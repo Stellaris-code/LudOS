@@ -25,10 +25,13 @@ set(CMAKE_ASM_NASM_COMPILER "/usr/bin/nasm")
 enable_language(ASM_NASM)
 
 file(GLOB KERN_TERMINAL_SOURCES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "kern/terminal/*.cpp")
+file(GLOB_RECURSE HEADERS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "*.hpp" "*.h")
+
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}/kern")
 
 set(GENERIC_SRCS ${KERN_TERMINAL_SOURCES})
 
-add_executable(${PROJECT_NAME} ${PLATFORM_SRCS} ${ISA_SRCS} ${GENERIC_SRCS})
+add_executable(${PROJECT_NAME} ${PLATFORM_SRCS} ${ISA_SRCS} ${GENERIC_SRCS} ${HEADERS})
 
 set(CMAKE_C_FLAGS "${ISA_C_FLAGS} ${PLATFORM_C_FLAGS}  -m32 -std=c11 -Wall -Wextra -ffreestanding -fno-builtin -nostdlib -finline-functions -fno-stack-protector -fomit-frame-pointer -Werror=implicit-function-declaration -mno-sse")
 set(CMAKE_CXX_FLAGS "${ISA_CXX_FLAGS} ${PLATFORM_CXX_FLAGS}  -m32 -std=c++11 -Wall -Wextra -ffreestanding -fno-builtin -nostdlib -finline-functions -fno-stack-protector -fomit-frame-pointer -Werror=implicit-function-declaration -mno-sse -fno-exceptions -fno-rtti")

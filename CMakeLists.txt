@@ -7,7 +7,7 @@ set(CMAKE_SYSTEM_NAME Generic)
 set(CMAKE_SYSTEM_PROCESSOR ${ARCH})
 set(CMAKE_CROSSCOMPILING 1)
 
-set(CMAKE_C_COMPILER_WORKS 1)
+set(CMAKE_C_COMPILER_WORKS 1) # Les test compilateur de CMake utilisent un flag, -rdynamic pas disponible sur le cross compiler qu'on a
 set(CMAKE_CXX_COMPILER_WORKS 1)
 
 project(LudOS)

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE QtCreatorProject>
-<!-- Written by QtCreator 4.3.82, 2017-08-22T18:11:42. -->
+<!-- Written by QtCreator 4.3.82, 2017-08-22T18:43:43. -->
 <qtcreator>
  <data>
   <variable>EnvironmentId</variable>
@@ -56,7 +56,8 @@
   <variable>ProjectExplorer.Project.PluginSettings</variable>
   <valuemap type="QVariantMap">
    <valuelist type="QVariantList" key="ClangCodeModel.CustomCommandLineKey"/>
-   <value type="bool" key="ClangCodeModel.UseGlobalConfig">true</value>
+   <value type="bool" key="ClangCodeModel.UseGlobalConfig">false</value>
+   <value type="QString" key="ClangCodeModel.WarningConfigId">{56a13827-190a-43d8-bb4c-31c3e2d6b2ef}</value>
    <valuelist type="QVariantList" key="ClangStaticAnalyzer.SuppressedDiagnostics"/>
   </valuemap>
  </data>

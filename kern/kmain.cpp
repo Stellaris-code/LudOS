@@ -36,7 +36,6 @@ SOFTWARE.
 extern "C" multiboot_header mbd;
 
 extern "C"
-{
 void kmain(void)
 {
 
@@ -48,16 +47,15 @@ void kmain(void)
         return;
     }
 
+    printf("%s", "Multiboot2 : architecture ");
+    if (mbd.architecture == 0) puts("32-bit i386 protected mode");
+    else                       puts("32-bit MIPS");
+
     puts("Welcome to : \n");
 
     Terminal::set_color(VGA_COLOR_LIGHT_CYAN);
 
-    puts(R"(   __           _   ___  __ )""\n"
-                           R"(  / / _   _  __| | /___\/ _\)""\n"
-                           R"( / / | | | |/ _` |//  //\ \ )""\n"
-                           R"(/ /__| |_| | (_| / \_// _\ \)""\n"
-                           R"(\____/\__,_|\__,_\___/  \__/)""\n");
-
-    ((uint16_t*)0xB8000)[1 * 80 + 2] = vga_entry(' ', VGA_COLOR_BLUE);
-}
+    puts(
+            #include "ludos_art.txt"
+        );
 }

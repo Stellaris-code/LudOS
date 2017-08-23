@@ -1,7 +1,7 @@
 /*
-qtcreatorstdint.hpp
+vga.hpp
 
-Copyright (c) 22 Yann BOUCHER (yann)
+Copyright (c) 23 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,21 +22,41 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef STDINT_HPP
-#define STDINT_HPP
+#ifndef VGA_HPP
+#define VGA_HPP
 
-#ifdef CODE_MODEL_PASS // Aliases for Qt Creator IDE
-#error Only for clang code model pass !
-using uint8_t = unsigned char;
-using int8_t = char;
-using uint16_t = unsigned short;
-using int16_t = short;
-using uint32_t = unsigned int;
-using int32_t = int;
-using uint64_t = unsigned long;
-using int64_t = long;
-#else
-#include <stdint.h>
-#endif
+#include "utils/stdint.h"
 
-#endif // STDINT_HPP
+
+/* Hardware text mode color constants. */
+enum vga_color : uint8_t
+{
+    VGA_COLOR_BLACK = 0,
+    VGA_COLOR_BLUE = 1,
+    VGA_COLOR_GREEN = 2,
+    VGA_COLOR_CYAN = 3,
+    VGA_COLOR_RED = 4,
+    VGA_COLOR_MAGENTA = 5,
+    VGA_COLOR_BROWN = 6,
+    VGA_COLOR_LIGHT_GREY = 7,
+    VGA_COLOR_DARK_GREY = 8,
+    VGA_COLOR_LIGHT_BLUE = 9,
+    VGA_COLOR_LIGHT_GREEN = 10,
+    VGA_COLOR_LIGHT_CYAN = 11,
+    VGA_COLOR_LIGHT_RED = 12,
+    VGA_COLOR_LIGHT_MAGENTA = 13,
+    VGA_COLOR_LIGHT_BROWN = 14,
+    VGA_COLOR_WHITE = 15,
+};
+
+static inline uint8_t vga_entry_color(enum vga_color fg, enum vga_color bg)
+{
+    return fg | bg << 4;
+}
+
+static inline uint16_t vga_entry(uint8_t uc, uint8_t color)
+{
+    return (uint16_t) uc | (uint16_t) color << 8;
+}
+
+#endif // VGA_HPP

@@ -25,20 +25,25 @@ set(CMAKE_ASM_NASM_COMPILER "/usr/bin/nasm")
 enable_language(ASM_NASM)
 
 file(GLOB KERN_TERMINAL_SOURCES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "kern/terminal/*.cpp")
+file(GLOB CPP_SOURCES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "kern/cpp_runtime/*.cpp")
+file(GLOB_RECURSE LIBC_SOURCES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "libc/*.c" "libc/*.cpp")
 file(GLOB_RECURSE HEADERS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "*.hpp" "*.h")
 
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/kern")
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}/libc")
 
-set(GENERIC_SRCS ${KERN_TERMINAL_SOURCES})
+set(GENERIC_SRCS ${KERN_TERMINAL_SOURCES} ${CPP_SOURCES} "kern/kmain.cpp")
 
-add_executable(${PROJECT_NAME} ${PLATFORM_SRCS} ${ISA_SRCS} ${GENERIC_SRCS} ${HEADERS})
+add_executable(${PROJECT_NAME} ${PLATFORM_SRCS} ${ISA_SRCS} ${LIBC_SOURCES} ${GENERIC_SRCS} ${HEADERS})
 
 set(CMAKE_C_FLAGS "${ISA_C_FLAGS} ${PLATFORM_C_FLAGS}  -m32 -std=c11 -Wall -Wextra -ffreestanding -fno-builtin -nostdlib -finline-functions -fno-stack-protector -fomit-frame-pointer -Werror=implicit-function-declaration -mno-sse")
-set(CMAKE_CXX_FLAGS "${ISA_CXX_FLAGS} ${PLATFORM_CXX_FLAGS}  -m32 -std=c++11 -Wall -Wextra -ffreestanding -fno-builtin -nostdlib -finline-functions -fno-stack-protector -fomit-frame-pointer -Werror=implicit-function-declaration -mno-sse -fno-exceptions -fno-rtti")
+set(CMAKE_CXX_FLAGS "${ISA_CXX_FLAGS} ${PLATFORM_CXX_FLAGS}  -m32 -std=c++17 -Wall -Wextra -ffreestanding -fno-builtin -nostdlib -finline-functions -fno-stack-protector -fomit-frame-pointer -Werror=implicit-function-declaration -mno-sse -fno-exceptions -fno-rtti")
 set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS
   "-T ${PLATFORM_LAYOUT} -N ${ISA_LINKER_FLAGS} ${PLATFORM_LINKER_FLAGS}")
 set_target_properties(${PROJECT_NAME} PROPERTIES SUFFIX ".bin")
 set(CMAKE_ASM_NASM_LINK_EXECUTABLE "${ARCH}-elf-gcc -T ${PLATFORM_LAYOUT} -N ${ISA_LINKER_FLAGS} ${PLATFORM_LINKER_FLAGS} <OBJECTS> -o <TARGET>.bin")
 
+
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-    COMMAND "${CMAKE_SOURCE_DIR}/tools/multiboot-check.sh" "$<TARGET_FILE:${PROJECT_NAME}>")
+    COMMAND "./iso.sh"
+    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/tools")

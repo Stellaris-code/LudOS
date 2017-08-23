@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE QtCreatorProject>
-<!-- Written by QtCreator 4.3.82, 2017-08-22T19:15:51. -->
+<!-- Written by QtCreator 4.3.82, 2017-08-23T14:00:05. -->
 <qtcreator>
  <data>
   <variable>EnvironmentId</variable>
@@ -407,11 +407,11 @@
     </valuelist>
     <value type="int" key="PE.EnvironmentAspect.Base">2</value>
     <valuelist type="QVariantList" key="PE.EnvironmentAspect.Changes"/>
-    <value type="QString" key="ProjectExplorer.CustomExecutableRunConfiguration.Arguments">-kernel %{buildDir}/bin/%{CurrentProject:Name}.bin</value>
-    <value type="QString" key="ProjectExplorer.CustomExecutableRunConfiguration.Executable">qemu-system-i386</value>
+    <value type="QString" key="ProjectExplorer.CustomExecutableRunConfiguration.Arguments">./run.sh</value>
+    <value type="QString" key="ProjectExplorer.CustomExecutableRunConfiguration.Executable">sh</value>
     <value type="bool" key="ProjectExplorer.CustomExecutableRunConfiguration.UseTerminal">false</value>
-    <value type="QString" key="ProjectExplorer.CustomExecutableRunConfiguration.WorkingDirectory">%{buildDir}</value>
-    <value type="QString" key="ProjectExplorer.ProjectConfiguration.DefaultDisplayName">Run qemu-system-i386</value>
+    <value type="QString" key="ProjectExplorer.CustomExecutableRunConfiguration.WorkingDirectory">/home/yann/LudOS/tools</value>
+    <value type="QString" key="ProjectExplorer.ProjectConfiguration.DefaultDisplayName">Run sh</value>
     <value type="QString" key="ProjectExplorer.ProjectConfiguration.DisplayName"></value>
     <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">ProjectExplorer.CustomExecutableRunConfiguration</value>
     <value type="uint" key="RunConfiguration.QmlDebugServerPort">3768</value>

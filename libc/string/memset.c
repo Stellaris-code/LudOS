@@ -1,5 +1,5 @@
 /*
-terminal.cpp
+memset.c
 
 Copyright (c) 23 Yann BOUCHER (yann)
 
@@ -22,64 +22,22 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#include "terminal.hpp"
-
 #include <string.h>
 
-detail::TerminalImpl::TerminalImpl()
+void* memset(void* bufptr, int value, size_t size)
 {
-    memsetw(terminal_buffer, vga_entry(' ', terminal_color), vga_height*vga_width);
-}
-
-void detail::TerminalImpl::set_color(uint8_t color)
-{
-    terminal_color = color;
-}
-
-void detail::TerminalImpl::put_entry_at(char c, uint8_t color, size_t x, size_t y)
-{
-    const size_t index = y * vga_width + x;
-    terminal_buffer[index] = vga_entry(c, color);
-}
-
-void detail::TerminalImpl::put_char(char c)
-{
-    if (c == '\n')
-    {
-        terminal_column = 0;
-        ++terminal_row;
-    }
-    else
-    {
-        put_entry_at(c, terminal_color, terminal_column, terminal_row);
-        ++terminal_column;
-    }
-
-    check_pos();
-}
-
-void detail::TerminalImpl::write(const char *data, size_t size)
-{
+    unsigned char* buf = (unsigned char*) bufptr;
     for (size_t i = 0; i < size; i++)
-    {
-        put_char(data[i]);
-    }
+        buf[i] = (unsigned char) value;
+    return bufptr;
 }
 
-void detail::TerminalImpl::write_string(const char *data)
+void* memsetw(void* bufptr, uint16_t value, size_t size)
 {
-    write(data, strlen(data));
-}
-
-void detail::TerminalImpl::check_pos()
-{
-    if (terminal_column >= vga_width)
+    uint16_t* buf = (uint16_t*) bufptr;
+    for (size_t i = 0; i < size/2; i++)
     {
-        terminal_column = 0;
-        ++terminal_row;
+        buf[i] = value;
     }
-    if (terminal_row >= vga_height)
-    {
-        terminal_row = 0;
-    }
+    return bufptr;
 }

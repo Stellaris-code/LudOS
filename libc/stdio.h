@@ -1,5 +1,5 @@
 /*
-kmain.cpp
+stdio.h
 
 Copyright (c) 23 Yann BOUCHER (yann)
 
@@ -22,42 +22,23 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
+#ifndef _STDIO_H
+#define _STDIO_H 1
 
-#ifndef __cplusplus
-#error Must be compiler using C++ !
+#include <sys/cdefs.h>
+
+#define EOF (-1)
+
+#ifdef __cplusplus
+extern "C" {
 #endif
 
-#include <stdio.h>
+int printf(const char* __restrict, ...);
+int putchar(int);
+int puts(const char*);
 
-#include "terminal/terminal.hpp"
-
-#include "utils/multiboot2.h"
-
-extern "C" multiboot_header mbd;
-
-extern "C"
-{
-void kmain(void)
-{
-
-    if (mbd.magic != 0xE85250D6)
-    {
-        // FIXME : Multiboot error
-        Terminal::set_color(VGA_COLOR_RED);
-        puts("Multiboot2 Magic number is invalid ! Aborting");
-        return;
-    }
-
-    puts("Welcome to : \n");
-
-    Terminal::set_color(VGA_COLOR_LIGHT_CYAN);
-
-    puts(R"(   __           _   ___  __ )""\n"
-                           R"(  / / _   _  __| | /___\/ _\)""\n"
-                           R"( / / | | | |/ _` |//  //\ \ )""\n"
-                           R"(/ /__| |_| | (_| / \_// _\ \)""\n"
-                           R"(\____/\__,_|\__,_\___/  \__/)""\n");
-
-    ((uint16_t*)0xB8000)[1 * 80 + 2] = vga_entry(' ', VGA_COLOR_BLUE);
+#ifdef __cplusplus
 }
-}
+#endif
+
+#endif

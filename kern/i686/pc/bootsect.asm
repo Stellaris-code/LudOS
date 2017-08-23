@@ -1,6 +1,4 @@
 global _start                           ; making entry point visible to linker
-global magic                            ; we will use this in kmain
-global mbd                              ; we will use this in kmain
 
 extern kmain                            ; kmain is defined in kmain.cpp
 
@@ -16,8 +14,6 @@ STACKSIZE equ 0x4000                    ; that's 16k.
 
 _start:
     mov  esp, stack + STACKSIZE         ; set up the stack
-    mov  [magic], eax                   ; Multiboot magic number
-    mov  [mbd], ebx                     ; Multiboot info structure
 
     mov  ebx, start_ctors               ; call the constructors
     jmp  .ctors_until_end

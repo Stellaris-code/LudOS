@@ -4,9 +4,14 @@ SECTIONS
 {
     . = 1M;
 
+    .boot ALIGN(0x1000) :
+    {
+        mbd = .;
+        *(.multiboot_header)
+    }
+
     .text ALIGN(0x1000) :
     {
-       	*(.multiboot_header) 
         *(.text)
         *(.gnu.linkonce.t*)
     }

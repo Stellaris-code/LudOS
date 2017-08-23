@@ -1,5 +1,5 @@
 /*
-kmain.cpp
+memmove.c
 
 Copyright (c) 23 Yann BOUCHER (yann)
 
@@ -22,42 +22,18 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
+#include <string.h>
 
-#ifndef __cplusplus
-#error Must be compiler using C++ !
-#endif
-
-#include <stdio.h>
-
-#include "terminal/terminal.hpp"
-
-#include "utils/multiboot2.h"
-
-extern "C" multiboot_header mbd;
-
-extern "C"
+void* memmove(void* dstptr, const void* srcptr, size_t size)
 {
-void kmain(void)
-{
-
-    if (mbd.magic != 0xE85250D6)
-    {
-        // FIXME : Multiboot error
-        Terminal::set_color(VGA_COLOR_RED);
-        puts("Multiboot2 Magic number is invalid ! Aborting");
-        return;
-    }
-
-    puts("Welcome to : \n");
-
-    Terminal::set_color(VGA_COLOR_LIGHT_CYAN);
-
-    puts(R"(   __           _   ___  __ )""\n"
-                           R"(  / / _   _  __| | /___\/ _\)""\n"
-                           R"( / / | | | |/ _` |//  //\ \ )""\n"
-                           R"(/ /__| |_| | (_| / \_// _\ \)""\n"
-                           R"(\____/\__,_|\__,_\___/  \__/)""\n");
-
-    ((uint16_t*)0xB8000)[1 * 80 + 2] = vga_entry(' ', VGA_COLOR_BLUE);
-}
+        unsigned char* dst = (unsigned char*) dstptr;
+        const unsigned char* src = (const unsigned char*) srcptr;
+        if (dst < src) {
+                for (size_t i = 0; i < size; i++)
+                        dst[i] = src[i];
+        } else {
+                for (size_t i = size; i != 0; i--)
+                        dst[i-1] = src[i-1];
+        }
+        return dstptr;
 }

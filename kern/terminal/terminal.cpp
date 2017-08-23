@@ -49,6 +49,23 @@ void detail::TerminalImpl::put_char(char c)
         terminal_column = 0;
         ++terminal_row;
     }
+    else if (c == '\r')
+    {
+        terminal_column = 0;
+    }
+    else if (c == '\b')
+    {
+        // TODO : backspace
+    }
+    else if (c == '\t')
+    {
+        terminal_column += 4;
+        if (terminal_column >= vga_width) terminal_column = vga_width-1;
+    }
+    else if (c == '\a')
+    {
+        // TODO : bell !
+    }
     else
     {
         put_entry_at(c, terminal_color, terminal_column, terminal_row);

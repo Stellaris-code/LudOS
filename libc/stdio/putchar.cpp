@@ -1,5 +1,5 @@
 /*
-kmain.cpp
+putchar.c
 
 Copyright (c) 23 Yann BOUCHER (yann)
 
@@ -23,41 +23,20 @@ SOFTWARE.
 
 */
 
-#ifndef __cplusplus
-#error Must be compiler using C++ !
-#endif
-
 #include <stdio.h>
 
-#include "terminal/terminal.hpp"
+#ifdef __is_libk
+#include <terminal/terminal.hpp>
+#endif
 
-#include "utils/multiboot2.h"
-
-extern "C" multiboot_header mbd;
-
-extern "C"
+int putchar(int ic)
 {
-void kmain(void)
-{
-
-    if (mbd.magic != 0xE85250D6)
-    {
-        // FIXME : Multiboot error
-        Terminal::set_color(VGA_COLOR_RED);
-        puts("Multiboot2 Magic number is invalid ! Aborting");
-        return;
-    }
-
-    puts("Welcome to : \n");
-
-    Terminal::set_color(VGA_COLOR_LIGHT_CYAN);
-
-    puts(R"(   __           _   ___  __ )""\n"
-                           R"(  / / _   _  __| | /___\/ _\)""\n"
-                           R"( / / | | | |/ _` |//  //\ \ )""\n"
-                           R"(/ /__| |_| | (_| / \_// _\ \)""\n"
-                           R"(\____/\__,_|\__,_\___/  \__/)""\n");
-
-    ((uint16_t*)0xB8000)[1 * 80 + 2] = vga_entry(' ', VGA_COLOR_BLUE);
-}
+        char c = (char) ic;
+#ifdef __is_libk
+        Terminal::put_char(c);
+#else
+        // TODO : do !
+#error Not implemented yet
+#endif
+        return ic;
 }

@@ -1,5 +1,5 @@
 /*
-abort.c
+atoi.cpp
 
 Copyright (c) 23 Yann BOUCHER (yann)
 
@@ -23,20 +23,23 @@ SOFTWARE.
 
 */
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <atoi.h>
+#include <ctype.h>
 
-__attribute__((__noreturn__))
-void abort(void)
+long long int atoi(const char *c)
 {
-#if defined(__is_libk)
-        // TODO: Add proper kernel panic.
-        printf("kernel: panic: abort()\n");
-#else
-        // TODO: Abnormally terminate the process as if by SIGABRT.
-        printf("abort()\n");
-#error not implemented yet
-#endif
-        while (1) { }
-        __builtin_unreachable();
+    long long int value = 0;
+    int sign = 1;
+    if( *c == '+' || *c == '-' )
+    {
+        if( *c == '-' ) sign = -1;
+        c++;
+    }
+    while (isdigit(*c))
+    {
+        value *= 10;
+        value += (int) (*c-'0');
+        c++;
+    }
+    return (value * sign);
 }

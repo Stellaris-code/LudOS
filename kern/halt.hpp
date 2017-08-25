@@ -1,5 +1,5 @@
 /*
-kmain.cpp
+halt.hpp
 
 Copyright (c) 23 Yann BOUCHER (yann)
 
@@ -22,29 +22,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
+#ifndef HALT_HPP
+#define HALT_HPP
 
-// TODO : Beep !
-// TODO : Keyboard
-
-
-#ifndef __cplusplus
-#error Must be compiler using C++ !
-#endif
-
-#include <stdio.h>
-
-#include "multiboot/multiboot_kern.hpp"
-
-#include "greet.hpp"
-
-extern "C" multiboot_header mbd;
-
-extern "C"
-void kmain(uint32_t magic, const multiboot_info* mbd_info)
+[[noreturn]]
+inline void halt()
 {
-    multiboot::check(magic, mbd, mbd_info);
-
-    greet();
-
-    multiboot::print_info(mbd, mbd_info);
+    while (true) {}
+    __builtin_unreachable();
 }
+
+#endif // HALT_HPP

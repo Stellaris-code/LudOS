@@ -1,7 +1,7 @@
 /*
-kmain.cpp
+greet.cpp
 
-Copyright (c) 23 Yann BOUCHER (yann)
+Copyright (c) 24 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -23,28 +23,21 @@ SOFTWARE.
 
 */
 
-// TODO : Beep !
-// TODO : Keyboard
-
-
-#ifndef __cplusplus
-#error Must be compiler using C++ !
-#endif
-
-#include <stdio.h>
-
-#include "multiboot/multiboot_kern.hpp"
-
 #include "greet.hpp"
 
-extern "C" multiboot_header mbd;
+#include <stdio.h>
+#include "terminal/terminal.hpp"
 
-extern "C"
-void kmain(uint32_t magic, const multiboot_info* mbd_info)
+void greet()
 {
-    multiboot::check(magic, mbd, mbd_info);
 
-    greet();
+    puts("Welcome to : \n");
 
-    multiboot::print_info(mbd, mbd_info);
+    Terminal::set_color(VGA_COLOR_LIGHT_CYAN);
+
+    puts(
+            #include "ludos_art.txt"
+        );
+
+    Terminal::set_color(VGA_COLOR_WHITE);
 }

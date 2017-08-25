@@ -1,5 +1,5 @@
 /*
-memcpy.c
+bda.hpp
 
 Copyright (c) 23 Yann BOUCHER (yann)
 
@@ -22,13 +22,33 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#include <string.h>
+#ifndef BDA_HPP
+#define BDA_HPP
 
-void* memcpy(void* restrict dstptr, const void* restrict srcptr, size_t size)
+#include "utils/stdint.h"
+
+namespace BDA
 {
-        unsigned char* dst = (unsigned char*) dstptr;
-        const unsigned char* src = (const unsigned char*) srcptr;
-        for (size_t i = 0; i < size; i++)
-                dst[i] = src[i];
-        return dstptr;
+    uint16_t com1_port();
+    uint16_t com2_port();
+    uint16_t com3_port();
+    uint16_t com4_port();
+
+    uint16_t lpt1_port();
+    uint16_t lpt2_port();
+    uint16_t lpt3_port();
+
+    uint16_t equipement();
+
+    uint16_t kbd_state();
+
+    uint8_t *kbd_buffer(); // TODO : array !
+
+    uint8_t disp_mode();
+
+    uint16_t txt_mode_columns();
+
+    uint16_t video_io_port();
 }
+
+#endif // BDA_HPP

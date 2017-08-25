@@ -1,7 +1,7 @@
 /*
-kmain.cpp
+greet.hpp
 
-Copyright (c) 23 Yann BOUCHER (yann)
+Copyright (c) 24 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,29 +22,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
+#ifndef GREET_HPP
+#define GREET_HPP
 
-// TODO : Beep !
-// TODO : Keyboard
+void greet();
 
-
-#ifndef __cplusplus
-#error Must be compiler using C++ !
-#endif
-
-#include <stdio.h>
-
-#include "multiboot/multiboot_kern.hpp"
-
-#include "greet.hpp"
-
-extern "C" multiboot_header mbd;
-
-extern "C"
-void kmain(uint32_t magic, const multiboot_info* mbd_info)
-{
-    multiboot::check(magic, mbd, mbd_info);
-
-    greet();
-
-    multiboot::print_info(mbd, mbd_info);
-}
+#endif // GREET_HPP

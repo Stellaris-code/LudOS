@@ -46,9 +46,11 @@ public:
     void put_char(char c);
     void write(const char* data, size_t size);
     void write_string(const char* data);
+    void clear();
 
 private:
     void check_pos();
+    void move_cursor(size_t x, size_t y);
 
 private:
     size_t terminal_row { 0 };

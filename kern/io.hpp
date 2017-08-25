@@ -1,5 +1,5 @@
 /*
-kmain.cpp
+io.hpp
 
 Copyright (c) 23 Yann BOUCHER (yann)
 
@@ -22,29 +22,19 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
+#ifndef IO_HPP
+#define IO_HPP
 
-// TODO : Beep !
-// TODO : Keyboard
+#include "utils/stdint.h"
 
+void outb(uint16_t port, uint8_t val);
+void outw(uint16_t port, uint16_t val);
+void outl(uint16_t port, uint32_t val);
 
-#ifndef __cplusplus
-#error Must be compiler using C++ !
-#endif
+uint8_t inb(uint16_t port);
+uint16_t inw(uint16_t port);
+uint32_t inl(uint16_t port);
 
-#include <stdio.h>
+void io_wait();
 
-#include "multiboot/multiboot_kern.hpp"
-
-#include "greet.hpp"
-
-extern "C" multiboot_header mbd;
-
-extern "C"
-void kmain(uint32_t magic, const multiboot_info* mbd_info)
-{
-    multiboot::check(magic, mbd, mbd_info);
-
-    greet();
-
-    multiboot::print_info(mbd, mbd_info);
-}
+#endif // IO_HPP

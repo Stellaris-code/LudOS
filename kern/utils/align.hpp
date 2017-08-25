@@ -1,7 +1,7 @@
 /*
-kmain.cpp
+align.hpp
 
-Copyright (c) 23 Yann BOUCHER (yann)
+Copyright (c) 24 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,29 +22,19 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
+#ifndef ALIGN_HPP
+#define ALIGN_HPP
 
-// TODO : Beep !
-// TODO : Keyboard
+#include "utils/stdint.h"
 
-
-#ifndef __cplusplus
-#error Must be compiler using C++ !
-#endif
-
-#include <stdio.h>
-
-#include "multiboot/multiboot_kern.hpp"
-
-#include "greet.hpp"
-
-extern "C" multiboot_header mbd;
-
-extern "C"
-void kmain(uint32_t magic, const multiboot_info* mbd_info)
+template <typename Ptr = void*>
+inline Ptr aligned(Ptr ptr, size_t alignement)
 {
-    multiboot::check(magic, mbd, mbd_info);
+    uintptr_t result = reinterpret_cast<uintptr_t>(ptr);
+    if (result % alignement != 0)
+        result += alignement - result % alignement;
 
-    greet();
-
-    multiboot::print_info(mbd, mbd_info);
+    return reinterpret_cast<Ptr>(result);
 }
+
+#endif // ALIGN_HPP

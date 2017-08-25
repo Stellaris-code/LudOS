@@ -50,7 +50,7 @@ void __cxa_finalize(void *f)
                 * According to the Itanium C++ ABI, if __cxa_finalize is called without a
                 * function ptr, then it means that we should destroy EVERYTHING MUAHAHAHA!!
                 *
-                * TODO:
+                *
                 * Note well, however, that deleting a function from here that contains a __dso_handle
                 * means that one link to a shared object file has been terminated. In other words,
                 * We should monitor this list (optional, of course), since it tells us how many links to

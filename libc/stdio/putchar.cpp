@@ -29,14 +29,12 @@ SOFTWARE.
 #include <terminal/terminal.hpp>
 #endif
 
-int putchar(int ic)
+void putchar(char c)
 {
-        char c = (char) ic;
 #ifdef __is_libk
         Terminal::put_char(c);
 #else
         // TODO : do !
 #error Not implemented yet
 #endif
-        return ic;
 }

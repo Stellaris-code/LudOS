@@ -1,5 +1,5 @@
 /*
-kmain.cpp
+itoa.cpp
 
 Copyright (c) 23 Yann BOUCHER (yann)
 
@@ -23,28 +23,41 @@ SOFTWARE.
 
 */
 
-// TODO : Beep !
-// TODO : Keyboard
+#include <itoa.h>
 
-
-#ifndef __cplusplus
-#error Must be compiler using C++ !
-#endif
-
-#include <stdio.h>
-
-#include "multiboot/multiboot_kern.hpp"
-
-#include "greet.hpp"
-
-extern "C" multiboot_header mbd;
-
-extern "C"
-void kmain(uint32_t magic, const multiboot_info* mbd_info)
+int itoa(int value, char *sp, int radix)
 {
-    multiboot::check(magic, mbd, mbd_info);
+    char tmp[16];// be careful with the length of the buffer
+    char *tp = tmp;
+    int i;
+    unsigned v;
 
-    greet();
+    int sign = (radix == 10 && value < 0);
+    if (sign)
+        v = -value;
+    else
+        v = (unsigned)value;
 
-    multiboot::print_info(mbd, mbd_info);
+    while (v || tp == tmp)
+    {
+        i = v % radix;
+        v /= radix; // v/=radix uses less CPU clocks than v=v/radix does
+        if (i < 10)
+          *tp++ = i+'0';
+        else
+          *tp++ = i + 'a' - 10;
+    }
+
+    int len = tp - tmp;
+
+    if (sign)
+    {
+        *sp++ = '-';
+        len++;
+    }
+
+    while (tp > tmp)
+        *sp++ = *--tp;
+
+    return len;
 }

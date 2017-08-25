@@ -10,6 +10,8 @@ SECTIONS
         *(.multiboot_header)
     }
 
+    _load_start = .;
+
     .text ALIGN(0x1000) :
     {
         *(.text)
@@ -36,14 +38,18 @@ SECTIONS
         *(.gnu.linkonce.d*)
     }
 
+    _load_end = .;
+
     .bss :
     {
-        sbss = .;
+        _bss_start = .;
         *(COMMON)
         *(.bss)
         *(.gnu.linkonce.b*)
-        ebss = .;
+        _bss_end = .;
     }
+
+    kernel_end = .;
 
     /DISCARD/ :
     {

@@ -15,6 +15,9 @@ STACKSIZE equ 0x4000                    ; that's 16k.
 _start:
     mov  esp, stack + STACKSIZE         ; set up the stack
 
+    mov [magic], eax
+    mov [mbd_info], ebx
+
     mov  ebx, start_ctors               ; call the constructors
     jmp  .ctors_until_end
 .call_constructor:
@@ -23,6 +26,9 @@ _start:
 .ctors_until_end:
     cmp  ebx, end_ctors
     jb   .call_constructor
+
+    push dword [mbd_info]
+    push dword [magic]
 
     call kmain                          ; call kernel proper
 
@@ -43,6 +49,6 @@ _start:
 section .bss
 
 align 4
-magic: resd 1
-mbd:   resd 1
-stack: resb STACKSIZE                   ; reserve 16k stack on a doubleword boundary
+magic:      resd 1
+mbd_info:   resd 1
+stack:      resb STACKSIZE                   ; reserve 16k stack on a doubleword boundary

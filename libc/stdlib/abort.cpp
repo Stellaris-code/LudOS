@@ -1,5 +1,5 @@
 /*
-kmain.cpp
+abort.c
 
 Copyright (c) 23 Yann BOUCHER (yann)
 
@@ -23,28 +23,24 @@ SOFTWARE.
 
 */
 
-// TODO : Beep !
-// TODO : Keyboard
+#include <stdio.h>
+#include <stdlib.h>
 
-
-#ifndef __cplusplus
-#error Must be compiler using C++ !
+#if defined(__is_libk)
+#include "panic.hpp"
 #endif
 
-#include <stdio.h>
 
-#include "multiboot/multiboot_kern.hpp"
-
-#include "greet.hpp"
-
-extern "C" multiboot_header mbd;
-
-extern "C"
-void kmain(uint32_t magic, const multiboot_info* mbd_info)
+__attribute__((__noreturn__))
+void abort(void)
 {
-    multiboot::check(magic, mbd, mbd_info);
-
-    greet();
-
-    multiboot::print_info(mbd, mbd_info);
+#if defined(__is_libk)
+        panic("Abort called");
+#else
+        // TODO: Abnormally terminate the process as if by SIGABRT.
+        printf("abort()\n");
+#error not implemented yet
+#endif
+        while (1) { }
+        __builtin_unreachable();
 }

@@ -1,5 +1,5 @@
 /*
-kmain.cpp
+bda.cpp
 
 Copyright (c) 23 Yann BOUCHER (yann)
 
@@ -23,28 +23,70 @@ SOFTWARE.
 
 */
 
-// TODO : Beep !
-// TODO : Keyboard
+#include "bda.hpp"
 
-
-#ifndef __cplusplus
-#error Must be compiler using C++ !
-#endif
-
-#include <stdio.h>
-
-#include "multiboot/multiboot_kern.hpp"
-
-#include "greet.hpp"
-
-extern "C" multiboot_header mbd;
-
-extern "C"
-void kmain(uint32_t magic, const multiboot_info* mbd_info)
+uint16_t BDA::com1_port()
 {
-    multiboot::check(magic, mbd, mbd_info);
+    return *reinterpret_cast<uint16_t*>(0x0400);
+}
 
-    greet();
+uint16_t BDA::com2_port()
+{
+    return *reinterpret_cast<uint16_t*>(0x0402);
+}
 
-    multiboot::print_info(mbd, mbd_info);
+uint16_t BDA::com3_port()
+{
+    return *reinterpret_cast<uint16_t*>(0x0404);
+}
+
+uint16_t BDA::com4_port()
+{
+    return *reinterpret_cast<uint16_t*>(0x0406);
+}
+
+
+uint16_t BDA::lpt1_port()
+{
+    return *reinterpret_cast<uint16_t*>(0x0408);
+}
+
+uint16_t BDA::lpt2_port()
+{
+    return *reinterpret_cast<uint16_t*>(0x040A);
+}
+
+uint16_t BDA::lpt3_port()
+{
+    return *reinterpret_cast<uint16_t*>(0x040C);
+}
+
+uint16_t BDA::equipement()
+{
+    return *reinterpret_cast<uint16_t*>(0x0410);
+}
+
+uint16_t BDA::kbd_state()
+{
+    return *reinterpret_cast<uint16_t*>(0x0417);
+}
+
+uint8_t *BDA::kbd_buffer()
+{
+    return  reinterpret_cast<uint8_t*>(0x041E);
+}
+
+uint8_t BDA::disp_mode()
+{
+    return *reinterpret_cast<uint8_t*>(0x0449);
+}
+
+uint16_t BDA::txt_mode_columns()
+{
+    return *reinterpret_cast<uint16_t*>(0x044A);
+}
+
+uint16_t BDA::video_io_port()
+{
+    return *reinterpret_cast<uint16_t*>(0x0463);
 }

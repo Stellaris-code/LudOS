@@ -1,5 +1,5 @@
 /*
-kmain.cpp
+atoi.h
 
 Copyright (c) 23 Yann BOUCHER (yann)
 
@@ -22,29 +22,17 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
+#ifndef ATOI_H
+#define ATOI_H
 
-// TODO : Beep !
-// TODO : Keyboard
-
-
-#ifndef __cplusplus
-#error Must be compiler using C++ !
+#ifdef __cplusplus
+extern "C" {
 #endif
 
-#include <stdio.h>
+long long int atoi(const char *c);
 
-#include "multiboot/multiboot_kern.hpp"
-
-#include "greet.hpp"
-
-extern "C" multiboot_header mbd;
-
-extern "C"
-void kmain(uint32_t magic, const multiboot_info* mbd_info)
-{
-    multiboot::check(magic, mbd, mbd_info);
-
-    greet();
-
-    multiboot::print_info(mbd, mbd_info);
+#ifdef __cplusplus
 }
+#endif
+
+#endif // ATOI_H

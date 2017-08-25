@@ -26,9 +26,12 @@ SOFTWARE.
 
 #include <string.h>
 
+#include "io.hpp"
+#include "bios/bda.hpp"
+
 detail::TerminalImpl::TerminalImpl()
 {
-    memsetw(terminal_buffer, vga_entry(' ', terminal_color), vga_height*vga_width);
+    clear();
 }
 
 void detail::TerminalImpl::set_color(uint8_t color)
@@ -55,7 +58,19 @@ void detail::TerminalImpl::put_char(char c)
     }
     else if (c == '\b')
     {
-        // TODO : backspace
+        if (terminal_column == 0)
+        {
+            if (terminal_row > 0)
+            {
+                --terminal_row;
+            }
+        }
+        else
+        {
+            --terminal_column;
+        }
+
+        check_pos();
     }
     else if (c == '\t')
     {
@@ -88,6 +103,11 @@ void detail::TerminalImpl::write_string(const char *data)
     write(data, strlen(data));
 }
 
+void detail::TerminalImpl::clear()
+{
+    memsetw(terminal_buffer, vga_entry(' ', terminal_color), vga_height*vga_width);
+}
+
 void detail::TerminalImpl::check_pos()
 {
     if (terminal_column >= vga_width)
@@ -99,4 +119,22 @@ void detail::TerminalImpl::check_pos()
     {
         terminal_row = 0;
     }
+
+    move_cursor(terminal_column, terminal_row);
+}
+
+void detail::TerminalImpl::move_cursor(size_t x, size_t y)
+{
+    const size_t index = y * vga_width + x;
+
+    const uint16_t port_low = BDA::video_io_port();
+    const uint16_t port_high = port_low + 1;
+
+    // cursor LOW port to vga INDEX register
+    outb(port_low, 0x0F);
+    outb(port_high, (uint8_t)(index&0xFF));
+
+    // cursor HIGH port to vga INDEX register
+    outb(port_low, 0x0E);
+    outb(port_high, (uint8_t)((index>>8)&0xFF));
 }

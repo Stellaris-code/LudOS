@@ -41,6 +41,7 @@ void* memmove(void*, const void*, size_t);
 void* memset(void*, int, size_t);
 void* memsetw(void*, uint16_t, size_t);
 size_t strlen(const char*);
+char *strcpy(char * __restrict dest, const char * __restrict src);
 
 #ifdef __cplusplus
 }

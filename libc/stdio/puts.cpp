@@ -1,5 +1,5 @@
 /*
-kmain.cpp
+puts.c
 
 Copyright (c) 23 Yann BOUCHER (yann)
 
@@ -23,28 +23,10 @@ SOFTWARE.
 
 */
 
-// TODO : Beep !
-// TODO : Keyboard
-
-
-#ifndef __cplusplus
-#error Must be compiler using C++ !
-#endif
 
 #include <stdio.h>
 
-#include "multiboot/multiboot_kern.hpp"
-
-#include "greet.hpp"
-
-extern "C" multiboot_header mbd;
-
-extern "C"
-void kmain(uint32_t magic, const multiboot_info* mbd_info)
+void puts(const char* string)
 {
-    multiboot::check(magic, mbd, mbd_info);
-
-    greet();
-
-    multiboot::print_info(mbd, mbd_info);
+    printf("%s\n", string);
 }

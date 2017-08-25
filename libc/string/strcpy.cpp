@@ -1,5 +1,5 @@
 /*
-puts.c
+strcpy.cpp
 
 Copyright (c) 23 Yann BOUCHER (yann)
 
@@ -23,9 +23,12 @@ SOFTWARE.
 
 */
 
+#include <string.h>
 
-#include <stdio.h>
-
-int puts(const char* string) {
-        return printf("%s\n", string);
+char *strcpy(char *__restrict dest, const char *__restrict src)
+{
+    char *ret = dest;
+    while ((*dest++ = *src++))
+        ;
+    return ret;
 }

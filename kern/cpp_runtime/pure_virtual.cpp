@@ -23,7 +23,9 @@ SOFTWARE.
 
 */
 
+#include "panic.hpp"
+
 extern "C" void __cxa_pure_virtual()
 {
-    // TODO : Error message
+    panic("Pure virtual function called !");
 }

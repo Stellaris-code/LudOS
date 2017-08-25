@@ -1,5 +1,5 @@
 /*
-kmain.cpp
+panic.hpp
 
 Copyright (c) 23 Yann BOUCHER (yann)
 
@@ -22,29 +22,22 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
+#ifndef PANIC_HPP
+#define PANIC_HPP
 
-// TODO : Beep !
-// TODO : Keyboard
+#include "terminal/terminal.hpp"
 
+#include "halt.hpp"
 
-#ifndef __cplusplus
-#error Must be compiler using C++ !
-#endif
-
-#include <stdio.h>
-
-#include "multiboot/multiboot_kern.hpp"
-
-#include "greet.hpp"
-
-extern "C" multiboot_header mbd;
-
-extern "C"
-void kmain(uint32_t magic, const multiboot_info* mbd_info)
+[[noreturn]]
+inline void panic(const char* string)
 {
-    multiboot::check(magic, mbd, mbd_info);
+    Terminal::set_color(VGA_COLOR_RED);
 
-    greet();
+    Terminal::write_string("KERNEL PANIC : ");
+    Terminal::write_string(string);
 
-    multiboot::print_info(mbd, mbd_info);
+    halt();
 }
+
+#endif // PANIC_HPP

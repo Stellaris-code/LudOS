@@ -1,7 +1,7 @@
 /*
-kmain.cpp
+multiboot_print.hpp
 
-Copyright (c) 23 Yann BOUCHER (yann)
+Copyright (c) 24 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,29 +22,30 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
+#ifndef MULTIBOOT_KERN_HPP
+#define MULTIBOOT_KERN_HPP
 
-// TODO : Beep !
-// TODO : Keyboard
+#include "multiboot/multiboot2.h"
+#include "utils/stdint.h"
 
-
-#ifndef __cplusplus
-#error Must be compiler using C++ !
-#endif
-
-#include <stdio.h>
-
-#include "multiboot/multiboot_kern.hpp"
-
-#include "greet.hpp"
-
-extern "C" multiboot_header mbd;
-
-extern "C"
-void kmain(uint32_t magic, const multiboot_info* mbd_info)
+struct multiboot_info
 {
-    multiboot::check(magic, mbd, mbd_info);
+    uint32_t total_size;
+    uint32_t reserved;
+    multiboot_tag* tags;
+};
 
-    greet();
+namespace multiboot
+{
 
-    multiboot::print_info(mbd, mbd_info);
+void check(uint32_t magic, const multiboot_header& mbd, const multiboot_info *mbd_info);
+
+void print_info(const multiboot_header& mbd, const multiboot_info *info);
+
+template <typename Tag> inline void print(const Tag* tag);
+
 }
+
+#include "multiboot_kern.tpp"
+
+#endif // MULTIBOOT_KERN_HPP

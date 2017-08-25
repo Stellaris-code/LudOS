@@ -1,105 +1,166 @@
-/*
-printf.c
 
-Copyright (c) 23 Yann BOUCHER (yann)
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-
-*/
-#include <limits.h>
-#include <stdbool.h>
-#include <stdarg.h>
 #include <stdio.h>
+#include <stdarg.h>
 #include <string.h>
+#include <atoi.h>
+#include <itoa.h>
 
-static bool print(const char* data, size_t length) {
-        const unsigned char* bytes = (const unsigned char*) data;
-        for (size_t i = 0; i < length; i++)
-                if (putchar(bytes[i]) == EOF)
-                        return false;
-        return true;
+#include "utils/stdint.h"
+
+int is_format_letter(char c) {
+    return c == 'c' ||  c == 'd' || c == 'i' ||c == 'e' ||c == 'E' ||c == 'f' ||c == 'g' ||c == 'G' ||c == 'o' ||c == 's' || c == 'u' || c == 'x' || c == 'X' || c == 'p' || c == 'n';
 }
 
-int printf(const char* restrict format, ...)
+void vsprintf_helper(char * str, void (*putchar)(char), const char * format, uint32_t * pos, va_list arg);
+
+/*
+ * Both printf and sprintf call this function to do the actual formatting
+ * The only difference of printf and sprintf is, one writes to screen memory, and another writes to normal memory buffer
+ * vsprintf should keeps track of current mem pointer to place next character(for printf, print_char alread keeps track of current screen posistion, so this is only true for sprintf)
+ * */
+void vsprintf(char * str, void (*putchar)(char), const char * format, va_list arg) {
+    uint32_t pos = 0;
+    vsprintf_helper(str, putchar, format, &pos, arg);
+}
+
+
+void vsprintf_helper(char * str, void (*putchar)(char), const char * format, uint32_t * pos, va_list arg)
 {
-        va_list parameters;
-        va_start(parameters, format);
+    char c;
+    int sign, ival, sys;
+    char buf[512];
+    char width_str[10];
+    uint32_t uval;
+    uint32_t size = 8;
+    uint32_t i;
+    int size_override = 0;
+    memset(buf, 0, 512);
 
-        int written = 0;
+    while((c = *format++) != 0) {
+        sign = 0;
 
-        while (*format != '\0') {
-                size_t maxrem = INT_MAX - written;
-
-                if (format[0] != '%' || format[1] == '%') {
-                        if (format[0] == '%')
-                                format++;
-                        size_t amount = 1;
-                        while (format[amount] && format[amount] != '%')
-                                amount++;
-                        if (maxrem < amount) {
-                                // TODO: Set errno to EOVERFLOW.
-                                return -1;
-                        }
-                        if (!print(format, amount))
-                                return -1;
-                        format += amount;
-                        written += amount;
-                        continue;
-                }
-
-                const char* format_begun_at = format++;
-
-                if (*format == 'c') {
+        if(c == '%') {
+            c = *format++;
+            switch(c) {
+                // Handle calls like printf("%08x", 0xaa);
+                case '0':
+                    size_override = 1;
+                    // Get the number between 0 and (x/d/p...)
+                    i = 0;
+                    c = *format;
+                    while(!is_format_letter(c)) {
+                        width_str[i++] = c;
                         format++;
-                        char c = (char) va_arg(parameters, int /* char promotes to int */);
-                        if (!maxrem) {
-                                // TODO: Set errno to EOVERFLOW.
-                                return -1;
+                        c = *format;
+                    }
+                    width_str[i] = 0;
+                    format++;
+                    // Convert to a number
+                    size = atoi(width_str);
+                case 'd':
+                case 'u':
+                case 'x':
+                case 'p':
+                    if(c == 'd' || c == 'u')
+                        sys = 10;
+                    else
+                        sys = 16;
+
+                    uval = ival = va_arg(arg, int);
+                    if(c == 'd' && ival < 0) {
+                        sign= 1;
+                        uval = -ival;
+                    }
+                    uint32_t len = itoa(uval, buf, sys);
+                    // If use did not specify width, then just use len = width
+                    if(!size_override) size = len;
+                    if((c == 'x' || c == 'p' || c == 'd') &&len < size) {
+                        for(i = 0; i < len; i++) {
+                            buf[size - 1 - i] = buf[len - 1 - i];
                         }
-                        if (!print(&c, sizeof(c)))
-                                return -1;
-                        written++;
-                } else if (*format == 's') {
-                        format++;
-                        const char* str = va_arg(parameters, const char*);
-                        size_t len = strlen(str);
-                        if (maxrem < len) {
-                                // TODO: Set errno to EOVERFLOW.
-                                return -1;
+                        for(i = 0; i < size - len; i++) {
+                            buf[i] = '0';
                         }
-                        if (!print(str, len))
-                                return -1;
-                        written += len;
-                } else {
-                        format = format_begun_at;
-                        size_t len = strlen(format);
-                        if (maxrem < len) {
-                                // TODO: Set errno to EOVERFLOW.
-                                return -1;
+                    }
+                    if(c == 'd' && sign) {
+                        if(str) {
+                            *(str + *pos) = '-';
+                            *pos = *pos + 1;
                         }
-                        if (!print(format, len))
-                                return -1;
-                        written += len;
-                        format += len;
-                }
+                        else
+                            (*putchar)('-');
+                    }
+                    if(str) {
+                        strcpy(str + *pos, buf);
+                        *pos = *pos + strlen(buf);
+                    }
+                    else {
+                        char * t = buf;
+                        while(*t) {
+                            putchar(*t);
+                            t++;
+                        }
+                    }
+                    break;
+                case 'c':
+                    if(str) {
+                        *(str + *pos) = (char)va_arg(arg, int);
+                        *pos = *pos + 1;
+                    }
+                    else {
+                        (*putchar)((char)va_arg(arg, int));
+                    }
+                    break;
+                case 's':
+                    if(str) {
+                        char * t = (char *) va_arg(arg, int);
+                        strcpy(str + (*pos), t);
+                        *pos = *pos + strlen(t);
+                    }
+                    else {
+                        char * t = (char *) va_arg(arg, int);
+                        while(*t) {
+                            putchar(*t);
+                            t++;
+                        }
+                    }
+                    break;
+                default:
+                    break;
+            }
+            continue;
+        }
+        if(str) {
+            *(str + *pos) = c;
+            *pos = *pos + 1;
+        }
+        else {
+            (*putchar)(c);
         }
 
-        va_end(parameters);
-        return written;
+    }
 }
+
+/*
+ * Simplified version of printf and sprintf
+ *
+ * printf is sprintf is very similar, except that sprintf doesn't print to screen
+ * */
+
+// BUG : implementation does not work for more than two hex numbers
+void printf(const char * s, ...) {
+    va_list ap;
+    va_start(ap, s);
+    vsprintf(NULL, putchar, s, ap);
+    va_end(ap);
+}
+
+/*
+This has been moved to string.c
+void sprintf(char * buf, const char * fmt, ...) {
+    va_list ap;
+    va_start(ap, fmt);
+    vsprintf(buf, NULL, fmt, ap);
+    va_end(ap);
+}
+*/

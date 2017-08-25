@@ -2,9 +2,9 @@ ENTRY(_start)
 
 SECTIONS
 {
-    . = 1M;
+    . = 0xE0100000; /* + 1M */
 
-    .boot ALIGN(0x1000) :
+    .boot ALIGN(0x1000) : AT(ADDR(.boot) - 0xE0000000)
     {
         mbd = .;
         *(.multiboot_header)
@@ -12,13 +12,13 @@ SECTIONS
 
     _load_start = .;
 
-    .text ALIGN(0x1000) :
+    .text ALIGN(0x1000) : AT(ADDR(.text) - 0xE0000000)
     {
         *(.text)
         *(.gnu.linkonce.t*)
     }
 
-    .rodata ALIGN(0x1000) :
+    .rodata ALIGN(0x1000) : AT(ADDR(.rodata) - 0xE0000000)
     {
         start_ctors = .;
         *(SORT(.ctors*))  /* Note the "SORT" */
@@ -32,7 +32,7 @@ SECTIONS
         *(.gnu.linkonce.r*)
     }
 
-    .data ALIGN(0x1000) :
+    .data ALIGN(0x1000) : AT(ADDR(.data) - 0xE0000000)
     {
         *(.data)
         *(.gnu.linkonce.d*)
@@ -40,7 +40,7 @@ SECTIONS
 
     _load_end = .;
 
-    .bss :
+    .bss : AT(ADDR(.bss) - 0xE0000000)
     {
         _bss_start = .;
         *(COMMON)

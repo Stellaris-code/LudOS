@@ -4,6 +4,7 @@ MAGIC       equ    0xE85250D6           ; 'magic number' lets bootloader find th
 [EXTERN _load_end]
 [EXTERN _bss_end]
 [EXTERN _start]
+[EXTERN loader]
 
 section .multiboot_header
 header_start:
@@ -30,12 +31,12 @@ header_start:
     align 8
 
     ;Entry point
-    dw 4
-    dw 0
-    dd 12
-    dd _start
+    ;dw 4
+    ;dw 0
+    ;dd 12
+    ;dd loader
 
-    align 8
+    ;align 8
 
     ;end tag
     dw 0                        ;type

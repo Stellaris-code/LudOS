@@ -1,7 +1,7 @@
 /*
-greet.cpp
+addr.hpp
 
-Copyright (c) 24 Yann BOUCHER (yann)
+Copyright (c) 25 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,21 +22,21 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
+#ifndef ADDR_HPP
+#define ADDR_HPP
 
-#include "greet.hpp"
-#include "halt.hpp"
+#include "utils/stdint.h"
 
-#include <stdio.h>
-#include "terminal/terminal.hpp"
+static constexpr uintptr_t kernel_virtual_base { 0xE0000000 };
 
-void greet()
+inline uintptr_t phys(uintptr_t ptr)
 {
-    puts("Welcome to : \n");
-    Terminal::set_color(VGA_COLOR_LIGHT_CYAN);
-
-    puts(
-            #include "ludos_art.txt"
-        );
-
-    Terminal::set_color(VGA_COLOR_WHITE);
+    return kernel_virtual_base + ptr;
 }
+
+inline uintptr_t virt(uintptr_t ptr)
+{
+    return ptr - kernel_virtual_base;
+}
+
+#endif // ADDR_HPP

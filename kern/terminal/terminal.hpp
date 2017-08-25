@@ -26,6 +26,7 @@ SOFTWARE.
 #define TERMINAL_HPP
 
 #include "utils/stdint.h"
+#include "utils/addr.hpp"
 #include "vga.hpp"
 
 namespace detail
@@ -56,7 +57,7 @@ private:
     size_t terminal_row { 0 };
     size_t terminal_column { 0 };
     uint8_t terminal_color { vga_entry_color(VGA_COLOR_LIGHT_GREY, VGA_COLOR_BLACK) };
-    uint16_t* terminal_buffer { reinterpret_cast<uint16_t*>(0xB8000) };
+    uint16_t* terminal_buffer { reinterpret_cast<uint16_t*>(phys(0xB8000)) };
 };
 
 }

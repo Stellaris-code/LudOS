@@ -24,69 +24,70 @@ SOFTWARE.
 */
 
 #include "bda.hpp"
+#include "utils/addr.hpp"
 
 uint16_t BDA::com1_port()
 {
-    return *reinterpret_cast<uint16_t*>(0x0400);
+    return *reinterpret_cast<uint16_t*>(phys(0x0400));
 }
 
 uint16_t BDA::com2_port()
 {
-    return *reinterpret_cast<uint16_t*>(0x0402);
+    return *reinterpret_cast<uint16_t*>(phys(0x0402));
 }
 
 uint16_t BDA::com3_port()
 {
-    return *reinterpret_cast<uint16_t*>(0x0404);
+    return *reinterpret_cast<uint16_t*>(phys(0x0404));
 }
 
 uint16_t BDA::com4_port()
 {
-    return *reinterpret_cast<uint16_t*>(0x0406);
+    return *reinterpret_cast<uint16_t*>(phys(0x0406));
 }
 
 
 uint16_t BDA::lpt1_port()
 {
-    return *reinterpret_cast<uint16_t*>(0x0408);
+    return *reinterpret_cast<uint16_t*>(phys(0x0408));
 }
 
 uint16_t BDA::lpt2_port()
 {
-    return *reinterpret_cast<uint16_t*>(0x040A);
+    return *reinterpret_cast<uint16_t*>(phys(0x040A));
 }
 
 uint16_t BDA::lpt3_port()
 {
-    return *reinterpret_cast<uint16_t*>(0x040C);
+    return *reinterpret_cast<uint16_t*>(phys(0x040C));
 }
 
 uint16_t BDA::equipement()
 {
-    return *reinterpret_cast<uint16_t*>(0x0410);
+    return *reinterpret_cast<uint16_t*>(phys(0x0410));
 }
 
 uint16_t BDA::kbd_state()
 {
-    return *reinterpret_cast<uint16_t*>(0x0417);
+    return *reinterpret_cast<uint16_t*>(phys(0x0417));
 }
 
 uint8_t *BDA::kbd_buffer()
 {
-    return  reinterpret_cast<uint8_t*>(0x041E);
+    return  reinterpret_cast<uint8_t*>(phys(0x041E));
 }
 
 uint8_t BDA::disp_mode()
 {
-    return *reinterpret_cast<uint8_t*>(0x0449);
+    return *reinterpret_cast<uint8_t*>(phys(0x0449));
 }
 
 uint16_t BDA::txt_mode_columns()
 {
-    return *reinterpret_cast<uint16_t*>(0x044A);
+    return *reinterpret_cast<uint16_t*>(phys(0x044A));
 }
 
 uint16_t BDA::video_io_port()
 {
-    return *reinterpret_cast<uint16_t*>(0x0463);
+    return *reinterpret_cast<uint16_t*>(phys(0x0463));
 }

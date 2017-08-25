@@ -28,6 +28,7 @@ SOFTWARE.
 
 #include "io.hpp"
 #include "bios/bda.hpp"
+#include "halt.hpp"
 
 detail::TerminalImpl::TerminalImpl()
 {

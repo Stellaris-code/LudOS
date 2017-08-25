@@ -54,12 +54,7 @@ void check(uint32_t magic, const multiboot_header &mbd, const multiboot_info* mb
 void print_info(const multiboot_info_t* info)
 {
     puts("Multiboot Info :");
-    /*
-        printf("Lower memory : 0x%08X\n", meminfo->mem_lower);
-        printf("Upper memory : 0x%08X\n", meminfo->mem_upper);
-    printf("Bootloader name : %s\n", info.bootloadername.string);
-    printf("Command line : %s\n", info.commandline.string);
-    */
+
     printf("Multiboot flags : 0x%x\n", info->flags);
     if (CHECK_FLAG(info->flags, 1))
     {

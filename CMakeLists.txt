@@ -57,5 +57,4 @@ target_link_libraries(${PROJECT_NAME} libc)
 
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
     COMMAND "./multiboot-check.sh" $<TARGET_FILE:${PROJECT_NAME}>
-    COMMAND "./iso.sh"
     WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/tools")

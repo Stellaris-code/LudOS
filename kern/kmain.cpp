@@ -36,15 +36,16 @@ SOFTWARE.
 #include "multiboot/multiboot_kern.hpp"
 
 #include "greet.hpp"
+#include "halt.hpp"
 
 extern "C" multiboot_header mbd;
 
 extern "C"
-void kmain(uint32_t magic, const multiboot_info* mbd_info)
+void kmain(uint32_t magic, const multiboot_info_t* mbd_info)
 {
     multiboot::check(magic, mbd, mbd_info);
 
     greet();
 
-    multiboot::print_info(mbd, mbd_info);
+    multiboot::print_info(mbd_info);
 }

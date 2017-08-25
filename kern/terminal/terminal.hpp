@@ -29,6 +29,8 @@ SOFTWARE.
 #include "utils/addr.hpp"
 #include "vga.hpp"
 
+
+// TODO : scrolling vers le haut !
 namespace detail
 {
 
@@ -48,6 +50,7 @@ public:
     void write(const char* data, size_t size);
     void write_string(const char* data);
     void clear();
+    void scroll_up();
 
 private:
     void check_pos();
@@ -73,6 +76,9 @@ public:
     static void put_char(char c) { impl.put_char(c); };
     static void write(const char* data, size_t size) { impl.write(data, size); };
     static void write_string(const char* data) { impl.write_string(data); }
+    static void clear() { impl.clear(); }
+    static void scroll_up() { impl.scroll_up(); }
+
 
 private:
     static inline detail::TerminalImpl impl;

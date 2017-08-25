@@ -25,27 +25,16 @@ SOFTWARE.
 #ifndef MULTIBOOT_KERN_HPP
 #define MULTIBOOT_KERN_HPP
 
-#include "multiboot/multiboot2.h"
+#include "multiboot/multiboot.h"
 #include "utils/stdint.h"
-
-struct multiboot_info
-{
-    uint32_t total_size;
-    uint32_t reserved;
-    multiboot_tag* tags;
-};
 
 namespace multiboot
 {
 
 void check(uint32_t magic, const multiboot_header& mbd, const multiboot_info *mbd_info);
 
-void print_info(const multiboot_header& mbd, const multiboot_info *info);
-
-template <typename Tag> inline void print(const Tag* tag);
+void print_info(const multiboot_info_t *info);
 
 }
-
-#include "multiboot_kern.tpp"
 
 #endif // MULTIBOOT_KERN_HPP

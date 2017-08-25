@@ -10,7 +10,7 @@ mkdir -p isodir/boot/grub
 cp build/bin/LudOS.bin isodir/boot/LudOS.kernel
 cat > isodir/boot/grub/grub.cfg << EOF
 menuentry "LudOS" {
-	multiboot2 /boot/LudOS.kernel
+	multiboot /boot/LudOS.kernel
 }
 EOF
 grub-mkrescue -o isodir/LudOS.iso isodir &> /dev/null

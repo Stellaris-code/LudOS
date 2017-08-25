@@ -109,6 +109,19 @@ void detail::TerminalImpl::clear()
     memsetw(terminal_buffer, vga_entry(' ', terminal_color), vga_height*vga_width);
 }
 
+void detail::TerminalImpl::scroll_up()
+{
+    for (size_t y { 1 }; y < vga_height; ++y)
+    {
+        for (size_t x { 0 }; x < vga_width; ++x)
+        {
+            const size_t index = y * vga_width + x;
+            const size_t index_up = (y-1) * vga_width + x;
+            terminal_buffer[index_up] = terminal_buffer[index];
+        }
+    }
+}
+
 void detail::TerminalImpl::check_pos()
 {
     if (terminal_column >= vga_width)

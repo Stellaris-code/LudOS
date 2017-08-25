@@ -29,13 +29,16 @@ SOFTWARE.
 #include "panic.hpp"
 
 #include "utils/align.hpp"
+#include "utils/addr.hpp"
+
+#define CHECK_FLAG(flags,bit)   ((flags) & (1 << (bit)))
 
 namespace multiboot
 {
 
 void check(uint32_t magic, const multiboot_header &mbd, const multiboot_info* mbd_info)
 {
-    if (mbd.magic != MULTIBOOT2_HEADER_MAGIC || magic != MULTIBOOT2_BOOTLOADER_MAGIC)
+    if (mbd.magic != MULTIBOOT_HEADER_MAGIC || magic != MULTIBOOT_BOOTLOADER_MAGIC)
     {
         printf("0x%08X\n", magic);
         panic("Multiboot2 Magic number is invalid ! Aborting");
@@ -48,49 +51,54 @@ void check(uint32_t magic, const multiboot_header &mbd, const multiboot_info* mb
     }
 }
 
-void print_info(const multiboot_header &mbd, const multiboot_info* info)
+void print_info(const multiboot_info_t* info)
 {
-    printf("%s", "Multiboot2 : architecture ");
-    if      (mbd.architecture == MULTIBOOT_ARCHITECTURE_I386)   puts("32-bit i386 protected mode");
-    else if (mbd.architecture == MULTIBOOT_ARCHITECTURE_MIPS32) puts("32-bit MIPS");
-    else                                                        puts("Unknown");
-
+    puts("Multiboot Info :");
     /*
         printf("Lower memory : 0x%08X\n", meminfo->mem_lower);
         printf("Upper memory : 0x%08X\n", meminfo->mem_upper);
     printf("Bootloader name : %s\n", info.bootloadername.string);
     printf("Command line : %s\n", info.commandline.string);
     */
-
-    for (multiboot_tag* tag = reinterpret_cast<multiboot_tag*>(reinterpret_cast<uintptr_t>(info) + 8);
-         tag->type != MULTIBOOT_TAG_TYPE_END;
-         tag = reinterpret_cast<multiboot_tag*>(reinterpret_cast<multiboot_uint8_t *>(tag)
-                                                + ((tag->size + 7) & ~7)))
+    printf("Multiboot flags : 0x%x\n", info->flags);
+    if (CHECK_FLAG(info->flags, 1))
     {
-        switch(tag->type)
+        printf("Boot device : 0x%x\n", info->boot_device);
+    }
+    if (CHECK_FLAG(info->flags, 2))
+    {
+        printf("Command line : '%s'\n", reinterpret_cast<char*>(phys(info->cmdline)));
+    }
+    if (CHECK_FLAG (info->flags, 3))
+    {
+        multiboot_module_t * mod { reinterpret_cast<multiboot_module_t *>(phys(info->mods_addr)) };
+
+        printf("Module count : %d\n", info->mods_count);
+        printf("Modules address : 0x%x\n", info->mods_addr);
+        for (size_t i = 0; i < info->mods_count; i++, mod++)
         {
-        case MULTIBOOT_TAG_TYPE_CMDLINE:
-            printf("Command line : "); print(reinterpret_cast<multiboot_tag_string*>(tag));
-            break;
-        case MULTIBOOT_TAG_TYPE_BOOT_LOADER_NAME:
-            printf("Bootloader : "); print(reinterpret_cast<multiboot_tag_string*>(tag));
-            break;
-        case MULTIBOOT_TAG_TYPE_MMAP:
-            print(reinterpret_cast<multiboot_tag_mmap*>(tag));
-            break;
-        case MULTIBOOT_TAG_TYPE_MODULE:
-            print(reinterpret_cast<multiboot_tag_module*>(tag));
-            break;
-        case MULTIBOOT_TAG_TYPE_BOOTDEV:
-            print(reinterpret_cast<multiboot_tag_bootdev*>(tag));
-            break;
-        default:
-            ;
-            //printf("(Ignored tag of type %d)\n", tag->type);
+            printf(" Module start : 0x%x\n", mod->mod_start);
+            printf(" Module end : 0x%x\n", mod->mod_end);
+            printf(" Module cmdline : '%s'\n", mod->cmdline);
         }
     }
+    if (CHECK_FLAG (info->flags, 6))
+    {
+        for (multiboot_memory_map_t *mmap =reinterpret_cast<multiboot_memory_map_t *>(phys(info->mmap_addr));
+             (uintptr_t)mmap < phys(info->mmap_addr) + info->mmap_length;
+             mmap = (multiboot_memory_map_t *) ((unsigned long) mmap
+                                                + mmap->size + sizeof (mmap->size)))
+        {
+            printf(" Base address : 0x%x, ", mmap->addr);
+            printf("size : 0x%x, ", mmap->len);
+            printf("type : %d\n", mmap->type);
 
-
+        }
+    }
+    if (CHECK_FLAG(info->flags, 9))
+    {
+        printf("Bootloader name : '%s'\n", reinterpret_cast<char*>(phys(info->boot_loader_name)));
+    }
 }
 
 }

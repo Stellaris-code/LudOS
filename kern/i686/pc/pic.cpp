@@ -1,7 +1,7 @@
 /*
-kmain.cpp
+pic.cpp
 
-Copyright (c) 23 Yann BOUCHER (yann)
+Copyright (c) 26 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -23,37 +23,55 @@ SOFTWARE.
 
 */
 
-// TODO : Beep !
-// TODO : Keyboard
-
-
-#ifndef __cplusplus
-#error Must be compiler using C++ !
-#endif
+#include "pic.hpp"
 
 #include <stdio.h>
 
-#include "multiboot/multiboot_kern.hpp"
+#include "io.hpp"
 
-#include "i686/pc/gdt.hpp"
-#include "i686/pc/pic.hpp"
-#include "i686/pc/idt.hpp"
-
-#include "greet.hpp"
-#include "halt.hpp"
-
-extern "C" multiboot_header mbd;
-
-extern "C"
-void kmain(uint32_t magic, const multiboot_info_t* mbd_info)
+namespace pic
 {
-    multiboot::check(magic, mbd, mbd_info);
+void init()
+{
+    puts("Beginning PIC initialization");
+    /* set up cascading mode */
+    outb(PIC_MASTER_CMD, 0x10 + 0x01);
+    io_wait();
+    outb(PIC_SLAVE_CMD,  0x10 + 0x01);
+    io_wait();
+    /* Setup master's vector offset */
+    outb(PIC_MASTER_DATA, 0x20);
+    io_wait();
+    /* Tell the slave its vector offset */
+    outb(PIC_SLAVE_DATA, 0x28);
+    io_wait();
+    /* Tell the master that he has a slave */
+    outb(PIC_MASTER_DATA, 4);
+    io_wait();
+    outb(PIC_SLAVE_DATA, 2);
+    io_wait();
+    /* Enabled 8086 mode */
+    outb(PIC_MASTER_DATA, 0x01);
+    io_wait();
+    outb(PIC_SLAVE_DATA, 0x01);
+    io_wait();
 
-    gdt::init();
-    pic::init();
-    idt::init();
+    puts("Resetting masks");
+    outb(PIC_MASTER_DATA, 0);
+    io_wait();
+    outb(PIC_SLAVE_DATA, 0);
+    puts("PIC Init done.");
+}
 
-    greet();
+void send_eoi(uint8_t irq)
+{
+    if(irq >= 8)
+    {
+        outb(PIC_SLAVE_CMD, PIC_CMD_EOI);
+        io_wait();
+    }
+    outb(PIC_MASTER_CMD, PIC_CMD_EOI);
+    io_wait();
+}
 
-    multiboot::print_info(mbd_info);
 }

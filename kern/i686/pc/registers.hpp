@@ -1,7 +1,7 @@
 /*
-kmain.cpp
+registers.hpp
 
-Copyright (c) 23 Yann BOUCHER (yann)
+Copyright (c) 26 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,38 +22,17 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
+#ifndef REGISTERS_HPP
+#define REGISTERS_HPP
 
-// TODO : Beep !
-// TODO : Keyboard
+#include "utils/stdint.h"
 
-
-#ifndef __cplusplus
-#error Must be compiler using C++ !
-#endif
-
-#include <stdio.h>
-
-#include "multiboot/multiboot_kern.hpp"
-
-#include "i686/pc/gdt.hpp"
-#include "i686/pc/pic.hpp"
-#include "i686/pc/idt.hpp"
-
-#include "greet.hpp"
-#include "halt.hpp"
-
-extern "C" multiboot_header mbd;
-
-extern "C"
-void kmain(uint32_t magic, const multiboot_info_t* mbd_info)
+struct registers
 {
-    multiboot::check(magic, mbd, mbd_info);
+   uint32_t ds;                  // Data segment selector
+   uint32_t edi, esi, ebp, ignore, ebx, edx, ecx, eax; // Pushed by pusha.
+   uint32_t int_no, err_code;    // Interrupt number and error code (if applicable)
+   uint32_t eip, cs, eflags, esp, ss; // Pushed by the processor automatically.
+};
 
-    gdt::init();
-    pic::init();
-    idt::init();
-
-    greet();
-
-    multiboot::print_info(mbd_info);
-}
+#endif // REGISTERS_HPP

@@ -74,7 +74,7 @@ void print_info(const multiboot_info_t* info)
         {
             printf(" Module start : 0x%x\n", mod->mod_start);
             printf(" Module end : 0x%x\n", mod->mod_end);
-            printf(" Module cmdline : '%s'\n", mod->cmdline);
+            printf(" Module cmdline : '%s'\n", reinterpret_cast<char*>(phys(mod->cmdline)));
         }
     }
     if (CHECK_FLAG (info->flags, 6))
@@ -86,7 +86,7 @@ void print_info(const multiboot_info_t* info)
         {
             printf(" Base address : 0x%x, ", mmap->addr);
             printf("size : 0x%x, ", mmap->len);
-            printf("type : %d\n", mmap->type);
+            printf("type : %u\n", mmap->type);
 
         }
     }

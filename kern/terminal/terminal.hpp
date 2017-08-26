@@ -55,6 +55,7 @@ public:
 private:
     void check_pos();
     void move_cursor(size_t x, size_t y);
+    void update_cursor();
 
 private:
     size_t terminal_row { 0 };

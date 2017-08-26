@@ -34,6 +34,7 @@ SECTIONS
 
     .data ALIGN(0x1000) : AT(ADDR(.data) - 0xE0000000)
     {
+        data_seg = .;
         *(.data)
         *(.gnu.linkonce.d*)
     }

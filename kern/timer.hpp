@@ -1,7 +1,7 @@
 /*
-kmain.cpp
+timer.hpp
 
-Copyright (c) 23 Yann BOUCHER (yann)
+Copyright (c) 26 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,47 +22,43 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
+#ifndef TIMER_HPP
+#define TIMER_HPP
 
-// TODO : Beep !
-// TODO : Keyboard
-// TODO : Paging
-// TODO : revoir terminal pour utiliser un init()
+#include "utils/stdint.h"
+#include "i686/pc/registers.hpp"
 
+#include "panic.hpp"
 
-#ifndef __cplusplus
-#error Must be compiler using C++ !
-#endif
-
-#include <stdio.h>
-
-#include "multiboot/multiboot_kern.hpp"
-
-#include "i686/pc/gdt.hpp"
-#include "i686/pc/pic.hpp"
-#include "i686/pc/idt.hpp"
-#include "i686/pc/pit.hpp"
-
-#include "greet.hpp"
-#include "halt.hpp"
-
-extern "C" multiboot_header mbd;
-
-extern "C"
-void kmain(uint32_t magic, const multiboot_info_t* mbd_info)
+class Timer
 {
-    multiboot::check(magic, mbd, mbd_info);
-
-    gdt::init();
-    pic::init();
-    idt::init();
-    PIT::init(50);
-
-    multiboot::print_info(mbd_info);
-
-    greet();
-
-    while (1)
+public:
+    static inline void set_frequency(uint32_t freq)
     {
-;
+        if (!m_set_frequency_callback)
+        {
+            panic("set_frequency_callback is not set !");
+        }
+        m_set_frequency_callback(freq);
     }
-}
+
+    static inline void sleep(uint32_t freq)
+    {
+        if (!m_sleep_callback)
+        {
+            panic("sleep_callback is not set !");
+        }
+        m_sleep_callback(freq);
+    }
+
+    static inline uint32_t ticks()
+    {
+
+    }
+
+    static inline void(*m_set_frequency_callback)(uint32_t); // set_frequency
+    static inline void(*m_sleep_callback)(uint32_t); // sleep
+    static inline uint32_t m_ticks { 0 };
+};
+
+#endif // TIMER_HPP

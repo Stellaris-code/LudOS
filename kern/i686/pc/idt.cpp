@@ -30,6 +30,8 @@ SOFTWARE.
 
 #include "utils/array.hpp"
 
+#include "i686/pc/interrupts.hpp"
+
 namespace idt
 {
 
@@ -89,8 +91,26 @@ void init()
     set_gate(29, reinterpret_cast<uint32_t>(isr29), 0x08, 0x8E);
     set_gate(30, reinterpret_cast<uint32_t>(isr30), 0x08, 0x8E);
     set_gate(31, reinterpret_cast<uint32_t>(isr31), 0x08, 0x8E);
+    set_gate(32, reinterpret_cast<uint32_t>(irq0), 0x08, 0x8E);
+    set_gate(33, reinterpret_cast<uint32_t>(irq1), 0x08, 0x8E);
+    set_gate(34, reinterpret_cast<uint32_t>(irq2), 0x08, 0x8E);
+    set_gate(35, reinterpret_cast<uint32_t>(irq3), 0x08, 0x8E);
+    set_gate(36, reinterpret_cast<uint32_t>(irq4), 0x08, 0x8E);
+    set_gate(37, reinterpret_cast<uint32_t>(irq5), 0x08, 0x8E);
+    set_gate(38, reinterpret_cast<uint32_t>(irq6), 0x08, 0x8E);
+    set_gate(39, reinterpret_cast<uint32_t>(irq7), 0x08, 0x8E);
+    set_gate(40, reinterpret_cast<uint32_t>(irq8), 0x08, 0x8E);
+    set_gate(41, reinterpret_cast<uint32_t>(irq9), 0x08, 0x8E);
+    set_gate(42, reinterpret_cast<uint32_t>(irq10), 0x08, 0x8E);
+    set_gate(43, reinterpret_cast<uint32_t>(irq11), 0x08, 0x8E);
+    set_gate(44, reinterpret_cast<uint32_t>(irq12), 0x08, 0x8E);
+    set_gate(45, reinterpret_cast<uint32_t>(irq13), 0x08, 0x8E);
+    set_gate(46, reinterpret_cast<uint32_t>(irq14), 0x08, 0x8E);
+    set_gate(47, reinterpret_cast<uint32_t>(irq15), 0x08, 0x8E);
 
     idt_flush(reinterpret_cast<uint32_t>(&idt_ptr));
+
+    sti();
 
     puts("ISRs and IDT initialized");
 }

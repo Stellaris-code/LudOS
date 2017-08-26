@@ -1,7 +1,7 @@
 /*
-interrupts.hpp
+pit.hpp
 
-Copyright (c) 25 Yann BOUCHER (yann)
+Copyright (c) 26 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,26 +22,22 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef INTERRUPTS_HPP
-#define INTERRUPTS_HPP
+#ifndef PIT_HPP
+#define PIT_HPP
 
-inline void cli()
+#include "utils/stdint.h"
+
+#include "registers.hpp"
+
+class PIT
 {
-    asm volatile ("cli");
-}
+public:
 
-inline void sti()
-{
-    asm volatile ("sti");
-}
+    static void irq_callback(const registers* const);
 
-inline bool interrupts_enabled()
-{
-    unsigned long flags;
-    asm volatile ( "pushf\n\t"
-                   "pop %0"
-                   : "=g"(flags) );
-    return flags & (1 << 9);
-}
+    static void init(uint32_t freq);
 
-#endif // INTERRUPTS_HPP
+    static void set_frequency(uint32_t freq);
+};
+
+#endif // PIT_HPP

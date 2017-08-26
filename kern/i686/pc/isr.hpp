@@ -1,7 +1,7 @@
 /*
-kmain.cpp
+isr.hpp
 
-Copyright (c) 23 Yann BOUCHER (yann)
+Copyright (c) 26 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,47 +22,34 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
+#ifndef ISR_HPP
+#define ISR_HPP
 
-// TODO : Beep !
-// TODO : Keyboard
-// TODO : Paging
-// TODO : revoir terminal pour utiliser un init()
+#include "registers.hpp"
 
+#define IRQ0 32
+#define IRQ1 33
+#define IRQ2 34
+#define IRQ3 35
+#define IRQ4 36
+#define IRQ5 37
+#define IRQ6 38
+#define IRQ7 39
+#define IRQ8 40
+#define IRQ9 41
+#define IRQ10 42
+#define IRQ11 43
+#define IRQ12 44
+#define IRQ13 45
+#define IRQ14 46
+#define IRQ15 47
 
-#ifndef __cplusplus
-#error Must be compiler using C++ !
-#endif
-
-#include <stdio.h>
-
-#include "multiboot/multiboot_kern.hpp"
-
-#include "i686/pc/gdt.hpp"
-#include "i686/pc/pic.hpp"
-#include "i686/pc/idt.hpp"
-#include "i686/pc/pit.hpp"
-
-#include "greet.hpp"
-#include "halt.hpp"
-
-extern "C" multiboot_header mbd;
-
-extern "C"
-void kmain(uint32_t magic, const multiboot_info_t* mbd_info)
+namespace isr
 {
-    multiboot::check(magic, mbd, mbd_info);
 
-    gdt::init();
-    pic::init();
-    idt::init();
-    PIT::init(50);
+typedef void(*isr_t)(const registers* const);
 
-    multiboot::print_info(mbd_info);
-
-    greet();
-
-    while (1)
-    {
-;
-    }
+void register_handler(uint8_t num, isr_t handler);
 }
+
+#endif // ISR_HPP

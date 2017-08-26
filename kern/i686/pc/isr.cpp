@@ -24,13 +24,36 @@ SOFTWARE.
 */
 
 #include "registers.hpp"
+#include "pic.hpp"
+#include "halt.hpp"
+#include "isr.hpp"
 
 #include <stdio.h>
+
+isr::isr_t handlers[256] { nullptr };
 
 extern "C"
 const registers* isr_handler(const registers* const regs)
 {
-    printf("Received interrupt : 0x%x\n", regs->int_no);
+    printf("Int 0x%x\n", regs->int_no);
+    // handle here
 
     return regs;
+}
+
+extern "C"
+const registers* irq_handler(const registers* const regs)
+{
+    pic::send_eoi(regs->int_no-31);
+    if (auto handl = handlers[regs->int_no]; handl)
+    {
+        handl(regs);
+    }
+
+    return regs;
+}
+
+void isr::register_handler(uint8_t num, isr::isr_t handler)
+{
+    handlers[num] = handler;
 }

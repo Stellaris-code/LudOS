@@ -1,7 +1,7 @@
 /*
-kmain.cpp
+pit.cpp
 
-Copyright (c) 23 Yann BOUCHER (yann)
+Copyright (c) 26 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -23,46 +23,44 @@ SOFTWARE.
 
 */
 
-// TODO : Beep !
-// TODO : Keyboard
-// TODO : Paging
-// TODO : revoir terminal pour utiliser un init()
-
-
-#ifndef __cplusplus
-#error Must be compiler using C++ !
-#endif
+#include "pit.hpp"
 
 #include <stdio.h>
 
-#include "multiboot/multiboot_kern.hpp"
+#include <io.hpp>
+#include "isr.hpp"
+#include "timer.hpp"
 
-#include "i686/pc/gdt.hpp"
-#include "i686/pc/pic.hpp"
-#include "i686/pc/idt.hpp"
-#include "i686/pc/pit.hpp"
-
-#include "greet.hpp"
-#include "halt.hpp"
-
-extern "C" multiboot_header mbd;
-
-extern "C"
-void kmain(uint32_t magic, const multiboot_info_t* mbd_info)
+void PIT::init(uint32_t freq)
 {
-    multiboot::check(magic, mbd, mbd_info);
+    isr::register_handler(IRQ0, &irq_callback);
 
-    gdt::init();
-    pic::init();
-    idt::init();
-    PIT::init(50);
+    Timer::m_set_frequency_callback = &set_frequency;
 
-    multiboot::print_info(mbd_info);
+    Timer::set_frequency(freq);
+}
 
-    greet();
+void PIT::set_frequency(uint32_t freq)
+{
+    // The value we send to the PIT is the value to divide it's input clock
+    // (1193180 Hz) by, to get our required frequency. Important to note is
+    // that the divisor must be small enough to fit into 16-bits.
+    uint32_t divisor = 1193180 / freq;
 
-    while (1)
-    {
-;
-    }
+    // Send the command byte.
+    outb(0x43, 0x36);
+
+    // Divisor has to be sent byte-wise, so split here into upper/lower bytes.
+    uint8_t l = (uint8_t)(divisor & 0xFF);
+    uint8_t h = (uint8_t)( (divisor>>8) & 0xFF );
+
+    // Send the frequency divisor.
+    outb(0x40, l);
+    outb(0x40, h);
+}
+
+void PIT::irq_callback(const registers * const)
+{
+    ++Timer::m_ticks;
+    printf("tick : %u\n", Timer::m_ticks);
 }

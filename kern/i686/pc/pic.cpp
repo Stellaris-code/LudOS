@@ -60,6 +60,7 @@ void init()
     outb(PIC_MASTER_DATA, 0);
     io_wait();
     outb(PIC_SLAVE_DATA, 0);
+    io_wait();
     puts("PIC Init done.");
 }
 
@@ -72,6 +73,42 @@ void send_eoi(uint8_t irq)
     }
     outb(PIC_MASTER_CMD, PIC_CMD_EOI);
     io_wait();
+}
+
+void set_mask(uint8_t irq)
+{
+    uint16_t port;
+    uint8_t value;
+
+    if(irq < 8)
+    {
+        port = PIC_MASTER_DATA;
+    }
+    else
+    {
+        port = PIC_SLAVE_DATA;
+        irq -= 8;
+    }
+    value = inb(port) | (1 << irq);
+    outb(port, value);
+}
+
+void IRQ_clear_mask(uint8_t irq)
+{
+    uint16_t port;
+    uint8_t value;
+
+    if(irq < 8)
+    {
+        port = PIC_MASTER_DATA;
+    }
+    else
+    {
+        port = PIC_SLAVE_DATA;
+        irq -= 8;
+    }
+    value = inb(port) & ~(1 << irq);
+    outb(port, value);
 }
 
 }

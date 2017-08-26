@@ -30,5 +30,7 @@ SOFTWARE.
 extern "C"
 const registers* isr_handler(const registers* const regs)
 {
+    printf("Received interrupt : 0x%x\n", regs->int_no);
+
     return regs;
 }

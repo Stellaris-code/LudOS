@@ -30,7 +30,6 @@ SOFTWARE.
 #include "vga.hpp"
 
 
-// TODO : scrolling vers le haut !
 namespace detail
 {
 

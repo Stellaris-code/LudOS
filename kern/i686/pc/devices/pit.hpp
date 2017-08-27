@@ -27,7 +27,7 @@ SOFTWARE.
 
 #include "utils/stdint.h"
 
-#include "registers.hpp"
+#include "../registers.hpp"
 
 class PIT
 {

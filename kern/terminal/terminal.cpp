@@ -25,6 +25,7 @@ SOFTWARE.
 #include "terminal.hpp"
 
 #include <string.h>
+#include <ctype.h>
 
 #include "io.hpp"
 #include "bios/bda.hpp"
@@ -64,13 +65,15 @@ void detail::TerminalImpl::put_char(char c)
         {
             if (terminal_row > 0)
             {
-                --terminal_row;
+                //--terminal_row;
             }
         }
         else
         {
             --terminal_column;
         }
+
+        put_entry_at(' ', terminal_color, terminal_column, terminal_row);
 
         check_pos();
     }
@@ -82,7 +85,7 @@ void detail::TerminalImpl::put_char(char c)
     {
         // TODO : bell !
     }
-    else
+    else if (isprint(c))
     {
         put_entry_at(c, terminal_color, terminal_column, terminal_row);
         ++terminal_column;

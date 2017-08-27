@@ -23,10 +23,9 @@ SOFTWARE.
 
 */
 
-// TODO : Beep !
-// TODO : Keyboard
 // TODO : Paging
 // TODO : revoir terminal pour utiliser un init()
+// TODO : logs
 
 
 #ifndef __cplusplus
@@ -38,10 +37,11 @@ SOFTWARE.
 #include "multiboot/multiboot_kern.hpp"
 
 #include "i686/pc/gdt.hpp"
-#include "i686/pc/pic.hpp"
+#include "i686/pc/devices/pic.hpp"
 #include "i686/pc/idt.hpp"
-#include "i686/pc/pit.hpp"
-#include "i686/pc/speaker.hpp"
+#include "i686/pc/devices/pit.hpp"
+#include "i686/pc/devices/speaker.hpp"
+#include "i686/pc/devices/keyboard.hpp"
 
 #include "timer.hpp"
 
@@ -62,6 +62,8 @@ void kmain(uint32_t magic, const multiboot_info_t* mbd_info)
 
     multiboot::parse_info(mbd_info);
 
+    Keyboard::init();
+    Keyboard::handle_char = &Terminal::put_char;
     Speaker::beep(200);
 
     greet();

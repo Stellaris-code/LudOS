@@ -81,7 +81,7 @@ struct tss_struct
     unsigned short   trap;
     unsigned short   iomap;
 
-};
+} __attribute__((packed));
 
 extern volatile tss_struct tss;
 

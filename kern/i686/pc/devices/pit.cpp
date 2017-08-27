@@ -28,7 +28,7 @@ SOFTWARE.
 #include <stdio.h>
 
 #include <io.hpp>
-#include "isr.hpp"
+#include "../isr.hpp"
 #include "timer.hpp"
 
 void PIT::init(uint32_t freq)

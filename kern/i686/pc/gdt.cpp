@@ -63,6 +63,11 @@ void init()
     gdt_ptr.limit = (sizeof(entry) * size(entries)) - 1;
     gdt_ptr.base  = reinterpret_cast<uint32_t>(&entries);
 
+    tss.trap = 0x00;
+    tss.iomap = 0x00;
+    tss.esp0 = 0x20000;
+    tss.ss0 = 0x18;
+
     set_gate(0, 0, 0, 0, 0);                // Null segment
     set_gate(1, 0, 0xFFFFFFFF, 0x9A, 0xCF); // Code segment
     set_gate(2, 0, 0xFFFFFFFF, 0x92, 0xCF); // Data segment

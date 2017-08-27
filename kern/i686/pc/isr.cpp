@@ -24,7 +24,7 @@ SOFTWARE.
 */
 
 #include "registers.hpp"
-#include "pic.hpp"
+#include "devices/pic.hpp"
 #include "halt.hpp"
 #include "isr.hpp"
 

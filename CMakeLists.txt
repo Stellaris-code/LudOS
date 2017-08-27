@@ -3,6 +3,8 @@ cmake_minimum_required(VERSION 2.8)
 set(ARCH i686)
 set(PLATFORM pc)
 
+add_definitions(-DARCH_${ARCH})
+
 set(CMAKE_SYSTEM_NAME Generic)
 set(CMAKE_SYSTEM_PROCESSOR ${ARCH})
 set(CMAKE_CROSSCOMPILING 1)

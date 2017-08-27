@@ -1,7 +1,7 @@
 /*
-multiboot_print.hpp
+nop.hpp
 
-Copyright (c) 24 Yann BOUCHER (yann)
+Copyright (c) 27 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,19 +22,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef MULTIBOOT_KERN_HPP
-#define MULTIBOOT_KERN_HPP
+#ifndef NOP_HPP
+#define NOP_HPP
 
-#include "multiboot/multiboot.h"
-#include "utils/stdint.h"
+#ifdef ARCH_i686
+#define NOP() asm volatile ("nop")
+#else
+#error no NOP defined for current arch
+#endif
 
-namespace multiboot
-{
-
-void check(uint32_t magic, const multiboot_header& mbd, const multiboot_info *mbd_info);
-
-void parse_info(const multiboot_info_t *info);
-
-}
-
-#endif // MULTIBOOT_KERN_HPP
+#endif // NOP_HPP

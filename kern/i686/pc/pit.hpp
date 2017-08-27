@@ -38,6 +38,8 @@ public:
     static void init(uint32_t freq);
 
     static void set_frequency(uint32_t freq);
+
+    static void set_pcspeaker_frequency(uint16_t freq);
 };
 
 #endif // PIT_HPP

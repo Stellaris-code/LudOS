@@ -28,13 +28,17 @@ SOFTWARE.
 #include "utils/stdint.h"
 #include "i686/pc/registers.hpp"
 
+#include "nop.hpp"
+
 #include "panic.hpp"
+#include <stdio.h>
 
 class Timer
 {
 public:
     static inline void set_frequency(uint32_t freq)
     {
+        Timer::m_freq = freq;
         if (!m_set_frequency_callback)
         {
             panic("set_frequency_callback is not set !");
@@ -42,23 +46,27 @@ public:
         m_set_frequency_callback(freq);
     }
 
-    static inline void sleep(uint32_t freq)
+    // time in ms
+    static inline void sleep(uint32_t time)
     {
-        if (!m_sleep_callback)
-        {
-            panic("sleep_callback is not set !");
-        }
-        m_sleep_callback(freq);
+        uint32_t interval = time/(1000/freq());
+        m_ticks = 0;
+        while (m_ticks < interval) {NOP();}
     }
 
     static inline uint32_t ticks()
     {
+        return m_ticks;
+    }
 
+    static inline uint32_t freq()
+    {
+        return m_freq;
     }
 
     static inline void(*m_set_frequency_callback)(uint32_t); // set_frequency
-    static inline void(*m_sleep_callback)(uint32_t); // sleep
     static inline uint32_t m_ticks { 0 };
+    static inline uint32_t m_freq { 0 };
 };
 
 #endif // TIMER_HPP

@@ -1,7 +1,7 @@
 /*
-multiboot_print.hpp
+interrupts.hpp
 
-Copyright (c) 24 Yann BOUCHER (yann)
+Copyright (c) 25 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,19 +22,26 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef MULTIBOOT_KERN_HPP
-#define MULTIBOOT_KERN_HPP
+#ifndef INTERRUPTS_HPP
+#define INTERRUPTS_HPP
 
-#include "multiboot/multiboot.h"
-#include "utils/stdint.h"
-
-namespace multiboot
+inline void cli()
 {
-
-void check(uint32_t magic, const multiboot_header& mbd, const multiboot_info *mbd_info);
-
-void parse_info(const multiboot_info_t *info);
-
+    asm volatile ("cli");
 }
 
-#endif // MULTIBOOT_KERN_HPP
+inline void sti()
+{
+    asm volatile ("sti");
+}
+
+inline bool interrupts_enabled()
+{
+    unsigned long flags;
+    asm volatile ( "pushf\n\t"
+                   "pop %0"
+                   : "=g"(flags) );
+    return flags & (1 << 9);
+}
+
+#endif // INTERRUPTS_HPP

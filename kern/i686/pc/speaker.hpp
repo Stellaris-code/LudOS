@@ -1,7 +1,7 @@
 /*
-multiboot_print.hpp
+speaker.hpp
 
-Copyright (c) 24 Yann BOUCHER (yann)
+Copyright (c) 27 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,19 +22,19 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef MULTIBOOT_KERN_HPP
-#define MULTIBOOT_KERN_HPP
+#ifndef SPEAKER_HPP
+#define SPEAKER_HPP
 
-#include "multiboot/multiboot.h"
 #include "utils/stdint.h"
 
-namespace multiboot
+class Speaker
 {
+public:
+    static void beep(uint32_t time, uint16_t freq = 1000);
 
-void check(uint32_t magic, const multiboot_header& mbd, const multiboot_info *mbd_info);
+private:
+    static void play_sound(uint16_t freq);
+    static void stop();
+};
 
-void parse_info(const multiboot_info_t *info);
-
-}
-
-#endif // MULTIBOOT_KERN_HPP
+#endif // SPEAKER_HPP

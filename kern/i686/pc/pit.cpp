@@ -45,7 +45,7 @@ void PIT::set_frequency(uint32_t freq)
     // The value we send to the PIT is the value to divide it's input clock
     // (1193180 Hz) by, to get our required frequency. Important to note is
     // that the divisor must be small enough to fit into 16-bits.
-    uint32_t divisor = 1193180 / freq;
+    const uint32_t divisor = 1193180 / freq;
 
     // Send the command byte.
     outb(0x43, 0x36);
@@ -59,8 +59,15 @@ void PIT::set_frequency(uint32_t freq)
     outb(0x40, h);
 }
 
+void PIT::set_pcspeaker_frequency(uint16_t freq)
+{
+    const uint16_t div = 1193180 / freq;
+    outb(0x43, 0xb6);
+    outb(0x42, (uint8_t) (div) );
+    outb(0x42, (uint8_t) (div >> 8));
+}
+
 void PIT::irq_callback(const registers * const)
 {
     ++Timer::m_ticks;
-    printf("tick : %u\n", Timer::m_ticks);
 }

@@ -41,6 +41,9 @@ SOFTWARE.
 #include "i686/pc/pic.hpp"
 #include "i686/pc/idt.hpp"
 #include "i686/pc/pit.hpp"
+#include "i686/pc/speaker.hpp"
+
+#include "timer.hpp"
 
 #include "greet.hpp"
 #include "halt.hpp"
@@ -55,14 +58,16 @@ void kmain(uint32_t magic, const multiboot_info_t* mbd_info)
     gdt::init();
     pic::init();
     idt::init();
-    PIT::init(50);
+    PIT::init(100);
 
-    multiboot::print_info(mbd_info);
+    multiboot::parse_info(mbd_info);
+
+    Speaker::beep(200);
 
     greet();
 
     while (1)
     {
-;
+        NOP();
     }
 }

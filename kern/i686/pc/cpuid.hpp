@@ -1,7 +1,7 @@
 /*
-fpu.cpp
+cpuid.hpp
 
-Copyright (c) 27 Yann BOUCHER (yann)
+Copyright (c) 28 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,31 +22,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-
-#include "fpu.hpp"
-
-#include "panic.hpp"
-#include "cpuid.hpp"
-#include "utils/bitops.hpp"
+#ifndef CPUID_HPP
+#define CPUID_HPP
 
 #include <stdio.h>
+#include <cpuid.h>
 
-void FPU::init()
-{
-    if (!check_cpuid() && !check_fpu_presence())
-    {
-        panic("No FPU found !");
-    }
+#define cpuid(in, a, b, c, d) __cpuid(in, a, b, c, d)
 
-    setup_fpu();
+int detect_cpu(void);
 
-    puts("FPU Initialized");
-}
-
-bool FPU::check_cpuid()
-{
-    unsigned long edx, unused;
-    cpuid(1, unused, unused, unused, edx);
-
-    return bit_check(edx, 0);
-}
+#endif // CPUID_HPP

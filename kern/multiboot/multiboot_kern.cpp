@@ -53,18 +53,18 @@ void check(uint32_t magic, const multiboot_header &mbd, const multiboot_info* mb
 
 void parse_info(const multiboot_info_t* info)
 {
-    puts("Multiboot Info :");
+    //puts("Multiboot Info :");
 
-    printf("Multiboot flags : 0x%x\n", info->flags);
+    //printf("Multiboot flags : 0x%x\n", info->flags);
     if (CHECK_FLAG(info->flags, 1))
     {
-        printf("Boot device : 0x%x\n", info->boot_device);
+    //    printf("Boot device : 0x%x\n", info->boot_device);
     }
     if (CHECK_FLAG(info->flags, 2))
     {
         printf("Command line : '%s'\n", reinterpret_cast<char*>(phys(info->cmdline)));
     }
-    if (CHECK_FLAG (info->flags, 3))
+    /*if (CHECK_FLAG (info->flags, 3))
     {
         multiboot_module_t * mod { reinterpret_cast<multiboot_module_t *>(phys(info->mods_addr)) };
 
@@ -76,8 +76,8 @@ void parse_info(const multiboot_info_t* info)
             printf(" Module end : 0x%x\n", mod->mod_end);
             printf(" Module cmdline : '%s'\n", reinterpret_cast<char*>(phys(mod->cmdline)));
         }
-    }
-    if (CHECK_FLAG (info->flags, 6))
+    }*/
+    /*if (CHECK_FLAG (info->flags, 6))
     {
         for (multiboot_memory_map_t *mmap =reinterpret_cast<multiboot_memory_map_t *>(phys(info->mmap_addr));
              (uintptr_t)mmap < phys(info->mmap_addr) + info->mmap_length;
@@ -89,7 +89,7 @@ void parse_info(const multiboot_info_t* info)
             printf("type : %d\n", mmap->type);
 
         }
-    }
+    }*/
     if (CHECK_FLAG(info->flags, 9))
     {
         printf("Bootloader name : '%s'\n", reinterpret_cast<char*>(phys(info->boot_loader_name)));

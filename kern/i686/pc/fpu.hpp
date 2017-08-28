@@ -32,6 +32,9 @@ class FPU
 {
 public:
     static void init();
+
+private:
+    static bool check_cpuid();
 };
 
 #endif // FPU_HPP

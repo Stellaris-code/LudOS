@@ -44,6 +44,7 @@ SOFTWARE.
 #include "i686/pc/devices/keyboard.hpp"
 #include "i686/pc/fpu.hpp"
 #include "i686/pc/cpuinfo.hpp"
+#include "i686/pc/cpuid.hpp"
 
 #include "timer.hpp"
 
@@ -66,6 +67,7 @@ void kmain(uint32_t magic, const multiboot_info_t* mbd_info)
 
     printf("CPU clock speed : ~%lu MHz\n", clock_speed());
     printf("Uptime : %fms\n", uptime());
+    detect_cpu();
 
     multiboot::parse_info(mbd_info);
 

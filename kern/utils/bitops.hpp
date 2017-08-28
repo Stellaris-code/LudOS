@@ -1,7 +1,7 @@
 /*
-fpu.cpp
+bitops.hpp
 
-Copyright (c) 27 Yann BOUCHER (yann)
+Copyright (c) 28 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,31 +22,39 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
+#ifndef BITOPS_HPP
+#define BITOPS_HPP
 
-#include "fpu.hpp"
+#include "utils/stdint.h"
 
-#include "panic.hpp"
-#include "cpuid.hpp"
-#include "utils/bitops.hpp"
-
-#include <stdio.h>
-
-void FPU::init()
+template <typename T>
+inline void bit_set(T& val, size_t pos)
 {
-    if (!check_cpuid() && !check_fpu_presence())
-    {
-        panic("No FPU found !");
-    }
-
-    setup_fpu();
-
-    puts("FPU Initialized");
+    val |= 1 << pos;
 }
 
-bool FPU::check_cpuid()
+template <typename T>
+inline void bit_clear(T& val, size_t pos)
 {
-    unsigned long edx, unused;
-    cpuid(1, unused, unused, unused, edx);
-
-    return bit_check(edx, 0);
+    val &= ~(1 << pos);
 }
+
+template <typename T>
+inline void bit_toggle(T& val, size_t pos)
+{
+    val ^= 1 << pos;
+}
+
+template <typename T>
+inline bool bit_check(T& val, size_t pos)
+{
+    return (val >> pos) & 1;
+}
+
+template <typename T>
+inline void bit_change(T& val, bool bit, size_t pos)
+{
+    val ^= (-bit ^ val) & (1 << pos);
+}
+
+#endif // BITOPS_HPP

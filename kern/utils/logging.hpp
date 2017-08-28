@@ -25,4 +25,11 @@ SOFTWARE.
 #ifndef LOGGING_HPP
 #define LOGGING_HPP
 
+#include <stdio.h>
+
+void log(const char* str)
+{
+
+}
+
 #endif // LOGGING_HPP

@@ -40,7 +40,7 @@ void check(uint32_t magic, const multiboot_header &mbd, const multiboot_info* mb
 {
     if (mbd.magic != MULTIBOOT_HEADER_MAGIC || magic != MULTIBOOT_BOOTLOADER_MAGIC)
     {
-        printf("0x%08X\n", magic);
+        printf("0x%x\n", magic);
         panic("Multiboot2 Magic number is invalid ! Aborting");
         return;
     }
@@ -86,7 +86,7 @@ void parse_info(const multiboot_info_t* info)
         {
             printf(" Base address : 0x%x, ", mmap->addr);
             printf("size : 0x%x, ", mmap->len);
-            printf("type : %u\n", mmap->type);
+            printf("type : %d\n", mmap->type);
 
         }
     }

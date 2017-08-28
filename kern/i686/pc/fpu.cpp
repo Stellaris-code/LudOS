@@ -22,3 +22,21 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
+
+#include "fpu.hpp"
+
+#include "panic.hpp"
+
+#include <stdio.h>
+
+void FPU::init()
+{
+    if (!check_fpu_presence())
+    {
+        panic("No FPU found !");
+    }
+
+    setup_fpu();
+
+    puts("FPU Initialized");
+}

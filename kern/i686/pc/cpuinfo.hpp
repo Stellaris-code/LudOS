@@ -25,4 +25,30 @@ SOFTWARE.
 #ifndef CPUINFO_HPP
 #define CPUINFO_HPP
 
+#include "timestamp.hpp"
+#include "nop.hpp"
+#include "timer.hpp"
+
+// in Mhz
+inline uint64_t clock_speed(bool recompute = false)
+{
+    static uint64_t speed;
+    static bool computed = false;
+    if (computed && !recompute)
+    {
+        return speed;
+    }
+
+    const uint32_t step { 10 };
+
+    uint64_t current = rdtsc();
+    uint32_t ticks = Timer::ticks();
+    while (ticks + step > Timer::ticks()) { NOP(); } // wait 'til a tick is elapsed
+
+    uint64_t elapsed = rdtsc() - current;
+    speed = elapsed*Timer::freq()/1'000'000/step;
+    computed = true;
+    return speed; // MHz
+}
+
 #endif // CPUINFO_HPP

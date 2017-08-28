@@ -26,7 +26,7 @@ SOFTWARE.
 // TODO : Paging
 // TODO : revoir terminal pour utiliser un init()
 // TODO : logs
-
+// TODO : investigate smbios
 
 #ifndef __cplusplus
 #error Must be compiler using C++ !
@@ -42,6 +42,8 @@ SOFTWARE.
 #include "i686/pc/devices/pit.hpp"
 #include "i686/pc/devices/speaker.hpp"
 #include "i686/pc/devices/keyboard.hpp"
+#include "i686/pc/fpu.hpp"
+#include "i686/pc/cpuinfo.hpp"
 
 #include "timer.hpp"
 
@@ -53,17 +55,23 @@ extern "C" multiboot_header mbd;
 extern "C"
 void kmain(uint32_t magic, const multiboot_info_t* mbd_info)
 {
-    multiboot::check(magic, mbd, mbd_info);
+    init_printf(nullptr, [](void*, char c){putchar(c);});
 
+    multiboot::check(magic, mbd, mbd_info);
     gdt::init();
     pic::init();
     idt::init();
     PIT::init(100);
+    FPU::init();
+
+    printf("CPU clock speed : ~%lu MHz\n", clock_speed());
+    printf("Uptime : %fms\n", uptime());
 
     multiboot::parse_info(mbd_info);
 
     Keyboard::init();
     Keyboard::handle_char = &Terminal::put_char;
+    Keyboard::set_kbdmap(kbdmap_fr);
     Speaker::beep(200);
 
     greet();

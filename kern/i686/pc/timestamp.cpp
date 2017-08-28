@@ -22,3 +22,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
+
+#include "timestamp.hpp"
+
+#include "cpuinfo.hpp"
+
+double uptime()
+{
+    double ticks = rdtsc();
+
+    return ticks / (double(clock_speed()) * 1'000'000.0); // MHz -> Hz
+}

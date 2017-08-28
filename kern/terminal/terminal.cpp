@@ -27,6 +27,10 @@ SOFTWARE.
 #include <string.h>
 #include <ctype.h>
 
+#ifdef ARCH_i686
+#include "i686/pc/devices/speaker.hpp"
+#endif
+
 #include "io.hpp"
 #include "bios/bda.hpp"
 #include "halt.hpp"
@@ -41,14 +45,14 @@ void detail::TerminalImpl::set_color(uint8_t color)
     terminal_color = color;
 }
 
-void detail::TerminalImpl::put_entry_at(char c, uint8_t color, size_t x, size_t y)
+void detail::TerminalImpl::put_entry_at(uint8_t c, uint8_t color, size_t x, size_t y)
 {
     check_pos();
     const size_t index = y * vga_width + x;
     terminal_buffer[index] = vga_entry(c, color);
 }
 
-void detail::TerminalImpl::put_char(char c)
+void detail::TerminalImpl::put_char(uint8_t c)
 {
     if (c == '\n')
     {
@@ -83,7 +87,9 @@ void detail::TerminalImpl::put_char(char c)
     }
     else if (c == '\a')
     {
-        // TODO : bell !
+#ifdef ARCH_i686
+        Speaker::beep(200);
+#endif
     }
     else if (isprint(c))
     {
@@ -121,6 +127,17 @@ void detail::TerminalImpl::scroll_up()
     memsetw(terminal_buffer + (vga_height-1)*vga_width, vga_entry(' ', terminal_color), vga_width*4); // clear scrolled line
     --terminal_row;
     update_cursor();
+}
+
+void detail::TerminalImpl::push_color(uint8_t color)
+{
+    old_terminal_color = terminal_color;
+    set_color(color);
+}
+
+void detail::TerminalImpl::pop_color()
+{
+    set_color(old_terminal_color);
 }
 
 void detail::TerminalImpl::check_pos()

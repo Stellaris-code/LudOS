@@ -9,7 +9,7 @@ inline bool isbdigit(char32_t c) { return ASCIIRANGE(c, 0x30,  2); }
 inline bool isodigit(char32_t c) { return ASCIIRANGE(c, 0x30,  8); }
 inline bool isxdigit(char32_t c) { return ASCIIRANGE(c | 32, 0x61, 6) || isdigit(c); }
 inline bool isalpha(char32_t c)  { return ASCIIRANGE(c | 32, 0x61, 26); }
-inline bool isprint(char32_t c)  { return ASCIIRANGE(c, 0x20, 95); }
+inline bool isprint(char32_t c)  { return ASCIIRANGE(c, 0x20, 95) || ASCIIRANGE(c, 128, 127); }
 inline bool isgraph(char32_t c)  { return ASCIIRANGE(c, 0x21, 94); }
 inline bool isspace(char32_t c)  { return ASCIIRANGE(c, 0x9, 5) || c == 0x20; }
 inline bool isalnum(char32_t c)  { return isalpha(c) || isdigit(c); }

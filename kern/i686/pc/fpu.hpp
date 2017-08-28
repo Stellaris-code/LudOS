@@ -25,4 +25,13 @@ SOFTWARE.
 #ifndef FPU_HPP
 #define FPU_HPP
 
+extern "C" bool check_fpu_presence();
+extern "C" void setup_fpu();
+
+class FPU
+{
+public:
+    static void init();
+};
+
 #endif // FPU_HPP

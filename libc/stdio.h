@@ -33,9 +33,10 @@ SOFTWARE.
 extern "C" {
 #endif
 
-void printf(const char* __restrict, ...);
 void putchar(char c);
 void puts(const char*);
+
+#include "stdio/tinyprintf.h"
 
 #ifdef __cplusplus
 }

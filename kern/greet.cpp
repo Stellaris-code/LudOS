@@ -32,11 +32,11 @@ SOFTWARE.
 void greet()
 {
     puts("Welcome to : \n");
-    Terminal::set_color(VGA_COLOR_LIGHT_CYAN);
+    Terminal::push_color(VGA_COLOR_LIGHT_CYAN);
 
     puts(
             #include "ludos_art.txt"
         );
 
-    Terminal::set_color(VGA_COLOR_WHITE);
+    Terminal::pop_color();
 }

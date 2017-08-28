@@ -50,6 +50,11 @@ void Keyboard::toggle_led(uint8_t led, bool value)
     set_leds(leds);
 }
 
+void Keyboard::set_kbdmap(const uint8_t *map)
+{
+    kbdmap = map;
+}
+
 void Keyboard::isr(const registers * const)
 {
     uint8_t key;
@@ -99,7 +104,7 @@ void Keyboard::isr(const registers * const)
             if (handle_char)
             {
                 handle_char(kbdmap
-                            [key * 4 + ((lshift || rshift) ^ caps_lock)]);
+                            [key * 4 + ((lshift || rshift) ^ caps_lock) ? 1 : alt ? 2 : num_lock ? 3 : 0]);
             }
         }
     }

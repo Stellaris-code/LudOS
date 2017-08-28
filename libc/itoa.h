@@ -29,7 +29,11 @@ SOFTWARE.
 extern "C" {
 #endif
 
-int itoa(int value, char *sp, int radix);
+
+#include "utils/stdint.h"
+
+int64_t itoa(int64_t value, char *sp, int radix);
+char *  ftoa(double f, char * buf, int precision);
 
 #ifdef __cplusplus
 }

@@ -29,6 +29,7 @@ SOFTWARE.
 #include "utils/addr.hpp"
 #include "vga.hpp"
 
+// TODO : use a stack for push()/pop()
 
 namespace detail
 {
@@ -44,12 +45,14 @@ public:
 
 public:
     void set_color(uint8_t color);
-    void put_entry_at(char c, uint8_t color, size_t x, size_t y);
-    void put_char(char c);
+    void put_entry_at(uint8_t c, uint8_t color, size_t x, size_t y);
+    void put_char(uint8_t c);
     void write(const char* data, size_t size);
     void write_string(const char* data);
     void clear();
     void scroll_up();
+    void push_color(uint8_t color);
+    void pop_color();
 
 private:
     void check_pos();
@@ -60,6 +63,7 @@ private:
     size_t terminal_row { 0 };
     size_t terminal_column { 0 };
     uint8_t terminal_color { vga_entry_color(VGA_COLOR_LIGHT_GREY, VGA_COLOR_BLACK) };
+    uint8_t old_terminal_color { vga_entry_color(VGA_COLOR_LIGHT_GREY, VGA_COLOR_BLACK) };
     uint16_t* terminal_buffer { reinterpret_cast<uint16_t*>(phys(0xB8000)) };
 };
 
@@ -72,12 +76,14 @@ public:
 
 public:
     static void set_color(uint8_t color) { impl.set_color(color); }
-    static void put_entry_at(char c, uint8_t color, size_t x, size_t y) { impl.put_entry_at(c, color, x, y); }
-    static void put_char(char c) { impl.put_char(c); };
+    static void put_entry_at(uint8_t c, uint8_t color, size_t x, size_t y) { impl.put_entry_at(c, color, x, y); }
+    static void put_char(uint8_t c) { impl.put_char(c); };
     static void write(const char* data, size_t size) { impl.write(data, size); };
     static void write_string(const char* data) { impl.write_string(data); }
     static void clear() { impl.clear(); }
     static void scroll_up() { impl.scroll_up(); }
+    static void push_color(uint8_t color) { impl.push_color(color); }
+    static void pop_color() { impl.pop_color(); }
 
 
 private:

@@ -25,7 +25,7 @@ SOFTWARE.
 
 #include "multiboot_kern.hpp"
 
-#include <stdio.h>
+#include "utils/logging.hpp"
 #include "panic.hpp"
 
 #include "utils/align.hpp"
@@ -40,13 +40,13 @@ void check(uint32_t magic, const multiboot_header &mbd, const multiboot_info* mb
 {
     if (mbd.magic != MULTIBOOT_HEADER_MAGIC || magic != MULTIBOOT_BOOTLOADER_MAGIC)
     {
-        printf("0x%x\n", magic);
+        log("0x%x\n", magic);
         panic("Multiboot2 Magic number is invalid ! Aborting");
         return;
     }
     if (reinterpret_cast<uintptr_t>(mbd_info) & 7)
     {
-        printf ("Unaligned mbi: 0x%x\n", reinterpret_cast<uintptr_t>(mbd_info));
+        log("Unaligned mbi: 0x%x\n", reinterpret_cast<uintptr_t>(mbd_info));
         return;
     }
 }
@@ -62,7 +62,7 @@ void parse_info(const multiboot_info_t* info)
     }
     if (CHECK_FLAG(info->flags, 2))
     {
-        printf("Command line : '%s'\n", reinterpret_cast<char*>(phys(info->cmdline)));
+        log("Command line : '%s'\n", reinterpret_cast<char*>(phys(info->cmdline)));
     }
     /*if (CHECK_FLAG (info->flags, 3))
     {
@@ -92,7 +92,7 @@ void parse_info(const multiboot_info_t* info)
     }*/
     if (CHECK_FLAG(info->flags, 9))
     {
-        printf("Bootloader name : '%s'\n", reinterpret_cast<char*>(phys(info->boot_loader_name)));
+        log("Bootloader name : '%s'\n", reinterpret_cast<char*>(phys(info->boot_loader_name)));
     }
 }
 

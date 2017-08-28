@@ -443,11 +443,16 @@ void init_printf(void *putp, putcf putf)
     stdout_putp = putp;
 }
 
+void tfp_vprintf(const char * __restrict fmt, va_list va)
+{
+    tfp_format(stdout_putp, stdout_putf, fmt, va);
+}
+
 void tfp_printf(const char * __restrict fmt, ...)
 {
     va_list va;
     va_start(va, fmt);
-    tfp_format(stdout_putp, stdout_putf, fmt, va);
+    tfp_vprintf(fmt, va);
     va_end(va);
 }
 #endif

@@ -29,6 +29,7 @@ SOFTWARE.
 #include <stdio.h>
 
 #include "utils/array.hpp"
+#include "utils/logging.hpp"
 
 #include "i686/pc/interrupts.hpp"
 

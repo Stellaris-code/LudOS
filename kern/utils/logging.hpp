@@ -26,10 +26,18 @@ SOFTWARE.
 #define LOGGING_HPP
 
 #include <stdio.h>
+#include <stdarg.h>
 
-void log(const char* str)
+#include "i686/pc/timestamp.hpp"
+
+inline void log(const char * __restrict fmt, ...)
 {
+    printf("[%f] ", uptime());
 
+    va_list va;
+    va_start(va, fmt);
+    tfp_format(nullptr, [](void*, char c){putchar(c);}, fmt, va);
+    va_end(va);
 }
 
 #endif // LOGGING_HPP

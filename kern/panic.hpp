@@ -25,18 +25,24 @@ SOFTWARE.
 #ifndef PANIC_HPP
 #define PANIC_HPP
 
+#include <stdio.h>
+#include <stdarg.h>
+
 #include "terminal/terminal.hpp"
 
 #include "halt.hpp"
 
 [[noreturn]]
-inline void panic(const char* string)
+inline void panic(const char* __restrict fmt, ...)
 {
     Terminal::set_color(VGA_COLOR_RED);
 
-    Terminal::write_string("KERNEL PANIC : ");
-    Terminal::write_string(string);
+    puts("KERNEL PANIC : ");
 
+    va_list va;
+    va_start(va, fmt);
+    tfp_format(nullptr, [](void*, char c){putchar(c);}, fmt, va);
+    va_end(va);
     halt();
 }
 

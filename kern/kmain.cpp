@@ -32,8 +32,6 @@ SOFTWARE.
 #error Must be compiler using C++ !
 #endif
 
-#include <stdio.h>
-
 #include "multiboot/multiboot_kern.hpp"
 
 #include "i686/pc/gdt.hpp"
@@ -48,6 +46,7 @@ SOFTWARE.
 
 #include "timer.hpp"
 
+#include "utils/logging.hpp"
 #include "greet.hpp"
 #include "halt.hpp"
 
@@ -65,8 +64,8 @@ void kmain(uint32_t magic, const multiboot_info_t* mbd_info)
     PIT::init(100);
     FPU::init();
 
-    printf("CPU clock speed : ~%lu MHz\n", clock_speed());
-    printf("Uptime : %fms\n", uptime());
+    log("CPU clock speed : ~%lu MHz\n", clock_speed());
+    log("Uptime : %fms\n", uptime());
     detect_cpu();
 
     multiboot::parse_info(mbd_info);

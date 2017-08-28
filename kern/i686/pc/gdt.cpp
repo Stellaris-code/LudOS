@@ -31,7 +31,7 @@ SOFTWARE.
 #include "panic.hpp"
 #include "tss.hpp"
 #include "utils/addr.hpp"
-
+#include "utils/logging.hpp"
 #include "utils/array.hpp"
 
 namespace gdt

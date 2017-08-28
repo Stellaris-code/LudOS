@@ -50,10 +50,12 @@ SOFTWARE.
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* You need to include a file with fairly(ish) compliant printf prototype, Decimal and String support like %s and %d and this is truely all you need! */
-//#include <stdio.h> /* for printf(); */
+/* You need to include a file with fairly(ish) compliant log prototype, Decimal and String support like %s and %d and this is truely all you need! */
+//#include <stdio.h> /* for log(); */
 
 #include "cpuid.hpp"
+
+#include "utils/logging.hpp"
 
 /* Required Declarations */
 int do_intel(void);
@@ -65,7 +67,7 @@ int detect_cpu(void)
 { /* or main() if your trying to port this as an independant application */
         unsigned long ebx, unused;
         cpuid(0, unused, ebx, unused, unused);
-        puts("CPU Info :");
+        log("CPU Info :");
         switch(ebx) {
                 case 0x756e6547: /* Intel Magic Code */
                 do_intel();
@@ -74,7 +76,7 @@ int detect_cpu(void)
                 do_amd();
                 break;
                 default:
-                printf("Unknown x86 CPU Detected\n");
+                log("Unknown x86 CPU Detected\n");
                 break;
         }
         return 0;
@@ -138,7 +140,7 @@ const char *Intel_Other[] = {
 
 /* Intel-specific information */
 int do_intel(void) {
-        printf("Intel Specific Features:\n");
+        log("Intel Specific Features:\n");
         unsigned long eax, ebx, ecx, edx, max_eax, signature, unused;
         int model, family, type, brand, stepping, reserved;
         int extended_family = -1;
@@ -150,7 +152,7 @@ int do_intel(void) {
         stepping = eax & 0xf;
         reserved = eax >> 14;
         signature = eax;
-        printf(" Type %d - ", type);
+        log(" Type %d - ", type);
         switch(type) {
                 case 0:
                 printf("  Original OEM");
@@ -166,7 +168,7 @@ int do_intel(void) {
                 break;
         }
         printf("\n");
-        printf(" Family %d - ", family);
+        log(" Family %d - ", family);
         switch(family) {
                 case 3:
                 printf("  i386");
@@ -186,9 +188,9 @@ int do_intel(void) {
         printf("\n");
         if(family == 15) {
                 extended_family = (eax >> 20) & 0xff;
-                printf(" Extended family %d\n", extended_family);
+                log(" Extended family %d\n", extended_family);
         }
-        printf(" Model %d - ", model);
+        log(" Model %d - ", model);
         switch(family) {
                 case 3:
                 break;
@@ -267,7 +269,7 @@ int do_intel(void) {
         According to the Sept. 2006 Intel Arch Software Developer's Guide, if extended eax values are supported,
         then all 3 values for the processor brand string are supported, but we'll test just to make sure and be safe. */
         if(max_eax >= 0x80000004) {
-                printf(" Brand: ");
+                log(" Brand: ");
                 if(max_eax >= 0x80000002) {
                         cpuid(0x80000002, eax, ebx, ecx, edx);
                         printregs(eax, ebx, ecx, edx);
@@ -282,7 +284,7 @@ int do_intel(void) {
                 }
                 printf("\n");
         } else if(brand > 0) {
-                printf(" Brand %d - ", brand);
+                log(" Brand %d - ", brand);
                 if(brand < 0x18) {
                         if(signature == 0x000006B1 || signature == 0x00000F13) {
                                 printf("  %s\n", Intel_Other[brand]);
@@ -293,7 +295,7 @@ int do_intel(void) {
                         printf("  Reserved\n");
                 }
         }
-        printf(" Stepping: %d Reserved: %d\n", stepping, reserved);
+        log(" Stepping: %d Reserved: %d\n", stepping, reserved);
         return 0;
 }
 
@@ -313,7 +315,7 @@ void printregs(int eax, int ebx, int ecx, int edx) {
 
 /* AMD-specific information */
 int do_amd(void) {
-        printf(" AMD Specific Features:\n");
+        log(" AMD Specific Features:\n");
         unsigned long extended, eax, ebx, ecx, edx, unused;
         int family, model, stepping, reserved;
         cpuid(1, eax, unused, unused, unused);
@@ -321,7 +323,7 @@ int do_amd(void) {
         family = (eax >> 8) & 0xf;
         stepping = eax & 0xf;
         reserved = eax >> 12;
-        printf(" Family: %d Model: %d [", family, model);
+        log(" Family: %d Model: %d [", family, model);
         switch(family) {
                 case 4:
                 printf("  486 Model %d", model);
@@ -369,14 +371,14 @@ int do_amd(void) {
                 }
                 break;
         }
-        printf("]\n");
+        puts("]");
         cpuid(0x80000000, extended, unused, unused, unused);
         if(extended == 0) {
                 return 0;
         }
         if(extended >= 0x80000002) {
                 unsigned int j;
-                printf(" Detected Processor Name: ");
+                log(" Detected Processor Name: ");
                 for(j = 0x80000002; j <= 0x80000004; j++) {
                         cpuid(j, eax, ebx, ecx, edx);
                         printregs(eax, ebx, ecx, edx);
@@ -386,9 +388,9 @@ int do_amd(void) {
         if(extended >= 0x80000007) {
                 cpuid(0x80000007, unused, unused, unused, edx);
                 if(edx & 1) {
-                        printf(" Temperature Sensing Diode Detected!\n");
+                        log(" Temperature Sensing Diode Detected!\n");
                 }
         }
-        printf(" Stepping: %d Reserved: %d\n", stepping, reserved);
+        log(" Stepping: %d Reserved: %d\n", stepping, reserved);
         return 0;
 }

@@ -29,7 +29,7 @@ SOFTWARE.
 #include "cpuid.hpp"
 #include "utils/bitops.hpp"
 
-#include <stdio.h>
+#include "utils/logging.hpp"
 
 void FPU::init()
 {
@@ -40,7 +40,7 @@ void FPU::init()
 
     setup_fpu();
 
-    puts("FPU Initialized");
+    log("FPU Initialized\n");
 }
 
 bool FPU::check_cpuid()

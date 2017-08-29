@@ -28,9 +28,8 @@ setup_fpu:
     mov cr0, edx
 
     mov edx, cr4
-    or edx, 10_0000_0011_0000_0000b
+    ;or edx, 0100_0000_0110_0000_0000b ; Check SSE first ! causes #GPF otherwise
     mov cr4, edx
 
     fninit
-
     ret

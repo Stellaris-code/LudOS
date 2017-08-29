@@ -26,16 +26,20 @@ SOFTWARE.
 #include "registers.hpp"
 #include "devices/pic.hpp"
 #include "halt.hpp"
+#include "panic.hpp"
 #include "isr.hpp"
 
 #include <stdio.h>
+
+// TODO : print regs
 
 isr::isr_t handlers[256] { nullptr };
 
 extern "C"
 const registers* isr_handler(const registers* const regs)
 {
-    printf("Int 0x%x\n", regs->int_no);
+    panic("Unhandeld interrupt 0x%x with error code 0x%x at %p\n"
+          "edx : 0x%x\n", regs->int_no, regs->err_code, regs->eip, regs->edx);
     // handle here
 
     return regs;

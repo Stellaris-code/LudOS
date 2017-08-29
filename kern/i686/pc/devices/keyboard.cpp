@@ -27,11 +27,14 @@ SOFTWARE.
 
 #include "io.hpp"
 #include "../isr.hpp"
+#include "utils/logging.hpp"
 #include <stdio.h>
 
 void Keyboard::init()
 {
     isr::register_handler(IRQ1, &Keyboard::isr);
+
+    log("Keyboard initialized\n");
 }
 
 void Keyboard::set_leds(uint8_t leds)
@@ -104,7 +107,7 @@ void Keyboard::isr(const registers * const)
             if (handle_char)
             {
                 handle_char(kbdmap
-                            [key * 4 + ((lshift || rshift) ^ caps_lock) ? 1 : alt ? 2 : num_lock ? 3 : 0]);
+                            [key * 4 + (((lshift || rshift) ^ caps_lock) ? 1 : alt ? 2 : num_lock ? 3 : 0)]);
             }
         }
     }

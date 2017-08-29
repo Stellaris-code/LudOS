@@ -38,6 +38,8 @@ void PIT::init(uint32_t freq)
     Timer::m_set_frequency_callback = &set_frequency;
 
     Timer::set_frequency(freq);
+
+    printf("PIT Timer initialized\n");
 }
 
 void PIT::set_frequency(uint32_t freq)

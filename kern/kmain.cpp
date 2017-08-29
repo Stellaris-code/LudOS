@@ -25,8 +25,8 @@ SOFTWARE.
 
 // TODO : Paging
 // TODO : revoir terminal pour utiliser un init()
-// TODO : logs
-// TODO : investigate smbios
+// TODO : ACPI
+// TODO : scrolling terminal
 
 #ifndef __cplusplus
 #error Must be compiler using C++ !
@@ -43,6 +43,7 @@ SOFTWARE.
 #include "i686/pc/fpu.hpp"
 #include "i686/pc/cpuinfo.hpp"
 #include "i686/pc/cpuid.hpp"
+#include "i686/pc/smbios.hpp"
 
 #include "timer.hpp"
 
@@ -62,10 +63,13 @@ void kmain(uint32_t magic, const multiboot_info_t* mbd_info)
     pic::init();
     idt::init();
     PIT::init(100);
+    Speaker::beep(200);
     FPU::init();
+    SMBIOS::locate();
+    SMBIOS::bios_info();
+    SMBIOS::cpu_info();
 
     log("CPU clock speed : ~%lu MHz\n", clock_speed());
-    log("Uptime : %fms\n", uptime());
     detect_cpu();
 
     multiboot::parse_info(mbd_info);
@@ -73,7 +77,6 @@ void kmain(uint32_t magic, const multiboot_info_t* mbd_info)
     Keyboard::init();
     Keyboard::handle_char = &Terminal::put_char;
     Keyboard::set_kbdmap(kbdmap_fr);
-    Speaker::beep(200);
 
     greet();
 

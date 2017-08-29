@@ -46,7 +46,7 @@ add_executable(${PROJECT_NAME} ${PLATFORM_SRCS} ${ISA_SRCS} ${GENERIC_SRCS} ${HE
 set(CMAKE_C_FLAGS "${ISA_C_FLAGS} ${PLATFORM_C_FLAGS}  -m32 -std=c11 -ftree-vectorize -Wall -Wextra -lgcc -static-libgcc -ffreestanding -fno-builtin -nostdlib -finline-functions -fno-stack-protector -fomit-frame-pointer -Werror=implicit-function-declaration -mno-sse -lgcc")
 set(CMAKE_CXX_FLAGS "${ISA_CXX_FLAGS} ${PLATFORM_CXX_FLAGS}  -m32 -std=c++17 -ftree-vectorize -Wall -Wextra -lgcc -static-libgcc -ffreestanding -fno-builtin -nostdlib -finline-functions -fno-stack-protector -fomit-frame-pointer -Werror=implicit-function-declaration -mno-sse -fno-exceptions -fno-rtti -lgcc")
 set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS
-  "-T ${PLATFORM_LAYOUT} -N ${ISA_LINKER_FLAGS} ${PLATFORM_LINKER_FLAGS} -lgcc -static-libgcc")
+  "-T ${PLATFORM_LAYOUT} -N ${ISA_LINKER_FLAGS} ${PLATFORM_LINKER_FLAGS} -lgcc -static-libgcc -Xlinker -Map=ld.map")
 set_target_properties(${PROJECT_NAME} PROPERTIES SUFFIX ".bin")
 set(CMAKE_ASM_NASM_LINK_EXECUTABLE "${ARCH}-elf-gcc -T ${PLATFORM_LAYOUT} -N ${ISA_LINKER_FLAGS} ${PLATFORM_LINKER_FLAGS} <OBJECTS> -o <TARGET>.bin")
 

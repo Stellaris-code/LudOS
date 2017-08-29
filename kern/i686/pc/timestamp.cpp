@@ -29,7 +29,8 @@ SOFTWARE.
 
 double uptime()
 {
-    double ticks = rdtsc();
+    static double initial_ticks = rdtsc();
+    double ticks = rdtsc() - initial_ticks;
 
     return ticks / (double(clock_speed()) * 1'000'000.0); // MHz -> Hz
 }

@@ -30,6 +30,9 @@ SOFTWARE.
 
 #include "terminal/terminal.hpp"
 
+#include "i686/pc/devices/speaker.hpp"
+#include "i686/pc/interrupts.hpp"
+
 #include "halt.hpp"
 
 [[noreturn]]
@@ -37,7 +40,11 @@ inline void panic(const char* __restrict fmt, ...)
 {
     Terminal::set_color(VGA_COLOR_RED);
 
-    puts("KERNEL PANIC : ");
+    //Speaker::beep(300);
+
+    cli();
+
+    puts("\nKERNEL PANIC : ");
 
     va_list va;
     va_start(va, fmt);

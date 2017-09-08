@@ -1,4 +1,0 @@
-/home/yann/LudOS/build/CMakeFiles/rebuild_cache.dir
-/home/yann/LudOS/build/CMakeFiles/edit_cache.dir
-/home/yann/LudOS/build/CMakeFiles/LudOS.dir
-/home/yann/LudOS/build/CMakeFiles/libc.dir

@@ -25,6 +25,7 @@ CTestTestfile.cmake
 *.moc
 *.o
 *.texinfo
+*.html
 *.dmp
 *.obj
 *.orig

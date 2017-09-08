@@ -22,3 +22,36 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
+
+#include "spinlock.hpp"
+
+#include "i686/pc/paging.hpp"
+
+#include "utils/stdint.h"
+
+DECLARE_LOCK(liballoc_lock);
+
+extern "C"
+{
+int liballoc_lock()
+{
+    LOCK(liballoc_lock);
+    return 0;
+}
+
+int liballoc_unlock()
+{
+    UNLOCK(liballoc_lock);
+    return 0;
+}
+
+void* liballoc_alloc(size_t pages)
+{
+    //return Paging::alloc_page_frame(pages);
+}
+
+int liballoc_free(void* ptr, size_t pages)
+{
+    //return Paging::release_page_frame((uintptr_t)ptr, pages);
+}
+}

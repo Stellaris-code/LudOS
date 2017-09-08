@@ -25,4 +25,30 @@ SOFTWARE.
 #ifndef MEMINFO_HPP
 #define MEMINFO_HPP
 
+#include "utils/stdint.h"
+
+struct multiboot_mmap_entry;
+typedef struct multiboot_mmap_entry multiboot_memory_map_t;
+struct multiboot_info;
+typedef struct multiboot_info multiboot_info_t;
+
+namespace multiboot
+{
+void parse_info(const multiboot_info_t* info);
+}
+
+class Meminfo
+{
+    friend void multiboot::parse_info(const multiboot_info_t* info);
+
+public:
+    static size_t free_frames();
+    static multiboot_memory_map_t *largest_frame();
+    static multiboot_memory_map_t *frame(size_t idx);
+
+private:
+    static inline multiboot_mmap_entry *mmap_addr;
+    static inline const multiboot_info_t* info;
+};
+
 #endif // MEMINFO_HPP

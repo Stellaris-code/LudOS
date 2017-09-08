@@ -25,4 +25,14 @@ SOFTWARE.
 #ifndef SWAP_HPP
 #define SWAP_HPP
 
+// TODO : implement using move !
+
+template <typename T>
+inline void swap(T& lhs, T& rhs)
+{
+    T temp = lhs;
+    lhs = rhs;
+    rhs = temp;
+}
+
 #endif // SWAP_HPP

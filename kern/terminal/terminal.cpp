@@ -35,6 +35,8 @@ SOFTWARE.
 #include "bios/bda.hpp"
 #include "halt.hpp"
 
+#include "utils/minmax.hpp"
+
 detail::TerminalImpl::TerminalImpl()
 {
     clear();
@@ -56,8 +58,7 @@ void detail::TerminalImpl::put_char(uint8_t c)
 {
     if (c == '\n')
     {
-        terminal_column = 0;
-        ++terminal_row;
+        new_line();
     }
     else if (c == '\r')
     {
@@ -140,11 +141,53 @@ void detail::TerminalImpl::pop_color()
     set_color(old_terminal_color);
 }
 
+void detail::TerminalImpl::show_history(int page)
+{
+    if (page < 0) page = 0;
+
+    if (page > history.size() - vga_height)
+    {
+        page = history.size() - vga_height; // avoir un plafond, une limite
+    }
+
+    current_history_page = page;
+
+    for (size_t i { 0 }; i < vga_height-1; ++i) // ignore first line where everything is typed
+    {
+        for (size_t j { 0 }; j < vga_width; ++j)
+        {
+            int index = history.size() - (vga_height-i) -page;
+            if (index >= 0)
+            {
+                terminal_buffer[i*vga_width+j] = history[index][j];
+            }
+        }
+    }
+}
+
+void detail::TerminalImpl::new_line()
+{
+    add_line_to_history();
+    terminal_column = 0;
+    ++terminal_row;
+}
+
+void detail::TerminalImpl::add_line_to_history()
+{
+    uint16_t line[vga_width];
+    for (size_t i { 0 }; i < vga_width; ++i)
+    {
+        line[i] = terminal_buffer[terminal_row*vga_width + i];
+    }
+    history.add(line);
+}
+
 void detail::TerminalImpl::check_pos()
 {
     if (terminal_column >= vga_width)
     {
         terminal_column = terminal_column%vga_width;
+        add_line_to_history();
         ++terminal_row;
     }
     if (terminal_row >= vga_height)

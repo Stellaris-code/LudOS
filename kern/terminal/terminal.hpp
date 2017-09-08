@@ -29,6 +29,8 @@ SOFTWARE.
 #include "utils/addr.hpp"
 #include "vga.hpp"
 
+#include "ext/ringbuf.hpp"
+
 // TODO : use a stack for push()/pop()
 
 namespace detail
@@ -42,6 +44,7 @@ public:
 public:
     static constexpr size_t vga_width = 80;
     static constexpr size_t vga_height = 25;
+    static constexpr size_t max_history = 10;
 
 public:
     void set_color(uint8_t color);
@@ -53,8 +56,12 @@ public:
     void scroll_up();
     void push_color(uint8_t color);
     void pop_color();
+    void show_history(int page);
+    uint8_t current_history() const { return current_history_page; }
 
 private:
+    void new_line();
+    void add_line_to_history();
     void check_pos();
     void move_cursor(size_t x, size_t y);
     void update_cursor();
@@ -65,6 +72,9 @@ private:
     uint8_t terminal_color { vga_entry_color(VGA_COLOR_LIGHT_GREY, VGA_COLOR_BLACK) };
     uint8_t old_terminal_color { vga_entry_color(VGA_COLOR_LIGHT_GREY, VGA_COLOR_BLACK) };
     uint16_t* terminal_buffer { reinterpret_cast<uint16_t*>(phys(0xB8000)) };
+
+    CircularBuffer<uint16_t[vga_width], vga_height*max_history> history;
+    uint8_t current_history_page { 0 };
 };
 
 }
@@ -84,7 +94,8 @@ public:
     static void scroll_up() { impl.scroll_up(); }
     static void push_color(uint8_t color) { impl.push_color(color); }
     static void pop_color() { impl.pop_color(); }
-
+    static void show_history(int page) { impl.show_history(page); }
+    static uint8_t current_history() { return impl.current_history(); }
 
 private:
     static inline detail::TerminalImpl impl;

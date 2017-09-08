@@ -30,6 +30,6 @@ SOFTWARE.
 
 #define cpuid(in, a, b, c, d) __cpuid(in, a, b, c, d)
 
-int detect_cpu(void);
+int detect_cpu();
 
 #endif // CPUID_HPP

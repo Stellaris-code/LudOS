@@ -27,7 +27,7 @@ SOFTWARE.
 
 #include "utils/stdint.h"
 
-static constexpr uintptr_t kernel_virtual_base { 0xE0000000 };
+static constexpr uintptr_t kernel_virtual_base { 0x00000000 };
 
 inline uintptr_t phys(uintptr_t ptr)
 {

@@ -25,4 +25,112 @@ SOFTWARE.
 #ifndef RINGBUF_HPP
 #define RINGBUF_HPP
 
+#include "utils/stdint.h"
+#include "utils/array.hpp"
+#include "utils/swap.hpp"
+#include "panic.hpp"
+
+#include <string.h>
+
+template <typename T, size_t Size>
+class CircularBuffer
+{
+public:
+    typedef size_t size_type;
+    typedef T& reference;
+    typedef const T& const_reference;
+
+    explicit CircularBuffer();
+
+    CircularBuffer<T, Size>& operator=(CircularBuffer<T, Size> rhs);
+
+    size_type size() const
+    {
+        if (_full)
+        {
+            return Size;
+        }
+        else
+        {
+            return _front;
+        }
+    }
+    bool is_full() const { return _full; }
+
+    const_reference operator[](size_type index) const;
+    reference operator[](size_type index);
+
+    void add(const T &item);
+
+    friend void swap(CircularBuffer<T, Size> &a, CircularBuffer<T, Size> &b)
+    {
+        swap(a._buffer, b._buffer);
+        swap(a._capacity, b._capacity);
+        swap(a._front, b._front);
+        swap(a._full, b._full);
+    }
+
+private:
+    T _buffer[Size];
+    size_type _front;
+    bool _full;
+};
+
+template<typename T, size_t Size>
+CircularBuffer<T, Size>::CircularBuffer()
+    : _front(0)
+    , _full(false)
+{
+}
+
+template<typename T, size_t Size>
+typename CircularBuffer<T, Size>::const_reference
+CircularBuffer<T, Size>::operator[](size_type index) const
+{
+    if (_full)
+    {
+        if (index >= size())
+        {
+            panic("Invalid access of circular buffer %p at index %d !", this, index);
+        }
+
+        return _buffer[(_front + index) % size()];
+    }
+    else
+    {
+        if (index >= _front)
+        {
+            panic("Invalid access of circular buffer %p at index %d with _front %d !", this, index, _front);
+        }
+        return _buffer[index];
+    }
+}
+
+template<typename T, size_t Size>
+typename CircularBuffer<T, Size>::reference
+CircularBuffer<T, Size>::operator[](size_type index)
+{
+    return const_cast<reference>(static_cast<const CircularBuffer<T, Size>&>(*this)[index]);
+}
+
+template<typename T, size_t Size>
+CircularBuffer<T, Size>&
+CircularBuffer<T, Size>::operator=(CircularBuffer<T, Size> rhs)
+{
+    swap(*this, rhs);
+    return *this;
+}
+
+template<typename T, size_t Size>
+void
+CircularBuffer<T, Size>::add(const T& item)
+{
+    memcpy(_buffer[_front++], item, ::size(item) * sizeof(T));
+    if (_front == Size)
+    {
+        _front = 0;
+        _full = true;
+    }
+}
+
 #endif // RINGBUF_HPP

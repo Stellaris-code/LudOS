@@ -63,7 +63,7 @@ int do_amd(void);
 void printregs(int eax, int ebx, int ecx, int edx);
 
 /* Simply call this function detect_cpu(); */
-int detect_cpu(void)
+int detect_cpu()
 { /* or main() if your trying to port this as an independant application */
         unsigned long ebx, unused;
         cpuid(0, unused, ebx, unused, unused);

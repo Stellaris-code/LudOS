@@ -1,0 +1,44 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+../kern/utils/stdint.h
+stdint.h
+-
+stddef.h
+-
+
+../libc/stdio.h
+sys/cdefs.h
+-
+stdio/tinyprintf.h
+../libc/stdio/tinyprintf.h
+
+../libc/stdio/tinyprintf.h
+stdarg.h
+-
+utils/stdint.h
+../libc/stdio/utils/stdint.h
+
+../libc/stdlib.h
+sys/cdefs.h
+-
+
+../libc/sys/cdefs.h
+
+/home/yann/LudOS/kern/ext/liballoc/liballoc.c
+liballoc.h
+/home/yann/LudOS/kern/ext/liballoc/liballoc.h
+stdio.h
+-
+stdlib.h
+-
+
+/home/yann/LudOS/kern/ext/liballoc/liballoc.h
+utils/stdint.h
+/home/yann/LudOS/kern/ext/liballoc/utils/stdint.h
+

@@ -26,10 +26,15 @@ SOFTWARE.
 // TODO : Paging
 // TODO : revoir terminal pour utiliser un init()
 // TODO : ACPI
-// TODO : scrolling terminal
+// TODO : scrolling terminal char par char
+// TODO : POC calculatrice
 
 #ifndef __cplusplus
 #error Must be compiler using C++ !
+#endif
+
+#ifndef NDEBUG
+#define DEBUG
 #endif
 
 #include "multiboot/multiboot_kern.hpp"
@@ -44,14 +49,20 @@ SOFTWARE.
 #include "i686/pc/cpuinfo.hpp"
 #include "i686/pc/cpuid.hpp"
 #include "i686/pc/smbios.hpp"
+#include "i686/pc/paging.hpp"
+
+#include "utils/addr.hpp"
 
 #include "timer.hpp"
+
+#include "ext/liballoc/liballoc.h"
 
 #include "utils/logging.hpp"
 #include "greet.hpp"
 #include "halt.hpp"
 
 extern "C" multiboot_header mbd;
+extern "C" uint32_t kernel_physical_end;
 
 extern "C"
 void kmain(uint32_t magic, const multiboot_info_t* mbd_info)
@@ -63,22 +74,32 @@ void kmain(uint32_t magic, const multiboot_info_t* mbd_info)
     pic::init();
     idt::init();
     PIT::init(100);
-    Speaker::beep(200);
     FPU::init();
-    SMBIOS::locate();
-    SMBIOS::bios_info();
-    SMBIOS::cpu_info();
+    multiboot::parse_info(mbd_info);
 
     log("CPU clock speed : ~%lu MHz\n", clock_speed());
     detect_cpu();
+    Paging::init();
 
-    multiboot::parse_info(mbd_info);
+    Speaker::beep(200);
+
+    SMBIOS::locate();
+    SMBIOS::bios_info();
+    SMBIOS::cpu_info();
 
     Keyboard::init();
     Keyboard::handle_char = &Terminal::put_char;
     Keyboard::set_kbdmap(kbdmap_fr);
 
     greet();
+
+//    uint8_t* ptr = (uint8_t*)kmalloc(100*1000*1000);
+
+//    liballoc_dump();
+
+//    kfree(ptr);
+
+//    liballoc_dump();
 
     while (1)
     {

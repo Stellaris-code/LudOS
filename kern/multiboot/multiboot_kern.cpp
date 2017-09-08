@@ -31,6 +31,8 @@ SOFTWARE.
 #include "utils/align.hpp"
 #include "utils/addr.hpp"
 
+#include "i686/pc/meminfo.hpp"
+
 #define CHECK_FLAG(flags,bit)   ((flags) & (1 << (bit)))
 
 namespace multiboot
@@ -53,6 +55,8 @@ void check(uint32_t magic, const multiboot_header &mbd, const multiboot_info* mb
 
 void parse_info(const multiboot_info_t* info)
 {
+    Meminfo::info = info;
+
     //puts("Multiboot Info :");
 
     //printf("Multiboot flags : 0x%x\n", info->flags);
@@ -77,9 +81,10 @@ void parse_info(const multiboot_info_t* info)
             printf(" Module cmdline : '%s'\n", reinterpret_cast<char*>(phys(mod->cmdline)));
         }
     }*/
-    /*if (CHECK_FLAG (info->flags, 6))
+    if (CHECK_FLAG (info->flags, 6))
     {
-        for (multiboot_memory_map_t *mmap =reinterpret_cast<multiboot_memory_map_t *>(phys(info->mmap_addr));
+        Meminfo::mmap_addr = reinterpret_cast<multiboot_memory_map_t *>(phys(info->mmap_addr));
+        for (multiboot_memory_map_t *mmap = Meminfo::mmap_addr;
              (uintptr_t)mmap < phys(info->mmap_addr) + info->mmap_length;
              mmap = (multiboot_memory_map_t *) ((unsigned long) mmap
                                                 + mmap->size + sizeof (mmap->size)))
@@ -89,7 +94,7 @@ void parse_info(const multiboot_info_t* info)
             printf("type : %d\n", mmap->type);
 
         }
-    }*/
+    }
     if (CHECK_FLAG(info->flags, 9))
     {
         log("Bootloader name : '%s'\n", reinterpret_cast<char*>(phys(info->boot_loader_name)));

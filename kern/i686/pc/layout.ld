@@ -2,9 +2,9 @@ ENTRY(_start)
 
 SECTIONS
 {
-    . = 0xE0100000; /* + 1M */
+    . = 0x00100000; /* + 1M */
 
-    .boot ALIGN(0x1000) : AT(ADDR(.boot) - 0xE0000000)
+    .boot ALIGN(0x1000) : AT(ADDR(.boot))
     {
         mbd = .;
         *(.multiboot_header)
@@ -12,13 +12,13 @@ SECTIONS
 
     _load_start = .;
 
-    .text ALIGN(0x1000) : AT(ADDR(.text) - 0xE0000000)
+    .text ALIGN(0x1000) : AT(ADDR(.text))
     {
         *(.text)
         *(.gnu.linkonce.t*)
     }
 
-    .rodata ALIGN(0x1000) : AT(ADDR(.rodata) - 0xE0000000)
+    .rodata ALIGN(0x1000) : AT(ADDR(.rodata))
     {
         start_ctors = .;
         *(SORT(.ctors*))  /* Note the "SORT" */
@@ -32,7 +32,7 @@ SECTIONS
         *(.gnu.linkonce.r*)
     }
 
-    .data ALIGN(0x1000) : AT(ADDR(.data) - 0xE0000000)
+    .data ALIGN(0x1000) : AT(ADDR(.data))
     {
         data_seg = .;
         *(.data)
@@ -41,7 +41,7 @@ SECTIONS
 
     _load_end = .;
 
-    .bss : AT(ADDR(.bss) - 0xE0000000)
+    .bss : AT(ADDR(.bss))
     {
         _bss_start = .;
         *(COMMON)
@@ -50,7 +50,13 @@ SECTIONS
         _bss_end = .;
     }
 
-    kernel_end = .;
+
+    kernel_virtual_end = .;
+    kernel_physical_end = .;
+
+    . = ALIGN(0x1000);
+    page_directory = .;
+    page_table_0 = page_directory + 0x1000;
 
     /DISCARD/ :
     {

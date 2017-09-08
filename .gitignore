@@ -4,6 +4,9 @@
 
 build/
 
+!LudOS.bin 
+!*/
+
 *~
 *.autosave
 *.a

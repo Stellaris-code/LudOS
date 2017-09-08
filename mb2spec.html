@@ -1,0 +1,3188 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1995,96 Bryan Ford <baford@cs.utah.edu>
+
+Copyright (C) 1995,96 Erich Stefan Boleyn <erich@uruk.org>
+
+Copyright (C) 1999,2000,2001,2002,2005,2006,2009,2010,2016 Free 
+Software Foundation, Inc.
+
+Permission is granted to make and distribute verbatim copies of
+this manual provided the copyright notice and this permission notice
+are preserved on all copies.
+
+
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, provided also that
+the entire resulting derived work is distributed under the terms of a
+permission notice identical to this one.
+
+Permission is granted to copy and distribute translations of this manual
+into another language, under the above conditions for modified
+versions.
+
+ -->
+<!-- Created on August 24, 2017 by texi2html 5.0
+texi2html was written by: 
+            Lionel Cons <Lionel.Cons@cern.ch> (original author)
+            Karl Berry  <karl@freefriends.org>
+            Olaf Bachmann <obachman@mathematik.uni-kl.de>
+            and many others.
+Maintained by: Many creative people.
+Send bugs and suggestions to <texi2html-bug@nongnu.org>
+-->
+<head>
+<title>Multiboot2 Specification version {No value for &lsquo;VERSION&rsquo;}</title>
+
+<meta name="description" content="Multiboot2 Specification version {No value for &lsquo;VERSION&rsquo;}">
+<meta name="keywords" content="Multiboot2 Specification version {No value for &lsquo;VERSION&rsquo;}">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="texi2html 5.0">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smalllisp {margin-left: 3.2em}
+pre.display {font-family: serif}
+pre.format {font-family: serif}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: serif; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: serif; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:pre}
+span.nolinebreak {white-space:pre}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<h1>The Multiboot2 Specification version {No value for &lsquo;VERSION&rsquo;}</h1>
+<strong>Yoshinori K. Okuji, Bryan Ford, Erich Stefan Boleyn,</strong><br>
+<strong>Kunihiro Ishiguro, Vladimir &rsquo;phcoder&rsquo; Serbinenko,</strong><br>
+<strong>Daniel Kiper</strong><br>
+
+<p>Copyright &copy; 1995,96 Bryan Ford &lt;baford@cs.utah.edu&gt;
+</p>
+<p>Copyright &copy; 1995,96 Erich Stefan Boleyn &lt;erich@uruk.org&gt;
+</p>
+<p>Copyright &copy; 1999,2000,2001,2002,2005,2006,2009,2010,2016 Free 
+Software Foundation, Inc.
+</p>
+<blockquote>
+<p>Permission is granted to make and distribute verbatim copies of
+this manual provided the copyright notice and this permission notice
+are preserved on all copies.
+</p>
+
+<p>Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, provided also that
+the entire resulting derived work is distributed under the terms of a
+permission notice identical to this one.
+</p>
+<p>Permission is granted to copy and distribute translations of this manual
+into another language, under the above conditions for modified
+versions.
+</p></blockquote>
+<hr>
+<a name="Top"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[ &lt; ]</td>
+<td valign="middle" align="left">[<a href="#Overview" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="Multiboot2-Specification"></a>
+<h1 class="top">Multiboot2 Specification</h1>
+
+<p>This file documents Multiboot2 Specification, the proposal for the boot
+sequence standard. This edition documents version {No value for &lsquo;VERSION&rsquo;}.
+</p>
+<p>Copyright &copy; 1995,96 Bryan Ford &lt;baford@cs.utah.edu&gt;
+</p>
+<p>Copyright &copy; 1995,96 Erich Stefan Boleyn &lt;erich@uruk.org&gt;
+</p>
+<p>Copyright &copy; 1999,2000,2001,2002,2005,2006,2009,2010,2016 Free 
+Software Foundation, Inc.
+</p>
+<blockquote>
+<p>Permission is granted to make and distribute verbatim copies of
+this manual provided the copyright notice and this permission notice
+are preserved on all copies.
+</p>
+
+<p>Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, provided also that
+the entire resulting derived work is distributed under the terms of a
+permission notice identical to this one.
+</p>
+<p>Permission is granted to copy and distribute translations of this manual
+into another language, under the above conditions for modified
+versions.
+</p></blockquote>
+
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top"><a href="#Overview">1 Introduction to Multiboot2 Specification</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">                    
+</td></tr>
+<tr><td align="left" valign="top"><a href="#Terminology">2 The definitions of terms used through the specification</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">                 
+</td></tr>
+<tr><td align="left" valign="top"><a href="#Specification">3 The exact definitions of Multiboot2 Specification</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">               
+</td></tr>
+<tr><td align="left" valign="top"><a href="#Examples">4 Examples</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">                    
+</td></tr>
+<tr><td align="left" valign="top"><a href="#History">5 The change log of this specification</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">                     
+</td></tr>
+<tr><td align="left" valign="top"><a href="#Index">Index</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">                       
+</td></tr>
+</table>
+
+
+<hr size="6">
+<a name="Overview"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Top" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Top" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Top" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#Motivation" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Terminology" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="Introduction-to-Multiboot2-Specification"></a>
+<h1 class="chapter">1 Introduction to Multiboot2 Specification</h1>
+
+<p>This chapter describes some rough information on the Multiboot2
+Specification. Note that this is not a part of the specification itself.
+</p>
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top"><a href="#Motivation">1.1 The background of Multiboot2 Specification</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">                  
+</td></tr>
+<tr><td align="left" valign="top"><a href="#Architecture">1.2 The target architecture</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">                
+</td></tr>
+<tr><td align="left" valign="top"><a href="#Operating-systems">1.3 The target operating systems</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">           
+</td></tr>
+<tr><td align="left" valign="top"><a href="#Boot-sources">1.4 Boot sources</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">                
+</td></tr>
+<tr><td align="left" valign="top"><a href="#Boot_002dtime-configuration">1.5 Configure an operating system at boot-time</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">     
+</td></tr>
+<tr><td align="left" valign="top"><a href="#Convenience-to-operating-systems">1.6 How to make OS development easier</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">  
+</td></tr>
+<tr><td align="left" valign="top"><a href="#Boot-modules">1.7 Boot modules</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">                
+</td></tr>
+</table>
+
+
+<hr>
+<a name="Motivation"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Overview" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Overview" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Overview" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#Architecture" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Terminology" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="The-background-of-Multiboot2-Specification"></a>
+<h2 class="section">1.1 The background of Multiboot2 Specification</h2>
+
+<p>Every operating system ever created tends to have its own boot loader.
+Installing a new operating system on a machine generally involves
+installing a whole new set of boot mechanisms, each with completely
+different install-time and boot-time user interfaces. Getting multiple
+operating systems to coexist reliably on one machine through typical
+<em>chaining</em> mechanisms can be a nightmare. There is little or no
+choice of boot loaders for a particular operating system &mdash; if the one
+that comes with the operating system doesn&rsquo;t do exactly what you want,
+or doesn&rsquo;t work on your machine, you&rsquo;re screwed.
+</p>
+<p>While we may not be able to fix this problem in existing proprietary
+operating systems, it shouldn&rsquo;t be too difficult for a few people in the
+free operating system communities to put their heads together and solve
+this problem for the popular free operating systems. That&rsquo;s what this
+specification aims for. Basically, it specifies an interface between a
+boot loader and a operating system, such that any complying boot loader
+should be able to load any complying operating system. This
+specification does <em>not</em> specify how boot loaders should work &mdash;
+only how they must interface with the operating system being loaded.
+</p>
+
+<hr>
+<a name="Architecture"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Overview" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Motivation" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Overview" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#Operating-systems" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Terminology" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="The-target-architecture"></a>
+<h2 class="section">1.2 The target architecture</h2>
+
+<p>This specification is primarily targeted at <small>PC</small>, since they are the
+most common and have the largest variety of operating systems and boot
+loaders. However, to the extent that certain other architectures may
+need a boot specification and do not have one already, a variation of
+this specification, stripped of the x86-specific details, could be
+adopted for them as well.
+</p>
+
+<hr>
+<a name="Operating-systems"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Overview" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Architecture" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Overview" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#Boot-sources" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Terminology" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="The-target-operating-systems"></a>
+<h2 class="section">1.3 The target operating systems</h2>
+
+<p>This specification is targeted toward free 32-bit operating systems
+that can be fairly easily modified to support the specification without
+going through lots of bureaucratic rigmarole. The particular free
+operating systems that this specification is being primarily designed
+for are Linux, the kernels of FreeBSD and NetBSD, Mach, and VSTa. It is 
+hoped that other
+emerging free operating systems will adopt it from the start, and thus
+immediately be able to take advantage of existing boot loaders. It would
+be nice if proprietary operating system vendors eventually adopted this
+specification as well, but that&rsquo;s probably a pipe dream.
+</p>
+
+<hr>
+<a name="Boot-sources"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Overview" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Operating-systems" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Overview" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#Boot_002dtime-configuration" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Terminology" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="Boot-sources-1"></a>
+<h2 class="section">1.4 Boot sources</h2>
+
+<p>It should be possible to write compliant boot loaders that load the OS
+image from a variety of sources, including floppy disk, hard disk, and
+across a network.
+</p>
+<p>Disk-based boot loaders may use a variety of techniques to find the
+relevant OS image and boot module data on disk, such as by
+interpretation of specific file systems (e.g. the BSD/Mach boot loader),
+using precalculated <em>blocklists</em> (e.g. LILO), loading from a
+special <em>boot partition</em> (e.g. OS/2), or even loading from within
+another operating system (e.g. the VSTa boot code, which loads from
+DOS). Similarly, network-based boot loaders could use a variety of
+network hardware and protocols.
+</p>
+<p>It is hoped that boot loaders will be created that support multiple
+loading mechanisms, increasing their portability, robustness, and
+user-friendliness.
+</p>
+
+<hr>
+<a name="Boot_002dtime-configuration"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Overview" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Boot-sources" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Overview" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#Convenience-to-operating-systems" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Terminology" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="Configure-an-operating-system-at-boot_002dtime"></a>
+<h2 class="section">1.5 Configure an operating system at boot-time</h2>
+
+<p>It is often necessary for one reason or another for the user to be able
+to provide some configuration information to an operating system
+dynamically at boot time. While this specification should not dictate
+how this configuration information is obtained by the boot loader, it
+should provide a standard means for the boot loader to pass such
+information to the operating system.
+</p>
+
+<hr>
+<a name="Convenience-to-operating-systems"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Overview" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Boot_002dtime-configuration" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Overview" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#Boot-modules" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Terminology" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="How-to-make-OS-development-easier"></a>
+<h2 class="section">1.6 How to make OS development easier</h2>
+
+<p>OS images should be easy to generate. Ideally, an OS image should simply
+be an ordinary 32-bit executable file in whatever file format the
+operating system normally uses. It should be possible to <code>nm</code> or
+disassemble OS images just like normal executables. Specialized tools
+should not be required to create OS images in a <em>special</em> file
+format. If this means shifting some work from the operating system to
+a boot loader, that is probably appropriate, because all the memory
+consumed by the boot loader will typically be made available again after
+the boot process is created, whereas every bit of code in the OS image
+typically has to remain in memory forever. The operating system should
+not have to worry about getting into 32-bit mode initially, because mode
+switching code generally needs to be in the boot loader anyway in order
+to load operating system data above the 1MB boundary, and forcing the
+operating system to do this makes creation of OS images much more
+difficult.
+</p>
+<p>Unfortunately, there is a horrendous variety of executable file formats
+even among free Unix-like <small>PC</small>-based operating systems &mdash; generally
+a different format for each operating system. Most of the relevant free
+operating systems use some variant of a.out format, but some are moving
+to <small>ELF</small>. It is highly desirable for boot loaders not to have to be
+able to interpret all the different types of executable file formats in
+existence in order to load the OS image &mdash; otherwise the boot loader
+effectively becomes operating system specific again.
+</p>
+<p>This specification adopts a compromise solution to this
+problem. Multiboot2-compliant OS images always contain a magic
+<em>Multiboot2 header</em> (see section <a href="#OS-image-format">OS image format</a>), which allows the boot
+loader to load the image without having to understand numerous a.out
+variants or other executable formats. This magic header does not need to
+be at the very beginning of the executable file, so kernel images can
+still conform to the local a.out format variant in addition to being
+Multiboot2-compliant.
+</p>
+
+<hr>
+<a name="Boot-modules"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Overview" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Convenience-to-operating-systems" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Overview" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#Terminology" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Terminology" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="Boot-modules-1"></a>
+<h2 class="section">1.7 Boot modules</h2>
+
+<p>Many modern operating system kernels, such as Mach and the microkernel 
+in VSTa, do
+not by themselves contain enough mechanism to get the system fully
+operational: they require the presence of additional software modules at
+boot time in order to access devices, mount file systems, etc. While
+these additional modules could be embedded in the main OS image along
+with the kernel itself, and the resulting image be split apart manually
+by the operating system when it receives control, it is often more
+flexible, more space-efficient, and more convenient to the operating
+system and user if the boot loader can load these additional modules
+independently in the first place.
+</p>
+<p>Thus, this specification should provide a standard method for a boot
+loader to indicate to the operating system what auxiliary boot modules
+were loaded, and where they can be found. Boot loaders don&rsquo;t have to
+support multiple boot modules, but they are strongly encouraged to,
+because some operating systems will be unable to boot without them.
+</p>
+
+<hr>
+<a name="Terminology"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Overview" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Boot-modules" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Top" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#Specification" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Specification" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="The-definitions-of-terms-used-through-the-specification"></a>
+<h1 class="chapter">2 The definitions of terms used through the specification</h1>
+
+<dl compact="compact">
+<dt><em>must</em></dt>
+<dd><p>We use the term <em>must</em>, when any boot loader or OS image needs to
+follow a rule &mdash; otherwise, the boot loader or OS image is <em>not</em>
+Multiboot2-compliant.
+</p>
+</dd>
+<dt><em>should</em></dt>
+<dd><p>We use the term <em>should</em>, when any boot loader or OS image is
+recommended to follow a rule, but it doesn&rsquo;t need to follow the rule.
+</p>
+</dd>
+<dt><em>may</em></dt>
+<dd><p>We use the term <em>may</em>, when any boot loader or OS image is allowed
+to follow a rule.
+</p>
+</dd>
+<dt><em>boot loader</em></dt>
+<dd><p>Whatever program or set of programs loads the image of the final
+operating system to be run on the machine. The boot loader may itself
+consist of several stages, but that is an implementation detail not
+relevant to this specification. Only the <em>final</em> stage of the boot
+loader &mdash; the stage that eventually transfers control to an operating
+system &mdash; must follow the rules specified in this document in order
+to be <em>Multiboot2-compliant</em>; earlier boot loader stages may be
+designed in whatever way is most convenient.
+</p>
+</dd>
+<dt><em>OS image, kernel</em></dt>
+<dd><p>The initial binary image that a boot loader loads into memory and
+transfers control to start an operating system. The OS image is
+typically an executable containing the operating system kernel.
+However it doesn&rsquo;t need to be a part of any OS and may be any kind
+of system tool.
+</p>
+</dd>
+<dt><em>boot module</em></dt>
+<dd><p>Other auxiliary files that a boot loader loads into memory along with
+an OS image, but does not interpret in any way other than passing their
+locations to the operating system when it is invoked.
+</p>
+</dd>
+<dt><em>Multiboot2-compliant</em></dt>
+<dd><p>A boot loader or an OS image which follows the rules defined as
+<em>must</em> is Multiboot2-compliant. When this specification specifies a
+rule as <em>should</em> or <em>may</em>, a Multiboot2-complaint boot loader/OS
+image doesn&rsquo;t need to follow the rule.
+</p>
+</dd>
+<dt><em>u8</em></dt>
+<dd><p>The type of unsigned 8-bit data.
+</p>
+</dd>
+<dt><em>u16</em></dt>
+<dd><p>The type of unsigned 16-bit data. Because the target architecture is
+little-endian, u16 is coded in little-endian.
+</p>
+</dd>
+<dt><em>u32</em></dt>
+<dd><p>The type of unsigned 32-bit data. Because the target architecture is
+little-endian, u32 is coded in little-endian.
+</p>
+</dd>
+<dt><em>u64</em></dt>
+<dd><p>The type of unsigned 64-bit data. Because the target architecture is
+little-endian, u64 is coded in little-endian.
+</p>
+</dd>
+</dl>
+
+
+<hr>
+<a name="Specification"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Terminology" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Terminology" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Top" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#OS-image-format" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Examples" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="The-exact-definitions-of-Multiboot2-Specification"></a>
+<h1 class="chapter">3 The exact definitions of Multiboot2 Specification</h1>
+
+<p>There are three main aspects of a boot loader/OS image interface:
+</p>
+<ol>
+<li>
+The format of an OS image as seen by a boot loader.
+
+</li><li>
+The state of a machine when a boot loader starts an operating
+system.
+
+</li><li>
+The format of information passed by a boot loader to an operating
+system.
+</li></ol>
+
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top"><a href="#OS-image-format">3.1 OS image format</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">             
+</td></tr>
+<tr><td align="left" valign="top"><a href="#Machine-state">3.2 MIPS machine state</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">               
+</td></tr>
+<tr><td align="left" valign="top"><a href="#Boot-information-format">3.6 Boot information</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">     
+</td></tr>
+</table>
+
+
+<hr>
+<a name="OS-image-format"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Specification" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Specification" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Specification" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#Header-layout" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Examples" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="OS-image-format-1"></a>
+<h2 class="section">3.1 OS image format</h2>
+
+<p>An OS image may be an ordinary 32-bit executable file in the standard
+format for that particular operating system, except that it may be
+linked at a non-default load address to avoid loading on top of the
+<small>PC</small>&rsquo;s I/O region or other reserved areas, and of course it should
+not use shared libraries or other fancy features.
+</p>
+<p>An OS image must contain an additional header called <em>Multiboot2
+header</em>, besides the headers of the format used by the OS image. The
+Multiboot2 header must be contained completely within the first 32768
+bytes of the OS image, and must be 64-bit aligned. In
+general, it should come <em>as early as possible</em>, and may be
+embedded in the beginning of the text segment after the <em>real</em>
+executable header.
+</p>
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top"><a href="#Header-layout">3.1.1 The layout of Multiboot2 header</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top"></td></tr>
+<tr><td align="left" valign="top"><a href="#Header-magic-fields">3.1.2 The magic fields of Multiboot2 header</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top"></td></tr>
+<tr><td align="left" valign="top"><a href="#Header-tags">3.1.3 General tag structure</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top"><a href="#Information-request-header-tag">3.1.4 Multiboot2 information request</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top"><a href="#Address-header-tag">3.1.5 The address tag of Multiboot2 header</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">       
+</td></tr>
+<tr><td align="left" valign="top"><a href="#Console-header-tags">3.1.9 Flags tag</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top"><a href="#Module-alignment-tag">3.1.11 Module alignment tag</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top"><a href="#EFI-boot-services-tag">3.1.12 EFI boot services tag</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top"><a href="#Relocatable-header-tag">3.1.13 Relocatable header tag</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><th colspan="3" align="left" valign="top"><pre class="menu-comment">
+</pre></th></tr></table>
+
+
+<hr>
+<a name="Header-layout"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Specification" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#OS-image-format" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#OS-image-format" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#Header-magic-fields" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Examples" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="The-layout-of-Multiboot2-header"></a>
+<h3 class="subsection">3.1.1 The layout of Multiboot2 header</h3>
+
+<p>The layout of the Multiboot2 header must be as follows:
+</p>
+<table>
+<tr><td width="10%">Offset</td><td width="10%">Type</td><td width="20%">Field Name</td><td width="50%">Note</td></tr>
+<tr><td width="10%">0</td><td width="10%">u32</td><td width="20%">magic</td><td width="50%">required</td></tr>
+<tr><td width="10%">4</td><td width="10%">u32</td><td width="20%">architecture</td><td width="50%">required</td></tr>
+<tr><td width="10%">8</td><td width="10%">u32</td><td width="20%">header_length</td><td width="50%">required</td></tr>
+<tr><td width="10%">12</td><td width="10%">u32</td><td width="20%">checksum</td><td width="50%">required</td></tr>
+<tr><td width="10%">16-XX</td><td width="10%"></td><td width="20%">tags</td><td width="50%">required</td></tr>
+</table>
+
+<p>The fields &lsquo;<samp>magic</samp>&rsquo;, &lsquo;<samp>architecture</samp>&rsquo;, &lsquo;<samp>header_length</samp>&rsquo; and 
+&lsquo;<samp>checksum</samp>&rsquo; are defined in <a href="#Header-magic-fields">The magic fields of Multiboot2 header</a>, &lsquo;<samp>tags</samp>&rsquo;
+are defined in <a href="#Header-tags">General tag structure</a>. All fields are in native endianness.
+On bi-endian platforms native-endianness means the endiannes OS image 
+starts in.
+</p>
+
+<hr>
+<a name="Header-magic-fields"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Specification" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Header-layout" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#OS-image-format" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#Header-tags" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Examples" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="The-magic-fields-of-Multiboot2-header"></a>
+<h3 class="subsection">3.1.2 The magic fields of Multiboot2 header</h3>
+
+<dl compact="compact">
+<dt>&lsquo;<samp>magic</samp>&rsquo;</dt>
+<dd><p>The field &lsquo;<samp>magic</samp>&rsquo; is the magic number identifying the header,
+which must be the hexadecimal value <code>0xE85250D6</code>.
+</p>
+</dd>
+<dt>&lsquo;<samp>architecture</samp>&rsquo;</dt>
+<dd><p>The field &lsquo;<samp>architecture</samp>&rsquo; specifies the Central Processing Unit
+Instruction Set Architecture. Since &lsquo;<samp>magic</samp>&rsquo; isn&rsquo;t a palindrome
+it already specifies the endianness ISAs differing only in endianness
+recieve the same ID. &lsquo;<samp>0</samp>&rsquo; means 32-bit (protected) mode of i386.
+&lsquo;<samp>4</samp>&rsquo; means 32-bit MIPS.
+</p>
+</dd>
+<dt>&lsquo;<samp>header_length</samp>&rsquo;</dt>
+<dd><p>The field &lsquo;<samp>header_length</samp>&rsquo; specifies the Length of Multiboot2 header
+in bytes including magic fields.
+</p>
+
+</dd>
+<dt>&lsquo;<samp>checksum</samp>&rsquo;</dt>
+<dd><p>The field &lsquo;<samp>checksum</samp>&rsquo; is a 32-bit unsigned value which, when added
+to the other magic fields (i.e. &lsquo;<samp>magic</samp>&rsquo;, &lsquo;<samp>architecture</samp>&rsquo; 
+and &lsquo;<samp>header_length</samp>&rsquo;), must have a 32-bit unsigned sum of zero.
+</p></dd>
+</dl>
+
+
+<hr>
+<a name="Header-tags"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Specification" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Header-magic-fields" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#OS-image-format" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#Information-request-header-tag" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Examples" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="General-tag-structure"></a>
+<h3 class="subsection">3.1.3 General tag structure</h3>
+<p>Tags constitutes a buffer of structures following each other padded when 
+necessary
+in order for each tag to start at 8-bytes aligned address. Tags are 
+terminated by
+a tag of type &lsquo;<samp>0</samp>&rsquo; and size &lsquo;<samp>8</samp>&rsquo;. Every structure has following 
+format:
+</p>
+<div class="example">
+<pre class="example">        +-------------------+
+u16     | type              |
+u16     | flags             |
+u32     | size              |
+        +-------------------+
+</pre></div>
+
+<p>&lsquo;<samp>type</samp>&rsquo; is divided into 2 parts. Lower contains an identifier of 
+contents of the rest of the tag.
+&lsquo;<samp>size</samp>&rsquo; contains the size of tag including header fields.
+If bit &lsquo;<samp>0</samp>&rsquo; of &lsquo;<samp>flags</samp>&rsquo; (also known as &lsquo;<samp>optional</samp>&rsquo;) is set, 
+the bootloader may ignore this tag if it
+lacks relevant support.
+Tags are terminated by a tag of type &lsquo;<samp>0</samp>&rsquo; and size &lsquo;<samp>8</samp>&rsquo;.
+</p>
+<hr>
+<a name="Information-request-header-tag"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Specification" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Header-tags" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#OS-image-format" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#Address-header-tag" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Examples" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="Multiboot2-information-request"></a>
+<h3 class="subsection">3.1.4 Multiboot2 information request</h3>
+
+<div class="example">
+<pre class="example">        +-------------------+
+u16     | type = 1          |
+u16     | flags             |
+u32     | size              |
+u32[n]  | mbi_tag_types     |
+        +-------------------+
+</pre></div>
+
+<p>&lsquo;<samp>mbi_tag_types</samp>&rsquo; is an array of u32&rsquo;s, each one representing an 
+information request.
+</p>
+<p>If this tag is present and &lsquo;<samp>optional</samp>&rsquo; is set to &lsquo;<samp>0</samp>&rsquo;, the 
+bootloader must
+support the requested tag and be able to provide relevant information to 
+the image
+if it is available. If the bootloader does not understand the meaning of 
+the requested
+tag it must fail with an error. However, if it supports a given tag but 
+the information
+conveyed by it is not available the bootloader does not provide the 
+requested tag in
+the Multiboot2 information structure and passes control to the loaded 
+image as usual.
+</p>
+<p>Note: The above means that there is no guarantee that any tags of type 
+&lsquo;<samp>mbi_tag_types</samp>&rsquo;
+will actually be present. E.g. on a videoless system even if you 
+requested tag &lsquo;<samp>8</samp>&rsquo;
+and the bootloader supports it, no tags of type &lsquo;<samp>8</samp>&rsquo; will be present 
+in the Multiboot2
+information structure.
+</p>
+
+<hr>
+<a name="Address-header-tag"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Specification" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Information-request-header-tag" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#OS-image-format" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#The-entry-address-tag-of-Multiboot2-header" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Examples" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="The-address-tag-of-Multiboot2-header"></a>
+<h3 class="subsection">3.1.5 The address tag of Multiboot2 header</h3>
+
+<div class="example">
+<pre class="example">        +-------------------+
+u16     | type = 2          |
+u16     | flags             |
+u32     | size              |
+u32     | header_addr       |
+u32     | load_addr         |
+u32     | load_end_addr     |
+u32     | bss_end_addr      |
+        +-------------------+
+</pre></div>
+
+<p>All of the address fields in this tag are physical addresses.
+The meaning of each is as follows:
+</p>
+<dl compact="compact">
+<dt><code>header_addr</code></dt>
+<dd><p>Contains the address corresponding to the beginning of the Multiboot2
+header &mdash; the physical memory location at which the magic value is
+supposed to be loaded. This field serves to <em>synchronize</em> the
+mapping between OS image offsets and physical memory addresses.
+</p>
+</dd>
+<dt><code>load_addr</code></dt>
+<dd><p>Contains the physical address of the beginning of the text segment. The
+offset in the OS image file at which to start loading is defined by the
+offset at which the header was found, minus (header_addr -
+load_addr). load_addr must be less than or equal to header_addr.
+</p>
+<p>Special value -1 means that the file must be loaded from its beginning.
+</p>
+</dd>
+<dt><code>load_end_addr</code></dt>
+<dd><p>Contains the physical address of the end of the data
+segment. (load_end_addr - load_addr) specifies how much data to load.
+This implies that the text and data segments must be consecutive in the
+OS image; this is true for existing a.out executable formats.
+If this field is zero, the boot loader assumes that the text and data
+segments occupy the whole OS image file.
+</p>
+</dd>
+<dt><code>bss_end_addr</code></dt>
+<dd><p>Contains the physical address of the end of the bss segment. The boot
+loader initializes this area to zero, and reserves the memory it
+occupies to avoid placing boot modules and other data relevant to the
+operating system in that area. If this field is zero, the boot loader
+assumes that no bss segment is present.
+</p>
+</dd>
+</dl>
+
+<hr>
+<a name="The-entry-address-tag-of-Multiboot2-header"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Specification" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Address-header-tag" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#OS-image-format" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#EFI-i386-entry-address-tag-of-Multiboot2-header" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Examples" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<h3 class="subsection">3.1.6 The entry address tag of Multiboot2 header</h3>
+
+<div class="example">
+<pre class="example">        +-------------------+
+u16     | type = 3          |
+u16     | flags             |
+u32     | size              |
+u32     | entry_addr        |
+        +-------------------+
+</pre></div>
+
+<p>All of the address fields in this tag are physical addresses.
+The meaning of each is as follows:
+</p>
+<dl compact="compact">
+<dt><code>entry_addr</code></dt>
+<dd><p>The physical address to which the boot loader should jump in order to
+start running the operating system.
+</p></dd>
+</dl>
+
+<hr>
+<a name="EFI-i386-entry-address-tag-of-Multiboot2-header"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Specification" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#The-entry-address-tag-of-Multiboot2-header" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#OS-image-format" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#EFI-amd64-entry-address-tag-of-Multiboot2-header" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Examples" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<h3 class="subsection">3.1.7 EFI i386 entry address tag of Multiboot2 header</h3>
+
+<div class="example">
+<pre class="example">        +-------------------+
+u16     | type = 8          |
+u16     | flags             |
+u32     | size              |
+u32     | entry_addr        |
+        +-------------------+
+</pre></div>
+
+<p>All of the address fields in this tag are physical addresses.
+The meaning of each is as follows:
+</p>
+<dl compact="compact">
+<dt><code>entry_addr</code></dt>
+<dd><p>The physical address to which the boot loader should jump in order to
+start running EFI i386 compatible operating system code.
+</p></dd>
+</dl>
+
+<p>This tag is taken into account only on EFI i386 platforms
+when Multiboot2 image header contains EFI boot services tag.
+Then entry point specified in ELF header and the entry address
+tag of Multiboot2 header are ignored.
+</p>
+<hr>
+<a name="EFI-amd64-entry-address-tag-of-Multiboot2-header"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Specification" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#EFI-i386-entry-address-tag-of-Multiboot2-header" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#OS-image-format" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#Console-header-tags" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Examples" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<h3 class="subsection">3.1.8 EFI amd64 entry address tag of Multiboot2 header</h3>
+
+<div class="example">
+<pre class="example">        +-------------------+
+u16     | type = 9          |
+u16     | flags             |
+u32     | size              |
+u32     | entry_addr        |
+        +-------------------+
+</pre></div>
+
+<p>All of the address fields in this tag are physical addresses (paging
+mode is enabled and any memory space defined by the UEFI memory map
+is identity mapped, hence, virtual address equals physical address;
+Unified Extensible Firmware Interface Specification, Version 2.6,
+section 2.3.4, x64 Platforms, boot services). The meaning of each
+is as follows:
+</p>
+<dl compact="compact">
+<dt><code>entry_addr</code></dt>
+<dd><p>The physical address to which the boot loader should jump in order to
+start running EFI amd64 compatible operating system code.
+</p></dd>
+</dl>
+
+<p>This tag is taken into account only on EFI amd64 platforms
+when Multiboot2 image header contains EFI boot services tag.
+Then entry point specified in ELF header and the entry address
+tag of Multiboot2 header are ignored.
+</p>
+<hr>
+<a name="Console-header-tags"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Specification" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#EFI-amd64-entry-address-tag-of-Multiboot2-header" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#OS-image-format" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#The-framebuffer-tag-of-Multiboot2-header" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Examples" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="Flags-tag"></a>
+<h3 class="subsection">3.1.9 Flags tag</h3>
+
+<div class="example">
+<pre class="example">        +-------------------+
+u16     | type = 4          |
+u16     | flags             |
+u32     | size = 12         |
+u32     | console_flags     |
+        +-------------------+
+</pre></div>
+
+<p>If this tag is present and bit 0 of &lsquo;<samp>console_flags</samp>&rsquo; is set
+at least one of supported consoles must be present and information about 
+it must be available in mbi.
+If bit &lsquo;<samp>1</samp>&rsquo; of &lsquo;<samp>console_flags</samp>&rsquo; is set it
+indicates that the OS image has EGA text support.
+</p>
+<hr>
+<a name="The-framebuffer-tag-of-Multiboot2-header"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Specification" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Console-header-tags" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#OS-image-format" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#Module-alignment-tag" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Examples" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<h3 class="subsection">3.1.10 The framebuffer tag of Multiboot2 header</h3>
+
+<div class="example">
+<pre class="example">        +-------------------+
+u16     | type = 5          |
+u16     | flags             |
+u32     | size = 20         |
+u32     | width             |
+u32     | height            |
+u32     | depth             |
+        +-------------------+
+</pre></div>
+
+
+<p>This tag specifies the preferred graphics mode. If this tag is present
+bootloader assumes that the payload has framebuffer support.
+Note that that is only a <em>recommended</em>
+mode by the OS image. Boot loader may choose a different mode if it sees 
+fit.
+</p>
+<p>The meaning of each is as follows:
+</p>
+<dl compact="compact">
+<dt><code>width</code></dt>
+<dd><p>Contains the number of the columns. This is specified in pixels in a
+graphics mode, and in characters in a text mode. The value zero
+indicates that the OS image has no preference.
+</p>
+</dd>
+<dt><code>height</code></dt>
+<dd><p>Contains the number of the lines. This is specified in pixels in a
+graphics mode, and in characters in a text mode. The value zero
+indicates that the OS image has no preference.
+</p>
+</dd>
+<dt><code>depth</code></dt>
+<dd><p>Contains the number of bits per pixel in a graphics mode, and zero in
+a text mode. The value zero indicates that the OS image has no
+preference.
+</p></dd>
+</dl>
+
+
+<hr>
+<a name="Module-alignment-tag"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Specification" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#The-framebuffer-tag-of-Multiboot2-header" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#OS-image-format" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#EFI-boot-services-tag" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Examples" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="Module-alignment-tag-1"></a>
+<h3 class="subsection">3.1.11 Module alignment tag</h3>
+
+<div class="example">
+<pre class="example">        +-------------------+
+u16     | type = 6          |
+u16     | flags             |
+u32     | size = 8          |
+        +-------------------+
+</pre></div>
+
+<p>If this tag is present modules must be page aligned.
+</p>
+<hr>
+<a name="EFI-boot-services-tag"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Specification" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Module-alignment-tag" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#OS-image-format" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#Relocatable-header-tag" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Examples" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="EFI-boot-services-tag-1"></a>
+<h3 class="subsection">3.1.12 EFI boot services tag</h3>
+
+<div class="example">
+<pre class="example">        +-------------------+
+u16     | type = 7          |
+u16     | flags             |
+u32     | size = 8          |
+        +-------------------+
+</pre></div>
+
+<p>This tag indicates that payload supports starting without
+terminating boot services.
+</p>
+<hr>
+<a name="Relocatable-header-tag"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Specification" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#EFI-boot-services-tag" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#OS-image-format" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#Machine-state" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Examples" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="Relocatable-header-tag-1"></a>
+<h3 class="subsection">3.1.13 Relocatable header tag</h3>
+
+<div class="example">
+<pre class="example">        +-------------------+
+u16     | type = 10         |
+u16     | flags             |
+u32     | size = 24         |
+u32     | min_addr          |
+u32     | max_addr          |
+u32     | align             |
+u32     | preference        |
+        +-------------------+
+</pre></div>
+
+<p>This tag indicates that image is relocatable.
+</p>
+<p>The meaning of each field is as follows:
+</p>
+<dl compact="compact">
+<dt><code>min_addr</code></dt>
+<dd><p>Lowest possible physical address at which image should be loaded.
+The bootloader cannot load any part of image below this address.
+</p>
+</dd>
+<dt><code>max_addr</code></dt>
+<dd><p>Highest possible physical address at which loaded image should end.
+The bootloader cannot load any part of image above this address.
+</p>
+</dd>
+<dt><code>align</code></dt>
+<dd><p>Image alignment in memory, e.g. 4096.
+</p>
+</dd>
+<dt><code>preference</code></dt>
+<dd><p>It contains load address placement suggestion for boot loader.
+Boot loader should follow it. &lsquo;<samp>0</samp>&rsquo; means none, &lsquo;<samp>1</samp>&rsquo; means
+load image at lowest possible address but not lower than min_addr
+and &lsquo;<samp>2</samp>&rsquo; means load image at highest possible address but not
+higher than max_addr.
+</p></dd>
+</dl>
+
+<hr>
+<a name="Machine-state"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Specification" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Relocatable-header-tag" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Specification" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#I386-machine-state" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Examples" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="MIPS-machine-state"></a>
+<h2 class="section">3.2 MIPS machine state</h2>
+
+<p>When the boot loader invokes the operating system, the machine
+must have the following state:
+</p>
+<dl compact="compact">
+<dt>&lsquo;<samp>R4 (also known as A0)</samp>&rsquo;</dt>
+<dd><p>Must contain the magic value &lsquo;<samp>0x36d76289</samp>&rsquo;; the presence of this
+value indicates to the operating system that it was loaded by a
+Multiboot2-compliant boot loader (e.g. as opposed to another type of
+boot loader that the operating system can also be loaded from).
+</p>
+</dd>
+<dt>&lsquo;<samp>R5 (also known as A1)</samp>&rsquo;</dt>
+<dd><p>Must contain the 32-bit physical address of the Multiboot2
+information structure provided by the boot loader (see section <a href="#Boot-information-format">Boot information</a>).
+</p></dd>
+</dl>
+
+<p>All other processor registers and flag bits are undefined. This
+includes, in particular:
+</p>
+<dl compact="compact">
+<dt>&lsquo;<samp>R29/SP</samp>&rsquo;</dt>
+<dd><p>The OS image must create its own stack as soon as it needs one.
+</p>
+</dd>
+</dl>
+
+<hr>
+<a name="I386-machine-state"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Specification" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Machine-state" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Specification" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#EFI-i386-machine-state-with-boot-services-enabled" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Examples" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<h2 class="section">3.3 I386 machine state</h2>
+
+<p>When the boot loader invokes the 32-bit operating system, the machine
+must have the following state:
+</p>
+<dl compact="compact">
+<dt>&lsquo;<samp>EAX</samp>&rsquo;</dt>
+<dd><p>Must contain the magic value &lsquo;<samp>0x36d76289</samp>&rsquo;; the presence of this
+value indicates to the operating system that it was loaded by a
+Multiboot2-compliant boot loader (e.g. as opposed to another type of
+boot loader that the operating system can also be loaded from).
+</p>
+</dd>
+<dt>&lsquo;<samp>EBX</samp>&rsquo;</dt>
+<dd><p>Must contain the 32-bit physical address of the Multiboot2
+information structure provided by the boot loader (see section <a href="#Boot-information-format">Boot information</a>).
+</p>
+</dd>
+<dt>&lsquo;<samp>CS</samp>&rsquo;</dt>
+<dd><p>Must be a 32-bit read/execute code segment with an offset of &lsquo;<samp>0</samp>&rsquo;
+and a limit of &lsquo;<samp>0xFFFFFFFF</samp>&rsquo;. The exact value is undefined.
+</p>
+</dd>
+<dt>&lsquo;<samp>DS</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>ES</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>FS</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>GS</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>SS</samp>&rsquo;</dt>
+<dd><p>Must be a 32-bit read/write data segment with an offset of &lsquo;<samp>0</samp>&rsquo;
+and a limit of &lsquo;<samp>0xFFFFFFFF</samp>&rsquo;. The exact values are all undefined.
+</p>
+</dd>
+<dt>&lsquo;<samp>A20 gate</samp>&rsquo;</dt>
+<dd><p>Must be enabled.
+</p>
+</dd>
+<dt>&lsquo;<samp>CR0</samp>&rsquo;</dt>
+<dd><p>Bit 31 (PG) must be cleared. Bit 0 (PE) must be set. Other bits are
+all undefined.
+</p>
+</dd>
+<dt>&lsquo;<samp>EFLAGS</samp>&rsquo;</dt>
+<dd><p>Bit 17 (VM) must be cleared. Bit 9 (IF) must be cleared. Other bits
+are all undefined.
+</p></dd>
+</dl>
+
+<p>All other processor registers and flag bits are undefined. This
+includes, in particular:
+</p>
+<dl compact="compact">
+<dt>&lsquo;<samp>ESP</samp>&rsquo;</dt>
+<dd><p>The OS image must create its own stack as soon as it needs one.
+</p>
+</dd>
+<dt>&lsquo;<samp>GDTR</samp>&rsquo;</dt>
+<dd><p>Even though the segment registers are set up as described above, the
+&lsquo;<samp>GDTR</samp>&rsquo; may be invalid, so the OS image must not load any segment
+registers (even just reloading the same values!) until it sets up its
+own &lsquo;<samp>GDT</samp>&rsquo;.
+</p>
+</dd>
+<dt>&lsquo;<samp>IDTR</samp>&rsquo;</dt>
+<dd><p>The OS image must leave interrupts disabled until it sets up its own
+<code>IDT</code>.
+</p></dd>
+</dl>
+
+<p>On EFI system boot services must be terminated.
+</p>
+<hr>
+<a name="EFI-i386-machine-state-with-boot-services-enabled"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Specification" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#I386-machine-state" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Specification" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#EFI-amd64-machine-state-with-boot-services-enabled" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Examples" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<h2 class="section">3.4 EFI i386 machine state with boot services enabled</h2>
+
+<p>When the boot loader invokes the 32-bit operating system on EFI i386
+platform and EFI boot services tag together with EFI i386 entry address
+tag are present in the image Multiboot2 header, the machine must have 
+the
+following state:
+</p>
+<dl compact="compact">
+<dt>&lsquo;<samp>EAX</samp>&rsquo;</dt>
+<dd><p>Must contain the magic value &lsquo;<samp>0x36d76289</samp>&rsquo;; the presence of this
+value indicates to the operating system that it was loaded by a
+Multiboot2-compliant boot loader (e.g. as opposed to another type of
+boot loader that the operating system can also be loaded from).
+</p>
+</dd>
+<dt>&lsquo;<samp>EBX</samp>&rsquo;</dt>
+<dd><p>Must contain the 32-bit physical address of the Multiboot2
+information structure provided by the boot loader (see section <a href="#Boot-information-format">Boot information</a>).
+</p></dd>
+</dl>
+
+<p>All other processor registers, flag bits and state are set accordingly
+to Unified Extensible Firmware Interface Specification, Version 2.6,
+section 2.3.2, IA-32 Platforms, boot services.
+</p>
+<hr>
+<a name="EFI-amd64-machine-state-with-boot-services-enabled"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Specification" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#EFI-i386-machine-state-with-boot-services-enabled" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Specification" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#Boot-information-format" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Examples" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<h2 class="section">3.5 EFI amd64 machine state with boot services enabled</h2>
+
+<p>When the boot loader invokes the 64-bit operating system on EFI amd64
+platform and EFI boot services tag together with EFI amd64 entry address
+tag are present in the image Multiboot2 header, the machine must have 
+the
+following state:
+</p>
+<dl compact="compact">
+<dt>&lsquo;<samp>EAX</samp>&rsquo;</dt>
+<dd><p>Must contain the magic value &lsquo;<samp>0x36d76289</samp>&rsquo;; the presence of this
+value indicates to the operating system that it was loaded by a
+Multiboot2-compliant boot loader (e.g. as opposed to another type of
+boot loader that the operating system can also be loaded from).
+</p>
+</dd>
+<dt>&lsquo;<samp>EBX</samp>&rsquo;</dt>
+<dd><p>Must contain the 64-bit physical address (paging mode is enabled and any
+memory space defined by the UEFI memory map is identity mapped, hence,
+virtual address equals physical address; Unified Extensible Firmware
+Interface Specification, Version 2.6, section 2.3.4, x64 Platforms, boot
+services) of the Multiboot2 information structure provided by the boot
+loader (see section <a href="#Boot-information-format">Boot information</a>).
+</p></dd>
+</dl>
+
+<p>All other processor registers, flag bits and state are set accordingly
+to Unified Extensible Firmware Interface Specification, Version 2.6,
+section 2.3.4, x64 Platforms, boot services.
+</p>
+<p>The bootloader must not load any part of the kernel, the modules, the 
+Multiboot2
+information structure, etc. higher than 4 GiB - 1. This requirement is 
+put in
+force because most of currently specified tags supports 32-bit addresses 
+only.
+Additionally, some kernels, even if they run on EFI 64-bit platform, 
+still
+execute some parts of its initialization code in 32-bit mode.
+</p>
+<p>Note: If at some point there is a need for full 64-bit mode support in 
+Multiboot2
+protocol then it should be designed very carefully. Especially it should 
+be taken
+into account that 32-bit and 64-bit mode code should coexist in an image 
+without
+any issue. The image should have a chance to inform the bootloader that 
+it supports
+full 64-bit mode. If it is the case then the bootloader should provide 
+64-bit tags
+if it is desired and possible. Otherwise 32-bit tags should be used.
+</p>
+<hr>
+<a name="Boot-information-format"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Specification" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#EFI-amd64-machine-state-with-boot-services-enabled" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Specification" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#Boot-information-format-1" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Examples" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="Boot-information"></a>
+<h2 class="section">3.6 Boot information</h2>
+<hr>
+<a name="Boot-information-format-1"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Specification" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Boot-information-format" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Boot-information-format" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#Basic-tags-structure" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Examples" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<h3 class="subsection">3.6.1 Boot information format</h3>
+
+<p>Upon entry to the operating system, the <code>EBX</code> register contains the
+physical address of a <em>Multiboot2 information</em> data structure,
+through which the boot loader communicates vital information to the
+operating system. The operating system can use or ignore any parts of
+the structure as it chooses; all information passed by the boot loader
+is advisory only.
+</p>
+<p>The Multiboot2 information structure and its related substructures may 
+be
+placed anywhere in memory by the boot loader (with the exception of the
+memory reserved for the kernel and boot modules, of course). It is the
+operating system&rsquo;s responsibility to avoid overwriting this memory until
+it is done using it.
+</p>
+<hr>
+<a name="Basic-tags-structure"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Specification" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Boot-information-format-1" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Boot-information-format" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#Basic-memory-information" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Examples" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<h3 class="subsection">3.6.2 Basic tags structure</h3>
+<p>Boot information consists of fixed part and a series of tags. Its start 
+is 8-bytes aligned.  Fixed part is as following:
+</p><div class="example">
+<pre class="example">        +-------------------+
+u32     | total_size        |
+u32     | reserved          |
+        +-------------------+
+</pre></div>
+
+<p>&lsquo;<samp>total_size</samp>&rsquo; contains the total size of boot information including
+this field and terminating tag in bytes
+</p>
+<p>&lsquo;<samp>reserved</samp>&rsquo; is always set to zero and must be ignored by OS image
+</p>
+<p>Every tag begins with following fields:
+</p>
+<div class="example">
+<pre class="example">        +-------------------+
+u32     | type              |
+u32     | size              |
+        +-------------------+
+</pre></div>
+
+<p>&lsquo;<samp>type</samp>&rsquo; contains an identifier of contents of the rest of the tag.
+&lsquo;<samp>size</samp>&rsquo; contains the size of tag including header fields but not 
+including padding.
+Tags follow one another padded when necessary in order for each tag to 
+start at 8-bytes aligned address. Tags are terminated by a tag of type 
+&lsquo;<samp>0</samp>&rsquo; and size &lsquo;<samp>8</samp>&rsquo;.
+</p>
+<hr>
+<a name="Basic-memory-information"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Specification" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Basic-tags-structure" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Boot-information-format" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#BIOS-Boot-device" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Examples" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<h3 class="subsection">3.6.3 Basic memory information</h3>
+<div class="example">
+<pre class="example">        +-------------------+
+u32     | type = 4          |
+u32     | size = 16         |
+u32     | mem_lower         |
+u32     | mem_upper         |
+        +-------------------+
+</pre></div>
+
+<p> &lsquo;<samp>mem_lower</samp>&rsquo; and &lsquo;<samp>mem_upper</samp>&rsquo; indicate the amount of
+lower and upper memory, respectively, in kilobytes. Lower memory starts
+at address 0, and upper memory starts at address 1 megabyte. The maximum
+possible value for lower memory is 640 kilobytes. The value returned for
+upper memory is maximally the address of the first upper memory hole
+minus 1 megabyte. It is not guaranteed to be this value.
+</p>
+<p>This tag may not be provided by some boot loaders on EFI platforms if 
+EFI boot
+services are enabled and available for the loaded image (EFI boot 
+services
+not terminated tag exists in Multiboot2 information structure).
+</p>
+<hr>
+<a name="BIOS-Boot-device"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Specification" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Basic-memory-information" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Boot-information-format" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#Boot-command-line" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Examples" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<h3 class="subsection">3.6.4 BIOS Boot device</h3>
+<div class="example">
+<pre class="example">        +-------------------+
+u32     | type = 5          |
+u32     | size = 20         |
+u32     | biosdev           |
+u32     | partition         |
+u32     | sub_parition      |
+        +-------------------+
+</pre></div>
+
+<p>This tag indicates which <small>BIOS</small> disk device the boot
+loader loaded the OS image from. If the OS image was not loaded from a
+<small>BIOS</small> disk, then this tag must not be present. The operating system 
+may
+use this field as a hint for determining its own <em>root</em> device,
+but is not required to.
+</p>
+<p>The &lsquo;<samp>biosdev</samp>&rsquo; contains the <small>BIOS</small> drive number as understood by 
+the
+<small>BIOS</small> INT 0x13 low-level disk interface: e.g. 0x00 for the first
+floppy disk or 0x80 for the first hard disk.
+</p>
+<p>The three remaining bytes specify the boot partition. &lsquo;<samp>partition</samp>&rsquo;
+specifies the <em>top-level</em> partition number, &lsquo;<samp>sub_partition</samp>&rsquo; 
+specifies a
+<em>sub-partition</em> in the top-level partition, etc. Partition numbers
+always start from zero. Unused partition bytes must be set to 
+0xFFFFFFFF. For
+example, if the disk is partitioned using a simple one-level DOS
+partitioning scheme, then &lsquo;<samp>partition</samp>&rsquo; contains the DOS partition
+number, and &lsquo;<samp>sub_partition</samp>&rsquo; if 0xFFFFFF. As another
+example, if a disk is partitioned first into DOS partitions, and then
+one of those DOS partitions is subdivided into several BSD partitions
+using BSD&rsquo;s <em>disklabel</em> strategy, then &lsquo;<samp>partition</samp>&rsquo; contains the 
+DOS
+partition number and &lsquo;<samp>sub_partition</samp>&rsquo; contains the BSD sub-partition 
+within
+that DOS partition.
+</p>
+<p>DOS extended partitions are indicated as partition numbers starting from
+4 and increasing, rather than as nested sub-partitions, even though the
+underlying disk layout of extended partitions is hierarchical in
+nature. For example, if the boot loader boots from the second extended
+partition on a disk partitioned in conventional DOS style, then
+&lsquo;<samp>partition</samp>&rsquo; will be 5, and &lsquo;<samp>sub_partiton</samp>&rsquo; will be 0xFFFFFFFF.
+</p>
+
+<hr>
+<a name="Boot-command-line"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Specification" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#BIOS-Boot-device" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Boot-information-format" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#Modules" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Examples" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<h3 class="subsection">3.6.5 Boot command line</h3>
+<div class="example">
+<pre class="example">        +-------------------+
+u32     | type = 1          |
+u32     | size              |
+u8[n]   | string            |
+        +-------------------+
+</pre></div>
+
+<p>&lsquo;<samp>string</samp>&rsquo; contains command line. The command line is a normal 
+C-style 
+zero-terminated UTF-8 string.
+</p>
+<hr>
+<a name="Modules"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Specification" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Boot-command-line" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Boot-information-format" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#ELF_002dSymbols" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Examples" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<h3 class="subsection">3.6.6 Modules</h3>
+<div class="example">
+<pre class="example">        +-------------------+
+u32     | type = 3          |
+u32     | size              |
+u32     | mod_start         |
+u32     | mod_end           |
+u8[n]   | string            |   
+        +-------------------+
+</pre></div>
+
+<p>This tag indicates to the kernel what boot module was loaded along with 
+the
+kernel image, and where it can be found.
+</p>
+<p>The &lsquo;<samp>mod_start</samp>&rsquo; and &lsquo;<samp>mod_end</samp>&rsquo; contain the start and end 
+physical addresses
+of the boot module itself. The &lsquo;<samp>string</samp>&rsquo; field provides an arbitrary 
+string to
+be associated with that particular boot module; it is a zero-terminated
+UTF-8 string, just like the kernel command line. Typically the
+string might be a command line (e.g. if the operating system treats boot
+modules as executable programs), or a pathname (e.g. if the operating
+system treats boot modules as files in a file system), but its exact use
+is specific to the operating system. 
+</p>
+<p>One tag appears per module. This tag type may appear multiple times.
+</p>
+<hr>
+<a name="ELF_002dSymbols"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Specification" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Modules" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Boot-information-format" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#Memory-map" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Examples" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<h3 class="subsection">3.6.7 ELF-Symbols</h3>
+<div class="example">
+<pre class="example">        +-------------------+
+u32     | type = 9          |
+u32     | size              |
+u16     | num               |
+u16     | entsize           |
+u16     | shndx             |
+u16     | reserved          |
+varies  | section headers   |
+        +-------------------+
+</pre></div>
+
+<p>This tag contains section header table from an ELF kernel, the
+size of each entry, number of entries, and the string table used as the
+index of names. They correspond to the &lsquo;<samp>shdr_*</samp>&rsquo; entries
+(&lsquo;<samp>shdr_num</samp>&rsquo;, etc.) in the Executable and Linkable Format (<small>ELF</small>)
+specification in the program header. All sections are loaded, and the
+physical address fields of the <small>ELF</small> section header then refer to 
+where
+the sections are in memory (refer to the i386 <small>ELF</small> documentation for
+details as to how to read the section header(s)).
+</p>
+<hr>
+<a name="Memory-map"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Specification" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#ELF_002dSymbols" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Boot-information-format" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#Boot-loader-name" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Examples" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<h3 class="subsection">3.6.8 Memory map</h3>
+
+<p>This tag provides memory map.
+</p>
+<div class="example">
+<pre class="example">        +-------------------+
+u32     | type = 6          |
+u32     | size              |
+u32     | entry_size        |
+u32     | entry_version     |
+varies  | entries           |
+        +-------------------+
+</pre></div>
+
+<p>&lsquo;<samp>entry_size</samp>&rsquo; contains the size of one entry so that in future new 
+fields may be added to it. It&rsquo;s guaranteed to be a multiple of 8. 
+&lsquo;<samp>entry_version</samp>&rsquo; is currently set at &lsquo;<samp>0</samp>&rsquo;. Future versions will 
+increment this field. Future version are guranteed to be backward 
+compatible with older format. Each entry has the following structure:
+</p>
+
+<div class="example">
+<pre class="example">        +-------------------+
+u64     | base_addr         |
+u64     | length            |
+u32     | type              |
+u32     | reserved          |
+        +-------------------+
+</pre></div>
+
+<p>&lsquo;<samp>size</samp>&rsquo; contains the size of current entry including this field 
+itself. It may be bigger than 24 bytes in future versions but is 
+guaranteed to be
+&lsquo;<samp>base_addr</samp>&rsquo; is the starting physical address. &lsquo;<samp>length</samp>&rsquo; is the 
+size of the memory region in bytes.
+&lsquo;<samp>type</samp>&rsquo; is the variety of address range represented, where a
+value of 1 indicates available <small>RAM</small>, value of 3 indicates usable 
+memory
+holding ACPI information, value of 4 indicates reserved memory which 
+needs to
+be preserved on hibernation, value of 5 indicates a memory which is 
+occupied by defective RAM modules and all other values currently
+indicated a reserved area.
+&lsquo;<samp>reserved</samp>&rsquo; is set to &lsquo;<samp>0</samp>&rsquo; by bootloader and must be ignored by 
+the OS image.
+</p>
+<p>The map provided is guaranteed to list all standard <small>RAM</small> that should
+be available for normal use. This type however includes the regions 
+occupied by kernel, mbi, segments and modules. Kernel must take care not 
+to overwrite these regions.
+</p>
+<p>This tag may not be provided by some boot loaders on EFI platforms if 
+EFI boot
+services are enabled and available for the loaded image (EFI boot 
+services
+not terminated tag exists in Multiboot2 information structure).
+</p>
+<hr>
+<a name="Boot-loader-name"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Specification" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Memory-map" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Boot-information-format" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#APM-table" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Examples" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<h3 class="subsection">3.6.9 Boot loader name</h3>
+<div class="example">
+<pre class="example">        +-------------------+
+u32     | type = 2          |
+u32     | size              |
+u8[n]   | string            |
+        +-------------------+
+</pre></div>
+
+<p>&lsquo;<samp>string</samp>&rsquo; contains  the name of a boot
+loader booting the kernel. The name is a normal C-style UTF-8 
+zero-terminated
+string.
+</p>
+<hr>
+<a name="APM-table"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Specification" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Boot-loader-name" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Boot-information-format" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#VBE-info" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Examples" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<h3 class="subsection">3.6.10 APM table</h3>
+<p>The tag type 10 contains <small>APM</small> table
+</p><div class="example">
+<pre class="example">        +----------------------+
+u32     | type = 10            |
+u32     | size = 28            |
+u16     | version              |
+u16     | cseg                 |
+u32     | offset               |
+u16     | cseg_16              |
+u16     | dseg                 |
+u16     | flags                |
+u16     | cseg_len             |
+u16     | cseg_16_len          |
+u16     | dseg_len             |
+        +----------------------+
+</pre></div>
+
+<p>The fields &lsquo;<samp>version</samp>&rsquo;, &lsquo;<samp>cseg</samp>&rsquo;, &lsquo;<samp>offset</samp>&rsquo;, &lsquo;<samp>cseg_16</samp>&rsquo;,
+&lsquo;<samp>dseg</samp>&rsquo;, &lsquo;<samp>flags</samp>&rsquo;, &lsquo;<samp>cseg_len</samp>&rsquo;, &lsquo;<samp>cseg_16_len</samp>&rsquo;,
+&lsquo;<samp>dseg_len</samp>&rsquo; indicate the version number, the protected mode 32-bit
+code segment, the offset of the entry point, the protected mode 16-bit
+code segment, the protected mode 16-bit data segment, the flags, the
+length of the protected mode 32-bit code segment, the length of the
+protected mode 16-bit code segment, and the length of the protected mode
+16-bit data segment, respectively. Only the field &lsquo;<samp>offset</samp>&rsquo; is 4
+bytes, and the others are 2 bytes. See
+<a href="http://www.microsoft.com/hwdev/busbios/amp_12.htm">Advanced Power Management (APM) BIOS Interface Specification</a>, for more information.
+</p>
+<hr>
+<a name="VBE-info"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Specification" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#APM-table" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Boot-information-format" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#Framebuffer-info" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Examples" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<h3 class="subsection">3.6.11 VBE info</h3>
+<div class="example">
+<pre class="example">        +-------------------+
+u32     | type = 7          |
+u32     | size = 784        |
+u16     | vbe_mode          |
+u16     | vbe_interface_seg |
+u16     | vbe_interface_off |
+u16     | vbe_interface_len |
+u8[512] | vbe_control_info  |
+u8[256] | vbe_mode_info     |
+        +-------------------+
+</pre></div>
+
+<p>The fields &lsquo;<samp>vbe_control_info</samp>&rsquo; and &lsquo;<samp>vbe_mode_info</samp>&rsquo; contain
+<small>VBE</small> control information returned by the
+<small>VBE</small> Function 00h and <small>VBE</small> mode information returned by the
+<small>VBE</small> Function 01h, respectively.
+</p>
+<p>The field &lsquo;<samp>vbe_mode</samp>&rsquo; indicates current video mode in the format
+specified in <small>VBE</small> 3.0.
+</p>
+<p>The rest fields &lsquo;<samp>vbe_interface_seg</samp>&rsquo;, &lsquo;<samp>vbe_interface_off</samp>&rsquo;, and
+&lsquo;<samp>vbe_interface_len</samp>&rsquo; contain the table of a protected mode interface
+defined in <small>VBE</small> 2.0+. If this information is not available, those
+fields contain zero. Note that <small>VBE</small> 3.0 defines another protected
+mode interface which is incompatible with the old one. If you want to
+use the new protected mode interface, you will have to find the table
+yourself.
+</p>
+<hr>
+<a name="Framebuffer-info"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Specification" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#VBE-info" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Boot-information-format" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#EFI-32_002dbit-system-table-pointer" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Examples" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<h3 class="subsection">3.6.12 Framebuffer info</h3>
+<div class="example">
+<pre class="example">        +--------------------+
+u32     | type = 8           |
+u32     | size               |
+u64     | framebuffer_addr   |
+u32     | framebuffer_pitch  |
+u32     | framebuffer_width  |
+u32     | framebuffer_height |
+u8      | framebuffer_bpp    |
+u8      | framebuffer_type   |
+u8      | reserved           |
+varies  | color_info         |
+        +--------------------+
+</pre></div>
+
+<p>The field &lsquo;<samp>framebuffer_addr</samp>&rsquo; contains framebuffer physical address. 
+This field is 64-bit wide but bootloader <em>should</em> set it under 4GiB 
+if possible for compatibility with payloads which aren&rsquo;t aware of PAE or 
+amd64. The field &lsquo;<samp>framebuffer_pitch</samp>&rsquo; contains pitch in bytes. The 
+fields &lsquo;<samp>framebuffer_width</samp>&rsquo;, &lsquo;<samp>framebuffer_height</samp>&rsquo; contain 
+framebuffer dimensions in pixels. The field &lsquo;<samp>framebuffer_bpp</samp>&rsquo; 
+contains number of bits per pixel. &lsquo;<samp>reserved</samp>&rsquo; always contains 0 in 
+current version of specification and must be ignored by OS image. If 
+&lsquo;<samp>framebuffer_type</samp>&rsquo; is set to 0 it means indexed color. In this case 
+color_info is defined as follows:
+</p><div class="example">
+<pre class="example">        +----------------------------------+
+u32     | framebuffer_palette_num_colors   |
+varies  | framebuffer_palette              |
+        +----------------------------------+
+</pre></div>
+<p>&lsquo;<samp>framebuffer_palette</samp>&rsquo; is an array of colour descriptors.
+Each colour descriptor has following structure:
+</p><div class="example">
+<pre class="example">        +-------------+
+u8      | red_value   |
+u8      | green_value |
+u8      | blue_value  |
+        +-------------+
+</pre></div>
+<p>If &lsquo;<samp>framebuffer_type</samp>&rsquo; is set to &lsquo;<samp>1</samp>&rsquo; it means direct RGB color.
+Then color_type is defined as follows:
+</p>
+<div class="example">
+<pre class="example">       +----------------------------------+
+u8     | framebuffer_red_field_position   |
+u8     | framebuffer_red_mask_size        |
+u8     | framebuffer_green_field_position |
+u8     | framebuffer_green_mask_size      |
+u8     | framebuffer_blue_field_position  |
+u8     | framebuffer_blue_mask_size       |
+       +----------------------------------+
+</pre></div>
+
+<p>If &lsquo;<samp>framebuffer_type</samp>&rsquo; is set to &lsquo;<samp>2</samp>&rsquo; it means EGA text. In this 
+case &lsquo;<samp>framebuffer_width</samp>&rsquo; and &lsquo;<samp>framebuffer_height</samp>&rsquo; are 
+expressed in characters and not in pixels. &lsquo;<samp>framebuffer_bpp</samp>&rsquo; is 
+equal 16 (16 bits per character) and &lsquo;<samp>framebuffer_pitch</samp>&rsquo; is 
+expressed in bytes per text line.
+All further values of &lsquo;<samp>framebuffer_type</samp>&rsquo; are reserved for future 
+expansion
+</p>
+<hr>
+<a name="EFI-32_002dbit-system-table-pointer"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Specification" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Framebuffer-info" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Boot-information-format" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#EFI-64_002dbit-system-table-pointer" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Examples" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<h3 class="subsection">3.6.13 EFI 32-bit system table pointer</h3>
+<div class="example">
+<pre class="example">        +-------------------+
+u32     | type = 11         |
+u32     | size = 12         |
+u32     | pointer           |
+        +-------------------+
+</pre></div>
+
+<p>This tag contains pointer to i386 EFI system table.
+</p>
+<hr>
+<a name="EFI-64_002dbit-system-table-pointer"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Specification" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#EFI-32_002dbit-system-table-pointer" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Boot-information-format" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#SMBIOS-tables" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Examples" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<h3 class="subsection">3.6.14 EFI 64-bit system table pointer</h3>
+<div class="example">
+<pre class="example">        +-------------------+
+u32     | type = 12         |
+u32     | size = 16         |
+u64     | pointer           |
+        +-------------------+
+</pre></div>
+
+<p>This tag contains pointer to amd64 EFI system table.
+</p>
+<hr>
+<a name="SMBIOS-tables"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Specification" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#EFI-64_002dbit-system-table-pointer" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Boot-information-format" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#ACPI-old-RSDP" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Examples" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<h3 class="subsection">3.6.15 SMBIOS tables</h3>
+<div class="example">
+<pre class="example">        +-------------------+
+u32     | type = 13         |
+u32     | size              |
+u8      | major             |
+u8      | minor             |
+u8[6]   | reserved          |
+        | smbios tables     |
+        +-------------------+
+</pre></div>
+
+<p>This tag contains a copy of SMBIOS tables as well as their version.
+</p>
+<hr>
+<a name="ACPI-old-RSDP"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Specification" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#SMBIOS-tables" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Boot-information-format" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#ACPI-new-RSDP" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Examples" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<h3 class="subsection">3.6.16 ACPI old RSDP</h3>
+<div class="example">
+<pre class="example">        +-------------------+
+u32     | type = 14         |
+u32     | size              |
+        | copy of RSDPv1    |
+        +-------------------+
+</pre></div>
+
+<p>This tag contains a copy of RSDP as defined per ACPI 1.0 specification.
+</p>
+<hr>
+<a name="ACPI-new-RSDP"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Specification" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#ACPI-old-RSDP" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Boot-information-format" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#Networking-information" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Examples" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<h3 class="subsection">3.6.17 ACPI new RSDP</h3>
+<div class="example">
+<pre class="example">        +-------------------+
+u32     | type = 15         |
+u32     | size              |
+        | copy of RSDPv2    |
+        +-------------------+
+</pre></div>
+
+<p>This tag contains a copy of RSDP as defined per ACPI 2.0 or later 
+specification.
+</p>
+<hr>
+<a name="Networking-information"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Specification" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#ACPI-new-RSDP" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Boot-information-format" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#EFI-memory-map" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Examples" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<h3 class="subsection">3.6.18 Networking information</h3>
+<div class="example">
+<pre class="example">        +-------------------+
+u32     | type = 16         |
+u32     | size              |
+        | DHCP ACK          |
+        +-------------------+
+</pre></div>
+
+<p>This tag contains network information in the format specified as DHCP. 
+It may be either a real DHCP reply or just the configuration info in the 
+same format. This tag appears once per card.
+</p>
+<hr>
+<a name="EFI-memory-map"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Specification" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Networking-information" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Boot-information-format" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#EFI-boot-services-not-terminated" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Examples" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<h3 class="subsection">3.6.19 EFI memory map</h3>
+<div class="example">
+<pre class="example">        +-------------------+
+u32     | type = 17         |
+u32     | size              |
+u32     | descriptor size   |
+u32     | descriptor version|
+        | EFI memory map    |
+        +-------------------+
+</pre></div>
+
+<p>This tag contains EFI memory map as per EFI specification.
+</p>
+<p>This tag may not be provided by some boot loaders on EFI platforms if 
+EFI boot
+services are enabled and available for the loaded image (EFI boot 
+services
+not terminated tag exists in Multiboot2 information structure).
+</p>
+<hr>
+<a name="EFI-boot-services-not-terminated"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Specification" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#EFI-memory-map" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Boot-information-format" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#EFI-32_002dbit-image-handle-pointer" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Examples" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<h3 class="subsection">3.6.20 EFI boot services not terminated</h3>
+<div class="example">
+<pre class="example">        +-------------------+
+u32     | type = 18         |
+u32     | size = 8          |
+        +-------------------+
+</pre></div>
+
+<p>This tag indicates ExitBootServices wasn&rsquo;t called
+</p>
+<hr>
+<a name="EFI-32_002dbit-image-handle-pointer"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Specification" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#EFI-boot-services-not-terminated" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Boot-information-format" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#EFI-64_002dbit-image-handle-pointer" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Examples" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<h3 class="subsection">3.6.21 EFI 32-bit image handle pointer</h3>
+<div class="example">
+<pre class="example">        +-------------------+
+u32     | type = 19         |
+u32     | size = 12         |
+u32     | pointer           |
+        +-------------------+
+</pre></div>
+
+<p>This tag contains pointer to EFI i386 image handle.
+Usually it is boot loader image handle.
+</p>
+<hr>
+<a name="EFI-64_002dbit-image-handle-pointer"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Specification" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#EFI-32_002dbit-image-handle-pointer" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Boot-information-format" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#Image-load-base-physical-address" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Examples" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<h3 class="subsection">3.6.22 EFI 64-bit image handle pointer</h3>
+<div class="example">
+<pre class="example">        +-------------------+
+u32     | type = 20         |
+u32     | size = 16         |
+u64     | pointer           |
+        +-------------------+
+</pre></div>
+
+<p>This tag contains pointer to EFI amd64 image handle.
+Usually it is boot loader image handle.
+</p>
+<hr>
+<a name="Image-load-base-physical-address"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Specification" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#EFI-64_002dbit-image-handle-pointer" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Boot-information-format" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#Examples" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Examples" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<h3 class="subsection">3.6.23 Image load base physical address</h3>
+<div class="example">
+<pre class="example">        +-------------------+
+u32     | type = 21         |
+u32     | size = 12         |
+u32     | load_base_addr    |
+        +-------------------+
+</pre></div>
+
+<p>This tag contains image load base physical address. It is
+provided only if image has relocatable header tag.
+</p>
+<hr>
+<a name="Examples"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Specification" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Image-load-base-physical-address" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Top" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#C-structure-members-alignment-and-padding-consideration" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#History" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="Examples-1"></a>
+<h1 class="chapter">4 Examples</h1>
+
+<p><strong>Caution:</strong> The following items are not part of the specification
+document, but are included for prospective operating system and boot
+loader writers.
+</p>
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top"><a href="#C-structure-members-alignment-and-padding-consideration">4.1 C structure members alignment and padding consideration</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top"><a href="#Notes-on-PC">4.2 Notes on PC</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">                 
+</td></tr>
+<tr><td align="left" valign="top"><a href="#BIOS-device-mapping-techniques">4.3 BIOS device mapping techniques</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">  
+</td></tr>
+<tr><td align="left" valign="top"><a href="#Example-OS-code">4.4 Example OS code</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">             
+</td></tr>
+<tr><td align="left" valign="top"><a href="#Example-boot-loader-code">4.5 Example boot loader code</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">    
+</td></tr>
+</table>
+
+
+<hr>
+<a name="C-structure-members-alignment-and-padding-consideration"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Examples" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Examples" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Examples" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#Notes-on-PC" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#History" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="C-structure-members-alignment-and-padding-consideration-1"></a>
+<h2 class="section">4.1 C structure members alignment and padding consideration</h2>
+
+<p>It is preferred that the structures used for communication between the 
+bootloader
+and the OS image conform to chosen ABI for a given architecture. If it 
+is not
+possible then GCC &lsquo;<samp>__attribute__ ((__packed__))</samp>&rsquo; (or anything else 
+which has
+similar meaning for chosen C compiler) have to be added to relevant 
+structures
+definitions to avoid spurious, in this case, padding and alignment.
+</p>
+
+<hr>
+<a name="Notes-on-PC"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Examples" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#C-structure-members-alignment-and-padding-consideration" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Examples" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#BIOS-device-mapping-techniques" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#History" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="Notes-on-PC-1"></a>
+<h2 class="section">4.2 Notes on PC</h2>
+
+<p>In reference to bit 0 of the &lsquo;<samp>flags</samp>&rsquo; parameter in the Multiboot2
+information structure, if the bootloader in question uses older
+<small>BIOS</small> interfaces, or the newest ones are not available (see
+description about bit 6), then a maximum of either 15 or 63 megabytes of
+memory may be reported. It is <em>highly</em> recommended that boot
+loaders perform a thorough memory probe.
+</p>
+<p>In reference to bit 1 of the &lsquo;<samp>flags</samp>&rsquo; parameter in the Multiboot2
+information structure, it is recognized that determination of which
+<small>BIOS</small> drive maps to which device driver in an operating system is
+non-trivial, at best. Many kludges have been made to various operating
+systems instead of solving this problem, most of them breaking under
+many conditions. To encourage the use of general-purpose solutions to
+this problem, there are 2 <small>BIOS</small> device mapping techniques
+(see section <a href="#BIOS-device-mapping-techniques">BIOS device mapping techniques</a>). 
+</p>
+<p>In reference to bit 6 of the &lsquo;<samp>flags</samp>&rsquo; parameter in the Multiboot2
+information structure, it is important to note that the data structure
+used there (starting with &lsquo;<samp>BaseAddrLow</samp>&rsquo;) is the data returned by
+the INT 15h, AX=E820h &mdash; Query System Address Map call. See See <a href="http://www.gnu.org/software/grub/manual/grub.html#Query-System-Address-Map">Query System Address Map</a> in <cite>The GRUB Manual</cite>, for more information. The interface here is meant to allow a
+boot loader to work unmodified with any reasonable extensions of the
+<small>BIOS</small> interface, passing along any extra data to be interpreted by
+the operating system as desired.
+</p>
+
+<hr>
+<a name="BIOS-device-mapping-techniques"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Examples" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Notes-on-PC" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Examples" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#Data-comparison-technique" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#History" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="BIOS-device-mapping-techniques-1"></a>
+<h2 class="section">4.3 BIOS device mapping techniques</h2>
+
+<p>Both of these techniques should be usable from any PC operating system,
+and neither require any special support in the drivers themselves. This
+section will be flushed out into detailed explanations, particularly for
+the I/O restriction technique.
+</p>
+<p>The general rule is that the data comparison technique is the quick and
+dirty solution. It works most of the time, but doesn&rsquo;t cover all the
+bases, and is relatively simple.
+</p>
+<p>The I/O restriction technique is much more complex, but it has potential
+to solve the problem under all conditions, plus allow access of the
+remaining <small>BIOS</small> devices when not all of them have operating system
+drivers.
+</p>
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top"><a href="#Data-comparison-technique">4.3.1 Data comparison technique</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">   
+</td></tr>
+<tr><td align="left" valign="top"><a href="#I_002fO-restriction-technique">4.3.2 I/O restriction technique</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">   
+</td></tr>
+</table>
+
+
+<hr>
+<a name="Data-comparison-technique"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Examples" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#BIOS-device-mapping-techniques" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#BIOS-device-mapping-techniques" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#I_002fO-restriction-technique" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#History" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="Data-comparison-technique-1"></a>
+<h3 class="subsection">4.3.1 Data comparison technique</h3>
+
+<p>Before activating <em>any</em> of the device drivers, gather enough data
+from similar sectors on each of the disks such that each one can be
+uniquely identified.
+</p>
+<p>After activating the device drivers, compare data from the drives using
+the operating system drivers. This should hopefully be sufficient to
+provide such a mapping.
+</p>
+<p>Problems:
+</p>
+<ol>
+<li>
+The data on some <small>BIOS</small> devices might be identical (so the part
+reading the drives from the <small>BIOS</small> should have some mechanism to give
+up).
+
+</li><li>
+There might be extra drives not accessible from the <small>BIOS</small> which are
+identical to some drive used by the <small>BIOS</small> (so it should be capable
+of giving up there as well).
+</li></ol>
+
+
+<hr>
+<a name="I_002fO-restriction-technique"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Examples" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Data-comparison-technique" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#BIOS-device-mapping-techniques" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#Example-OS-code" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#History" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="I_002fO-restriction-technique-1"></a>
+<h3 class="subsection">4.3.2 I/O restriction technique</h3>
+
+<p>This first step may be unnecessary, but first create copy-on-write
+mappings for the device drivers writing into <small>PC</small> <small>RAM</small>. Keep the
+original copies for the <em>clean <small>BIOS</small> virtual machine</em> to be
+created later.
+</p>
+<p>For each device driver brought online, determine which <small>BIOS</small> devices
+become inaccessible by:
+</p>
+<ol>
+<li>
+Create a <em>clean <small>BIOS</small> virtual machine</em>.
+
+</li><li>
+Set the I/O permission map for the I/O area claimed by the device driver
+to no permissions (neither read nor write).
+
+</li><li>
+Access each device.
+
+</li><li>
+Record which devices succeed, and those which try to access the
+<em>restricted</em> I/O areas (hopefully, this will be an <em>xor</em>
+situation).
+</li></ol>
+
+<p>For each device driver, given how many of the <small>BIOS</small> devices were
+subsumed by it (there should be no gaps in this list), it should be easy
+to determine which devices on the controller these are.
+</p>
+<p>In general, you have at most 2 disks from each controller given
+<small>BIOS</small> numbers, but they pretty much always count from the lowest
+logically numbered devices on the controller.
+</p>
+
+<hr>
+<a name="Example-OS-code"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Examples" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#I_002fO-restriction-technique" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Examples" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#multiboot2_002eh" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#History" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="Example-OS-code-1"></a>
+<h2 class="section">4.4 Example OS code</h2>
+
+<p>In this distribution, the example Multiboot2 kernel &lsquo;<tt>kernel</tt>&rsquo; is
+included. The kernel just prints out the Multiboot2 information 
+structure
+on the screen, so you can make use of the kernel to test a
+Multiboot2-compliant boot loader and for reference to how to implement a
+Multiboot2 kernel. The source files can be found under the directory
+&lsquo;<tt>doc</tt>&rsquo; in the Multiboot2 source distribution.
+</p>
+<p>The kernel &lsquo;<tt>kernel</tt>&rsquo; consists of only three files: &lsquo;<tt>boot.S</tt>&rsquo;,
+&lsquo;<tt>kernel.c</tt>&rsquo; and &lsquo;<tt>multiboot2.h</tt>&rsquo;. The assembly source
+&lsquo;<tt>boot.S</tt>&rsquo; is written in GAS (see <a href="http://sourceware.org/binutils/docs/as/index.html#Top">GNU assembler</a> in <cite>The GNU assembler</cite>), and contains the Multiboot2 information structure 
+to
+comply with the specification. When a Multiboot2-compliant boot loader
+loads and execute it, it initialize the stack pointer and <code>EFLAGS</code>,
+and then call the function <code>cmain</code> defined in &lsquo;<tt>kernel.c</tt>&rsquo;. If
+<code>cmain</code> returns to the callee, then it shows a message to inform
+the user of the halt state and stops forever until you push the reset
+key. The file &lsquo;<tt>kernel.c</tt>&rsquo; contains the function <code>cmain</code>,
+which checks if the magic number passed by the boot loader is valid and
+so on, and some functions to print messages on the screen. The file
+&lsquo;<tt>multiboot2.h</tt>&rsquo; defines some macros, such as the magic number for 
+the
+Multiboot2 header, the Multiboot2 header structure and the Multiboot2
+information structure.
+</p>
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top"><a href="#multiboot2_002eh">4.4.1 multiboot2.h</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">                 
+</td></tr>
+<tr><td align="left" valign="top"><a href="#boot_002eS">4.4.2 boot.S</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">                      
+</td></tr>
+<tr><td align="left" valign="top"><a href="#kernel_002ec">4.4.3 kernel.c</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">                    
+</td></tr>
+<tr><td align="left" valign="top"><a href="#Other-Multiboot2-kernels">4.4.4 Other Multiboot2 kernels</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+</table>
+
+
+<hr>
+<a name="multiboot2_002eh"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Examples" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Example-OS-code" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Example-OS-code" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#boot_002eS" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#History" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="multiboot2_002eh-1"></a>
+<h3 class="subsection">4.4.1 multiboot2.h</h3>
+
+<p>This is the source code in the file &lsquo;<tt>multiboot2.h</tt>&rsquo;:
+</p>
+
+
+<hr>
+<a name="boot_002eS"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Examples" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#multiboot2_002eh" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Example-OS-code" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#kernel_002ec" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#History" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="boot_002eS-1"></a>
+<h3 class="subsection">4.4.2 boot.S</h3>
+
+<p>In the file &lsquo;<tt>boot.S</tt>&rsquo;:
+</p>
+
+
+<hr>
+<a name="kernel_002ec"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Examples" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#boot_002eS" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Example-OS-code" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#Other-Multiboot2-kernels" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#History" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="kernel_002ec-1"></a>
+<h3 class="subsection">4.4.3 kernel.c</h3>
+
+<p>And, in the file &lsquo;<tt>kernel.c</tt>&rsquo;:
+</p>
+
+
+<hr>
+<a name="Other-Multiboot2-kernels"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Examples" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#kernel_002ec" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Example-OS-code" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#Example-boot-loader-code" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#History" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="Other-Multiboot2-kernels-1"></a>
+<h3 class="subsection">4.4.4 Other Multiboot2 kernels</h3>
+
+<p>Other useful information should be available in Multiboot2 kernels, such
+as GNU Mach and Fiasco <a href="http://os.inf.tu-dresden.de/fiasco/">http://os.inf.tu-dresden.de/fiasco/</a>. And,
+it is worth mentioning the OSKit
+<a href="http://www.cs.utah.edu/projects/flux/oskit/">http://www.cs.utah.edu/projects/flux/oskit/</a>, which provides a
+library supporting the specification.
+</p>
+
+<hr>
+<a name="Example-boot-loader-code"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Examples" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Other-Multiboot2-kernels" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Examples" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#History" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#History" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="Example-boot-loader-code-1"></a>
+<h2 class="section">4.5 Example boot loader code</h2>
+
+<p>The GNU GRUB (see <a href="http://www.gnu.org/software/grub/manual/grub.html#Top">GRUB</a> in <cite>The GRUB manual</cite>) project
+is a Multiboot2-compliant boot loader, supporting all required and
+many optional features present in this specification. A public release 
+has
+not been made, but the test release is available from:
+</p>
+<p><a href="ftp://alpha.gnu.org/gnu/grub">ftp://alpha.gnu.org/gnu/grub</a>
+</p>
+<p>See the webpage <a href="http://www.gnu.org/software/grub/grub.html">http://www.gnu.org/software/grub/grub.html</a>, for
+more information.
+</p>
+
+<hr>
+<a name="History"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Examples" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Example-boot-loader-code" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Top" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="The-change-log-of-this-specification"></a>
+<h1 class="chapter">5 The change log of this specification</h1>
+
+<dl compact="compact">
+<dt>0.7</dt>
+<dd><ul>
+<li>
+<em>Multiboot2 Standard</em> is renamed to <em>Multiboot2 Specification</em>.
+
+</li><li>
+Graphics fields are added to Multiboot2 header.
+
+</li><li>
+BIOS drive information, BIOS configuration table, the name of a boot
+loader, APM information, and graphics information are added to 
+Multiboot2
+information.
+
+</li><li>
+Rewritten in Texinfo format.
+
+</li><li>
+Rewritten, using more strict words.
+
+</li><li>
+The maintainer changes to the GNU GRUB maintainer team
+<a href="mailto:bug-grub@gnu.org">bug-grub@gnu.org</a>, from Bryan Ford and Erich Stefan Boleyn.
+
+</li><li>
+The byte order of the &lsquo;<samp>boot_device</samp>&rsquo; in Multiboot2 information is
+reversed. This was a mistake.
+
+</li><li>
+The offset of the address fields were wrong.
+
+</li><li>
+The format is adapted to a newer Texinfo, and the version number is
+specified more explicitly in the title.
+</li></ul>
+
+</dd>
+<dt>0.6</dt>
+<dd><ul>
+<li>
+A few wording changes.
+
+</li><li>
+Header checksum.
+
+</li><li>
+Classification of machine state passed to an operating system.
+</li></ul>
+
+</dd>
+<dt>0.5</dt>
+<dd><ul>
+<li>
+Name change.
+</li></ul>
+
+</dd>
+<dt>0.4</dt>
+<dd><ul>
+<li>
+Major changes plus HTMLification.
+</li></ul>
+</dd>
+</dl>
+
+
+<hr>
+<a name="Index"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#History" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#History" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Top" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[ &gt; ]</td>
+<td valign="middle" align="left">[ &gt;&gt; ]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="Index-1"></a>
+<h1 class="unnumbered">Index</h1>
+
+
+<hr size="6">
+<a name="SEC_Contents"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<h1>Table of Contents</h1>
+
+<div class="contents">
+
+<ul class="no-bullet">
+  <li><a name="toc-Introduction-to-Multiboot2-Specification" href="#Overview">1 Introduction to Multiboot2 Specification</a>
+  <ul class="no-bullet">
+    <li><a name="toc-The-background-of-Multiboot2-Specification" href="#Motivation">1.1 The background of Multiboot2 Specification</a></li>
+    <li><a name="toc-The-target-architecture" href="#Architecture">1.2 The target architecture</a></li>
+    <li><a name="toc-The-target-operating-systems" href="#Operating-systems">1.3 The target operating systems</a></li>
+    <li><a name="toc-Boot-sources-1" href="#Boot-sources">1.4 Boot sources</a></li>
+    <li><a name="toc-Configure-an-operating-system-at-boot_002dtime" href="#Boot_002dtime-configuration">1.5 Configure an operating system at boot-time</a></li>
+    <li><a name="toc-How-to-make-OS-development-easier" href="#Convenience-to-operating-systems">1.6 How to make OS development easier</a></li>
+    <li><a name="toc-Boot-modules-1" href="#Boot-modules">1.7 Boot modules</a></li>
+  </ul></li>
+  <li><a name="toc-The-definitions-of-terms-used-through-the-specification" href="#Terminology">2 The definitions of terms used through the specification</a></li>
+  <li><a name="toc-The-exact-definitions-of-Multiboot2-Specification" href="#Specification">3 The exact definitions of Multiboot2 Specification</a>
+  <ul class="no-bullet">
+    <li><a name="toc-OS-image-format-1" href="#OS-image-format">3.1 OS image format</a>
+    <ul class="no-bullet">
+      <li><a name="toc-The-layout-of-Multiboot2-header" href="#Header-layout">3.1.1 The layout of Multiboot2 header</a></li>
+      <li><a name="toc-The-magic-fields-of-Multiboot2-header" href="#Header-magic-fields">3.1.2 The magic fields of Multiboot2 header</a></li>
+      <li><a name="toc-General-tag-structure" href="#Header-tags">3.1.3 General tag structure</a></li>
+      <li><a name="toc-Multiboot2-information-request" href="#Information-request-header-tag">3.1.4 Multiboot2 information request</a></li>
+      <li><a name="toc-The-address-tag-of-Multiboot2-header" href="#Address-header-tag">3.1.5 The address tag of Multiboot2 header</a></li>
+      <li><a name="toc-The-entry-address-tag-of-Multiboot2-header" href="#The-entry-address-tag-of-Multiboot2-header">3.1.6 The entry address tag of Multiboot2 header</a></li>
+      <li><a name="toc-EFI-i386-entry-address-tag-of-Multiboot2-header" href="#EFI-i386-entry-address-tag-of-Multiboot2-header">3.1.7 EFI i386 entry address tag of Multiboot2 header</a></li>
+      <li><a name="toc-EFI-amd64-entry-address-tag-of-Multiboot2-header" href="#EFI-amd64-entry-address-tag-of-Multiboot2-header">3.1.8 EFI amd64 entry address tag of Multiboot2 header</a></li>
+      <li><a name="toc-Flags-tag" href="#Console-header-tags">3.1.9 Flags tag</a></li>
+      <li><a name="toc-The-framebuffer-tag-of-Multiboot2-header" href="#The-framebuffer-tag-of-Multiboot2-header">3.1.10 The framebuffer tag of Multiboot2 header</a></li>
+      <li><a name="toc-Module-alignment-tag-1" href="#Module-alignment-tag">3.1.11 Module alignment tag</a></li>
+      <li><a name="toc-EFI-boot-services-tag-1" href="#EFI-boot-services-tag">3.1.12 EFI boot services tag</a></li>
+      <li><a name="toc-Relocatable-header-tag-1" href="#Relocatable-header-tag">3.1.13 Relocatable header tag</a></li>
+    </ul></li>
+    <li><a name="toc-MIPS-machine-state" href="#Machine-state">3.2 MIPS machine state</a></li>
+    <li><a name="toc-I386-machine-state" href="#I386-machine-state">3.3 I386 machine state</a></li>
+    <li><a name="toc-EFI-i386-machine-state-with-boot-services-enabled" href="#EFI-i386-machine-state-with-boot-services-enabled">3.4 EFI i386 machine state with boot services enabled</a></li>
+    <li><a name="toc-EFI-amd64-machine-state-with-boot-services-enabled" href="#EFI-amd64-machine-state-with-boot-services-enabled">3.5 EFI amd64 machine state with boot services enabled</a></li>
+    <li><a name="toc-Boot-information" href="#Boot-information-format">3.6 Boot information</a>
+    <ul class="no-bullet">
+      <li><a name="toc-Boot-information-format-1" href="#Boot-information-format-1">3.6.1 Boot information format</a></li>
+      <li><a name="toc-Basic-tags-structure" href="#Basic-tags-structure">3.6.2 Basic tags structure</a></li>
+      <li><a name="toc-Basic-memory-information" href="#Basic-memory-information">3.6.3 Basic memory information</a></li>
+      <li><a name="toc-BIOS-Boot-device" href="#BIOS-Boot-device">3.6.4 BIOS Boot device</a></li>
+      <li><a name="toc-Boot-command-line" href="#Boot-command-line">3.6.5 Boot command line</a></li>
+      <li><a name="toc-Modules" href="#Modules">3.6.6 Modules</a></li>
+      <li><a name="toc-ELF_002dSymbols" href="#ELF_002dSymbols">3.6.7 ELF-Symbols</a></li>
+      <li><a name="toc-Memory-map" href="#Memory-map">3.6.8 Memory map</a></li>
+      <li><a name="toc-Boot-loader-name" href="#Boot-loader-name">3.6.9 Boot loader name</a></li>
+      <li><a name="toc-APM-table" href="#APM-table">3.6.10 APM table</a></li>
+      <li><a name="toc-VBE-info" href="#VBE-info">3.6.11 VBE info</a></li>
+      <li><a name="toc-Framebuffer-info" href="#Framebuffer-info">3.6.12 Framebuffer info</a></li>
+      <li><a name="toc-EFI-32_002dbit-system-table-pointer" href="#EFI-32_002dbit-system-table-pointer">3.6.13 EFI 32-bit system table pointer</a></li>
+      <li><a name="toc-EFI-64_002dbit-system-table-pointer" href="#EFI-64_002dbit-system-table-pointer">3.6.14 EFI 64-bit system table pointer</a></li>
+      <li><a name="toc-SMBIOS-tables" href="#SMBIOS-tables">3.6.15 SMBIOS tables</a></li>
+      <li><a name="toc-ACPI-old-RSDP" href="#ACPI-old-RSDP">3.6.16 ACPI old RSDP</a></li>
+      <li><a name="toc-ACPI-new-RSDP" href="#ACPI-new-RSDP">3.6.17 ACPI new RSDP</a></li>
+      <li><a name="toc-Networking-information" href="#Networking-information">3.6.18 Networking information</a></li>
+      <li><a name="toc-EFI-memory-map" href="#EFI-memory-map">3.6.19 EFI memory map</a></li>
+      <li><a name="toc-EFI-boot-services-not-terminated" href="#EFI-boot-services-not-terminated">3.6.20 EFI boot services not terminated</a></li>
+      <li><a name="toc-EFI-32_002dbit-image-handle-pointer" href="#EFI-32_002dbit-image-handle-pointer">3.6.21 EFI 32-bit image handle pointer</a></li>
+      <li><a name="toc-EFI-64_002dbit-image-handle-pointer" href="#EFI-64_002dbit-image-handle-pointer">3.6.22 EFI 64-bit image handle pointer</a></li>
+      <li><a name="toc-Image-load-base-physical-address" href="#Image-load-base-physical-address">3.6.23 Image load base physical address</a></li>
+    </ul>
+</li>
+  </ul></li>
+  <li><a name="toc-Examples-1" href="#Examples">4 Examples</a>
+  <ul class="no-bullet">
+    <li><a name="toc-C-structure-members-alignment-and-padding-consideration-1" href="#C-structure-members-alignment-and-padding-consideration">4.1 C structure members alignment and padding consideration</a></li>
+    <li><a name="toc-Notes-on-PC-1" href="#Notes-on-PC">4.2 Notes on PC</a></li>
+    <li><a name="toc-BIOS-device-mapping-techniques-1" href="#BIOS-device-mapping-techniques">4.3 BIOS device mapping techniques</a>
+    <ul class="no-bullet">
+      <li><a name="toc-Data-comparison-technique-1" href="#Data-comparison-technique">4.3.1 Data comparison technique</a></li>
+      <li><a name="toc-I_002fO-restriction-technique-1" href="#I_002fO-restriction-technique">4.3.2 I/O restriction technique</a></li>
+    </ul></li>
+    <li><a name="toc-Example-OS-code-1" href="#Example-OS-code">4.4 Example OS code</a>
+    <ul class="no-bullet">
+      <li><a name="toc-multiboot2_002eh-1" href="#multiboot2_002eh">4.4.1 multiboot2.h</a></li>
+      <li><a name="toc-boot_002eS-1" href="#boot_002eS">4.4.2 boot.S</a></li>
+      <li><a name="toc-kernel_002ec-1" href="#kernel_002ec">4.4.3 kernel.c</a></li>
+      <li><a name="toc-Other-Multiboot2-kernels-1" href="#Other-Multiboot2-kernels">4.4.4 Other Multiboot2 kernels</a></li>
+    </ul></li>
+    <li><a name="toc-Example-boot-loader-code-1" href="#Example-boot-loader-code">4.5 Example boot loader code</a></li>
+  </ul></li>
+  <li><a name="toc-The-change-log-of-this-specification" href="#History">5 The change log of this specification</a></li>
+  <li><a name="toc-Index-1" href="#Index">Index</a></li>
+</ul>
+</div>
+<hr>
+<a name="SEC_About"></a>
+<table class="header" cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="#Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<h1>About This Document</h1>
+
+<p>
+  This document was generated on <i>August 24, 2017</i> using <a href="http://www.nongnu.org/texi2html/"><i>texi2html 5.0</i></a>.
+</p>
+<p>
+  The buttons in the navigation panels have the following meaning:
+</p>
+<table border="1">
+  <tr>
+    <th> Button </th>
+    <th> Name </th>
+    <th> Go to </th>
+    <th> From 1.2.3 go to</th>
+  </tr>
+  <tr>
+    <td align="center"> [ &lt;&lt; ] </td>
+    <td align="center">FastBack</td>
+    <td>Beginning of this chapter or previous chapter</td>
+    <td>1</td>
+  </tr>
+  <tr>
+    <td align="center"> [ &lt; ] </td>
+    <td align="center">Back</td>
+    <td>Previous section in reading order</td>
+    <td>1.2.2</td>
+  </tr>
+  <tr>
+    <td align="center"> [ Up ] </td>
+    <td align="center">Up</td>
+    <td>Up section</td>
+    <td>1.2</td>
+  </tr>
+  <tr>
+    <td align="center"> [ &gt; ] </td>
+    <td align="center">Forward</td>
+    <td>Next section in reading order</td>
+    <td>1.2.4</td>
+  </tr>
+  <tr>
+    <td align="center"> [ &gt;&gt; ] </td>
+    <td align="center">FastForward</td>
+    <td>Next chapter</td>
+    <td>2</td>
+  </tr>
+  <tr>
+    <td align="center"> [Top] </td>
+    <td align="center">Top</td>
+    <td>Cover (top) of document</td>
+    <td> &nbsp; </td>
+  </tr>
+  <tr>
+    <td align="center"> [Contents] </td>
+    <td align="center">Contents</td>
+    <td>Table of contents</td>
+    <td> &nbsp; </td>
+  </tr>
+  <tr>
+    <td align="center"> [Index] </td>
+    <td align="center">Index</td>
+    <td>Index</td>
+    <td> &nbsp; </td>
+  </tr>
+  <tr>
+    <td align="center"> [ ? ] </td>
+    <td align="center">About</td>
+    <td>About (help)</td>
+    <td> &nbsp; </td>
+  </tr>
+</table>
+
+<p>
+  where the <strong> Example </strong> assumes that the current position is at <strong> Subsubsection One-Two-Three </strong> of a document of the following structure:
+</p>
+
+<ul>
+  <li> 1. Section One
+    <ul>
+      <li>1.1 Subsection One-One
+        <ul>
+          <li>...</li>
+        </ul>
+      </li>
+      <li>1.2 Subsection One-Two
+        <ul>
+          <li>1.2.1 Subsubsection One-Two-One</li>
+          <li>1.2.2 Subsubsection One-Two-Two</li>
+          <li>1.2.3 Subsubsection One-Two-Three &nbsp; &nbsp;
+            <strong>&lt;== Current Position </strong></li>
+          <li>1.2.4 Subsubsection One-Two-Four</li>
+        </ul>
+      </li>
+      <li>1.3 Subsection One-Three
+        <ul>
+          <li>...</li>
+        </ul>
+      </li>
+      <li>1.4 Subsection One-Four</li>
+    </ul>
+  </li>
+</ul>
+
+<hr>
+<p>
+ <font size="-1">
+  This document was generated on <i>August 24, 2017</i> using <a href="http://www.nongnu.org/texi2html/"><i>texi2html 5.0</i></a>.
+ </font>
+ <br>
+
+</p>
+</body>
+</html>

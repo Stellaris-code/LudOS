@@ -33,11 +33,11 @@ SOFTWARE.
 
 void FPU::init()
 {
-    log("Initializing FPU...");
+    log("Initializing FPU...\n");
 
     if (!check_cpuid() && !check_fpu_presence())
     {
-        panic("No FPU found !");
+        panic("No FPU found !\n");
     }
 
     setup_fpu();

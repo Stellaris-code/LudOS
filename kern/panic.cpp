@@ -22,3 +22,33 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
+
+#include "panic.hpp"
+
+#include <stdio.h>
+#include <stdarg.h>
+
+#include "terminal/terminal.hpp"
+
+#include "i686/pc/devices/speaker.hpp"
+#include "i686/pc/interrupts.hpp"
+
+#include "halt.hpp"
+
+[[noreturn]]
+void panic(const char *fmt, ...)
+{
+    Terminal::set_color(VGA_COLOR_RED);
+
+    //Speaker::beep(300);
+
+    cli();
+
+    puts("\nKERNEL PANIC : ");
+
+    va_list va;
+    va_start(va, fmt);
+    tfp_format(nullptr, [](void*, char c){putchar(c);}, fmt, va);
+    va_end(va);
+    halt();
+}

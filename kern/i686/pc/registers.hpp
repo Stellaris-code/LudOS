@@ -27,6 +27,9 @@ SOFTWARE.
 
 #include "utils/stdint.h"
 
+#include "halt.hpp"
+#include <stdio.h>
+
 struct registers
 {
     // Pushed by the interrupt request/routine handler
@@ -54,5 +57,52 @@ struct registers
     uint32_t esp;
     uint32_t ss;
 } __attribute__((packed));
+
+inline uint32_t cr0()
+{
+    uint32_t out;
+    asm volatile("mov %%cr0, %[var]" : [var] "=r" (out));
+    return out;
+}
+inline uint32_t cr2()
+{
+    uint32_t out;
+    asm volatile("mov %%cr2, %[var]" : [var] "=r" (out));
+    return out;
+}
+inline uint32_t cr3()
+{
+    uint32_t out;
+    asm volatile("mov %%cr3, %[var]" : [var] "=r" (out));
+    return out;
+}
+inline uint32_t cr4()
+{
+    uint32_t out;
+    asm volatile("mov %%cr4, %[var]" : [var] "=r" (out));
+    return out;
+}
+
+
+inline void dump(const registers* regs)
+{
+
+    printf("eip : 0x%x\n", regs->eip);
+
+    printf("eax : 0x%x  ebx : 0x%x\n", regs->eax, regs->ebx);
+
+    printf("ecx : 0x%x  edx : 0x%x\n", regs->ecx, regs->edx);
+    printf("ebx : 0x%x  esi : 0x%x\n", regs->ebp, regs->esi);
+    printf("edi : 0x%x\n\n", regs->edi);
+
+    printf("cr0 : 0x%x  cr2 : 0x%x\n", cr0(), cr2());
+    printf("cr3 : 0x%x  cr4 : 0x%x\n\n", cr3(), cr4());
+
+    printf("gs : 0x%x  fs : 0x%x\n", regs->gs, regs->fs);
+    printf("es : 0x%x  ds : 0x%x\n\n", regs->es, regs->ds);
+
+    printf("cs : 0x%x  eflags : 0x%x\n", regs->cs, regs->eflags);
+    printf("ss : 0x%x  esp : 0x%x\n", regs->ss, regs->esp);
+}
 
 #endif // REGISTERS_HPP

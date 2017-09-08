@@ -7,6 +7,8 @@ extern end_ctors                        ; of the respective
 extern start_dtors                      ; ctors and dtors section,
 extern end_dtors                        ; declared by the linker script
 
+global BootPageDirectory
+
 KERNEL_VIRTUAL_BASE equ 0xE0000000                  ; 3.5GB
 KERNEL_PAGE_NUMBER equ (KERNEL_VIRTUAL_BASE >> 22)
 
@@ -34,34 +36,34 @@ STACKSIZE equ 0x4000                    ; that's 16k.
 _start:
     ; NOTE: Until paging is set up, the code must be position-independent and use physical
     ; addresses, not virtual ones!
-    mov ecx, (BootPageDirectory - KERNEL_VIRTUAL_BASE)
-    mov cr3, ecx                                        ; Load Page Directory Base Register.
+    ;mov ecx, (BootPageDirectory - KERNEL_VIRTUAL_BASE)
+    ;mov cr3, ecx                                        ; Load Page Directory Base Register.
 
-    mov ecx, cr4
-    or ecx, 0x00000010                          ; Set PSE bit in CR4 to enable 4MB pages.
-    mov cr4, ecx
+    ;mov ecx, cr4
+    ;or ecx, 0x00000010                          ; Set PSE bit in CR4 to enable 4MB pages.
+    ;mov cr4, ecx
 
-    mov ecx, cr0
-    or ecx, 0x80000000                          ; Set PG bit in CR0 to enable paging.
-    mov cr0, ecx
+    ;mov ecx, cr0
+    ;or ecx, 0x80000000                          ; Set PG bit in CR0 to enable paging.
+    ;mov cr0, ecx
 
     ; Start fetching instructions in kernel space.
     ; Since eip at this point holds the physical address of this command (approximately 0x00100000)
     ; we need to do a long jump to the correct virtual address of StartInHigherHalf which is
-    ; approximately 0xC0100000.
-    lea ecx, [higher_half_start]
-    jmp ecx                                                     ; NOTE: Must be absolute jump!
+    ; approximately 0xE0100000.
+    ;lea ecx, [higher_half_start]
+    ;jmp ecx                                                     ; NOTE: Must be absolute jump!
 
 higher_half_start:
     ; Unmap the identity-mapped first 4MB of physical address space. It should not be needed
     ; anymore.
-    mov dword [BootPageDirectory], 0
-    invlpg [0]
+    ;mov dword [BootPageDirectory], 0
+    ;invlpg [0]
 
     mov  esp, stack + STACKSIZE         ; set up the stack
 
     mov [magic], eax
-    add ebx, KERNEL_VIRTUAL_BASE ; make the address virtual
+    ;add ebx, KERNEL_VIRTUAL_BASE ; make the address virtual
     mov [mbd_info], ebx
 
     mov  ebx, start_ctors               ; call the constructors

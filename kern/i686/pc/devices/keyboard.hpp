@@ -71,7 +71,10 @@ private:
 
 public:
     static inline void (*handle_char)(uint8_t); // callback
-    static inline void (*kbd_event)(Event);
+    static inline void (*kbd_event)(const Event&);
+
+    typedef bool(*key_handler)(const Event&); // if return false : skip handling
+    static inline key_handler handlers[256];
 
     static inline bool lshift { false };
     static inline bool rshift { false };

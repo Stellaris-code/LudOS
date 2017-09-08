@@ -25,4 +25,46 @@ SOFTWARE.
 #ifndef PAGING_HPP
 #define PAGING_HPP
 
+#include "utils/stdint.h"
+
+/* Design :
+ * pour chaque bloc de mémoire libre de meminfo :
+ * au début : un bitmap de taille (chunk.size()/page_size/8)
+ *
+ */
+
+struct multiboot_mmap_entry;
+typedef struct multiboot_mmap_entry multiboot_memory_map_t;
+
+class Paging
+{
+public:
+    static void init();
+
+    static uint8_t *alloc_page_frame(size_t number = 1);
+
+    static bool release_page_frame(uintptr_t p_addr, size_t number = 1);
+
+
+public:
+    //static constexpr uint32_t ram_maxpage { 0x10000 };
+    static constexpr uint32_t page_size { 0x1000 };
+
+private:
+    static constexpr uintptr_t page(uintptr_t ptr)
+    {
+        return ptr >> 12;
+    }
+
+    static void set_page_frame_used(uint32_t page)
+    {
+        //mem_bitmap[page/8] |= (1 << (page%8));
+    }
+
+    static void init_memchunks();
+    static void init_memchunk(multiboot_memory_map_t* chunk);
+private:
+    //static inline uint8_t mem_bitmap[ram_maxpage / 8];
+};
+
 #endif // PAGING_HPP

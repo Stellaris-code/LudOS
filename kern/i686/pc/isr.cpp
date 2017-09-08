@@ -38,8 +38,9 @@ isr::isr_t handlers[256] { nullptr };
 extern "C"
 const registers* isr_handler(const registers* const regs)
 {
+    dump(regs);
     panic("Unhandeld interrupt 0x%x with error code 0x%x at %p\n"
-          "edx : 0x%x\n", regs->int_no, regs->err_code, regs->eip, regs->edx);
+          "edx : 0x%x\ncr2 : 0x%x", regs->int_no, regs->err_code, regs->eip, regs->edx, cr2());
     // handle here
 
     return regs;

@@ -25,32 +25,7 @@ SOFTWARE.
 #ifndef PANIC_HPP
 #define PANIC_HPP
 
-#include <stdio.h>
-#include <stdarg.h>
-
-#include "terminal/terminal.hpp"
-
-#include "i686/pc/devices/speaker.hpp"
-#include "i686/pc/interrupts.hpp"
-
-#include "halt.hpp"
-
 [[noreturn]]
-inline void panic(const char* __restrict fmt, ...)
-{
-    Terminal::set_color(VGA_COLOR_RED);
-
-    //Speaker::beep(300);
-
-    cli();
-
-    puts("\nKERNEL PANIC : ");
-
-    va_list va;
-    va_start(va, fmt);
-    tfp_format(nullptr, [](void*, char c){putchar(c);}, fmt, va);
-    va_end(va);
-    halt();
-}
+void panic(const char* __restrict fmt, ...);
 
 #endif // PANIC_HPP

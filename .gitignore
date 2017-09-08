@@ -6,12 +6,25 @@ build/
 
 !build/bin/LudOS.bin 
 
+CMakeCache.txt
+CMakeLists.txt.user
+CMakeFiles
+CMakeScripts
+Testing
+Makefile
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+CTestTestfile.cmake
+
 *~
 *.autosave
 *.a
 *.core
 *.moc
 *.o
+*.texinfo
+*.dmp
 *.obj
 *.orig
 *.rej

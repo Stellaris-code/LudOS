@@ -4,8 +4,7 @@
 
 build/
 
-!LudOS.bin 
-!*/
+!build/bin/LudOS.bin 
 
 *~
 *.autosave

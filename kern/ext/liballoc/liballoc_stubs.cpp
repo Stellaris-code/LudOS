@@ -47,11 +47,11 @@ int liballoc_unlock()
 
 void* liballoc_alloc(size_t pages)
 {
-    //return Paging::alloc_page_frame(pages);
+    return (void*)Paging::alloc_page_frame(pages);
 }
 
 int liballoc_free(void* ptr, size_t pages)
 {
-    //return Paging::release_page_frame((uintptr_t)ptr, pages);
+    return Paging::release_page_frame((uintptr_t)ptr, pages);
 }
 }

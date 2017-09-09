@@ -77,7 +77,7 @@ multiboot_memory_map_t *Meminfo::frame(size_t idx)
         {
             if (counter == idx)
             {
-            return mmap;
+                return mmap;
             }
             ++counter;
         }

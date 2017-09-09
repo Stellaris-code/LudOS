@@ -71,6 +71,10 @@ protected:
 template <size_t Size, typename IntType = uint64_t>
 class bitarray : public bitarray_base
 {
+public:
+    static constexpr size_t array_size = Size;
+    using int_type = IntType;
+
 private:
     static constexpr size_t numvals = ((Size + sizeof(IntType)*CHAR_BIT-1) / (sizeof(IntType)*CHAR_BIT));
 public:

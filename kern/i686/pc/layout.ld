@@ -55,12 +55,10 @@ SECTIONS
     kernel_physical_end = .;
 
     . = ALIGN(0x1000);
-    page_directory = .;
-    page_table_0 = page_directory + 0x1000;
 
     /DISCARD/ :
     {
         *(.comment)
-/*        *(.eh_frame)  discard this, unless you are implementing runtime support for C++ exceptions. */
+/*        *(.eh_frame) */
     }
 }

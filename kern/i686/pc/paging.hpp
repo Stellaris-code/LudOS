@@ -27,6 +27,9 @@ SOFTWARE.
 
 #include <stdint.h>
 
+#include "utils/bitarray.hpp"
+
+// OBSOLETE
 /* Design :
  * pour chaque bloc de mémoire libre de meminfo :
  * au début : un bitmap de taille (chunk.size()/page_size/8)
@@ -41,13 +44,12 @@ class Paging
 public:
     static void init();
 
-    static uint8_t *alloc_page_frame(size_t number = 1);
+    static uintptr_t alloc_page_frame(size_t number = 1);
 
     static bool release_page_frame(uintptr_t p_addr, size_t number = 1);
 
-
 public:
-    //static constexpr uint32_t ram_maxpage { 0x10000 };
+    static constexpr uint32_t ram_maxpage { 0x10000 };
     static constexpr uint32_t page_size { 0x1000 };
 
 private:
@@ -56,15 +58,10 @@ private:
         return ptr >> 12;
     }
 
-    static void set_page_frame_used(uint32_t page)
-    {
-        //mem_bitmap[page/8] |= (1 << (page%8));
-    }
+    static void init_mem_bitmap();
 
-    static void init_memchunks();
-    static void init_memchunk(multiboot_memory_map_t* chunk);
 private:
-    //static inline uint8_t mem_bitmap[ram_maxpage / 8];
+    static inline bitarray<ram_maxpage, uint32_t> mem_bitmap; // 0 = free / 1 = used
 };
 
 #endif // PAGING_HPP

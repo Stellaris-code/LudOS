@@ -29,12 +29,18 @@ SOFTWARE.
 #include <stdarg.h>
 
 #include "../kern/utils/logging.hpp"
-
-#define assert(cond) impl_assert(cond, #cond, __FILE__, __LINE__, __FUNCTION__)
-#define assert_msg(cond, msg, ...) impl_assert(cond, #cond, __FILE__, __LINE__, __FUNCTION__); \
-                                   err("Reason : '" msg "'\n", __VA_ARGS__)
+#include "panic.hpp"
 
 void err(const char * __restrict fmt, ...);
+
+#ifndef NDEBUG
+#define error_impl panic
+#elif
+#define error_impl err
+#endif
+//"Reason : '" msg "'\n"
+#define assert(cond) impl_assert(cond, #cond, __FILE__, __LINE__, __FUNCTION__)
+#define assert_msg(cond, fmt, ...) impl_assert_msg(cond, #cond, __FILE__, __LINE__, __FUNCTION__, fmt, ##__VA_ARGS__);
 
 extern "C"
 {
@@ -43,7 +49,21 @@ inline void impl_assert(bool cond, const char* strcond, const char* file, size_t
 {
     if (!cond)
     {
-        err("Assert in file '%s', '%s', line %d : cond '%s' is false\n", file, fun, line, strcond);
+        error_impl("Assert in file '%s', '%s', line %d : cond '%s' is false\n", file, fun, line, strcond);
+    }
+}
+inline void impl_assert_msg(bool cond, const char* strcond, const char* file, size_t line, const char* fun, const char* fmt, ...)
+{
+    if (!cond)
+    {
+        char* msg;
+
+        va_list va;
+        va_start(va, fmt);
+        vsprintf(msg, fmt, va);
+        va_end(va);
+
+        error_impl("Assert in file '%s', '%s', line %d : cond '%s' is false\nReason : '%s'\n", file, fun, line, strcond, msg);
     }
 }
 

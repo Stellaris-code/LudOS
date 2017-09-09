@@ -25,7 +25,7 @@ SOFTWARE.
 #ifndef TERMINAL_HPP
 #define TERMINAL_HPP
 
-#include "utils/stdint.h"
+#include <stdint.h>
 #include "utils/addr.hpp"
 #include "vga.hpp"
 

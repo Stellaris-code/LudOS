@@ -25,7 +25,7 @@ SOFTWARE.
 #ifndef IDT_HPP
 #define IDT_HPP
 
-#include "utils/stdint.h"
+#include <stdint.h>
 
 extern "C"
 void idt_flush(uint32_t addr);

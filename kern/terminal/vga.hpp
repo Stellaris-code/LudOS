@@ -25,7 +25,7 @@ SOFTWARE.
 #ifndef VGA_HPP
 #define VGA_HPP
 
-#include "utils/stdint.h"
+#include <stdint.h>
 
 
 /* Hardware text mode color constants. */

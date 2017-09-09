@@ -25,7 +25,7 @@ SOFTWARE.
 #ifndef REGISTERS_HPP
 #define REGISTERS_HPP
 
-#include "utils/stdint.h"
+#include <stdint.h>
 
 #include "halt.hpp"
 #include <stdio.h>

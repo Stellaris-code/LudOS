@@ -25,7 +25,7 @@ SOFTWARE.
 #ifndef PAGING_HPP
 #define PAGING_HPP
 
-#include "utils/stdint.h"
+#include <stdint.h>
 
 /* Design :
  * pour chaque bloc de mémoire libre de meminfo :

@@ -30,7 +30,7 @@ extern "C" {
 #endif
 
 
-#include "utils/stdint.h"
+#include <stdint.h>
 
 int64_t itoa(int64_t value, char *sp, int radix);
 char *  ftoa(double f, char * buf, int precision);

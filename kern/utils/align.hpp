@@ -25,7 +25,7 @@ SOFTWARE.
 #ifndef ALIGN_HPP
 #define ALIGN_HPP
 
-#include "utils/stdint.h"
+#include <stdint.h>
 
 template <typename Ptr = void*>
 inline Ptr aligned(Ptr ptr, size_t alignement)

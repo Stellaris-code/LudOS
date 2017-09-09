@@ -1,7 +1,7 @@
 /*
-qtcreatorstdint.hpp
+assert.h
 
-Copyright (c) 22 Yann BOUCHER (yann)
+Copyright (c) 09 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,25 +22,31 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef STDINT_HPP
-#define STDINT_HPP
+#ifndef ASSERT_H
+#define ASSERT_H
 
-#ifdef CODE_MODEL_PASS // Aliases for Qt Creator IDE
-#error Only for clang code model pass !
-typedef unsigned char uint8_t;
-typedef char int8_t;
-typedef unsigned short uint16_t;
-typedef short int16_t;
-typedef unsigned int uint32_t;
-typedef int int32_t;
-typedef unsigned long uint64_t;
-typedef long int64_t;
-typedef uint64_t size_t;
-typedef int32_t intptr_t;
-typedef uint32_t uintptr_t;
-#else
 #include <stdint.h>
-#include <stddef.h>
-#endif
+#include <stdarg.h>
 
-#endif // STDINT_HPP
+#include "../kern/utils/logging.hpp"
+
+#define assert(cond) impl_assert(cond, #cond, __FILE__, __LINE__, __FUNCTION__)
+#define assert_msg(cond, msg, ...) impl_assert(cond, #cond, __FILE__, __LINE__, __FUNCTION__); \
+                                   err("Reason : '" msg "'\n", __VA_ARGS__)
+
+void err(const char * __restrict fmt, ...);
+
+extern "C"
+{
+
+inline void impl_assert(bool cond, const char* strcond, const char* file, size_t line, const char* fun)
+{
+    if (!cond)
+    {
+        err("Assert in file '%s', '%s', line %d : cond '%s' is false\n", file, fun, line, strcond);
+    }
+}
+
+}
+
+#endif // ASSERT_H

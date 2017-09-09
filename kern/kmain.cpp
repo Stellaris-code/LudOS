@@ -25,8 +25,13 @@ SOFTWARE.
 
 // TODO : Paging
 // TODO : revoir terminal pour utiliser un init()
+// TODO : APM
 // TODO : ACPI
+// TODO : disque
+// TODO : ext2
 // TODO : scrolling terminal char par char
+// TODO : system calls
+// TODO : user mode
 // TODO : POC calculatrice
 
 #ifndef __cplusplus
@@ -52,6 +57,7 @@ SOFTWARE.
 #include "i686/pc/paging.hpp"
 
 #include "utils/addr.hpp"
+#include "utils/bitarray.hpp"
 
 #include "timer.hpp"
 

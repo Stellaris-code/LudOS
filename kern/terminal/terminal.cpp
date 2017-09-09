@@ -145,7 +145,7 @@ void detail::TerminalImpl::show_history(int page)
 {
     if (page < 0) page = 0;
 
-    if (page > history.size() - vga_height)
+    if ((size_t)page > history.size() - vga_height)
     {
         page = history.size() - vga_height; // avoir un plafond, une limite
     }

@@ -29,7 +29,7 @@ SOFTWARE.
 
 #include <stddef.h>
 
-#include "utils/stdint.h"
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {

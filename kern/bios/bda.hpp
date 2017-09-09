@@ -25,7 +25,7 @@ SOFTWARE.
 #ifndef BDA_HPP
 #define BDA_HPP
 
-#include "utils/stdint.h"
+#include <stdint.h>
 
 namespace BDA
 {

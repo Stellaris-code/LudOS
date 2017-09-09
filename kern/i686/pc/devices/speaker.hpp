@@ -25,7 +25,7 @@ SOFTWARE.
 #ifndef SPEAKER_HPP
 #define SPEAKER_HPP
 
-#include "utils/stdint.h"
+#include <stdint.h>
 
 class Speaker
 {

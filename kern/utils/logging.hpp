@@ -32,42 +32,10 @@ SOFTWARE.
 
 #include "i686/pc/timestamp.hpp"
 
-inline void log(const char * __restrict fmt, ...)
-{
-    printf("[%f] ", uptime());
+void log(const char * __restrict fmt, ...);
 
-    va_list va;
-    va_start(va, fmt);
-    tfp_format(nullptr, [](void*, char c){putchar(c);}, fmt, va);
-    va_end(va);
-}
+void warn(const char * __restrict fmt, ...);
 
-inline void warn(const char * __restrict fmt, ...)
-{
-    Terminal::push_color(VGA_COLOR_LIGHT_RED);
-
-    printf("[%f] ", uptime());
-
-    va_list va;
-    va_start(va, fmt);
-    tfp_format(nullptr, [](void*, char c){putchar(c);}, fmt, va);
-    va_end(va);
-
-    Terminal::pop_color();
-}
-
-inline void err(const char * __restrict fmt, ...)
-{
-    Terminal::push_color(VGA_COLOR_RED);
-
-    printf("[%f] ", uptime());
-
-    va_list va;
-    va_start(va, fmt);
-    tfp_format(nullptr, [](void*, char c){putchar(c);}, fmt, va);
-    va_end(va);
-
-    Terminal::pop_color();
-}
+void err(const char * __restrict fmt, ...);
 
 #endif // LOGGING_HPP

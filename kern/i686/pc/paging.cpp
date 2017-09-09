@@ -25,7 +25,7 @@ SOFTWARE.
 
 #include "paging.hpp"
 
-#include "utils/stdint.h"
+#include <stdint.h>
 #include "utils/addr.hpp"
 
 #include "halt.hpp"

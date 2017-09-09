@@ -27,7 +27,7 @@ SOFTWARE.
 
 #include "i686/pc/paging.hpp"
 
-#include "utils/stdint.h"
+#include <stdint.h>
 
 DECLARE_LOCK(liballoc_lock);
 

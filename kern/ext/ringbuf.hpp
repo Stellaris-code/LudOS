@@ -25,12 +25,12 @@ SOFTWARE.
 #ifndef RINGBUF_HPP
 #define RINGBUF_HPP
 
-#include "utils/stdint.h"
 #include "utils/array.hpp"
 #include "utils/swap.hpp"
-#include "panic.hpp"
 
+#include <stdint.h>
 #include <string.h>
+#include <assert.h>
 
 template <typename T, size_t Size>
 class CircularBuffer
@@ -89,19 +89,13 @@ CircularBuffer<T, Size>::operator[](size_type index) const
 {
     if (_full)
     {
-        if (index >= size())
-        {
-            panic("Invalid access of circular buffer %p at index %d !", this, index);
-        }
+        assert_msg(index < size(), "Invalid access of circular buffer %p at index %d !", this, index);
 
         return _buffer[(_front + index) % size()];
     }
     else
     {
-        if (index >= _front)
-        {
-            panic("Invalid access of circular buffer %p at index %d with _front %d !", this, index, _front);
-        }
+        assert_msg(index < size(), "Invalid access of circular buffer %p at index %d with _front %d !", this, index, _front);
         return _buffer[index];
     }
 }

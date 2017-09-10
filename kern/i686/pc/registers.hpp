@@ -86,23 +86,22 @@ inline uint32_t cr4()
 
 inline void dump(const registers* regs)
 {
+    printf("eip : 0x%x\n", static_cast<unsigned int>(regs->eip));
 
-    printf("eip : 0x%x\n", regs->eip);
+    printf("eax : 0x%x  ebx : 0x%x\n", static_cast<unsigned int>(regs->eax), static_cast<unsigned int>(regs->ebx));
 
-    printf("eax : 0x%x  ebx : 0x%x\n", regs->eax, regs->ebx);
+    printf("ecx : 0x%x  edx : 0x%x\n", static_cast<unsigned int>(regs->ecx), static_cast<unsigned int>(regs->edx));
+    printf("ebx : 0x%x  esi : 0x%x\n", static_cast<unsigned int>(regs->ebp), static_cast<unsigned int>(regs->esi));
+    printf("edi : 0x%x\n\n", static_cast<unsigned int>(regs->edi));
 
-    printf("ecx : 0x%x  edx : 0x%x\n", regs->ecx, regs->edx);
-    printf("ebx : 0x%x  esi : 0x%x\n", regs->ebp, regs->esi);
-    printf("edi : 0x%x\n\n", regs->edi);
+    printf("cr0 : 0x%x  cr2 : 0x%x\n", static_cast<unsigned int>(cr0()), static_cast<unsigned int>(cr2()));
+    printf("cr3 : 0x%x  cr4 : 0x%x\n\n", static_cast<unsigned int>(cr3()), static_cast<unsigned int>(cr4()));
 
-    printf("cr0 : 0x%x  cr2 : 0x%x\n", cr0(), cr2());
-    printf("cr3 : 0x%x  cr4 : 0x%x\n\n", cr3(), cr4());
+    printf("gs : 0x%x  fs : 0x%x\n", static_cast<unsigned int>(regs->gs), static_cast<unsigned int>(regs->fs));
+    printf("es : 0x%x  ds : 0x%x\n\n", static_cast<unsigned int>(regs->es), static_cast<unsigned int>(regs->ds));
 
-    printf("gs : 0x%x  fs : 0x%x\n", regs->gs, regs->fs);
-    printf("es : 0x%x  ds : 0x%x\n\n", regs->es, regs->ds);
-
-    printf("cs : 0x%x  eflags : 0x%x\n", regs->cs, regs->eflags);
-    printf("ss : 0x%x  esp : 0x%x\n", regs->ss, regs->esp);
+    printf("cs : 0x%x  eflags : 0x%x\n", static_cast<unsigned int>(regs->cs), static_cast<unsigned int>(regs->eflags));
+    printf("ss : 0x%x  esp : 0x%x\n", static_cast<unsigned int>(regs->ss), static_cast<unsigned int>(regs->esp));
 }
 
 #endif // REGISTERS_HPP

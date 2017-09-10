@@ -99,14 +99,6 @@ void kmain(uint32_t magic, const multiboot_info_t* mbd_info)
 
     greet();
 
-    uint8_t* ptr = (uint8_t*)kmalloc(200*1000*1000);
-
-    liballoc_dump();
-
-    kfree(ptr);
-
-    liballoc_dump();
-
     while (1)
     {
         NOP();

@@ -388,6 +388,11 @@ void tfp_format(void *putp, putcf putf, const char *fmt, va_list va)
                 lng = 2;
 # endif
 #endif
+#ifndef __cplusplus
+                __attribute__((fallthrough));
+#else
+            [[fallthrough]];
+#endif
             case 'x':
             case 'X':
                 p.base = 16;

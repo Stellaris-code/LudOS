@@ -31,7 +31,7 @@ SOFTWARE.
 static inline const char *dmi_processor_family(uint32_t type)
 {
         struct {
-                int value;
+                uint32_t value;
                 const char *name;
         } family2[] = {
                 { 0x01, "Other" },

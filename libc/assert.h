@@ -56,11 +56,11 @@ inline void impl_assert_msg(bool cond, const char* strcond, const char* file, si
 {
     if (!cond)
     {
-        char* msg;
+        char msg[512];
 
         va_list va;
         va_start(va, fmt);
-        vsprintf(msg, fmt, va);
+        vsnprintf(msg, sizeof(msg), fmt, va);
         va_end(va);
 
         error_impl("Assert in file '%s', '%s', line %d : cond '%s' is false\nReason : '%s'\n", file, fun, line, strcond, msg);

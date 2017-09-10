@@ -1,5 +1,8 @@
 #include "liballoc.h"
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat"
+
 /**  Durand's Amazing Super Duper Memory functions.  */
 
 #ifndef NDEBUG
@@ -119,9 +122,9 @@ static void *liballoc_memset(void* s, int c, size_t n)
 static void* liballoc_memcpy(void* s1, const void* s2, size_t n)
 {
   char *cdest;
-  char *csrc;
+  const char *csrc;
   unsigned int *ldest = (unsigned int*)s1;
-  unsigned int *lsrc  = (unsigned int*)s2;
+  const unsigned int *lsrc  = (const unsigned int*)s2;
 
   while ( n >= sizeof(unsigned int) )
   {
@@ -130,7 +133,7 @@ static void* liballoc_memcpy(void* s1, const void* s2, size_t n)
   }
 
   cdest = (char*)ldest;
-  csrc  = (char*)lsrc;
+  csrc  = (const char*)lsrc;
   
   while ( n > 0 )
   {
@@ -291,7 +294,7 @@ void *PREFIX(malloc)(size_t req_size)
 		{
 		  liballoc_unlock();
 		  #ifdef DEBUG
-		  printf( "liballoc: initial l_memRoot initialization failed\n", p); 
+          printf( "liballoc: initial l_memRoot at %p initialization failed\n", p);
 		  FLUSH();
 		  #endif
 		  return NULL;
@@ -830,6 +833,6 @@ void*   PREFIX(realloc)(void *p, size_t size)
 	return ptr;
 }
 
-
+#pragma GCC diagnostic pop
 
 

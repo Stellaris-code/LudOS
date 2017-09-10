@@ -89,8 +89,8 @@ void parse_info(const multiboot_info_t* info)
              mmap = (multiboot_memory_map_t *) ((unsigned long) mmap
                                                 + mmap->size + sizeof (mmap->size)))
         {
-            printf(" Base address : 0x%x, ", mmap->addr);
-            printf("size : 0x%x, ", mmap->len);
+            printf(" Base address : 0x%llx, ", mmap->addr);
+            printf("size : 0x%llx, ", mmap->len);
             printf("type : %d\n", mmap->type);
 
         }

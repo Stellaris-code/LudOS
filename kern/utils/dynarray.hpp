@@ -46,7 +46,7 @@ private:
         return static_cast<value_type *> (__builtin_alloca(sizeof(value_type) * count));
     }
 
-    static inline void __deallocate ( value_type* __ptr ) noexcept
+    static inline void __deallocate (value_type*) noexcept
     {
 
     }
@@ -56,17 +56,6 @@ public:
     explicit dynarray(size_type __c);
     dynarray(size_type __c, const value_type& __v);
     dynarray(const dynarray& __d);
-
-//  We're not implementing these right now.
-//  Updated with the resolution of LWG issue #2255
-//     template <typename _Alloc>
-//       dynarray(allocator_arg_t, const _Alloc& __alloc, size_type __c);
-//     template <typename _Alloc>
-//       dynarray(allocator_arg_t, const _Alloc& __alloc, size_type __c, const value_type& __v);
-//     template <typename _Alloc>
-//       dynarray(allocator_arg_t, const _Alloc& __alloc, const dynarray& __d);
-//     template <typename _Alloc>
-//       dynarray(allocator_arg_t, const _Alloc& __alloc, initializer_list<value_type>);
 
     dynarray& operator=(const dynarray&) = delete;
     ~dynarray();

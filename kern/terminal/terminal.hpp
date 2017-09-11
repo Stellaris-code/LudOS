@@ -31,17 +31,14 @@ SOFTWARE.
 
 #include "ext/ringbuf.hpp"
 
-
-template <class T>
-struct dynarray;
+#include "utils/dynarray.hpp"
 
 // TODO : use a stack for push()/pop()
 
-template <size_t Width, size_t Height, size_t MaxHistory = 10>
 class TerminalImpl
 {
 public:
-    TerminalImpl(uint16_t* term_buf);
+    TerminalImpl(uint16_t* term_buf, size_t iwidth, size_t iheight, size_t imax_history = 10);
 
 public:
     void set_color(uint8_t color);
@@ -69,7 +66,12 @@ public:
     uint8_t terminal_color { vga_entry_color(VGA_COLOR_LIGHT_GREY, VGA_COLOR_BLACK) };
     uint8_t old_terminal_color { vga_entry_color(VGA_COLOR_LIGHT_GREY, VGA_COLOR_BLACK) };
     uint16_t* terminal_buffer { reinterpret_cast<uint16_t*>(phys(0xB8000)) };
-    CircularBuffer<dynarray<uint16_t>, Height*MaxHistory> history;
+
+    const size_t width;
+    const size_t height;
+    const size_t max_history;
+
+    dynarray<uint16_t> history;
     uint8_t current_history_page { 0 };
 };
 
@@ -90,9 +92,7 @@ public:
     static uint8_t current_history() { return impl->current_history(); }
 
 public:
-    static inline TerminalImpl<80, 25>* impl {nullptr};
+    static inline TerminalImpl* impl {nullptr};
 };
-
-#include "terminal.tpp"
 
 #endif // TERMINAL_HPP

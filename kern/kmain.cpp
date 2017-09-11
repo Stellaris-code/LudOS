@@ -45,8 +45,6 @@ SOFTWARE.
 #define DEBUG
 #endif
 
-#include "utils/dynarray.hpp"
-
 #include "multiboot/multiboot_kern.hpp"
 
 #include "i686/pc/gdt.hpp"
@@ -84,7 +82,7 @@ void kmain(uint32_t magic, const multiboot_info_t* mbd_info)
     serial::debug::init(BDA::com1_port());
     serial::debug::write(BDA::com1_port(), "Serial COM1 : Booting LudOS v%d...\n", 1);
 
-    TerminalImpl<80, 25> hwterminal(reinterpret_cast<uint16_t*>(phys(0xB8000)));
+    TerminalImpl hwterminal(reinterpret_cast<uint16_t*>(phys(0xB8000)), 80, 25);
     Terminal::impl = &hwterminal;
 
     init_printf(nullptr, [](void*, char c){putchar(c);});

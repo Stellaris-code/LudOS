@@ -23,8 +23,6 @@ SOFTWARE.
 
 */
 
-// TODO : Paging
-// TODO : revoir terminal pour utiliser un init()
 // TODO : APM
 // TODO : ACPI
 // TODO : disque
@@ -33,6 +31,11 @@ SOFTWARE.
 // TODO : system calls
 // TODO : user mode
 // TODO : POC calculatrice
+// TODO : utiliser une vraie implémentation de printf (newlib ?)
+// TODO : stack protectors
+
+// FIXME : bug si clavier utilisé avant init
+// FIXME : buffer overflow qui écrit sur la idt avec Terminal
 
 #ifndef __cplusplus
 #error Must be compiler using C++ !
@@ -41,6 +44,8 @@ SOFTWARE.
 #ifndef NDEBUG
 #define DEBUG
 #endif
+
+#include "utils/dynarray.hpp"
 
 #include "multiboot/multiboot_kern.hpp"
 
@@ -55,6 +60,8 @@ SOFTWARE.
 #include "i686/pc/cpuid.hpp"
 #include "i686/pc/smbios.hpp"
 #include "i686/pc/paging.hpp"
+#include "i686/pc/bios/bda.hpp"
+#include "i686/pc/serialdebug.hpp"
 
 #include "utils/addr.hpp"
 #include "utils/bitarray.hpp"
@@ -73,6 +80,12 @@ extern "C" uint32_t kernel_physical_end;
 extern "C"
 void kmain(uint32_t magic, const multiboot_info_t* mbd_info)
 {
+    serial::debug::init(BDA::com1_port());
+    serial::debug::write(BDA::com1_port(), "Serial COM1 : Booting LudOS v%d...\n", 1);
+
+    TerminalImpl<80, 25> hwterminal(reinterpret_cast<uint16_t*>(phys(0xB8000)));
+    Terminal::impl = &hwterminal;
+
     init_printf(nullptr, [](void*, char c){putchar(c);});
 
     multiboot::check(magic, mbd, mbd_info);
@@ -83,21 +96,32 @@ void kmain(uint32_t magic, const multiboot_info_t* mbd_info)
     FPU::init();
     multiboot::parse_info(mbd_info);
 
-    log("CPU clock speed : ~%lu MHz\n", clock_speed());
+    log("CPU clock speed : ~%llu MHz\n", clock_speed());
     detect_cpu();
-    Paging::init();
+    log("plop\n");
+    // paging fucks up i/o
+    //Paging::init();
+
 
     Speaker::beep(200);
+
+
 
     SMBIOS::locate();
     SMBIOS::bios_info();
     SMBIOS::cpu_info();
 
     Keyboard::init();
-    Keyboard::handle_char = &Terminal::put_char;
+    Keyboard::handle_char = [](uint8_t c){Terminal::put_char(c);};
     Keyboard::set_kbdmap(kbdmap_fr);
 
     greet();
+
+//    char* ptr = (char*)kmalloc(256*1000*1000);
+//    liballoc_dump();
+//    ptr[4] = 'c';
+//    kfree(ptr);
+//    liballoc_dump();
 
     while (1)
     {

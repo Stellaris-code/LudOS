@@ -1,7 +1,7 @@
 /*
-panic.cpp
+serialdebug.cpp
 
-Copyright (c) 29 Yann BOUCHER (yann)
+Copyright (c) 10 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -23,49 +23,68 @@ SOFTWARE.
 
 */
 
-#include "panic.hpp"
+#include "serialdebug.hpp"
 
-#include <stdio.h>
+#include "utils/array.hpp"
+
+#include "i686/pc/bios/bda.hpp"
+#include "io.hpp"
+
 #include <stdarg.h>
+#include <stdio.h>
 
-#include "utils/defs.hpp"
-
-#include "terminal/terminal.hpp"
-
-#include "i686/pc/devices/speaker.hpp"
-#include "i686/pc/serialdebug.hpp"
-#include "i686/pc/interrupts.hpp"
-
-#include "halt.hpp"
-
-// TODO : gérer si le terminal est mort
-
-[[noreturn]]
-void panic(const char *fmt, ...)
+namespace serial
 {
-    serial::debug::write("Kernel Panic !\n");
+namespace debug
+{
 
-    cli();
+void init(uint16_t comport)
+{
+    set_interrupt_reg(comport, 0);
+    set_divisor_rate(comport, 0xc);
+    set_data_length(comport, 7);
+    set_parity(comport, None);
+    set_stop_bits(comport, 0);
+    set_fifo(comport, 0b11000111);
+}
 
+void write(uint16_t comport, const char *fmt, ...)
+{
+    char buf[512];
+
+    va_list va;
+    va_start(va, fmt);
+    kvsnprintf(buf, size(buf), fmt, va);
+    va_end(va);
+
+    char* str = buf;
+
+    while (*str != '\0')
     {
-        va_list va;
-        va_start(va, fmt);
-        tfp_format(nullptr, [](void*, char c){serial::debug::write("%c", c);}, fmt, va);
-        va_end(va);
+        write_serial(comport, *str);
+        outb(0xe9, *str); // bochs
+        ++str;
     }
+}
 
-    Terminal::set_color(VGA_COLOR_RED);
+void write(const char *fmt, ...)
+{
+    char buf[512];
 
-    //Speaker::beep(300);
+    va_list va;
+    va_start(va, fmt);
+    kvsnprintf(buf, size(buf), fmt, va);
+    va_end(va);
 
-    puts("\nKERNEL PANIC : ");
+    char* str = buf;
 
+    while (*str != '\0')
     {
-        va_list va;
-        va_start(va, fmt);
-        tfp_format(nullptr, [](void*, char c){putchar(c);  serial::debug::write("%c", c);}, fmt, va);
-        va_end(va);
+        write_serial(BDA::com1_port(), *str);
+        outb(0xe9, *str); // bochs
+        ++str;
     }
+}
 
-    halt();
+}
 }

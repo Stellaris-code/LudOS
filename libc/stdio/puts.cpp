@@ -28,5 +28,5 @@ SOFTWARE.
 
 void puts(const char* string)
 {
-    printf("%s\n", string);
+    kprintf("%s\n", string);
 }

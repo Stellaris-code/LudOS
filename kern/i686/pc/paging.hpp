@@ -36,6 +36,8 @@ SOFTWARE.
  *
  */
 
+// FIXME : enabling paging disables vga cursor
+
 struct multiboot_mmap_entry;
 typedef struct multiboot_mmap_entry multiboot_memory_map_t;
 

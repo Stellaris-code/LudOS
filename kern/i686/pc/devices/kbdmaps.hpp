@@ -156,7 +156,7 @@ static constexpr uint8_t kbdmap_fr[] = {
     'p', 'P', 'p', 'p',
     '^',0xF9, '^', '^',
     '$', 156, '$', '$',
-    0x0A, 0x0A, 0x0A, 0x0A,	/*      enter   */
+    '\n', '\n', '\n','\n',	/*      enter   */
     0xFF, 0xFF, 0xFF, 0xFF,	/*      ctrl    */
     'q', 'Q', 'q', 'q',
     's', 'S', 's', 's',

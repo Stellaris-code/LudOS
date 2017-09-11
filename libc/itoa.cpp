@@ -142,7 +142,7 @@ int64_t itoa(int64_t value, char *sp, int radix)
     if (sign)
         v = -value;
     else
-        v = (uint64_t)value;
+        v = static_cast<uint64_t>(value);
 
     while (v || tp == tmp)
     {

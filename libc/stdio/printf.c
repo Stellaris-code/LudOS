@@ -257,9 +257,9 @@ void tfp_format(void *putp, putcf putf, const char *fmt, va_list va)
 {
     struct param p;
 #ifdef PRINTF_LONG_SUPPORT
-    char bf[23];  /* long = 64b on some architectures */
+    char bf[23+1000];  /* long = 64b on some architectures */
 #else
-    char bf[12];  /* int = 32b on some architectures */
+    char bf[12+1000];  /* int = 32b on some architectures */
 #endif
     char ch;
     p.bf = bf;

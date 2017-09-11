@@ -27,6 +27,8 @@ SOFTWARE.
 
 #include <stdint.h>
 
+// TODO : le rendre non-blocking
+
 class Speaker
 {
 public:

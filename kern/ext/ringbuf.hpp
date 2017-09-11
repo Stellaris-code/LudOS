@@ -27,6 +27,7 @@ SOFTWARE.
 
 #include "utils/array.hpp"
 #include "utils/swap.hpp"
+#include "halt.hpp"
 
 #include <stdint.h>
 #include <string.h>
@@ -70,7 +71,7 @@ public:
         swap(a._full, b._full);
     }
 
-private:
+public:
     T _buffer[Size];
     size_type _front;
     bool _full;
@@ -89,13 +90,13 @@ CircularBuffer<T, Size>::operator[](size_type index) const
 {
     if (_full)
     {
-        assert_msg(index < size(), "Invalid access of circular buffer %p at index %d !", this, index);
+        assert_msg(index < size(), "Invalid access of circular buffer %p at index %zd !", this, index);
 
         return _buffer[(_front + index) % size()];
     }
     else
     {
-        assert_msg(index < size(), "Invalid access of circular buffer %p at index %d with _front %d !", this, index, _front);
+        assert_msg(index < size(), "Invalid access of circular buffer %p at index %zd with _front %zd !", this, index, _front);
         return _buffer[index];
     }
 }
@@ -119,7 +120,7 @@ template<typename T, size_t Size>
 void
 CircularBuffer<T, Size>::add(const T& item)
 {
-    memcpy(_buffer[_front++], item, ::size(item) * sizeof(T));
+    memcpy(_buffer[_front++], item, ::size(item) * sizeof(item[0]));
     if (_front == Size)
     {
         _front = 0;

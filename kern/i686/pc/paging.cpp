@@ -31,18 +31,21 @@ SOFTWARE.
 #include "halt.hpp"
 #include "panic.hpp"
 #include "utils/logging.hpp"
+#include "i686/pc/serialdebug.hpp"
 
 #include "meminfo.hpp"
 #include "multiboot/multiboot.h"
 
+extern "C" int kernel_physical_end;
+
 void Paging::init()
 {
-    init_mem_bitmap();
+    Paging::init_mem_bitmap();
 
-    uint32_t* pt0 = (uint32_t*)alloc_page_frame();
+    uint32_t* pt0 = reinterpret_cast<uint32_t*>(alloc_page_frame());
 
-    uint32_t* pd0 = (uint32_t*)alloc_page_frame();
-    pd0[0] = (uint32_t)pt0;
+    uint32_t* pd0 = reinterpret_cast<uint32_t*>(alloc_page_frame());
+    pd0[0] = reinterpret_cast<uintptr_t>(pt0);
     pd0[0] |= 3;
     for (size_t i = 1; i < 1024; i++)
     {
@@ -121,9 +124,14 @@ void Paging::init_mem_bitmap()
     for (size_t i { 0 }; i < free_frames; ++i)
     {
         multiboot_memory_map_t* mem_zone = Meminfo::frame(i);
-        for (size_t pg = page(mem_zone->addr); pg < page(mem_zone->addr+mem_zone->len); ++pg)
+        for (size_t pg = page(mem_zone->addr); pg < page(mem_zone->addr+mem_zone->len) && pg < ram_maxpage; ++pg)
         {
             mem_bitmap[pg] = false;
         }
+    }
+    // Mark kernel space as unavailable
+    for (size_t i { page(0) }; i < page(reinterpret_cast<uintptr_t>(&kernel_physical_end)); ++i)
+    {
+        mem_bitmap[i] = false;
     }
 }

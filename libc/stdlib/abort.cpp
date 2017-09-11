@@ -38,7 +38,7 @@ void abort(void)
         panic("Abort called");
 #else
         // TODO: Abnormally terminate the process as if by SIGABRT.
-        printf("abort()\n");
+        kprintf("abort()\n");
 #error not implemented yet
 #endif
         while (1) { }

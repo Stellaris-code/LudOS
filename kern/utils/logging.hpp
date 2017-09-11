@@ -30,12 +30,17 @@ SOFTWARE.
 
 #include "terminal/terminal.hpp"
 
+#include "utils/defs.hpp"
+
 #include "i686/pc/timestamp.hpp"
 
+PRINTF_FMT(1, 2)
 void log(const char * __restrict fmt, ...);
 
+PRINTF_FMT(1, 2)
 void warn(const char * __restrict fmt, ...);
 
+PRINTF_FMT(1, 2)
 void err(const char * __restrict fmt, ...);
 
 #endif // LOGGING_HPP

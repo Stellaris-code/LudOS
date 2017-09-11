@@ -30,21 +30,15 @@ SOFTWARE.
 #include "vga.hpp"
 
 #include "ext/ringbuf.hpp"
+#include "utils/dynarray.hpp"
 
 // TODO : use a stack for push()/pop()
 
-namespace detail
-{
-
+template <size_t Width, size_t Height, size_t MaxHistory = 10>
 class TerminalImpl
 {
 public:
-    TerminalImpl();
-
-public:
-    static constexpr size_t vga_width = 80;
-    static constexpr size_t vga_height = 25;
-    static constexpr size_t max_history = 10;
+    TerminalImpl(uint16_t* term_buf);
 
 public:
     void set_color(uint8_t color);
@@ -66,39 +60,36 @@ private:
     void move_cursor(size_t x, size_t y);
     void update_cursor();
 
-private:
+public:
     size_t terminal_row { 0 };
     size_t terminal_column { 0 };
     uint8_t terminal_color { vga_entry_color(VGA_COLOR_LIGHT_GREY, VGA_COLOR_BLACK) };
     uint8_t old_terminal_color { vga_entry_color(VGA_COLOR_LIGHT_GREY, VGA_COLOR_BLACK) };
     uint16_t* terminal_buffer { reinterpret_cast<uint16_t*>(phys(0xB8000)) };
-
-    CircularBuffer<uint16_t[vga_width], vga_height*max_history> history;
+    CircularBuffer<uint16_t[Width], Height*MaxHistory> history;
     uint8_t current_history_page { 0 };
 };
 
-}
 
 class Terminal
 {
 public:
-    Terminal() = delete;
+    static void set_color(uint8_t color) { impl->set_color(color); }
+    static void put_entry_at(uint8_t c, uint8_t color, size_t x, size_t y) { impl->put_entry_at(c, color, x, y); }
+    static void put_char(uint8_t c) { impl->put_char(c); };
+    static void write(const char* data, size_t size) { impl->write(data, size); };
+    static void write_string(const char* data) { impl->write_string(data); }
+    static void clear() { impl->clear(); }
+    static void scroll_up() { impl->scroll_up(); }
+    static void push_color(uint8_t color) { impl->push_color(color); }
+    static void pop_color() { impl->pop_color(); }
+    static void show_history(int page) { impl->show_history(page); }
+    static uint8_t current_history() { return impl->current_history(); }
 
 public:
-    static void set_color(uint8_t color) { impl.set_color(color); }
-    static void put_entry_at(uint8_t c, uint8_t color, size_t x, size_t y) { impl.put_entry_at(c, color, x, y); }
-    static void put_char(uint8_t c) { impl.put_char(c); };
-    static void write(const char* data, size_t size) { impl.write(data, size); };
-    static void write_string(const char* data) { impl.write_string(data); }
-    static void clear() { impl.clear(); }
-    static void scroll_up() { impl.scroll_up(); }
-    static void push_color(uint8_t color) { impl.push_color(color); }
-    static void pop_color() { impl.pop_color(); }
-    static void show_history(int page) { impl.show_history(page); }
-    static uint8_t current_history() { return impl.current_history(); }
-
-private:
-    static inline detail::TerminalImpl impl;
+    static inline TerminalImpl<80, 25>* impl {nullptr};
 };
+
+#include "terminal.tpp"
 
 #endif // TERMINAL_HPP

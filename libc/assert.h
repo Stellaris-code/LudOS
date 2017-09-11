@@ -22,15 +22,34 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef ASSERT_H
-#define ASSERT_H
+
+#include <stdint.h>
+
+#include "utils/defs.hpp"
+
+inline void impl_assert(bool cond, const char* strcond, const char* file, size_t line, const char* fun);
+PRINTF_FMT(6, 7)
+inline void impl_assert_msg(bool cond, const char* strcond, const char* file, size_t line, const char* fun, const char* fmt, ...);
+
+#ifndef assert
+#define assert(cond) ::impl_assert(cond, #cond, __FILE__, __LINE__, __FUNCTION__)
+#endif
+
+#ifndef assert_mesg
+#define assert_msg(cond, fmt, ...) ::impl_assert_msg(cond, #cond, __FILE__, __LINE__, __FUNCTION__, fmt, ##__VA_ARGS__);
+#endif
+
+#ifndef __ASSERT_H
+#define __ASSERT_H
 
 #include <stdint.h>
 #include <stdarg.h>
 
 #include "../kern/utils/logging.hpp"
+#include "halt.hpp"
 #include "panic.hpp"
 
+PRINTF_FMT(1, 2)
 void err(const char * __restrict fmt, ...);
 
 #ifndef NDEBUG
@@ -39,17 +58,12 @@ void err(const char * __restrict fmt, ...);
 #define error_impl err
 #endif
 //"Reason : '" msg "'\n"
-#define assert(cond) impl_assert(cond, #cond, __FILE__, __LINE__, __FUNCTION__)
-#define assert_msg(cond, fmt, ...) impl_assert_msg(cond, #cond, __FILE__, __LINE__, __FUNCTION__, fmt, ##__VA_ARGS__);
-
-extern "C"
-{
 
 inline void impl_assert(bool cond, const char* strcond, const char* file, size_t line, const char* fun)
 {
     if (!cond)
     {
-        error_impl("Assert in file '%s', '%s', line %d : cond '%s' is false\n", file, fun, line, strcond);
+        error_impl("Assert in file '%s', '%s', line %zd : cond '%s' is false\n", file, fun, line, strcond);
     }
 }
 inline void impl_assert_msg(bool cond, const char* strcond, const char* file, size_t line, const char* fun, const char* fmt, ...)
@@ -60,13 +74,11 @@ inline void impl_assert_msg(bool cond, const char* strcond, const char* file, si
 
         va_list va;
         va_start(va, fmt);
-        vsnprintf(msg, sizeof(msg), fmt, va);
+        kvsnprintf(msg, sizeof(msg), fmt, va);
         va_end(va);
 
-        error_impl("Assert in file '%s', '%s', line %d : cond '%s' is false\nReason : '%s'\n", file, fun, line, strcond, msg);
+        error_impl("Assert in file '%s', '%s', line %zd : cond '%s' is false\nReason : '%s'\n", file, fun, line, strcond, msg);
     }
 }
 
-}
-
-#endif // ASSERT_H
+#endif // __ASSERT_H

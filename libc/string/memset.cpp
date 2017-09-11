@@ -24,17 +24,19 @@ SOFTWARE.
 */
 #include <string.h>
 
-void* memset(void* bufptr, int value, size_t size)
+void* memset(void* bufptr, uint8_t value, size_t size)
 {
-    unsigned char* buf = (unsigned char*) bufptr;
+    uint8_t* buf = reinterpret_cast<uint8_t*>(bufptr);
     for (size_t i = 0; i < size; i++)
-        buf[i] = (unsigned char) value;
+    {
+        buf[i] = value;
+    }
     return bufptr;
 }
 
 void* memsetw(void* bufptr, uint16_t value, size_t size)
 {
-    uint16_t* buf = (uint16_t*) bufptr;
+    uint16_t* buf = reinterpret_cast<uint16_t*>(bufptr);
     for (size_t i = 0; i < size/2; i++)
     {
         buf[i] = value;

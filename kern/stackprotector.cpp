@@ -1,7 +1,7 @@
 /*
-atoi.cpp
+stackprotector.cpp
 
-Copyright (c) 23 Yann BOUCHER (yann)
+Copyright (c) 10 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,24 +22,20 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
+#include <stdint.h>
 
-#include <atoi.h>
-#include <ctype.h>
+#include "panic.hpp"
 
-long long int atoi(const char *c)
+#if UINT32_MAX == UINTPTR_MAX
+#define STACK_CHK_GUARD 0xe2dee396
+#else
+#define STACK_CHK_GUARD 0x595e9fbd94fda766
+#endif
+
+uintptr_t __stack_chk_guard = STACK_CHK_GUARD;
+
+__attribute__((noreturn))
+void __stack_chk_fail(void)
 {
-    long long int value = 0;
-    int sign = 1;
-    if( *c == '+' || *c == '-' )
-    {
-        if( *c == '-' ) sign = -1;
-        c++;
-    }
-    while (isdigit(*c))
-    {
-        value *= 10;
-        value += static_cast<int>(*c-'0');
-        c++;
-    }
-    return (value * sign);
+    panic("Stack smashing detected");
 }

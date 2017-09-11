@@ -1,7 +1,7 @@
 /*
-atoi.cpp
+defs.hpp
 
-Copyright (c) 23 Yann BOUCHER (yann)
+Copyright (c) 10 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,24 +22,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
+#ifndef DEFS_HPP
+#define DEFS_HPP
 
-#include <atoi.h>
-#include <ctype.h>
+#ifdef __GNUC__
+# define PRINTF_FMT(fmt_idx,arg1_idx, ...) \
+    __attribute__((format (printf, fmt_idx, arg1_idx)))
+#else
+# define PRINTF_FMT(fmt_idx,arg1_idx)
+#endif
 
-long long int atoi(const char *c)
-{
-    long long int value = 0;
-    int sign = 1;
-    if( *c == '+' || *c == '-' )
-    {
-        if( *c == '-' ) sign = -1;
-        c++;
-    }
-    while (isdigit(*c))
-    {
-        value *= 10;
-        value += static_cast<int>(*c-'0');
-        c++;
-    }
-    return (value * sign);
-}
+#endif // DEFS_HPP

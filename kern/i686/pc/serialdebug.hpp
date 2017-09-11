@@ -1,7 +1,7 @@
 /*
-atoi.cpp
+serialdebug.hpp
 
-Copyright (c) 23 Yann BOUCHER (yann)
+Copyright (c) 10 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,24 +22,25 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
+#ifndef SERIALDEBUG_HPP
+#define SERIALDEBUG_HPP
 
-#include <atoi.h>
-#include <ctype.h>
+#include "serial.hpp"
 
-long long int atoi(const char *c)
+#include "utils/defs.hpp"
+
+namespace serial
 {
-    long long int value = 0;
-    int sign = 1;
-    if( *c == '+' || *c == '-' )
-    {
-        if( *c == '-' ) sign = -1;
-        c++;
-    }
-    while (isdigit(*c))
-    {
-        value *= 10;
-        value += static_cast<int>(*c-'0');
-        c++;
-    }
-    return (value * sign);
+namespace debug
+{
+
+void init(uint16_t comport);
+PRINTF_FMT(2, 3)
+void write(uint16_t comport, const char* fmt, ...);
+PRINTF_FMT(1, 2)
+void write(const char* fmt, ...);
+
 }
+}
+
+#endif // SERIALDEBUG_HPP

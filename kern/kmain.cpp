@@ -32,10 +32,8 @@ SOFTWARE.
 // TODO : user mode
 // TODO : POC calculatrice
 // TODO : utiliser une vraie implémentation de printf (newlib ?)
-// TODO : stack protectors
 
 // FIXME : bug si clavier utilisé avant init
-// FIXME : buffer overflow qui écrit sur la idt avec Terminal
 
 #ifndef __cplusplus
 #error Must be compiler using C++ !
@@ -116,11 +114,11 @@ void kmain(uint32_t magic, const multiboot_info_t* mbd_info)
 
     greet();
 
-//    char* ptr = (char*)kmalloc(256*1000*1000);
-//    liballoc_dump();
-//    ptr[4] = 'c';
-//    kfree(ptr);
-//    liballoc_dump();
+    char* ptr = (char*)kmalloc(256*1000*1000);
+    liballoc_dump();
+    ptr[4] = 'c';
+    kfree(ptr);
+    liballoc_dump();
 
     while (1)
     {

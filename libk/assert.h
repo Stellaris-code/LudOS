@@ -27,10 +27,6 @@ SOFTWARE.
 
 #include "utils/defs.hpp"
 
-inline void impl_assert(bool cond, const char* strcond, const char* file, size_t line, const char* fun);
-PRINTF_FMT(6, 7)
-inline void impl_assert_msg(bool cond, const char* strcond, const char* file, size_t line, const char* fun, const char* fmt, ...);
-
 #ifndef assert
 #define assert(cond) ::impl_assert(cond, #cond, __FILE__, __LINE__, __FUNCTION__)
 #endif
@@ -43,14 +39,6 @@ inline void impl_assert_msg(bool cond, const char* strcond, const char* file, si
 #define __ASSERT_H
 
 #include <stdint.h>
-#include <stdarg.h>
-
-#include "../kern/utils/logging.hpp"
-#include "halt.hpp"
-#include "panic.hpp"
-
-PRINTF_FMT(1, 2)
-void err(const char * __restrict fmt, ...);
 
 #ifndef NDEBUG
 #define error_impl panic
@@ -59,26 +47,8 @@ void err(const char * __restrict fmt, ...);
 #endif
 //"Reason : '" msg "'\n"
 
-inline void impl_assert(bool cond, const char* strcond, const char* file, size_t line, const char* fun)
-{
-    if (!cond)
-    {
-        error_impl("Assert in file '%s', '%s', line %zd : cond '%s' is false\n", file, fun, line, strcond);
-    }
-}
-inline void impl_assert_msg(bool cond, const char* strcond, const char* file, size_t line, const char* fun, const char* fmt, ...)
-{
-    if (!cond)
-    {
-        char msg[512];
-
-        va_list va;
-        va_start(va, fmt);
-        kvsnprintf(msg, sizeof(msg), fmt, va);
-        va_end(va);
-
-        error_impl("Assert in file '%s', '%s', line %zd : cond '%s' is false\nReason : '%s'\n", file, fun, line, strcond, msg);
-    }
-}
+void impl_assert(bool cond, const char* strcond, const char* file, size_t line, const char* fun);
+PRINTF_FMT(6, 7)
+void impl_assert_msg(bool cond, const char* strcond, const char* file, size_t line, const char* fun, const char* fmt, ...);
 
 #endif // __ASSERT_H

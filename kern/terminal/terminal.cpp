@@ -29,7 +29,6 @@ SOFTWARE.
 
 #ifdef ARCH_i686
 #include "i686/pc/devices/speaker.hpp"
-#include "i686/pc/serialdebug.hpp"
 #include "i686/pc/bios/bda.hpp"
 #endif
 
@@ -42,7 +41,7 @@ SOFTWARE.
 
 TerminalImpl::TerminalImpl(uint16_t* term_buf, size_t iwidth, size_t iheight, size_t imax_history)
     : terminal_buffer(term_buf), width(iwidth), height(iheight), max_history(imax_history),
-      history(width*height*max_history)
+      history(width, height*max_history)
 {
     clear();
 }
@@ -145,7 +144,6 @@ void TerminalImpl::scroll_up()
 
 void TerminalImpl::push_color(uint8_t color)
 {
-    //serial::debug::write("%zd\n", history._front);
     old_terminal_color = terminal_color;
     set_color(color);
 }
@@ -174,6 +172,7 @@ void TerminalImpl::show_history(int page)
         //Speaker::beep(200);
 #endif
         page = history.size() - height; // avoir un plafond, une limite
+
     }
 
     current_history_page = page;
@@ -185,7 +184,7 @@ void TerminalImpl::show_history(int page)
             int index = history.size() - (height-i) -page;
             if (index >= 0)
             {
-                //terminal_buffer[i*width+j] = history[index][j];
+                terminal_buffer[i*width+j] = history.get_char(j, index);
             }
         }
     }
@@ -202,12 +201,12 @@ void TerminalImpl::new_line()
 
 void TerminalImpl::add_line_to_history()
 {
-    dynarray<uint16_t> line(width);
+    uint16_t line[width];
     for (size_t i { 0 }; i < width; ++i)
     {
         line[i] = terminal_buffer[terminal_row*width + i];
     }
-    //history.add(line);
+    history.add(line);
 }
 
 

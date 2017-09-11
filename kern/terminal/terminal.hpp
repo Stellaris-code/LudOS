@@ -29,10 +29,7 @@ SOFTWARE.
 #include "utils/addr.hpp"
 #include "vga.hpp"
 
-#include "ext/ringbuf.hpp"
-
-#include "utils/dynarray.hpp"
-
+#include "historybuffer.hpp"
 // TODO : use a stack for push()/pop()
 
 class TerminalImpl
@@ -71,7 +68,7 @@ public:
     const size_t height;
     const size_t max_history;
 
-    dynarray<uint16_t> history;
+    HistoryBuffer history;
     uint8_t current_history_page { 0 };
 };
 

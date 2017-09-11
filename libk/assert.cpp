@@ -22,3 +22,33 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
+
+#include <assert.h>
+
+#include <stdarg.h>
+
+#include "../kern/utils/logging.hpp"
+#include "halt.hpp"
+#include "panic.hpp"
+
+void impl_assert(bool cond, const char* strcond, const char* file, size_t line, const char* fun)
+{
+    if (!cond)
+    {
+        error_impl("Assert in file '%s', '%s', line %zd : cond '%s' is false\n", file, fun, line, strcond);
+    }
+}
+void impl_assert_msg(bool cond, const char* strcond, const char* file, size_t line, const char* fun, const char* fmt, ...)
+{
+    if (!cond)
+    {
+        char msg[512];
+
+        va_list va;
+        va_start(va, fmt);
+        kvsnprintf(msg, sizeof(msg), fmt, va);
+        va_end(va);
+
+        error_impl("Assert in file '%s', '%s', line %zd : cond '%s' is false\nReason : '%s'\n", file, fun, line, strcond, msg);
+    }
+}

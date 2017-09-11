@@ -25,4 +25,43 @@ SOFTWARE.
 #ifndef HISTORYBUFFER_HPP
 #define HISTORYBUFFER_HPP
 
+#include <stdint.h>
+
+#include "utils/dynarray.hpp"
+
+class HistoryBuffer
+{
+public:
+    HistoryBuffer(size_t line_width, size_t height);
+
+    uint16_t get_char(size_t x, size_t y) const;
+    void add(uint16_t* line);
+
+    size_t size() const
+    {
+        if (full())
+        {
+            return m_data.size()/m_line_width;
+        }
+        else
+        {
+            return m_front;
+        }
+    }
+
+    bool full() const
+    {
+        return m_full;
+    }
+
+private:
+    const size_t m_line_width;
+    const size_t m_height;
+
+    size_t m_front { 0 };
+    bool m_full { false };
+
+    dynarray<uint16_t> m_data;
+};
+
 #endif // HISTORYBUFFER_HPP

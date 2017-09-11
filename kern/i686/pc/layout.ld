@@ -51,9 +51,6 @@ SECTIONS
     }
 
 
-    kernel_virtual_end = .;
-    kernel_physical_end = .;
-
     . = ALIGN(0x1000);
 
     /DISCARD/ :
@@ -61,4 +58,7 @@ SECTIONS
         *(.comment)
 /*        *(.eh_frame) */
     }
+
+    kernel_virtual_end = .;
+    kernel_physical_end = .;
 }

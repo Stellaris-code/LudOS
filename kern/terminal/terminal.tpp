@@ -36,6 +36,8 @@ SOFTWARE.
 #include "i686/pc/bios/bda.hpp"
 #endif
 
+#include "utils/dynarray.hpp"
+
 #include "io.hpp"
 #include "halt.hpp"
 
@@ -203,7 +205,7 @@ void TerminalImpl<Width, Height, MaxHistory>::new_line()
 template<size_t Width, size_t Height, size_t MaxHistory>
 void TerminalImpl<Width, Height, MaxHistory>::add_line_to_history()
 {
-    uint16_t line[Width];
+    dynarray<uint16_t> line(Width);
     for (size_t i { 0 }; i < Width; ++i)
     {
         line[i] = terminal_buffer[terminal_row*Width + i];

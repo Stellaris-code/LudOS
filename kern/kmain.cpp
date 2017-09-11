@@ -65,6 +65,7 @@ SOFTWARE.
 
 #include "utils/addr.hpp"
 #include "utils/bitarray.hpp"
+#include "utils/dynarray.hpp"
 
 #include "timer.hpp"
 
@@ -100,7 +101,7 @@ void kmain(uint32_t magic, const multiboot_info_t* mbd_info)
     detect_cpu();
     log("plop\n");
     // paging fucks up i/o
-    //Paging::init();
+    Paging::init();
 
 
     Speaker::beep(200);
@@ -125,6 +126,7 @@ void kmain(uint32_t magic, const multiboot_info_t* mbd_info)
 
     while (1)
     {
+//        log("dd\n");
         NOP();
     }
 }

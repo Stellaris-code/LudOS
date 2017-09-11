@@ -42,12 +42,16 @@ const registers* isr_handler(const registers* const regs)
 {
     if (regs->int_no == 8) // double fault
     {
+        cli();
         // assume terminal is broken
         dump_serial(regs);
+        serial::debug::write("Double fault, aborting\n");
         halt();
+        return regs;
     }
 
-    serial::debug::write("0x%lx\n", regs->eip);
+    serial::debug::write("eip : 0x%lx\n", regs->eip);
+    dump_serial(regs);
     dump(regs);
     panic("Unhandeld interrupt 0x%lx with error code 0x%lx at 0x%lx\n"
           "edx : 0x%lx\ncr2 : 0x%lx", regs->int_no, regs->err_code, regs->eip, regs->edx, cr2());

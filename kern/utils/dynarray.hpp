@@ -14,6 +14,7 @@
 #include <limits.h>
 #include <stdint.h>
 #include <assert.h>
+#include <new.hpp>
 
 template <class _Tp>
 struct dynarray

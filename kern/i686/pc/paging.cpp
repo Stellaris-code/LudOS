@@ -45,6 +45,7 @@ void Paging::init()
     uint32_t* pt0 = reinterpret_cast<uint32_t*>(alloc_page_frame());
 
     uint32_t* pd0 = reinterpret_cast<uint32_t*>(alloc_page_frame());
+
     pd0[0] = reinterpret_cast<uintptr_t>(pt0);
     pd0[0] |= 3;
     for (size_t i = 1; i < 1024; i++)
@@ -52,6 +53,8 @@ void Paging::init()
         pd0[i] = 0;
     }
 
+
+    log("%p\n", pt0);
 
     /* Création de la Page Table[0] */
     uint32_t page_addr = 0;
@@ -61,7 +64,6 @@ void Paging::init()
         pt0[i] |= 3;
         page_addr += 0x1000;
     }
-
     // must use inline assembly, cannot call external function as that would mess up the stack
     asm("   mov %0, %%eax    \n \
     mov %%eax, %%cr3 \n \
@@ -132,6 +134,6 @@ void Paging::init_mem_bitmap()
     // Mark kernel space as unavailable
     for (size_t i { page(0) }; i < page(reinterpret_cast<uintptr_t>(&kernel_physical_end)); ++i)
     {
-        mem_bitmap[i] = false;
+        mem_bitmap[i] = true;
     }
 }

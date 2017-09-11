@@ -30,7 +30,10 @@ SOFTWARE.
 #include "vga.hpp"
 
 #include "ext/ringbuf.hpp"
-#include "utils/dynarray.hpp"
+
+
+template <class T>
+struct dynarray;
 
 // TODO : use a stack for push()/pop()
 
@@ -66,7 +69,7 @@ public:
     uint8_t terminal_color { vga_entry_color(VGA_COLOR_LIGHT_GREY, VGA_COLOR_BLACK) };
     uint8_t old_terminal_color { vga_entry_color(VGA_COLOR_LIGHT_GREY, VGA_COLOR_BLACK) };
     uint16_t* terminal_buffer { reinterpret_cast<uint16_t*>(phys(0xB8000)) };
-    CircularBuffer<uint16_t[Width], Height*MaxHistory> history;
+    CircularBuffer<dynarray<uint16_t>, Height*MaxHistory> history;
     uint8_t current_history_page { 0 };
 };
 

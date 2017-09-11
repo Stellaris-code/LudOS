@@ -120,7 +120,11 @@ template<typename T, size_t Size>
 void
 CircularBuffer<T, Size>::add(const T& item)
 {
-    memcpy(_buffer[_front++], item, ::size(item) * sizeof(item[0]));
+    for (size_t i { 0 }; i < item.size(); ++i)
+    {
+        _buffer[_front][i] = item[i];
+    }
+    ++_front;
     if (_front == Size)
     {
         _front = 0;

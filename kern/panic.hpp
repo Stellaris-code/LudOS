@@ -25,7 +25,10 @@ SOFTWARE.
 #ifndef PANIC_HPP
 #define PANIC_HPP
 
+#include "utils/defs.hpp"
+
 [[noreturn]]
+PRINTF_FMT(1, 2)
 void panic(const char* __restrict fmt, ...);
 
 #endif // PANIC_HPP

@@ -38,7 +38,7 @@ long long int atoi(const char *c)
     while (isdigit(*c))
     {
         value *= 10;
-        value += (int) (*c-'0');
+        value += static_cast<int>(*c-'0');
         c++;
     }
     return (value * sign);

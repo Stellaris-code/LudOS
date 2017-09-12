@@ -1,5 +1,5 @@
 /*
-io.hpp
+abort.c
 
 Copyright (c) 23 Yann BOUCHER (yann)
 
@@ -22,19 +22,25 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef IO_HPP
-#define IO_HPP
 
-#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
 
-void outb(uint16_t port, uint8_t val);
-void outw(uint16_t port, uint16_t val);
-void outl(uint16_t port, uint32_t val);
+#if defined(__is_libk)
+#include "panic.hpp"
+#endif
 
-uint8_t inb(uint16_t port);
-uint16_t inw(uint16_t port);
-uint32_t inl(uint16_t port);
 
-void io_wait();
-
-#endif // IO_HPP
+__attribute__((__noreturn__))
+void abort(void)
+{
+#if defined(__is_libk)
+        panic("Abort called");
+#else
+        // TODO: Abnormally terminate the process as if by SIGABRT.
+        kprintf("abort()\n");
+#error not implemented yet
+#endif
+        while (1) { }
+        __builtin_unreachable();
+}

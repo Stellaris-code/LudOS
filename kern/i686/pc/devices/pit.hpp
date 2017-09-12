@@ -25,7 +25,7 @@ SOFTWARE.
 #ifndef PIT_HPP
 #define PIT_HPP
 
-#include "utils/stdint.h"
+#include <stdint.h>
 
 #include "../registers.hpp"
 

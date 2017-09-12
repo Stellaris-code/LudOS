@@ -1,5 +1,5 @@
 /*
-io.hpp
+memset.c
 
 Copyright (c) 23 Yann BOUCHER (yann)
 
@@ -22,19 +22,24 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef IO_HPP
-#define IO_HPP
+#include <string.h>
 
-#include <stdint.h>
+void* memset(void* bufptr, uint8_t value, size_t size)
+{
+    uint8_t* buf = reinterpret_cast<uint8_t*>(bufptr);
+    for (size_t i = 0; i < size; i++)
+    {
+        buf[i] = value;
+    }
+    return bufptr;
+}
 
-void outb(uint16_t port, uint8_t val);
-void outw(uint16_t port, uint16_t val);
-void outl(uint16_t port, uint32_t val);
-
-uint8_t inb(uint16_t port);
-uint16_t inw(uint16_t port);
-uint32_t inl(uint16_t port);
-
-void io_wait();
-
-#endif // IO_HPP
+void* memsetw(void* bufptr, uint16_t value, size_t size)
+{
+    uint16_t* buf = reinterpret_cast<uint16_t*>(bufptr);
+    for (size_t i = 0; i < size/2; i++)
+    {
+        buf[i] = value;
+    }
+    return bufptr;
+}

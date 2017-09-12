@@ -1,7 +1,7 @@
 /*
-io.hpp
+stackprotector.cpp
 
-Copyright (c) 23 Yann BOUCHER (yann)
+Copyright (c) 10 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,19 +22,20 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef IO_HPP
-#define IO_HPP
-
 #include <stdint.h>
 
-void outb(uint16_t port, uint8_t val);
-void outw(uint16_t port, uint16_t val);
-void outl(uint16_t port, uint32_t val);
+#include "panic.hpp"
 
-uint8_t inb(uint16_t port);
-uint16_t inw(uint16_t port);
-uint32_t inl(uint16_t port);
+#if UINT32_MAX == UINTPTR_MAX
+#define STACK_CHK_GUARD 0xe2dee396
+#else
+#define STACK_CHK_GUARD 0x595e9fbd94fda766
+#endif
 
-void io_wait();
+uintptr_t __stack_chk_guard = STACK_CHK_GUARD;
 
-#endif // IO_HPP
+__attribute__((noreturn))
+void __stack_chk_fail(void)
+{
+    panic("Stack smashing detected");
+}

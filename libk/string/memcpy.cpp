@@ -1,5 +1,5 @@
 /*
-io.hpp
+memcpy.c
 
 Copyright (c) 23 Yann BOUCHER (yann)
 
@@ -22,19 +22,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef IO_HPP
-#define IO_HPP
+#include <string.h>
 
-#include <stdint.h>
-
-void outb(uint16_t port, uint8_t val);
-void outw(uint16_t port, uint16_t val);
-void outl(uint16_t port, uint32_t val);
-
-uint8_t inb(uint16_t port);
-uint16_t inw(uint16_t port);
-uint32_t inl(uint16_t port);
-
-void io_wait();
-
-#endif // IO_HPP
+void* memcpy(void* __restrict dstptr, const void* __restrict srcptr, size_t size)
+{
+    unsigned char* dst = reinterpret_cast<unsigned char*>(dstptr);
+    const unsigned char* src = reinterpret_cast<const unsigned char*>(srcptr);
+    for (size_t i = 0; i < size; i++)
+        dst[i] = src[i];
+    return dstptr;
+}

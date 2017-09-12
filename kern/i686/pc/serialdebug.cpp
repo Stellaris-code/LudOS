@@ -1,7 +1,7 @@
 /*
-timer.hpp
+serialdebug.cpp
 
-Copyright (c) 26 Yann BOUCHER (yann)
+Copyright (c) 10 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,51 +22,69 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef TIMER_HPP
-#define TIMER_HPP
 
-#include <stdint.h>
-#include "i686/pc/registers.hpp"
+#include "serialdebug.hpp"
 
-#include "nop.hpp"
+#include "utils/array.hpp"
 
-#include "panic.hpp"
+#include "i686/pc/bios/bda.hpp"
+#include "io.hpp"
+
+#include <stdarg.h>
 #include <stdio.h>
 
-class Timer
+namespace serial
 {
-public:
-    static inline void set_frequency(uint32_t freq)
+namespace debug
+{
+
+void init(uint16_t comport)
+{
+    set_interrupt_reg(comport, 0);
+    set_divisor_rate(comport, 0xc);
+    set_data_length(comport, 7);
+    set_parity(comport, None);
+    set_stop_bits(comport, 0);
+    set_fifo(comport, 0b11000111);
+}
+
+void write(uint16_t comport, const char *fmt, ...)
+{
+    char buf[512];
+
+    va_list va;
+    va_start(va, fmt);
+    kvsnprintf(buf, size(buf), fmt, va);
+    va_end(va);
+
+    char* str = buf;
+
+    while (*str != '\0')
     {
-        Timer::m_freq = freq;
-        if (!m_set_frequency_callback)
-        {
-            panic("set_frequency_callback is not set !");
-        }
-        m_set_frequency_callback(freq);
+        write_serial(comport, *str);
+        outb(0xe9, *str); // bochs
+        ++str;
     }
+}
 
-    // time in ms
-    static inline void sleep(uint32_t time)
+void write(const char *fmt, ...)
+{
+    char buf[512];
+
+    va_list va;
+    va_start(va, fmt);
+    kvsnprintf(buf, size(buf), fmt, va);
+    va_end(va);
+
+    char* str = buf;
+
+    while (*str != '\0')
     {
-        uint32_t interval = time/(1000/freq());
-        m_ticks = 0;
-        while (m_ticks < interval) { NOP(); }
+        write_serial(BDA::com1_port(), *str);
+        outb(0xe9, *str); // bochs
+        ++str;
     }
+}
 
-    static inline uint32_t ticks()
-    {
-        return m_ticks;
-    }
-
-    static inline uint32_t freq()
-    {
-        return m_freq;
-    }
-
-    static inline void(*m_set_frequency_callback)(uint32_t); // set_frequency
-    static inline uint32_t m_ticks { 0 };
-    static inline uint32_t m_freq { 0 };
-};
-
-#endif // TIMER_HPP
+}
+}

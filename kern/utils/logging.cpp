@@ -1,7 +1,7 @@
 /*
-io.hpp
+logging.cpp
 
-Copyright (c) 23 Yann BOUCHER (yann)
+Copyright (c) 09 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,19 +22,45 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef IO_HPP
-#define IO_HPP
 
-#include <stdint.h>
+#include "logging.hpp"
 
-void outb(uint16_t port, uint8_t val);
-void outw(uint16_t port, uint16_t val);
-void outl(uint16_t port, uint32_t val);
+#include "i686/pc/serialdebug.hpp"
 
-uint8_t inb(uint16_t port);
-uint16_t inw(uint16_t port);
-uint32_t inl(uint16_t port);
+void log(const char * __restrict fmt, ...)
+{
+    kprintf("[%f] ", uptime());
 
-void io_wait();
+    va_list va;
+    va_start(va, fmt);
+    tfp_format(nullptr, [](void*, char c){putchar(c);}, fmt, va);
+    va_end(va);
+}
 
-#endif // IO_HPP
+void warn(const char * __restrict fmt, ...)
+{
+    Terminal::push_color(VGA_COLOR_LIGHT_RED);
+
+    kprintf("[%f] ", uptime());
+
+    va_list va;
+    va_start(va, fmt);
+    tfp_format(nullptr, [](void*, char c){putchar(c); serial::debug::write("%c", c);}, fmt, va);
+    va_end(va);
+
+    Terminal::pop_color();
+}
+
+void err(const char * __restrict fmt, ...)
+{
+    Terminal::push_color(VGA_COLOR_RED);
+
+    kprintf("[%f] ", uptime());
+
+    va_list va;
+    va_start(va, fmt);
+    tfp_format(nullptr, [](void*, char c){putchar(c); serial::debug::write("%c", c);}, fmt, va);
+    va_end(va);
+
+    Terminal::pop_color();
+}

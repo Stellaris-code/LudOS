@@ -38,7 +38,7 @@ void Keyboard::init()
 
     handlers[0x48] = [](const Event&)
     {
-        //printf("Hey\n");
+        //kprintf("Hey\n");
         wait();
         uint8_t code = inb(KBD_PORT);
         if (code == 0xE0)
@@ -159,13 +159,12 @@ void Keyboard::isr(const registers * const)
     }
 
     Event event {(lshift || rshift), alt, ctrl, false, caps_lock, scroll_lock, num_lock, pressed, unaltered_key};
-
     if ((!handlers[unaltered_key] || handlers[unaltered_key](event)) && is_handle_char)
     {
         handle_char(kbdmap
                     [key * 4 + (((lshift || rshift) ^ caps_lock) ? 1 : alt ? 2 : num_lock ? 3 : 0)]);
     }
-
+                Terminal::push_color(0);Terminal::pop_color();
     if (kbd_event)
     {
         kbd_event(event);

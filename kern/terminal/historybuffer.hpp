@@ -1,7 +1,7 @@
 /*
-memcpy.c
+historybuffer.hpp
 
-Copyright (c) 23 Yann BOUCHER (yann)
+Copyright (c) 11 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,13 +22,46 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#include <string.h>
+#ifndef HISTORYBUFFER_HPP
+#define HISTORYBUFFER_HPP
 
-void* memcpy(void* __restrict dstptr, const void* __restrict srcptr, size_t size)
+#include <stdint.h>
+
+#include "utils/dynarray.hpp"
+
+class HistoryBuffer
 {
-        unsigned char* dst = (unsigned char*) dstptr;
-        const unsigned char* src = (const unsigned char*) srcptr;
-        for (size_t i = 0; i < size; i++)
-                dst[i] = src[i];
-        return dstptr;
-}
+public:
+    HistoryBuffer(size_t line_width, size_t height);
+
+    uint16_t get_char(size_t x, size_t y) const;
+    void add(uint16_t* line);
+
+    size_t size() const
+    {
+        if (full())
+        {
+            return m_data.size()/m_line_width;
+        }
+        else
+        {
+            return m_front;
+        }
+    }
+
+    bool full() const
+    {
+        return m_full;
+    }
+
+private:
+    const size_t m_line_width;
+    const size_t m_height;
+
+    size_t m_front { 0 };
+    bool m_full { false };
+
+    dynarray<uint16_t> m_data;
+};
+
+#endif // HISTORYBUFFER_HPP

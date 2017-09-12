@@ -1,7 +1,7 @@
 /*
-io.hpp
+qtcreatorstdint.hpp
 
-Copyright (c) 23 Yann BOUCHER (yann)
+Copyright (c) 22 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,19 +22,25 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef IO_HPP
-#define IO_HPP
+#ifndef STDINT_HPP
+#define STDINT_HPP
 
-#include <stdint.h>
+#ifdef CODE_MODEL_PASS // Aliases for Qt Creator IDE
+#error Only for clang code model pass !
+typedef unsigned char uint8_t;
+typedef char int8_t;
+typedef unsigned short uint16_t;
+typedef short int16_t;
+typedef unsigned int uint32_t;
+typedef int int32_t;
+typedef unsigned long uint64_t;
+typedef long int64_t;
+typedef uint64_t size_t;
+typedef int32_t intptr_t;
+typedef uint32_t uintptr_t;
+#endif
 
-void outb(uint16_t port, uint8_t val);
-void outw(uint16_t port, uint16_t val);
-void outl(uint16_t port, uint32_t val);
+#include_next <stdint.h>
+#include <stddef.h>
 
-uint8_t inb(uint16_t port);
-uint16_t inw(uint16_t port);
-uint32_t inl(uint16_t port);
-
-void io_wait();
-
-#endif // IO_HPP
+#endif // STDINT_HPP

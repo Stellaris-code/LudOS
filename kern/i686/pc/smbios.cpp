@@ -27,36 +27,40 @@ SOFTWARE.
 
 #include "ext/dmidecode.hpp"
 
+#include "i686/pc/serialdebug.hpp"
+
 #include "utils/addr.hpp"
 #include "utils/bitops.hpp"
 #include "panic.hpp"
 
 SMBIOSEntryPoint *SMBIOS::locate()
 {
-    uint8_t *mem = (uint8_t*)phys(0xF0000);
+    uint8_t *mem = reinterpret_cast<uint8_t*>(phys(0x0F0000));
     int length, i;
     uint8_t checksum;
-    while ((unsigned int) mem < phys(0x100000))
+    while (reinterpret_cast<uintptr_t>(mem) < phys(0x100000))
     {
-        if (mem[0] == '_' && mem[1] == 'S' && mem[2] == 'M' && mem[3] == '_') {
+        if (mem[0] == '_' && mem[1] == 'S' && mem[2] == 'M' && mem[3] == '_')
+        {
             length = mem[5];
             checksum = 0;
-            for(i = 0; i < length; i++) {
+            for(i = 0; i < length; i++)
+            {
                 checksum += mem[i];
             }
-            if(checksum == 0) break;
+            if (checksum == 0) break;
         }
         mem += 16;
     }
-    if ((uintptr_t)mem == phys(0x100000))
+    if (reinterpret_cast<uintptr_t>(mem) >= phys(0x100000))
     {
         warn("SMBIOS not found !\n");
         return nullptr;
     }
     else
     {
-        log("SMBIOS found at : %p\n", virt((uintptr_t)mem));
-        entry_point =  (SMBIOSEntryPoint*)mem;
+        log("SMBIOS found at : %p\n", mem);
+        entry_point = reinterpret_cast<SMBIOSEntryPoint*>(mem);
         log(" SMBIOS version : %d.%d\n", entry_point->MajorVersion, entry_point->MinorVersion);
         log(" SMBIOS entries : %d\n", entry_point->NumberOfStructures);
         return entry_point;
@@ -70,16 +74,16 @@ SMBIOSBIOSInfo* SMBIOS::bios_info()
         uintptr_t mem = phys(entry_point->TableAddress);
         while (mem < phys(entry_point->TableAddress) + entry_point->TableLength)
         {
-            auto* tag = (SMBIOSTag*)mem;
+            auto* tag = reinterpret_cast<SMBIOSTag*>(mem);
             if (tag->type == 127)
             {
                 break;
             }
             if (tag->type == 0)
             {
-                SMBIOSBIOSInfo* info = (SMBIOSBIOSInfo*)mem;
+                SMBIOSBIOSInfo* info = reinterpret_cast<SMBIOSBIOSInfo*>(mem);
 
-                uint8_t* tag_end = (uint8_t*)(mem + tag->length - 1);
+                uint8_t* tag_end = reinterpret_cast<uint8_t*>(mem + tag->length - 1);
 
                 log(" BIOS Vendor : %s\n", get_string(tag_end, info->vendor));
                 log(" BIOS Version : %s\n",get_string(tag_end, info->version));
@@ -89,14 +93,15 @@ SMBIOSBIOSInfo* SMBIOS::bios_info()
             }
 
             mem += tag->length - 1;
-            mem = find_strings_end((uint8_t*)mem);
+            mem = find_strings_end(reinterpret_cast<uint8_t*>(mem));
         }
 
         return nullptr;
     }
     else
     {
-        panic("Tried to access inexistent SMBIOS !");
+        warn("Tried to access inexistent SMBIOS !");
+        return nullptr;
     }
 }
 
@@ -107,16 +112,16 @@ SMBIOSCPUInfo *SMBIOS::cpu_info()
         uintptr_t mem = phys(entry_point->TableAddress);
         while (mem < phys(entry_point->TableAddress) + entry_point->TableLength)
         {
-            auto* tag = (SMBIOSTag*)mem;
+            auto* tag = reinterpret_cast<SMBIOSTag*>(mem);
             if (tag->type == 127)
             {
                 break;
             }
             if (tag->type == 4)
             {
-                SMBIOSCPUInfo* info = (SMBIOSCPUInfo*)mem;
+                SMBIOSCPUInfo* info = reinterpret_cast<SMBIOSCPUInfo*>(mem);
 
-                uint8_t* tag_end = (uint8_t*)(mem + tag->length - 1);
+                uint8_t* tag_end = reinterpret_cast<uint8_t*>(mem + tag->length - 1);
 
                 log(" Processor Type : ");
                 switch (info->cpu_type)
@@ -125,19 +130,19 @@ SMBIOSCPUInfo *SMBIOS::cpu_info()
                 case 1:
                 case 2:
                 default:
-                    printf("Unknown\n");
+                    kprintf("Unknown\n");
                     break;
                 case 3:
-                    printf("CPU\n");
+                    kprintf("CPU\n");
                     break;
                 case 4:
-                    printf("Math processor\n");
+                    kprintf("Math processor\n");
                     break;
                 case 5:
-                    printf("DSP processor\n");
+                    kprintf("DSP processor\n");
                     break;
                 case 6:
-                    printf("Video processor\n");
+                    kprintf("Video processor\n");
                     break;
                 }
 
@@ -148,11 +153,11 @@ SMBIOSCPUInfo *SMBIOS::cpu_info()
                 log(" Processor voltage : ");
                 if (bit_check(info->voltage, 7))
                 {
-                    printf("%.1fv\n", (info->voltage & 0b1111111)/10.0);
+                    kprintf("%.1fv\n", (info->voltage & 0b1111111)/10.0);
                 }
                 else
                 {
-                    printf("%.1fv\n", info->voltage == 0 ? 5 : info->voltage == 1 ? 3.3 : info->voltage == 2 ? 2.9 : -1);
+                    kprintf("%.1fv\n", info->voltage == 0 ? 5 : info->voltage == 1 ? 3.3 : info->voltage == 2 ? 2.9 : -1);
                 }
 
                 log(" Processor speed : %dMHz\n", info->curr_speed);
@@ -161,14 +166,15 @@ SMBIOSCPUInfo *SMBIOS::cpu_info()
             }
 
             mem += tag->length - 1;
-            mem = find_strings_end((uint8_t*)mem);
+            mem = find_strings_end(reinterpret_cast<uint8_t*>(mem));
         }
 
         return nullptr;
     }
     else
     {
-        panic("Tried to access inexistent SMBIOS !");
+        warn("Tried to access inexistent SMBIOS !");
+        return nullptr;
     }
 }
 
@@ -177,7 +183,7 @@ const char *SMBIOS::get_string(uint8_t *offset, uint8_t number)
     uint8_t idx = 1;
     while (offset[0] != '\0' || offset[1] != '\0')
     {
-        if (idx == number) { return (const char*)offset; }
+        if (idx == number) { return reinterpret_cast<const char*>(offset); }
 
         if (offset[0] == '\0') ++idx;
         ++offset;
@@ -192,5 +198,5 @@ uintptr_t SMBIOS::find_strings_end(uint8_t* offset)
     {
         ++offset;
     }
-    return ((uintptr_t)offset) + 2;
+    return (reinterpret_cast<uintptr_t>(offset)) + 2;
 }

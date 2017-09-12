@@ -1,7 +1,7 @@
 #ifndef _LIBALLOC_H
 #define _LIBALLOC_H
 
-#include "utils/stdint.h"
+#include <stdint.h>
 
 /** \defgroup ALLOCHOOKS liballoc hooks 
  *

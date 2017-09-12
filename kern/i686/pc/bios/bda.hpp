@@ -1,5 +1,5 @@
 /*
-io.hpp
+bda.hpp
 
 Copyright (c) 23 Yann BOUCHER (yann)
 
@@ -22,19 +22,33 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef IO_HPP
-#define IO_HPP
+#ifndef BDA_HPP
+#define BDA_HPP
 
 #include <stdint.h>
 
-void outb(uint16_t port, uint8_t val);
-void outw(uint16_t port, uint16_t val);
-void outl(uint16_t port, uint32_t val);
+namespace BDA
+{
+    uint16_t com1_port();
+    uint16_t com2_port();
+    uint16_t com3_port();
+    uint16_t com4_port();
 
-uint8_t inb(uint16_t port);
-uint16_t inw(uint16_t port);
-uint32_t inl(uint16_t port);
+    uint16_t lpt1_port();
+    uint16_t lpt2_port();
+    uint16_t lpt3_port();
 
-void io_wait();
+    uint16_t equipement();
 
-#endif // IO_HPP
+    uint16_t kbd_state();
+
+    uint8_t *kbd_buffer(); // TODO : array !
+
+    uint8_t disp_mode();
+
+    uint16_t txt_mode_columns();
+
+    uint16_t video_io_port();
+}
+
+#endif // BDA_HPP

@@ -33,9 +33,11 @@ size_t Meminfo::free_frames()
     size_t counter = 0;
 
     for (multiboot_memory_map_t *mmap = Meminfo::mmap_addr;
-         (uintptr_t)mmap < phys(info->mmap_addr) + info->mmap_length;
-         mmap = (multiboot_memory_map_t *) ((unsigned long) mmap
-                                            + mmap->size + sizeof (mmap->size)))
+         reinterpret_cast<uintptr_t>(mmap) < phys(info->mmap_addr) + info->mmap_length;
+         mmap = reinterpret_cast<multiboot_memory_map_t*>(
+             reinterpret_cast<uintptr_t>(mmap)
+             + mmap->size + sizeof(mmap->size))
+         )
     {
         if (mmap->type == 1)
         {
@@ -51,9 +53,11 @@ multiboot_memory_map_t *Meminfo::largest_frame()
     multiboot_memory_map_t* msf = Meminfo::mmap_addr;
 
     for (multiboot_memory_map_t *mmap = Meminfo::mmap_addr;
-         (uintptr_t)mmap < phys(info->mmap_addr) + info->mmap_length;
-         mmap = (multiboot_memory_map_t *) ((unsigned long) mmap
-                                            + mmap->size + sizeof (mmap->size)))
+         reinterpret_cast<uintptr_t>(mmap) < phys(info->mmap_addr) + info->mmap_length;
+         mmap = reinterpret_cast<multiboot_memory_map_t*>(
+             reinterpret_cast<uintptr_t>(mmap)
+             + mmap->size + sizeof(mmap->size))
+         )
     {
         if (mmap->size > msf->size)
         {
@@ -69,15 +73,17 @@ multiboot_memory_map_t *Meminfo::frame(size_t idx)
     size_t counter = 0;
 
     for (multiboot_memory_map_t *mmap = Meminfo::mmap_addr;
-         (uintptr_t)mmap < phys(info->mmap_addr) + info->mmap_length;
-         mmap = (multiboot_memory_map_t *) ((unsigned long) mmap
-                                            + mmap->size + sizeof (mmap->size)))
+         reinterpret_cast<uintptr_t>(mmap) < phys(info->mmap_addr) + info->mmap_length;
+         mmap = reinterpret_cast<multiboot_memory_map_t*>(
+             reinterpret_cast<uintptr_t>(mmap)
+             + mmap->size + sizeof(mmap->size))
+         )
     {
         if (mmap->type == 1)
         {
             if (counter == idx)
             {
-            return mmap;
+                return mmap;
             }
             ++counter;
         }

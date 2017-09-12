@@ -1,7 +1,7 @@
 /*
-memmove.c
+historybuffer.cpp
 
-Copyright (c) 23 Yann BOUCHER (yann)
+Copyright (c) 11 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,18 +22,44 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
+
+#include "historybuffer.hpp"
+
+#include <assert.h>
 #include <string.h>
 
-void* memmove(void* dstptr, const void* srcptr, size_t size)
+HistoryBuffer::HistoryBuffer(size_t line_width, size_t height)
+    : m_line_width(line_width), m_height(height),
+      m_data(line_width*height)
 {
-        unsigned char* dst = (unsigned char*) dstptr;
-        const unsigned char* src = (const unsigned char*) srcptr;
-        if (dst < src) {
-                for (size_t i = 0; i < size; i++)
-                        dst[i] = src[i];
-        } else {
-                for (size_t i = size; i != 0; i--)
-                        dst[i-1] = src[i-1];
-        }
-        return dstptr;
+
+}
+
+uint16_t HistoryBuffer::get_char(size_t x, size_t y) const
+{
+    const size_t index = y*m_line_width + x;
+
+    if (full())
+    {
+        assert_msg(index < m_data.size(), "Invalid access of history buffer %p at index %zd !", this, index);
+
+        return m_data[(m_front + index) % m_data.size()];
+    }
+    else
+    {
+        assert_msg(index < m_data.size(), "Invalid access of history buffer %p at index %zd with m_front %zd !", this, index, m_front);
+        return m_data[index];
+    }
+}
+
+void HistoryBuffer::add(uint16_t *line)
+{
+    memcpy(&m_data[m_front*m_line_width], line, m_line_width*sizeof(uint16_t));
+    ++m_front;
+
+    if (m_front == m_height)
+    {
+        m_front = 0;
+        m_full = true;
+    }
 }

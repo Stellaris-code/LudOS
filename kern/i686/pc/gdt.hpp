@@ -25,7 +25,7 @@ SOFTWARE.
 #ifndef GDT_HPP
 #define GDT_HPP
 
-#include "utils/stdint.h"
+#include <stdint.h>
 
 extern "C"
 void gdt_flush(uint32_t addr);

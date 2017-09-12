@@ -1,5 +1,5 @@
 /*
-io.hpp
+puts.c
 
 Copyright (c) 23 Yann BOUCHER (yann)
 
@@ -22,19 +22,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef IO_HPP
-#define IO_HPP
 
-#include <stdint.h>
 
-void outb(uint16_t port, uint8_t val);
-void outw(uint16_t port, uint16_t val);
-void outl(uint16_t port, uint32_t val);
+#include <stdio.h>
 
-uint8_t inb(uint16_t port);
-uint16_t inw(uint16_t port);
-uint32_t inl(uint16_t port);
-
-void io_wait();
-
-#endif // IO_HPP
+void puts(const char* string)
+{
+    kprintf("%s\n", string);
+}

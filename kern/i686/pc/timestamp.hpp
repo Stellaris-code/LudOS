@@ -25,7 +25,7 @@ SOFTWARE.
 #ifndef TIMESTAMP_HPP
 #define TIMESTAMP_HPP
 
-#include <stdint.h>
+#include "utils/stdint.h"
 
 inline uint64_t rdtsc()
 {

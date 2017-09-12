@@ -25,7 +25,7 @@ SOFTWARE.
 #ifndef TIMER_HPP
 #define TIMER_HPP
 
-#include <stdint.h>
+#include "utils/stdint.h"
 #include "i686/pc/registers.hpp"
 
 #include "nop.hpp"

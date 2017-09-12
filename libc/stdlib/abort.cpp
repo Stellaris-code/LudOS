@@ -1,5 +1,5 @@
 /*
-memmove.c
+abort.c
 
 Copyright (c) 23 Yann BOUCHER (yann)
 
@@ -22,18 +22,25 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#include <string.h>
 
-void* memmove(void* dstptr, const void* srcptr, size_t size)
+#include <stdio.h>
+#include <stdlib.h>
+
+#if defined(__is_libk)
+#include "panic.hpp"
+#endif
+
+
+__attribute__((__noreturn__))
+void abort(void)
 {
-    unsigned char* dst = reinterpret_cast<unsigned char*>(dstptr);
-    const unsigned char* src = reinterpret_cast<const unsigned char*>(srcptr);
-    if (dst < src) {
-        for (size_t i = 0; i < size; i++)
-            dst[i] = src[i];
-    } else {
-        for (size_t i = size; i != 0; i--)
-            dst[i-1] = src[i-1];
-    }
-    return dstptr;
+#if defined(__is_libk)
+        panic("Abort called");
+#else
+        // TODO: Abnormally terminate the process as if by SIGABRT.
+        printf("abort()\n");
+#error not implemented yet
+#endif
+        while (1) { }
+        __builtin_unreachable();
 }

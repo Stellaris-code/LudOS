@@ -1,7 +1,7 @@
 /*
-assert.cpp
+memset.c
 
-Copyright (c) 11 Yann BOUCHER (yann)
+Copyright (c) 23 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,33 +22,22 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
+#include <string.h>
 
-#include <assert.h>
-
-#include <stdarg.h>
-
-#include "../kern/utils/logging.hpp"
-#include "halt.hpp"
-#include "panic.hpp"
-
-void impl_assert(bool cond, const char* strcond, const char* file, size_t line, const char* fun)
+void* memset(void* bufptr, int value, size_t size)
 {
-    if (!cond)
-    {
-        error_impl("Assert in file '%s', '%s', line %zd : cond '%s' is false\n", file, fun, line, strcond);
-    }
+    unsigned char* buf = (unsigned char*) bufptr;
+    for (size_t i = 0; i < size; i++)
+        buf[i] = (unsigned char) value;
+    return bufptr;
 }
-void impl_assert_msg(bool cond, const char* strcond, const char* file, size_t line, const char* fun, const char* fmt, ...)
+
+void* memsetw(void* bufptr, uint16_t value, size_t size)
 {
-    if (!cond)
+    uint16_t* buf = (uint16_t*) bufptr;
+    for (size_t i = 0; i < size/2; i++)
     {
-        char msg[512];
-
-        va_list va;
-        va_start(va, fmt);
-        kvsnprintf(msg, sizeof(msg), fmt, va);
-        va_end(va);
-
-        error_impl("Assert in file '%s', '%s', line %zd : cond '%s' is false\nReason : '%s'\n", file, fun, line, strcond, msg);
+        buf[i] = value;
     }
+    return bufptr;
 }

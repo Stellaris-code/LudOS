@@ -118,7 +118,6 @@ isr_common_stub:
     ; Call handler
     call isr_handler
     ; Set stack pointer to returned value
-
     mov esp, eax
 
     ; Restore segments

@@ -25,7 +25,7 @@ SOFTWARE.
 #ifndef IO_HPP
 #define IO_HPP
 
-#include <stdint.h>
+#include "utils/stdint.h"
 
 void outb(uint16_t port, uint8_t val);
 void outw(uint16_t port, uint16_t val);

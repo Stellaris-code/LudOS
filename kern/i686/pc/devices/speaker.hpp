@@ -25,9 +25,7 @@ SOFTWARE.
 #ifndef SPEAKER_HPP
 #define SPEAKER_HPP
 
-#include <stdint.h>
-
-// TODO : le rendre non-blocking
+#include "utils/stdint.h"
 
 class Speaker
 {

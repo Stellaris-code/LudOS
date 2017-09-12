@@ -39,7 +39,7 @@ void PIT::init(uint32_t freq)
 
     Timer::set_frequency(freq);
 
-    kprintf("PIT Timer initialized\n");
+    printf("PIT Timer initialized\n");
 }
 
 void PIT::set_frequency(uint32_t freq)
@@ -53,8 +53,8 @@ void PIT::set_frequency(uint32_t freq)
     outb(0x43, 0x36);
 
     // Divisor has to be sent byte-wise, so split here into upper/lower bytes.
-    uint8_t l = static_cast<uint8_t>(divisor & 0xFF);
-    uint8_t h = static_cast<uint8_t>((divisor>>8) & 0xFF);
+    uint8_t l = (uint8_t)(divisor & 0xFF);
+    uint8_t h = (uint8_t)( (divisor>>8) & 0xFF );
 
     // Send the frequency divisor.
     outb(0x40, l);
@@ -65,8 +65,8 @@ void PIT::set_pcspeaker_frequency(uint16_t freq)
 {
     const uint16_t div = 1193180 / freq;
     outb(0x43, 0xb6);
-    outb(0x42, static_cast<uint8_t>(div) );
-    outb(0x42, static_cast<uint8_t>(div >> 8));
+    outb(0x42, (uint8_t) (div) );
+    outb(0x42, (uint8_t) (div >> 8));
 }
 
 void PIT::irq_callback(const registers * const)

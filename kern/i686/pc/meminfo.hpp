@@ -25,7 +25,7 @@ SOFTWARE.
 #ifndef MEMINFO_HPP
 #define MEMINFO_HPP
 
-#include <stdint.h>
+#include "utils/stdint.h"
 
 struct multiboot_mmap_entry;
 typedef struct multiboot_mmap_entry multiboot_memory_map_t;

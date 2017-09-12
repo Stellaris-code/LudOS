@@ -25,13 +25,13 @@ SOFTWARE.
 #ifndef DMIDECODE_H
 #define DMIDECODE_H
 
-#include <stdint.h>
+#include "utils/stdint.h"
 #include "utils/array.hpp"
 
 static inline const char *dmi_processor_family(uint32_t type)
 {
         struct {
-                uint32_t value;
+                int value;
                 const char *name;
         } family2[] = {
                 { 0x01, "Other" },

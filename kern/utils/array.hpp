@@ -25,7 +25,7 @@ SOFTWARE.
 #ifndef ARRAY_HPP
 #define ARRAY_HPP
 
-#include <stdint.h>
+#include "utils/stdint.h"
 
 template<class T, size_t N>
 constexpr size_t size(T (&)[N]) { return N; }

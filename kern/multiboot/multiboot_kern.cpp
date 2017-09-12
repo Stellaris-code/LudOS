@@ -42,13 +42,13 @@ void check(uint32_t magic, const multiboot_header &mbd, const multiboot_info* mb
 {
     if (mbd.magic != MULTIBOOT_HEADER_MAGIC || magic != MULTIBOOT_BOOTLOADER_MAGIC)
     {
-        log("0x%lx\n", magic);
+        log("0x%x\n", magic);
         panic("Multiboot2 Magic number is invalid ! Aborting");
         return;
     }
     if (reinterpret_cast<uintptr_t>(mbd_info) & 7)
     {
-        log("Unaligned mbi: 0x%lx\n", reinterpret_cast<uintptr_t>(mbd_info));
+        log("Unaligned mbi: 0x%x\n", reinterpret_cast<uintptr_t>(mbd_info));
         return;
     }
 }
@@ -59,10 +59,10 @@ void parse_info(const multiboot_info_t* info)
 
     //puts("Multiboot Info :");
 
-    //kprintf("Multiboot flags : 0x%x\n", info->flags);
+    //printf("Multiboot flags : 0x%x\n", info->flags);
     if (CHECK_FLAG(info->flags, 1))
     {
-        //    kprintf("Boot device : 0x%x\n", info->boot_device);
+    //    printf("Boot device : 0x%x\n", info->boot_device);
     }
     if (CHECK_FLAG(info->flags, 2))
     {
@@ -72,28 +72,26 @@ void parse_info(const multiboot_info_t* info)
     {
         multiboot_module_t * mod { reinterpret_cast<multiboot_module_t *>(phys(info->mods_addr)) };
 
-        kprintf("Module count : %d\n", info->mods_count);
-        kprintf("Modules address : 0x%x\n", info->mods_addr);
+        printf("Module count : %d\n", info->mods_count);
+        printf("Modules address : 0x%x\n", info->mods_addr);
         for (size_t i = 0; i < info->mods_count; i++, mod++)
         {
-            kprintf(" Module start : 0x%x\n", mod->mod_start);
-            kprintf(" Module end : 0x%x\n", mod->mod_end);
-            kprintf(" Module cmdline : '%s'\n", reinterpret_cast<char*>(phys(mod->cmdline)));
+            printf(" Module start : 0x%x\n", mod->mod_start);
+            printf(" Module end : 0x%x\n", mod->mod_end);
+            printf(" Module cmdline : '%s'\n", reinterpret_cast<char*>(phys(mod->cmdline)));
         }
     }*/
     if (CHECK_FLAG (info->flags, 6))
     {
         Meminfo::mmap_addr = reinterpret_cast<multiboot_memory_map_t *>(phys(info->mmap_addr));
         for (multiboot_memory_map_t *mmap = Meminfo::mmap_addr;
-             reinterpret_cast<uintptr_t>(mmap) < phys(info->mmap_addr) + info->mmap_length;
-             mmap = reinterpret_cast<multiboot_memory_map_t*>(
-                 reinterpret_cast<uintptr_t>(mmap)
-                 + mmap->size + sizeof(mmap->size))
-             )
+             (uintptr_t)mmap < phys(info->mmap_addr) + info->mmap_length;
+             mmap = (multiboot_memory_map_t *) ((unsigned long) mmap
+                                                + mmap->size + sizeof (mmap->size)))
         {
-            kprintf(" Base address : 0x%llx, ", mmap->addr);
-            kprintf("size : 0x%llx, ", mmap->len);
-            kprintf("type : %d\n", mmap->type);
+            printf(" Base address : 0x%x, ", mmap->addr);
+            printf("size : 0x%x, ", mmap->len);
+            printf("type : %d\n", mmap->type);
 
         }
     }

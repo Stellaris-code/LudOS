@@ -25,12 +25,9 @@ SOFTWARE.
 #ifndef HALT_HPP
 #define HALT_HPP
 
-#include "i686/pc/interrupts.hpp"
-
 [[noreturn]]
 inline void halt()
 {
-    cli();
     while (true) {}
     __builtin_unreachable();
 }

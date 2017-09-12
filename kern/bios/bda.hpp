@@ -1,5 +1,5 @@
 /*
-iota.h
+bda.hpp
 
 Copyright (c) 23 Yann BOUCHER (yann)
 
@@ -22,21 +22,33 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef IOTA_H
-#define IOTA_H
+#ifndef BDA_HPP
+#define BDA_HPP
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include "utils/stdint.h"
 
+namespace BDA
+{
+    uint16_t com1_port();
+    uint16_t com2_port();
+    uint16_t com3_port();
+    uint16_t com4_port();
 
-#include <stdint.h>
+    uint16_t lpt1_port();
+    uint16_t lpt2_port();
+    uint16_t lpt3_port();
 
-int64_t itoa(int64_t value, char *sp, int radix);
-char *  ftoa(double f, char * buf, int precision);
+    uint16_t equipement();
 
-#ifdef __cplusplus
+    uint16_t kbd_state();
+
+    uint8_t *kbd_buffer(); // TODO : array !
+
+    uint8_t disp_mode();
+
+    uint16_t txt_mode_columns();
+
+    uint16_t video_io_port();
 }
-#endif
 
-#endif // IOTA_H
+#endif // BDA_HPP

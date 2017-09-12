@@ -25,7 +25,7 @@ SOFTWARE.
 #ifndef ADDR_HPP
 #define ADDR_HPP
 
-#include <stdint.h>
+#include "utils/stdint.h"
 
 static constexpr uintptr_t kernel_virtual_base { 0x00000000 };
 

@@ -25,7 +25,7 @@ SOFTWARE.
 #ifndef BITOPS_HPP
 #define BITOPS_HPP
 
-#include <stdint.h>
+#include "utils/stdint.h"
 
 template <typename T>
 inline void bit_set(T& val, size_t pos)

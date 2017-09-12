@@ -25,12 +25,10 @@ SOFTWARE.
 #ifndef REGISTERS_HPP
 #define REGISTERS_HPP
 
-#include <stdint.h>
+#include "utils/stdint.h"
 
 #include "halt.hpp"
 #include <stdio.h>
-
-#include "i686/pc/serialdebug.hpp"
 
 struct registers
 {
@@ -88,46 +86,23 @@ inline uint32_t cr4()
 
 inline void dump(const registers* regs)
 {
-    kprintf("eip : 0x%x\n", static_cast<unsigned int>(regs->eip));
 
-    kprintf("int : 0x%x  err code : 0x%x\n", static_cast<unsigned int>(regs->int_no), static_cast<unsigned int>(regs->err_code));
+    printf("eip : 0x%x\n", regs->eip);
 
-    kprintf("eax : 0x%x  ebx : 0x%x\n", static_cast<unsigned int>(regs->eax), static_cast<unsigned int>(regs->ebx));
+    printf("eax : 0x%x  ebx : 0x%x\n", regs->eax, regs->ebx);
 
-    kprintf("ecx : 0x%x  edx : 0x%x\n", static_cast<unsigned int>(regs->ecx), static_cast<unsigned int>(regs->edx));
-    kprintf("ebx : 0x%x  esi : 0x%x\n", static_cast<unsigned int>(regs->ebp), static_cast<unsigned int>(regs->esi));
-    kprintf("edi : 0x%x\n\n", static_cast<unsigned int>(regs->edi));
+    printf("ecx : 0x%x  edx : 0x%x\n", regs->ecx, regs->edx);
+    printf("ebx : 0x%x  esi : 0x%x\n", regs->ebp, regs->esi);
+    printf("edi : 0x%x\n\n", regs->edi);
 
-    kprintf("cr0 : 0x%x  cr2 : 0x%x\n", static_cast<unsigned int>(cr0()), static_cast<unsigned int>(cr2()));
-    kprintf("cr3 : 0x%x  cr4 : 0x%x\n\n", static_cast<unsigned int>(cr3()), static_cast<unsigned int>(cr4()));
+    printf("cr0 : 0x%x  cr2 : 0x%x\n", cr0(), cr2());
+    printf("cr3 : 0x%x  cr4 : 0x%x\n\n", cr3(), cr4());
 
-    kprintf("gs : 0x%x  fs : 0x%x\n", static_cast<unsigned int>(regs->gs), static_cast<unsigned int>(regs->fs));
-    kprintf("es : 0x%x  ds : 0x%x\n\n", static_cast<unsigned int>(regs->es), static_cast<unsigned int>(regs->ds));
+    printf("gs : 0x%x  fs : 0x%x\n", regs->gs, regs->fs);
+    printf("es : 0x%x  ds : 0x%x\n\n", regs->es, regs->ds);
 
-    kprintf("cs : 0x%x  eflags : 0x%x\n", static_cast<unsigned int>(regs->cs), static_cast<unsigned int>(regs->eflags));
-    kprintf("ss : 0x%x  esp : 0x%x\n", static_cast<unsigned int>(regs->ss), static_cast<unsigned int>(regs->esp));
-}
-
-inline void dump_serial(const registers* regs)
-{
-    serial::debug::write("eip : 0x%x\n", static_cast<unsigned int>(regs->eip));
-
-    serial::debug::write("int : 0x%x  err code : 0x%x\n", static_cast<unsigned int>(regs->int_no), static_cast<unsigned int>(regs->err_code));
-
-    serial::debug::write("eax : 0x%x  ebx : 0x%x\n", static_cast<unsigned int>(regs->eax), static_cast<unsigned int>(regs->ebx));
-
-    serial::debug::write("ecx : 0x%x  edx : 0x%x\n", static_cast<unsigned int>(regs->ecx), static_cast<unsigned int>(regs->edx));
-    serial::debug::write("ebx : 0x%x  esi : 0x%x\n", static_cast<unsigned int>(regs->ebp), static_cast<unsigned int>(regs->esi));
-    serial::debug::write("edi : 0x%x\n\n", static_cast<unsigned int>(regs->edi));
-
-    serial::debug::write("cr0 : 0x%x  cr2 : 0x%x\n", static_cast<unsigned int>(cr0()), static_cast<unsigned int>(cr2()));
-    serial::debug::write("cr3 : 0x%x  cr4 : 0x%x\n\n", static_cast<unsigned int>(cr3()), static_cast<unsigned int>(cr4()));
-
-    serial::debug::write("gs : 0x%x  fs : 0x%x\n", static_cast<unsigned int>(regs->gs), static_cast<unsigned int>(regs->fs));
-    serial::debug::write("es : 0x%x  ds : 0x%x\n\n", static_cast<unsigned int>(regs->es), static_cast<unsigned int>(regs->ds));
-
-    serial::debug::write("cs : 0x%x  eflags : 0x%x\n", static_cast<unsigned int>(regs->cs), static_cast<unsigned int>(regs->eflags));
-    serial::debug::write("ss : 0x%x  esp : 0x%x\n", static_cast<unsigned int>(regs->ss), static_cast<unsigned int>(regs->esp));
+    printf("cs : 0x%x  eflags : 0x%x\n", regs->cs, regs->eflags);
+    printf("ss : 0x%x  esp : 0x%x\n", regs->ss, regs->esp);
 }
 
 #endif // REGISTERS_HPP

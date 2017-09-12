@@ -41,7 +41,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  * Configuration adjustments
  */
 #ifdef PRINTF_SIZE_T_SUPPORT
-#include <stdint.h>
+#include "utils/stdint.h"
 #endif
 
 #ifdef PRINTF_LONG_LONG_SUPPORT
@@ -257,9 +257,9 @@ void tfp_format(void *putp, putcf putf, const char *fmt, va_list va)
 {
     struct param p;
 #ifdef PRINTF_LONG_SUPPORT
-    char bf[23+1000];  /* long = 64b on some architectures */
+    char bf[23];  /* long = 64b on some architectures */
 #else
-    char bf[12+1000];  /* int = 32b on some architectures */
+    char bf[12];  /* int = 32b on some architectures */
 #endif
     char ch;
     p.bf = bf;
@@ -387,11 +387,6 @@ void tfp_format(void *putp, putcf putf, const char *fmt, va_list va)
 # elif defined(SIZEOF_LONG_LONG) && SIZEOF_POINTER <= SIZEOF_LONG_LONG
                 lng = 2;
 # endif
-#endif
-#ifndef __cplusplus
-                __attribute__((fallthrough));
-#else
-            [[fallthrough]];
 #endif
             case 'x':
             case 'X':

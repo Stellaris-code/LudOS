@@ -29,32 +29,18 @@ SOFTWARE.
 #include "panic.hpp"
 #include "isr.hpp"
 
-#include "io.hpp"
-#include "i686/pc/serialdebug.hpp"
-#include "terminal/terminal.hpp"
-
 #include <stdio.h>
+
+// TODO : print regs
 
 isr::isr_t handlers[256] { nullptr };
 
 extern "C"
 const registers* isr_handler(const registers* const regs)
 {
-    if (regs->int_no == 8) // double fault
-    {
-        cli();
-        // assume terminal is broken
-        dump_serial(regs);
-        serial::debug::write("Double fault, aborting\n");
-        halt();
-        return regs;
-    }
-
-    serial::debug::write("eip : 0x%lx\n", regs->eip);
-    dump_serial(regs);
     dump(regs);
-    panic("Unhandeld interrupt 0x%lx with error code 0x%lx at 0x%lx\n"
-          "edx : 0x%lx\ncr2 : 0x%lx", regs->int_no, regs->err_code, regs->eip, regs->edx, cr2());
+    panic("Unhandeld interrupt 0x%x with error code 0x%x at %p\n"
+          "edx : 0x%x\ncr2 : 0x%x", regs->int_no, regs->err_code, regs->eip, regs->edx, cr2());
     // handle here
 
     return regs;
@@ -63,11 +49,11 @@ const registers* isr_handler(const registers* const regs)
 extern "C"
 const registers* irq_handler(const registers* const regs)
 {
+    pic::send_eoi(regs->int_no-31);
     if (auto handl = handlers[regs->int_no]; handl)
     {
         handl(regs);
     }
-    pic::send_eoi(regs->int_no-31);
 
     return regs;
 }

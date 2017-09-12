@@ -25,7 +25,7 @@ SOFTWARE.
 #ifndef KBDMAPS_HPP
 #define KBDMAPS_HPP
 
-#include <stdint.h>
+#include "utils/stdint.h"
 
 static constexpr uint8_t kbdmap_us[] = {
     0x1B, 0x1B, 0x1B, 0x1B,	/*      esc     (0x01)  */
@@ -156,7 +156,7 @@ static constexpr uint8_t kbdmap_fr[] = {
     'p', 'P', 'p', 'p',
     '^',0xF9, '^', '^',
     '$', 156, '$', '$',
-    '\n', '\n', '\n','\n',	/*      enter   */
+    0x0A, 0x0A, 0x0A, 0x0A,	/*      enter   */
     0xFF, 0xFF, 0xFF, 0xFF,	/*      ctrl    */
     'q', 'Q', 'q', 'q',
     's', 'S', 's', 's',

@@ -1,5 +1,5 @@
 /*
-string.h
+puts.c
 
 Copyright (c) 23 Yann BOUCHER (yann)
 
@@ -22,29 +22,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef _STRING_H
-#define _STRING_H 1
 
-#include <sys/cdefs.h>
 
-#include <stddef.h>
+#include <stdio.h>
 
-#include <stdint.h>
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-int memcmp(const void*, const void*, size_t);
-void* memcpy(void* __restrict, const void* __restrict, size_t);
-void* memmove(void*, const void*, size_t);
-void* memset(void*, uint8_t, size_t);
-void* memsetw(void*, uint16_t, size_t);
-size_t strlen(const char*);
-char *strcpy(char * __restrict dest, const char * __restrict src);
-
-#ifdef __cplusplus
+void puts(const char* string)
+{
+    printf("%s\n", string);
 }
-#endif
-
-#endif

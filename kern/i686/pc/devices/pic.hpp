@@ -25,7 +25,7 @@ SOFTWARE.
 #ifndef PIC_HPP
 #define PIC_HPP
 
-#include <stdint.h>
+#include "utils/stdint.h"
 
 #define PIC_MASTER_CMD 0x20
 #define PIC_MASTER_DATA 0x21

@@ -1,7 +1,7 @@
 /*
-assert.h
+string.h
 
-Copyright (c) 09 Yann BOUCHER (yann)
+Copyright (c) 23 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,33 +22,29 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
+#ifndef _STRING_H
+#define _STRING_H 1
 
-#include <stdint.h>
+#include <sys/cdefs.h>
 
-#include "utils/defs.hpp"
+#include <stddef.h>
 
-#ifndef assert
-#define assert(cond) ::impl_assert(cond, #cond, __FILE__, __LINE__, __FUNCTION__)
+#include "utils/stdint.h"
+
+#ifdef __cplusplus
+extern "C" {
 #endif
 
-#ifndef assert_mesg
-#define assert_msg(cond, fmt, ...) ::impl_assert_msg(cond, #cond, __FILE__, __LINE__, __FUNCTION__, fmt, ##__VA_ARGS__);
+int memcmp(const void*, const void*, size_t);
+void* memcpy(void* __restrict, const void* __restrict, size_t);
+void* memmove(void*, const void*, size_t);
+void* memset(void*, int, size_t);
+void* memsetw(void*, uint16_t, size_t);
+size_t strlen(const char*);
+char *strcpy(char * __restrict dest, const char * __restrict src);
+
+#ifdef __cplusplus
+}
 #endif
 
-#ifndef __ASSERT_H
-#define __ASSERT_H
-
-#include <stdint.h>
-
-#ifndef NDEBUG
-#define error_impl panic
-#elif
-#define error_impl err
 #endif
-//"Reason : '" msg "'\n"
-
-void impl_assert(bool cond, const char* strcond, const char* file, size_t line, const char* fun);
-PRINTF_FMT(6, 7)
-void impl_assert_msg(bool cond, const char* strcond, const char* file, size_t line, const char* fun, const char* fmt, ...);
-
-#endif // __ASSERT_H

@@ -28,44 +28,27 @@ SOFTWARE.
 #include <stdio.h>
 #include <stdarg.h>
 
-#include "utils/defs.hpp"
-
 #include "terminal/terminal.hpp"
 
 #include "i686/pc/devices/speaker.hpp"
-#include "i686/pc/serialdebug.hpp"
 #include "i686/pc/interrupts.hpp"
 
 #include "halt.hpp"
 
-// TODO : gérer si le terminal est mort
-
 [[noreturn]]
 void panic(const char *fmt, ...)
 {
-    serial::debug::write("Kernel Panic !\n");
-
-    cli();
-
-    {
-        va_list va;
-        va_start(va, fmt);
-        tfp_format(nullptr, [](void*, char c){serial::debug::write("%c", c);}, fmt, va);
-        va_end(va);
-    }
-
     Terminal::set_color(VGA_COLOR_RED);
 
     //Speaker::beep(300);
 
+    cli();
+
     puts("\nKERNEL PANIC : ");
 
-    {
-        va_list va;
-        va_start(va, fmt);
-        tfp_format(nullptr, [](void*, char c){putchar(c);  serial::debug::write("%c", c);}, fmt, va);
-        va_end(va);
-    }
-
+    va_list va;
+    va_start(va, fmt);
+    tfp_format(nullptr, [](void*, char c){putchar(c);}, fmt, va);
+    va_end(va);
     halt();
 }

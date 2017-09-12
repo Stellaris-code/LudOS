@@ -26,7 +26,7 @@ SOFTWARE.
 #define SMBIOS_HPP
 
 #include "utils/logging.hpp"
-#include <stdint.h>
+#include "utils/stdint.h"
 
 struct SMBIOSEntryPoint
 {

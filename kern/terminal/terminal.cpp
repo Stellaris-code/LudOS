@@ -1,5 +1,5 @@
 /*
-TerminalImpl.cpp
+terminal.cpp
 
 Copyright (c) 23 Yann BOUCHER (yann)
 
@@ -29,39 +29,32 @@ SOFTWARE.
 
 #ifdef ARCH_i686
 #include "i686/pc/devices/speaker.hpp"
-#include "i686/pc/bios/bda.hpp"
 #endif
 
-#include "utils/dynarray.hpp"
-
 #include "io.hpp"
+#include "bios/bda.hpp"
 #include "halt.hpp"
 
 #include "utils/minmax.hpp"
 
-TerminalImpl::TerminalImpl(uint16_t* term_buf, size_t iwidth, size_t iheight, size_t imax_history)
-    : terminal_buffer(term_buf), width(iwidth), height(iheight), max_history(imax_history),
-      history(width, height*max_history)
+detail::TerminalImpl::TerminalImpl()
 {
     clear();
 }
 
-
-void TerminalImpl::set_color(uint8_t color)
+void detail::TerminalImpl::set_color(uint8_t color)
 {
     terminal_color = color;
 }
 
-
-void TerminalImpl::put_entry_at(uint8_t c, uint8_t color, size_t x, size_t y)
+void detail::TerminalImpl::put_entry_at(uint8_t c, uint8_t color, size_t x, size_t y)
 {
     check_pos();
-    const size_t index = y * width + x;
+    const size_t index = y * vga_width + x;
     terminal_buffer[index] = vga_entry(c, color);
 }
 
-
-void TerminalImpl::put_char(uint8_t c)
+void detail::TerminalImpl::put_char(uint8_t c)
 {
     if (c == '\n')
     {
@@ -108,8 +101,7 @@ void TerminalImpl::put_char(uint8_t c)
     check_pos();
 }
 
-
-void TerminalImpl::write(const char *data, size_t size)
+void detail::TerminalImpl::write(const char *data, size_t size)
 {
     for (size_t i = 0; i < size; i++)
     {
@@ -117,139 +109,113 @@ void TerminalImpl::write(const char *data, size_t size)
     }
 }
 
-
-void TerminalImpl::write_string(const char *data)
+void detail::TerminalImpl::write_string(const char *data)
 {
     write(data, strlen(data));
 }
 
-
-void TerminalImpl::clear()
+void detail::TerminalImpl::clear()
 {
-    memsetw(terminal_buffer, vga_entry(' ', terminal_color), height*width*4);
+    memsetw(terminal_buffer, vga_entry(' ', terminal_color), vga_height*vga_width*4);
 }
 
-
-void TerminalImpl::scroll_up()
+void detail::TerminalImpl::scroll_up()
 {
-    for (size_t y { 1 }; y < height; ++y)
+    for (size_t y { 1 }; y < vga_height; ++y)
     {
-        memcpy(terminal_buffer + (y-1)*width, terminal_buffer + y*width, width*4); // copy line below
+        memcpy(terminal_buffer + (y-1)*vga_width, terminal_buffer + y*vga_width, vga_width*4); // copy line below
     }
-    memsetw(terminal_buffer + (height-1)*width, vga_entry(' ', terminal_color), width*4); // clear scrolled line
+    memsetw(terminal_buffer + (vga_height-1)*vga_width, vga_entry(' ', terminal_color), vga_width*4); // clear scrolled line
     --terminal_row;
     update_cursor();
 }
 
-
-void TerminalImpl::push_color(uint8_t color)
+void detail::TerminalImpl::push_color(uint8_t color)
 {
     old_terminal_color = terminal_color;
     set_color(color);
 }
 
-
-void TerminalImpl::pop_color()
+void detail::TerminalImpl::pop_color()
 {
-
     set_color(old_terminal_color);
 }
 
-
-void TerminalImpl::show_history(int page)
+void detail::TerminalImpl::show_history(int page)
 {
-    if (page < 0)
-    {
-#ifdef ARCH_i686
-        //Speaker::beep(200);
-#endif
-        page = 0;
-    }
+    if (page < 0) page = 0;
 
-    if (static_cast<size_t>(page) > history.size() - height)
+    if (page > history.size() - vga_height)
     {
-#ifdef ARCH_i686
-        //Speaker::beep(200);
-#endif
-        page = history.size() - height; // avoir un plafond, une limite
-
+        page = history.size() - vga_height; // avoir un plafond, une limite
     }
 
     current_history_page = page;
 
-    for (size_t i { 0 }; i < height-1; ++i) // ignore first line where everything is typed
+    for (size_t i { 0 }; i < vga_height-1; ++i) // ignore first line where everything is typed
     {
-        for (size_t j { 0 }; j < width; ++j)
+        for (size_t j { 0 }; j < vga_width; ++j)
         {
-            int index = history.size() - (height-i) -page;
+            int index = history.size() - (vga_height-i) -page;
             if (index >= 0)
             {
-                terminal_buffer[i*width+j] = history.get_char(j, index);
+                terminal_buffer[i*vga_width+j] = history[index][j];
             }
         }
     }
 }
 
-
-void TerminalImpl::new_line()
+void detail::TerminalImpl::new_line()
 {
     add_line_to_history();
     terminal_column = 0;
     ++terminal_row;
 }
 
-
-void TerminalImpl::add_line_to_history()
+void detail::TerminalImpl::add_line_to_history()
 {
-    uint16_t line[width];
-    for (size_t i { 0 }; i < width; ++i)
+    uint16_t line[vga_width];
+    for (size_t i { 0 }; i < vga_width; ++i)
     {
-        line[i] = terminal_buffer[terminal_row*width + i];
+        line[i] = terminal_buffer[terminal_row*vga_width + i];
     }
     history.add(line);
 }
 
-
-void TerminalImpl::check_pos()
+void detail::TerminalImpl::check_pos()
 {
-    if (terminal_column >= width)
+    if (terminal_column >= vga_width)
     {
-        terminal_column = terminal_column%width;
+        terminal_column = terminal_column%vga_width;
         add_line_to_history();
         ++terminal_row;
     }
-    if (terminal_row >= height)
+    if (terminal_row >= vga_height)
     {
         scroll_up();
-        terminal_row = height-1;
+        terminal_row = vga_height-1;
     }
 
     update_cursor();
 }
 
-
-void TerminalImpl::move_cursor(size_t x, size_t y)
+void detail::TerminalImpl::move_cursor(size_t x, size_t y)
 {
-#ifdef ARCH_i686
-    const size_t index = y * width + x;
+    const size_t index = y * vga_width + x;
 
     const uint16_t port_low = BDA::video_io_port();
     const uint16_t port_high = port_low + 1;
 
     // cursor LOW port to vga INDEX register
     outb(port_low, 0x0F);
-    outb(port_high, static_cast<uint8_t>(index&0xFF));
+    outb(port_high, (uint8_t)(index&0xFF));
 
     // cursor HIGH port to vga INDEX register
     outb(port_low, 0x0E);
-    outb(port_high, static_cast<uint8_t>((index>>8)&0xFF));
-#else
-#endif
+    outb(port_high, (uint8_t)((index>>8)&0xFF));
 }
 
-
-void TerminalImpl::update_cursor()
+void detail::TerminalImpl::update_cursor()
 {
     move_cursor(terminal_column, terminal_row);
 }
-

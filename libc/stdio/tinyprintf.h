@@ -103,8 +103,6 @@ regs Kusti, 23.10.2004
 
 #include <stdarg.h>
 
-#include "utils/defs.hpp"
-
 /* Global configuration */
 
 /* Set this to 0 if you do not want to provide tfp_printf */
@@ -128,7 +126,16 @@ regs Kusti, 23.10.2004
 /* Optional external types dependencies */
 
 #if TINYPRINTF_DEFINE_TFP_SPRINTF
-# include <stdint.h> /* size_t */
+# include "utils/stdint.h" /* size_t */
+#endif
+
+/* Declarations */
+
+#ifdef __GNUC__
+# define _TFP_SPECIFY_PRINTF_FMT(fmt_idx,arg1_idx) \
+    __attribute__((format (printf, fmt_idx, arg1_idx)))
+#else
+# define _TFP_SPECIFY_PRINTF_FMT(fmt_idx,arg1_idx)
 #endif
 
 #ifdef  __cplusplus
@@ -152,23 +159,23 @@ void tfp_format(void *putp, putcf putf, const char *fmt, va_list va);
 #if TINYPRINTF_DEFINE_TFP_SPRINTF
 int tfp_vsnprintf(char *str, size_t size, const char *fmt, va_list ap);
 int tfp_snprintf(char *str, size_t size, const char *fmt, ...) \
-     PRINTF_FMT(3, 4);
+     _TFP_SPECIFY_PRINTF_FMT(3, 4);
 int tfp_vsprintf(char *str, const char *fmt, va_list ap);
 int tfp_sprintf(char *str, const char *fmt, ...) \
-   PRINTF_FMT(2, 3);
+    _TFP_SPECIFY_PRINTF_FMT(2, 3);
 # if TINYPRINTF_OVERRIDE_LIBC
-#  define kvsnprintf tfp_vsnprintf
-#  define ksnprintf tfp_snprintf
-#  define kvsprintf tfp_vsprintf
-#  define ksprintf tfp_sprintf
+#  define vsnprintf tfp_vsnprintf
+#  define snprintf tfp_snprintf
+#  define vsprintf tfp_vsprintf
+#  define sprintf tfp_sprintf
 # endif
 #endif
 
 #if TINYPRINTF_DEFINE_TFP_PRINTF
 void init_printf(void *putp, putcf putf);
-void tfp_printf(const char * __restrict fmt, ...) PRINTF_FMT(1, 2);
+void tfp_printf(const char * __restrict fmt, ...) _TFP_SPECIFY_PRINTF_FMT(1, 2);
 # if TINYPRINTF_OVERRIDE_LIBC
-#  define kprintf tfp_printf
+#  define printf tfp_printf
 # endif
 #endif
 

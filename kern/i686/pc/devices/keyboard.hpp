@@ -25,7 +25,7 @@ SOFTWARE.
 #ifndef KEYBOARD_HPP
 #define KEYBOARD_HPP
 
-#include <stdint.h>
+#include "utils/stdint.h"
 #include "../registers.hpp"
 
 #include "kbdmaps.hpp"

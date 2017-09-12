@@ -1,7 +1,7 @@
 /*
-serialdebug.hpp
+iota.h
 
-Copyright (c) 10 Yann BOUCHER (yann)
+Copyright (c) 23 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,25 +22,21 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef SERIALDEBUG_HPP
-#define SERIALDEBUG_HPP
+#ifndef IOTA_H
+#define IOTA_H
 
-#include "serial.hpp"
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-#include "utils/defs.hpp"
 
-namespace serial
-{
-namespace debug
-{
+#include "utils/stdint.h"
 
-void init(uint16_t comport);
-PRINTF_FMT(2, 3)
-void write(uint16_t comport, const char* fmt, ...);
-PRINTF_FMT(1, 2)
-void write(const char* fmt, ...);
+int64_t itoa(int64_t value, char *sp, int radix);
+char *  ftoa(double f, char * buf, int precision);
 
+#ifdef __cplusplus
 }
-}
+#endif
 
-#endif // SERIALDEBUG_HPP
+#endif // IOTA_H

@@ -22,30 +22,33 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-// FIXME : Implement guards !
+
 namespace __cxxabiv1
 {
-        /* guard variables */
+/* guard variables */
 
-        /* The ABI requires a 64-bit type.  */
-        __extension__ typedef int __guard __attribute__((mode(__DI__)));
+/* The ABI requires a 64-bit type.  */
+__extension__ typedef volatile int __guard __attribute__((mode(__DI__)));
 
-        extern "C" int __cxa_guard_acquire (__guard *);
-        extern "C" void __cxa_guard_release (__guard *);
-        extern "C" void __cxa_guard_abort (__guard *);
+extern "C" int __cxa_guard_acquire (__guard *);
+extern "C" void __cxa_guard_release (__guard *);
+extern "C" void __cxa_guard_abort (__guard *);
 
-        extern "C" int __cxa_guard_acquire (__guard *g)
-        {
-                return !*(char *)(g);
-        }
+extern "C" int __cxa_guard_acquire (__guard *g)
+{
+    while (__sync_bool_compare_and_swap(g, 1, 0));
+    __sync_synchronize();
+    return !*g;
+}
 
-        extern "C" void __cxa_guard_release (__guard *g)
-        {
-                *(char *)g = 1;
-        }
+extern "C" void __cxa_guard_release (__guard *g)
+{
+    __sync_synchronize();
+    *g = 1;
+}
 
-        extern "C" void __cxa_guard_abort (__guard *)
-        {
+extern "C" void __cxa_guard_abort (__guard *)
+{
 
-        }
+}
 }

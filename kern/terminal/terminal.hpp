@@ -54,10 +54,13 @@ private:
     void new_line();
     void add_line_to_history();
     void check_pos();
-    void move_cursor(size_t x, size_t y);
     void update_cursor();
 
 public:
+    void (*move_cursor_callback)(size_t, size_t, size_t);
+    void (*beep_callback)(size_t);
+
+private:
     size_t terminal_row { 0 };
     size_t terminal_column { 0 };
     uint8_t terminal_color { vga_entry_color(VGA_COLOR_LIGHT_GREY, VGA_COLOR_BLACK) };

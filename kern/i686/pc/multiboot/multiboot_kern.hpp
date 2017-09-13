@@ -25,7 +25,7 @@ SOFTWARE.
 #ifndef MULTIBOOT_KERN_HPP
 #define MULTIBOOT_KERN_HPP
 
-#include "multiboot/multiboot.h"
+#include "multiboot.h"
 #include <stdint.h>
 
 namespace multiboot

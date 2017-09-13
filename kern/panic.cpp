@@ -32,9 +32,11 @@ SOFTWARE.
 
 #include "terminal/terminal.hpp"
 
+#ifdef ARCH_i686
 #include "i686/pc/devices/speaker.hpp"
 #include "i686/pc/serialdebug.hpp"
 #include "i686/pc/interrupts.hpp"
+#endif
 
 #include "halt.hpp"
 

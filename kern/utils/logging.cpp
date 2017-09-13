@@ -25,7 +25,10 @@ SOFTWARE.
 
 #include "logging.hpp"
 
+#ifdef ARCH_i686
 #include "i686/pc/serialdebug.hpp"
+#include "i686/pc/timestamp.hpp"
+#endif
 
 void log(const char * __restrict fmt, ...)
 {

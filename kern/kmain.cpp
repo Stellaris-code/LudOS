@@ -23,7 +23,6 @@ SOFTWARE.
 
 */
 
-// TODO : APM
 // TODO : ACPI
 // TODO : disque
 // TODO : ext2
@@ -32,6 +31,7 @@ SOFTWARE.
 // TODO : user mode
 // TODO : POC calculatrice
 // TODO : utiliser une vraie implémentation de printf (newlib ?)
+// TODO : mettre le code d'intialization arch specific ailleurs dans un fichier à part
 
 // FIXME : bug si clavier utilisé avant init
 
@@ -42,22 +42,6 @@ SOFTWARE.
 #ifndef NDEBUG
 #define DEBUG
 #endif
-
-#include "multiboot/multiboot_kern.hpp"
-
-#include "i686/pc/gdt.hpp"
-#include "i686/pc/devices/pic.hpp"
-#include "i686/pc/idt.hpp"
-#include "i686/pc/devices/pit.hpp"
-#include "i686/pc/devices/speaker.hpp"
-#include "i686/pc/devices/keyboard.hpp"
-#include "i686/pc/fpu.hpp"
-#include "i686/pc/cpuinfo.hpp"
-#include "i686/pc/cpuid.hpp"
-#include "i686/pc/smbios.hpp"
-#include "i686/pc/paging.hpp"
-#include "i686/pc/bios/bda.hpp"
-#include "i686/pc/serialdebug.hpp"
 
 #include "utils/addr.hpp"
 #include "utils/bitarray.hpp"
@@ -71,46 +55,22 @@ SOFTWARE.
 #include "greet.hpp"
 #include "halt.hpp"
 
-extern "C" multiboot_header mbd;
+#ifdef ARCH_i686
+#include "i686/pc/init.hpp"
+#endif
+
 extern "C" uint32_t kernel_physical_end;
 
+#ifdef ARCH_i686
 extern "C"
 void kmain(uint32_t magic, const multiboot_info_t* mbd_info)
+#else
+void kmain()
+#endif
 {
-    serial::debug::init(BDA::com1_port());
-    serial::debug::write(BDA::com1_port(), "Serial COM1 : Booting LudOS v%d...\n", 1);
-
-    TerminalImpl hwterminal(reinterpret_cast<uint16_t*>(phys(0xB8000)), 80, 25);
-    Terminal::impl = &hwterminal;
-
-    init_printf(nullptr, [](void*, char c){putchar(c);});
-
-    multiboot::check(magic, mbd, mbd_info);
-    gdt::init();
-    pic::init();
-    idt::init();
-    PIT::init(100);
-    FPU::init();
-    multiboot::parse_info(mbd_info);
-
-    log("CPU clock speed : ~%llu MHz\n", clock_speed());
-    detect_cpu();
-    log("plop\n");
-    // paging fucks up i/o
-    Paging::init();
-
-
-    Speaker::beep(200);
-
-
-
-    SMBIOS::locate();
-    SMBIOS::bios_info();
-    SMBIOS::cpu_info();
-
-    Keyboard::init();
-    Keyboard::handle_char = [](uint8_t c){Terminal::put_char(c);};
-    Keyboard::set_kbdmap(kbdmap_fr);
+#ifdef ARCH_i686
+    i686::pc::init(magic, mbd_info);
+#endif
 
     greet();
 
@@ -122,7 +82,7 @@ void kmain(uint32_t magic, const multiboot_info_t* mbd_info)
 
     while (1)
     {
-//        log("dd\n");
+        //        log("dd\n");
         NOP();
     }
 }

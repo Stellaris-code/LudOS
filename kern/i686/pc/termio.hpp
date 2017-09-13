@@ -1,7 +1,7 @@
 /*
-logging.hpp
+termio.hpp
 
-Copyright (c) 27 Yann BOUCHER (yann)
+Copyright (c) 13 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,23 +22,30 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef LOGGING_HPP
-#define LOGGING_HPP
+#ifndef TERMIO_HPP
+#define TERMIO_HPP
 
-#include <stdio.h>
-#include <stdarg.h>
+#include <stdint.h>
 
-#include "terminal/terminal.hpp"
+#include "io.hpp"
+#include "i686/pc/bios/bda.hpp"
 
-#include "utils/defs.hpp"
+inline void move_cursor(size_t x, size_t y, size_t width)
+{
 
-PRINTF_FMT(1, 2)
-void log(const char * __restrict fmt, ...);
+    const size_t index = y * width + x;
 
-PRINTF_FMT(1, 2)
-void warn(const char * __restrict fmt, ...);
+    const uint16_t port_low = BDA::video_io_port();
+    const uint16_t port_high = port_low + 1;
 
-PRINTF_FMT(1, 2)
-void err(const char * __restrict fmt, ...);
+    // cursor LOW port to vga INDEX register
+    outb(port_low, 0x0F);
+    outb(port_high, static_cast<uint8_t>(index&0xFF));
 
-#endif // LOGGING_HPP
+    // cursor HIGH port to vga INDEX register
+    outb(port_low, 0x0E);
+    outb(port_high, static_cast<uint8_t>((index>>8)&0xFF));
+
+}
+
+#endif // TERMIO_HPP

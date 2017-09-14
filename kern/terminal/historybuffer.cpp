@@ -55,6 +55,7 @@ uint16_t HistoryBuffer::get_char(size_t x, size_t y) const
 void HistoryBuffer::add(uint16_t *line)
 {
     memcpy(&m_data[m_front*m_line_width], line, m_line_width*sizeof(uint16_t));
+
     ++m_front;
 
     if (m_front == m_height)

@@ -35,7 +35,7 @@ SOFTWARE.
 class TerminalImpl
 {
 public:
-    TerminalImpl(uint16_t* term_buf, size_t iwidth, size_t iheight, size_t imax_history = 10);
+    TerminalImpl(uint16_t* term_buf, size_t iwidth, size_t iheight, size_t imax_history = 5);
 
 public:
     void set_color(uint8_t color);

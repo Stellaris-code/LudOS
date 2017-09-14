@@ -23,7 +23,6 @@ SOFTWARE.
 
 */
 
-// TODO : ACPI
 // TODO : disque
 // TODO : ext2
 // TODO : scrolling terminal char par char
@@ -31,10 +30,8 @@ SOFTWARE.
 // TODO : user mode
 // TODO : POC calculatrice
 // TODO : utiliser une vraie implémentation de printf (newlib ?)
-// TODO : mettre le code d'intialization arch specific ailleurs dans un fichier à part
 
 // FIXME : bug si clavier utilisé avant init
-// FIXME : free() doit être pourri (page())
 
 #ifndef __cplusplus
 #error Must be compiler using C++ !
@@ -77,7 +74,6 @@ void kmain()
 
     while (1)
     {
-        //        log("dd\n");
         NOP();
     }
 }

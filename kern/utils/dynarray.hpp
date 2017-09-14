@@ -11,6 +11,8 @@
 #ifndef _LIBCPP_DYNARRAY
 #define _LIBCPP_DYNARRAY
 
+#define STACKSIZE 0x8000
+
 #include <limits.h>
 #include <stdint.h>
 #include <assert.h>
@@ -39,6 +41,8 @@ private:
 
     static inline value_type* __allocate (size_t count)
     {
+        assert_msg(count < STACKSIZE, "count 0x%x is too large for stack size 0x%x !", count, STACKSIZE);
+
         if (__SIZE_MAX__ / sizeof (value_type) <= count)
         {
             ::impl_assert_msg(true, "d", "d",4,"d","dynarray::allocation");
@@ -87,6 +91,7 @@ inline
 dynarray<_Tp>::dynarray(size_type __c) : dynarray ()
 {
     __base_ = __allocate (__c);
+    __size_ = __c;
     value_type *__data = data ();
     for ( __size_ = 0; __size_ < __c; ++__size_, ++__data )
         ::new (__data) value_type;
@@ -97,6 +102,7 @@ inline
 dynarray<_Tp>::dynarray(size_type __c, const value_type& __v) : dynarray ()
 {
     __base_ = __allocate (__c);
+    __size_ = __c;
     value_type *__data = data ();
     for ( __size_ = 0; __size_ < __c; ++__size_, ++__data )
         ::new (__data) value_type (__v);
@@ -129,10 +135,7 @@ inline
 typename dynarray<_Tp>::reference
 dynarray<_Tp>::at(size_type __n)
 {
-    if (__n >= __size_)
-    {
-        assert_msg(true, "dynarray::at out_of_range");
-    }
+    assert_msg(__n < __size_, "dynarray::at out_of_range");
     return data()[__n];
 }
 
@@ -141,10 +144,7 @@ inline
 typename dynarray<_Tp>::const_reference
 dynarray<_Tp>::at(size_type __n) const
 {
-    if (__n >= __size_)
-    {
-        assert_msg(true, "dynarray::at out_of_range");
-    }
+    assert_msg(__n < __size_, "dynarray::at out_of_range");
     return data()[__n];
 }
 

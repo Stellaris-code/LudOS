@@ -1,12 +1,14 @@
 #include "liballoc.h"
 
+#include "utils/logging.hpp"
+
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wformat"
 
 /**  Durand's Amazing Super Duper Memory functions.  */
 
 #ifndef NDEBUG
-#define DEBUG
+//#define DEBUG
 #endif
 
 #define VERSION 	"1.1"

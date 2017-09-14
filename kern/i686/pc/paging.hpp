@@ -48,6 +48,8 @@ public:
 
     static bool release_page_frame(uintptr_t p_addr, size_t number = 1);
 
+    void map_page(void* phys, void* virt, uint32_t flags);
+
 public:
     static constexpr uint32_t ram_maxpage { 0x10000 };
     static constexpr uint32_t page_size { 0x1000 };

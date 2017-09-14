@@ -25,6 +25,8 @@ SOFTWARE.
 
 #include "logging.hpp"
 
+#include "terminal/terminal.hpp"
+
 #ifdef ARCH_i686
 #include "i686/pc/serialdebug.hpp"
 #include "i686/pc/timestamp.hpp"

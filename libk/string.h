@@ -42,6 +42,10 @@ void* memset(void*, uint8_t, size_t);
 void* memsetw(void*, uint16_t, size_t);
 size_t strlen(const char*);
 char *strcpy(char * __restrict dest, const char * __restrict src);
+char *strncpy(char * __restrict dest, const char * __restrict src, size_t n);
+char *strcat ( char * destination, const char * source );
+int strcmp(const char* str1, const char* str2);
+int strncmp(const char* str1, const char* str2, size_t n);
 
 #ifdef __cplusplus
 }

@@ -50,6 +50,8 @@ namespace isr
 typedef void(*isr_t)(const registers* const);
 
 void register_handler(uint8_t num, isr_t handler);
+
+void delete_handler(uint8_t num);
 }
 
 #endif // ISR_HPP

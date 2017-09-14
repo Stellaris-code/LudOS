@@ -34,6 +34,7 @@ SOFTWARE.
 // TODO : mettre le code d'intialization arch specific ailleurs dans un fichier à part
 
 // FIXME : bug si clavier utilisé avant init
+// FIXME : free() doit être pourri (page())
 
 #ifndef __cplusplus
 #error Must be compiler using C++ !
@@ -73,12 +74,6 @@ void kmain()
 #endif
 
     greet();
-
-    char* ptr = (char*)kmalloc(256*1000*1000);
-    liballoc_dump();
-    ptr[4] = 'c';
-    kfree(ptr);
-    liballoc_dump();
 
     while (1)
     {

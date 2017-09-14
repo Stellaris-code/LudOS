@@ -42,36 +42,36 @@ void Paging::init()
 {
     Paging::init_mem_bitmap();
 
-    uint32_t* pt0 = reinterpret_cast<uint32_t*>(alloc_page_frame());
+//    uint32_t* pt0 = reinterpret_cast<uint32_t*>(alloc_page_frame());
 
-    uint32_t* pd0 = reinterpret_cast<uint32_t*>(alloc_page_frame());
+//    uint32_t* pd0 = reinterpret_cast<uint32_t*>(alloc_page_frame());
 
-    pd0[0] = reinterpret_cast<uintptr_t>(pt0);
-    pd0[0] |= 3;
-    for (size_t i = 1; i < 1024; i++)
-    {
-        pd0[i] = 0;
-    }
+//    pd0[0] = reinterpret_cast<uintptr_t>(pt0);
+//    pd0[0] |= 3;
+//    for (size_t i = 1; i < 1024; i++)
+//    {
+//        pd0[i] = 0;
+//    }
 
 
-    log("%p\n", pt0);
+//    log("%p\n", pt0);
 
-    /* Création de la Page Table[0] */
-    uint32_t page_addr = 0;
-    for (size_t i = 0; i < 1024; i++)
-    {
-        pt0[i] = page_addr;
-        pt0[i] |= 3;
-        page_addr += 0x1000;
-    }
-    // must use inline assembly, cannot call external function as that would mess up the stack
-    asm("   mov %0, %%eax    \n \
-    mov %%eax, %%cr3 \n \
-            mov %%cr0, %%eax \n \
-            or $0x80000001, %%eax     \n \
-            mov %%eax, %%cr0" :: "m"(pd0));
+//    /* Création de la Page Table[0] */
+//    uint32_t page_addr = 0;
+//    for (size_t i = 0; i < 1024; i++)
+//    {
+//        pt0[i] = page_addr;
+//        pt0[i] |= 3;
+//        page_addr += 0x1000;
+//    }
+//    // must use inline assembly, cannot call external function as that would mess up the stack
+//    asm("   mov %0, %%eax    \n \
+//    mov %%eax, %%cr3 \n \
+//            mov %%cr0, %%eax \n \
+//            or $0x80000001, %%eax     \n \
+//            mov %%eax, %%cr0" :: "m"(pd0));
 
-            log("Paging initialized\n");
+//            log("Paging initialized\n");
 }
 
 uintptr_t Paging::alloc_page_frame(size_t number)
@@ -113,6 +113,12 @@ bool Paging::release_page_frame(uintptr_t p_addr, size_t number)
     }
 
     return true;
+}
+
+// TODO : implement
+void Paging::map_page(void *phys, void *virt, uint32_t flags)
+{
+    virt = phys;
 }
 
 void Paging::init_mem_bitmap()

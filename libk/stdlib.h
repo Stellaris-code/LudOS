@@ -27,6 +27,8 @@ SOFTWARE.
 
 #include <sys/cdefs.h>
 
+#include "ext/liballoc/liballoc.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif

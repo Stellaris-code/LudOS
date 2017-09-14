@@ -42,7 +42,11 @@ SOFTWARE.
 #include "i686/pc/serialdebug.hpp"
 #include "i686/pc/termio.hpp"
 
+#include "powermanagement.hpp"
+
 #include "terminal/terminal.hpp"
+
+#include "acpi_init.hpp"
 
 extern "C" multiboot_header mbd;
 
@@ -89,6 +93,12 @@ inline void init(uint32_t magic, const multiboot_info_t* mbd_info)
     Keyboard::init();
     Keyboard::handle_char = [](uint8_t c){Terminal::put_char(c);};
     Keyboard::set_kbdmap(kbdmap_fr);
+
+    auto status = acpi_init();
+    if (ACPI_FAILURE(status))
+    {
+        err("ACPI Initialization error ! Message : '%s'\n", AcpiFormatException(status));
+    }
 }
 }
 }

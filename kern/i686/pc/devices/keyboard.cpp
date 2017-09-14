@@ -32,6 +32,8 @@ SOFTWARE.
 #include <ctype.h>
 #include <atoi.h>
 
+#include "terminal/terminal.hpp"
+
 void Keyboard::init()
 {
     isr::register_handler(IRQ1, &Keyboard::isr);

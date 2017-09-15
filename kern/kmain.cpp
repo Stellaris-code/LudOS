@@ -30,8 +30,10 @@ SOFTWARE.
 // TODO : user mode
 // TODO : POC calculatrice
 // TODO : utiliser une vraie implémentation de printf (newlib ?)
+// TODO : Paging
 
 // FIXME : bug si clavier utilisé avant init
+// FIXME : le terminal fait encore des siennes
 
 #ifndef __cplusplus
 #error Must be compiler using C++ !
@@ -41,23 +43,11 @@ SOFTWARE.
 #define DEBUG
 #endif
 
-#include "utils/addr.hpp"
-#include "utils/bitarray.hpp"
-#include "utils/dynarray.hpp"
-
-#include "timer.hpp"
-
-#include "ext/liballoc/liballoc.h"
-
-#include "utils/logging.hpp"
 #include "greet.hpp"
-#include "halt.hpp"
 
 #ifdef ARCH_i686
 #include "i686/pc/init.hpp"
 #endif
-
-extern "C" uint32_t kernel_physical_end;
 
 #ifdef ARCH_i686
 extern "C"
@@ -74,6 +64,6 @@ void kmain()
 
     while (1)
     {
-        NOP();
+        nop();
     }
 }

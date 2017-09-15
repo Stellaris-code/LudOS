@@ -41,6 +41,7 @@ SOFTWARE.
 #include "i686/pc/bios/bda.hpp"
 #include "i686/pc/serialdebug.hpp"
 #include "i686/pc/termio.hpp"
+#include "i686/pc/ide/ide_pio.hpp"
 
 #include "powermanagement.hpp"
 

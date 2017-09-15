@@ -43,7 +43,7 @@ inline uint64_t clock_speed(bool recompute = false)
 
     uint64_t current = rdtsc();
     uint32_t ticks = Timer::ticks();
-    while (ticks + step > Timer::ticks()) { NOP(); } // wait 'til a tick is elapsed
+    while (ticks + step > Timer::ticks()) { nop(); } // wait 'til a tick is elapsed
 
     uint64_t elapsed = rdtsc() - current;
     speed = elapsed*Timer::freq()/1'000'000/step;

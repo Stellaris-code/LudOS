@@ -1,7 +1,7 @@
 /*
-nop.hpp
+ide_pio.hpp
 
-Copyright (c) 27 Yann BOUCHER (yann)
+Copyright (c) 15 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,13 +22,37 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef NOP_HPP
-#define NOP_HPP
+#ifndef IDE_PIO_HPP
+#define IDE_PIO_HPP
 
-#ifdef ARCH_i686
-#define nop() asm volatile ("nop")
-#else
-#error no NOP defined for current arch
-#endif
+#include <stdint.h>
 
-#endif // NOP_HPP
+namespace ide
+{
+namespace pio
+{
+
+    enum DriveType : uint8_t
+    {
+        Master = 0xE0,
+        Slave = 0xF0
+    };
+
+    bool read(DriveType type, uint32_t block, uint8_t count, uint8_t* buf);
+    bool write(DriveType type, uint32_t block, uint8_t count, const uint8_t* buf);
+
+    uint8_t error_register();
+    uint8_t status_register();
+
+    namespace detail
+    {
+        void common(DriveType type, uint32_t block, uint8_t count);
+        void poll();
+        void flush();
+        bool error_set();
+        void clear_error();
+    }
+}
+}
+
+#endif // IDE_PIO_HPP

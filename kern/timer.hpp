@@ -51,7 +51,7 @@ public:
     {
         uint32_t interval = time/(1000/freq());
         m_ticks = 0;
-        while (m_ticks < interval) { NOP(); }
+        while (m_ticks < interval) { nop(); }
     }
 
     static inline uint32_t ticks()

@@ -116,7 +116,7 @@ bool Paging::release_page_frame(uintptr_t p_addr, size_t number)
 }
 
 // TODO : implement
-void Paging::map_page(void *phys, void *virt, uint32_t flags)
+void Paging::map_page(void *phys, void *&virt, uint32_t flags)
 {
     virt = phys;
 }

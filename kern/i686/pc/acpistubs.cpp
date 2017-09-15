@@ -150,6 +150,10 @@ ACPI_STATUS AcpiOsSignal(UINT32 fun, void* info)
 
         return AE_OK;
     }
+    else
+    {
+        return AE_OK; // ignore
+    }
 }
 
 ACPI_STATUS
@@ -214,6 +218,7 @@ ACPI_CPU_FLAGS AcpiOsAcquireLock(ACPI_SPINLOCK lock)
 //    LOCK_VAL(lock);
 
 //    return AE_OK;
+    return AE_NOT_IMPLEMENTED;
 }
 
 void AcpiOsReleaseLock(ACPI_SPINLOCK lock, ACPI_CPU_FLAGS flags)
@@ -228,7 +233,7 @@ ACPI_STATUS AcpiOsCreateLock(ACPI_SPINLOCK *lock)
         return AE_BAD_PARAMETER;
     }
 
-    *lock = (ACPI_SPINLOCK)kmalloc(sizeof(ACPI_SPINLOCK));
+    *lock = new spinlock_t;
 
     if (*lock == nullptr)
     {

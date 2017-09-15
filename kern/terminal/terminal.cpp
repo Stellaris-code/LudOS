@@ -199,7 +199,7 @@ void TerminalImpl::new_line()
 
 void TerminalImpl::add_line_to_history()
 {
-    uint16_t line[width];
+    vector<uint16_t> line(width);
     for (size_t i { 0 }; i < width; ++i)
     {
         line[i] = terminal_buffer[terminal_row*width + i];

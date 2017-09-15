@@ -34,6 +34,7 @@ namespace multiboot
 void check(uint32_t magic, const multiboot_header& mbd, const multiboot_info *mbd_info);
 
 void parse_info(const multiboot_info_t *info);
+void parse_mem(const multiboot_info_t *info);
 
 }
 

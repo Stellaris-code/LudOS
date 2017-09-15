@@ -53,10 +53,18 @@ void check(uint32_t magic, const multiboot_header &mbd, const multiboot_info* mb
     }
 }
 
-void parse_info(const multiboot_info_t* info)
+void parse_mem(const multiboot_info_t* info)
 {
     Meminfo::info = info;
 
+    if (CHECK_FLAG (info->flags, 6))
+    {
+        Meminfo::mmap_addr = reinterpret_cast<multiboot_memory_map_t *>(phys(info->mmap_addr));
+    }
+}
+
+void parse_info(const multiboot_info_t* info)
+{
     //puts("Multiboot Info :");
 
     //kprintf("Multiboot flags : 0x%x\n", info->flags);
@@ -83,8 +91,7 @@ void parse_info(const multiboot_info_t* info)
     }*/
     if (CHECK_FLAG (info->flags, 6))
     {
-        Meminfo::mmap_addr = reinterpret_cast<multiboot_memory_map_t *>(phys(info->mmap_addr));
-        for (multiboot_memory_map_t *mmap = Meminfo::mmap_addr;
+        for (multiboot_memory_map_t *mmap = reinterpret_cast<multiboot_memory_map_t *>(phys(info->mmap_addr));
              reinterpret_cast<uintptr_t>(mmap) < phys(info->mmap_addr) + info->mmap_length;
              mmap = reinterpret_cast<multiboot_memory_map_t*>(
                  reinterpret_cast<uintptr_t>(mmap)

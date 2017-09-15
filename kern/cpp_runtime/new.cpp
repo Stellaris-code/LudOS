@@ -1,7 +1,7 @@
 /*
-meminfo.hpp
+new.cpp
 
-Copyright (c) 31 Yann BOUCHER (yann)
+Copyright (c) 15 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,34 +22,36 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef MEMINFO_HPP
-#define MEMINFO_HPP
 
+#include <stdlib.h>
 #include <stdint.h>
 
-struct multiboot_mmap_entry;
-typedef struct multiboot_mmap_entry multiboot_memory_map_t;
-struct multiboot_info;
-typedef struct multiboot_info multiboot_info_t;
-
-namespace multiboot
+void *operator new(size_t size) noexcept
 {
-void parse_mem(const multiboot_info_t* info);
-void parse_mem(const multiboot_info_t* info);
+    return kmalloc(size);
 }
 
-class Meminfo
+void *operator new[](size_t size) noexcept
 {
-    friend void multiboot::parse_mem(const multiboot_info_t* info);
+    return kmalloc(size);
+}
 
-public:
-    static size_t free_frames();
-    static multiboot_memory_map_t *largest_frame();
-    static multiboot_memory_map_t *frame(size_t idx);
+void operator delete(void *p) noexcept
+{
+    kfree(p);
+}
 
-private:
-    static inline multiboot_mmap_entry *mmap_addr;
-    static inline const multiboot_info_t* info;
-};
+void operator delete[](void *p) noexcept
+{
+    kfree(p);
+}
 
-#endif // MEMINFO_HPP
+void operator delete(void *p, size_t) noexcept
+{
+    kfree(p);
+}
+
+void operator delete[](void *p, size_t) noexcept
+{
+    kfree(p);
+}

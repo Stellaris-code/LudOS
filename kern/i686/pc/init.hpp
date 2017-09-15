@@ -49,6 +49,8 @@ SOFTWARE.
 
 #include "acpi_init.hpp"
 
+#include "utils/bitops.hpp"
+
 extern "C" multiboot_header mbd;
 
 namespace i686
@@ -58,21 +60,25 @@ namespace pc
 inline void init(uint32_t magic, const multiboot_info_t* mbd_info)
 {
     serial::debug::init(BDA::com1_port());
-    serial::debug::write(BDA::com1_port(), "Serial COM1 : Booting LudOS v%d...\n", 1);
+    serial::debug::write("Serial COM1 : Booting LudOS v%d...\n", 1);
 
-#ifndef CODE_MODEL_PASS
-    static TerminalImpl hwterminal(reinterpret_cast<uint16_t*>(phys(0xB8000)), 80, 25);
+    multiboot::parse_mem(mbd_info);
+    Paging::init();
+
+    uint64_t framebuffer_addr = bit_check(mbd_info->flags, 12) ? mbd_info->framebuffer_addr : 0xB8000;
+
+    serial::debug::write("Framebuffer address : 0x%lx\n", phys(framebuffer_addr));
+
+    static TerminalImpl hwterminal(reinterpret_cast<uint16_t*>(phys(framebuffer_addr)), 80, 25);
     Terminal::impl = &hwterminal;
     Terminal::impl->beep_callback = [](size_t ms){Speaker::beep(ms);};
     Terminal::impl->move_cursor_callback = move_cursor;
-#endif
 
     init_printf(nullptr, [](void*, char c){putchar(c);});
 
     multiboot::check(magic, mbd, mbd_info);
 
     gdt::init();
-
     pic::init();
     idt::init();
     PIT::init(100);
@@ -82,8 +88,6 @@ inline void init(uint32_t magic, const multiboot_info_t* mbd_info)
 
     log("CPU clock speed : ~%llu MHz\n", clock_speed());
     detect_cpu();
-
-    Paging::init();
 
     Speaker::beep(200);
 

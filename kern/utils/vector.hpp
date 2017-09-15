@@ -1,29 +1,40 @@
-// -*- C++ -*-
-//===-------------------------- dynarray ----------------------------------===//
-//
-//                     The LLVM Compiler Infrastructure
-//
-// This file is dual licensed under the MIT and the University of Illinois Open
-// Source Licenses. See LICENSE.TXT for details.
-//
-//===----------------------------------------------------------------------===//
+/*
+vector.hpp
 
-#ifndef _LIBCPP_DYNARRAY
-#define _LIBCPP_DYNARRAY
+Copyright (c) 15 Yann BOUCHER (yann)
 
-#define STACKSIZE 0x8000
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
-#include <limits.h>
-#include <stdint.h>
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+*/
+#ifndef VECTOR_HPP
+#define VECTOR_HPP
+
 #include <assert.h>
-#include <new.hpp>
+
+#include <stdint.h>
 
 template <class _Tp>
-struct dynarray
+struct vector
 {
 public:
     // types:
-    typedef dynarray __self;
+    typedef vector __self;
     typedef _Tp                                   value_type;
     typedef value_type&                           reference;
     typedef const value_type&                     const_reference;
@@ -37,32 +48,26 @@ public:
 private:
     size_t                  __size_;
     value_type *            __base_;
-    inline dynarray() noexcept :  __size_(0), __base_(nullptr) {}
+    inline vector() noexcept :  __size_(0), __base_(nullptr) {}
 
     static inline value_type* __allocate (size_t count)
     {
-        assert_msg(count < STACKSIZE, "count 0x%zd is too large for stack size 0x%x !", count, STACKSIZE);
-
-        if (__SIZE_MAX__ / sizeof (value_type) <= count)
-        {
-            ::impl_assert_msg(true, "d", "d",4,"d","dynarray::allocation");
-        }
-        return static_cast<value_type *> (__builtin_alloca(sizeof(value_type) * count));
+        return new _Tp[count];
     }
 
-    static inline void __deallocate (value_type*) noexcept
+    static inline void __deallocate (value_type* val) noexcept
     {
-
+        delete[] val;
     }
 
 public:
 
-    explicit dynarray(size_type __c);
-    dynarray(size_type __c, const value_type& __v);
-    dynarray(const dynarray& __d);
+    explicit vector(size_type __c);
+    vector(size_type __c, const value_type& __v);
+    vector(const vector& __d);
 
-    dynarray& operator=(const dynarray&) = delete;
-    ~dynarray();
+    vector& operator=(const vector&) = delete;
+    ~vector();
 
     // capacity:
     inline size_type size()     const noexcept { return __size_; }
@@ -88,7 +93,7 @@ public:
 
 template <class _Tp>
 inline
-dynarray<_Tp>::dynarray(size_type __c) : dynarray ()
+vector<_Tp>::vector(size_type __c) : vector ()
 {
     __base_ = __allocate (__c);
     __size_ = __c;
@@ -99,7 +104,7 @@ dynarray<_Tp>::dynarray(size_type __c) : dynarray ()
 
 template <class _Tp>
 inline
-dynarray<_Tp>::dynarray(size_type __c, const value_type& __v) : dynarray ()
+vector<_Tp>::vector(size_type __c, const value_type& __v) : vector ()
 {
     __base_ = __allocate (__c);
     __size_ = __c;
@@ -110,7 +115,7 @@ dynarray<_Tp>::dynarray(size_type __c, const value_type& __v) : dynarray ()
 
 template <class _Tp>
 inline
-dynarray<_Tp>::dynarray(const dynarray& __d) : dynarray ()
+vector<_Tp>::vector(const vector& __d) : vector ()
 {
     size_t sz = __d.size();
     __base_ = __allocate (sz);
@@ -122,7 +127,7 @@ dynarray<_Tp>::dynarray(const dynarray& __d) : dynarray ()
 
 template <class _Tp>
 inline
-dynarray<_Tp>::~dynarray()
+vector<_Tp>::~vector()
 {
     value_type *__data = data () + __size_;
     for ( size_t i = 0; i < __size_; ++i )
@@ -132,20 +137,20 @@ dynarray<_Tp>::~dynarray()
 
 template <class _Tp>
 inline
-typename dynarray<_Tp>::reference
-dynarray<_Tp>::at(size_type __n)
+typename vector<_Tp>::reference
+vector<_Tp>::at(size_type __n)
 {
-    assert_msg(__n < __size_, "dynarray::at out_of_range");
+    assert_msg(__n < __size_, "vector::at out_of_range");
     return data()[__n];
 }
 
 template <class _Tp>
 inline
-typename dynarray<_Tp>::const_reference
-dynarray<_Tp>::at(size_type __n) const
+typename vector<_Tp>::const_reference
+vector<_Tp>::at(size_type __n) const
 {
-    assert_msg(__n < __size_, "dynarray::at out_of_range");
+    assert_msg(__n < __size_, "vector::at out_of_range");
     return data()[__n];
 }
 
-#endif  // _LIBCPP_DYNARRAY
+#endif // VECTOR_HPP

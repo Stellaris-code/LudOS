@@ -28,6 +28,7 @@ SOFTWARE.
 #include <stdint.h>
 
 #include "utils/dynarray.hpp"
+#include "utils/vector.hpp"
 
 class HistoryBuffer
 {
@@ -35,7 +36,7 @@ public:
     HistoryBuffer(size_t line_width, size_t height);
 
     uint16_t get_char(size_t x, size_t y) const;
-    void add(uint16_t* line);
+    void add(const vector<uint16_t> &line);
 
     size_t size() const
     {
@@ -61,7 +62,7 @@ private:
     size_t m_front { 0 };
     bool m_full { false };
 
-    dynarray<uint16_t> m_data;
+    vector<uint16_t> m_data;
 };
 
 #endif // HISTORYBUFFER_HPP

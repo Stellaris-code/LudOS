@@ -24,12 +24,11 @@ SOFTWARE.
 */
 
 // TODO : disque
-// TODO : ext2
+// TODO : FAT32
 // TODO : scrolling terminal char par char
 // TODO : system calls
 // TODO : user mode
 // TODO : POC calculatrice
-// TODO : utiliser une vraie implémentation de printf (newlib ?)
 // TODO : Paging
 
 // FIXME : bug si clavier utilisé avant init

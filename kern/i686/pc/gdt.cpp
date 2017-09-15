@@ -77,7 +77,7 @@ void init()
 
     flush();
 
-    puts("GDT initialized.");
+    //puts("GDT initialized.");
 }
 
 void flush()

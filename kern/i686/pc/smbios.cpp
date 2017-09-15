@@ -25,7 +25,7 @@ SOFTWARE.
 
 #include "smbios.hpp"
 
-#include "ext/dmidecode.hpp"
+#include "external/dmidecode.hpp"
 
 #include "i686/pc/serialdebug.hpp"
 

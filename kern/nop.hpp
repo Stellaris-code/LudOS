@@ -26,7 +26,7 @@ SOFTWARE.
 #define NOP_HPP
 
 #ifdef ARCH_i686
-#define NOP() asm volatile ("nop")
+#define nop() asm volatile ("nop")
 #else
 #error no NOP defined for current arch
 #endif

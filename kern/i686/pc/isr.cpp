@@ -76,3 +76,8 @@ void isr::register_handler(uint8_t num, isr::isr_t handler)
 {
     handlers[num] = handler;
 }
+
+void isr::delete_handler(uint8_t num)
+{
+    handlers[num] = nullptr;
+}

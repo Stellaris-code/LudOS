@@ -25,12 +25,14 @@ SOFTWARE.
 
 #include "historybuffer.hpp"
 
+#include "i686/pc/serialdebug.hpp"
+
 #include <assert.h>
 #include <string.h>
 
 HistoryBuffer::HistoryBuffer(size_t line_width, size_t height)
     : m_line_width(line_width), m_height(height),
-      m_data(line_width*height)
+      m_data(line_width*height, 0)
 {
 
 }
@@ -38,7 +40,6 @@ HistoryBuffer::HistoryBuffer(size_t line_width, size_t height)
 uint16_t HistoryBuffer::get_char(size_t x, size_t y) const
 {
     const size_t index = y*m_line_width + x;
-
     if (full())
     {
         assert_msg(index < m_data.size(), "Invalid access of history buffer %p at index %zd !", this, index);
@@ -52,9 +53,13 @@ uint16_t HistoryBuffer::get_char(size_t x, size_t y) const
     }
 }
 
-void HistoryBuffer::add(uint16_t *line)
+void HistoryBuffer::add(const vector<uint16_t>& line)
 {
-    memcpy(&m_data[m_front*m_line_width], line, m_line_width*sizeof(uint16_t));
+    for (size_t i { 0 }; i < line.size(); ++i)
+    {
+        m_data[m_front*m_line_width+i] = line[i];
+    }
+
     ++m_front;
 
     if (m_front == m_height)

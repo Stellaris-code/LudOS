@@ -46,7 +46,7 @@ inline void bit_toggle(T& val, size_t pos)
 }
 
 template <typename T>
-inline bool bit_check(T& val, size_t pos)
+inline bool bit_check(const T& val, size_t pos)
 {
     return (val >> pos) & 1;
 }

@@ -25,6 +25,8 @@ SOFTWARE.
 
 #include "io.hpp"
 
+#ifdef ARCH_i686
+
 void outb(uint16_t port, uint8_t val)
 {
     asm volatile ( "outb %0, %1" : : "a"(val), "Nd"(port) );
@@ -71,3 +73,5 @@ void io_wait()
 {
     asm volatile ( "outb %%al, $0x80" : : "a"(0) );
 }
+
+#endif

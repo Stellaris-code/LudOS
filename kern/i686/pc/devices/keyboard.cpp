@@ -27,10 +27,15 @@ SOFTWARE.
 
 #include "io.hpp"
 #include "../isr.hpp"
+#include "pic.hpp"
 #include "utils/logging.hpp"
 #include <stdio.h>
 #include <ctype.h>
 #include <atoi.h>
+
+#include "nop.hpp"
+
+#include "terminal/terminal.hpp"
 
 void Keyboard::init()
 {
@@ -61,6 +66,8 @@ void Keyboard::init()
     };
 
     log("Keyboard initialized\n");
+
+    pic::clear_mask(1); // enable keyboard interrupts
 }
 
 void Keyboard::set_leds(uint8_t leds)
@@ -164,7 +171,7 @@ void Keyboard::isr(const registers * const)
         handle_char(kbdmap
                     [key * 4 + (((lshift || rshift) ^ caps_lock) ? 1 : alt ? 2 : num_lock ? 3 : 0)]);
     }
-                Terminal::push_color(0);Terminal::pop_color();
+    Terminal::push_color(0);Terminal::pop_color();
     if (kbd_event)
     {
         kbd_event(event);

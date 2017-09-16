@@ -7,7 +7,7 @@ extern end_ctors                        ; of the respective
 extern start_dtors                      ; ctors and dtors section,
 extern end_dtors                        ; declared by the linker script
 
-global BootPageDirectory
+extern __cxa_finalize
 
 KERNEL_VIRTUAL_BASE equ 0xE0000000                  ; 3.5GB
 KERNEL_PAGE_NUMBER equ (KERNEL_VIRTUAL_BASE >> 22)
@@ -31,34 +31,9 @@ BootPageDirectory:
 section .text
 
 ; reserve initial kernel stack space
-STACKSIZE equ 0x4000                    ; that's 16k.
+STACKSIZE equ 0x8000                    ; that's 32k.
 
 _start:
-    ; NOTE: Until paging is set up, the code must be position-independent and use physical
-    ; addresses, not virtual ones!
-    ;mov ecx, (BootPageDirectory - KERNEL_VIRTUAL_BASE)
-    ;mov cr3, ecx                                        ; Load Page Directory Base Register.
-
-    ;mov ecx, cr4
-    ;or ecx, 0x00000010                          ; Set PSE bit in CR4 to enable 4MB pages.
-    ;mov cr4, ecx
-
-    ;mov ecx, cr0
-    ;or ecx, 0x80000000                          ; Set PG bit in CR0 to enable paging.
-    ;mov cr0, ecx
-
-    ; Start fetching instructions in kernel space.
-    ; Since eip at this point holds the physical address of this command (approximately 0x00100000)
-    ; we need to do a long jump to the correct virtual address of StartInHigherHalf which is
-    ; approximately 0xE0100000.
-    ;lea ecx, [higher_half_start]
-    ;jmp ecx                                                     ; NOTE: Must be absolute jump!
-
-higher_half_start:
-    ; Unmap the identity-mapped first 4MB of physical address space. It should not be needed
-    ; anymore.
-    ;mov dword [BootPageDirectory], 0
-    ;invlpg [0]
 
     mov  esp, stack + STACKSIZE         ; set up the stack
 
@@ -88,6 +63,13 @@ higher_half_start:
 .dtors_until_end:
     cmp  ebx, start_dtors
     ja   .call_destructor
+
+    sub esp, 4
+    mov [esp], dword 0x0
+
+    call __cxa_finalize
+
+    add esp, 4
 
     cli
 hang:

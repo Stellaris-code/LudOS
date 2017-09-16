@@ -27,11 +27,6 @@ SOFTWARE.
 #include <string.h>
 #include <ctype.h>
 
-#ifdef ARCH_i686
-#include "i686/pc/devices/speaker.hpp"
-#include "i686/pc/bios/bda.hpp"
-#endif
-
 #include "utils/dynarray.hpp"
 
 #include "io.hpp"
@@ -95,9 +90,10 @@ void TerminalImpl::put_char(uint8_t c)
     }
     else if (c == '\a')
     {
-#ifdef ARCH_i686
-        Speaker::beep(200);
-#endif
+        if (beep_callback)
+        {
+            beep_callback(200);
+        }
     }
     else if (isprint(c))
     {
@@ -160,17 +156,19 @@ void TerminalImpl::show_history(int page)
 {
     if (page < 0)
     {
-#ifdef ARCH_i686
-        //Speaker::beep(200);
-#endif
+        if (beep_callback)
+        {
+            //beep_callback(200);
+        }
         page = 0;
     }
 
     if (static_cast<size_t>(page) > history.size() - height)
     {
-#ifdef ARCH_i686
-        //Speaker::beep(200);
-#endif
+        if (beep_callback)
+        {
+            //beep_callback(200);
+        }
         page = history.size() - height; // avoir un plafond, une limite
 
     }
@@ -201,7 +199,7 @@ void TerminalImpl::new_line()
 
 void TerminalImpl::add_line_to_history()
 {
-    uint16_t line[width];
+    vector<uint16_t> line(width);
     for (size_t i { 0 }; i < width; ++i)
     {
         line[i] = terminal_buffer[terminal_row*width + i];
@@ -227,29 +225,11 @@ void TerminalImpl::check_pos()
     update_cursor();
 }
 
-
-void TerminalImpl::move_cursor(size_t x, size_t y)
-{
-#ifdef ARCH_i686
-    const size_t index = y * width + x;
-
-    const uint16_t port_low = BDA::video_io_port();
-    const uint16_t port_high = port_low + 1;
-
-    // cursor LOW port to vga INDEX register
-    outb(port_low, 0x0F);
-    outb(port_high, static_cast<uint8_t>(index&0xFF));
-
-    // cursor HIGH port to vga INDEX register
-    outb(port_low, 0x0E);
-    outb(port_high, static_cast<uint8_t>((index>>8)&0xFF));
-#else
-#endif
-}
-
-
 void TerminalImpl::update_cursor()
 {
-    move_cursor(terminal_column, terminal_row);
+    if (move_cursor_callback)
+    {
+        move_cursor_callback(terminal_column, terminal_row, width);
+    }
 }
 

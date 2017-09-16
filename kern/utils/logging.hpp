@@ -28,11 +28,12 @@ SOFTWARE.
 #include <stdio.h>
 #include <stdarg.h>
 
-#include "terminal/terminal.hpp"
-
 #include "utils/defs.hpp"
 
-#include "i686/pc/timestamp.hpp"
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 
 PRINTF_FMT(1, 2)
 void log(const char * __restrict fmt, ...);
@@ -42,5 +43,9 @@ void warn(const char * __restrict fmt, ...);
 
 PRINTF_FMT(1, 2)
 void err(const char * __restrict fmt, ...);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // LOGGING_HPP

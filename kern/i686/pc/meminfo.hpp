@@ -34,12 +34,13 @@ typedef struct multiboot_info multiboot_info_t;
 
 namespace multiboot
 {
-void parse_info(const multiboot_info_t* info);
+void parse_mem(const multiboot_info_t* info);
+void parse_mem(const multiboot_info_t* info);
 }
 
 class Meminfo
 {
-    friend void multiboot::parse_info(const multiboot_info_t* info);
+    friend void multiboot::parse_mem(const multiboot_info_t* info);
 
 public:
     static size_t free_frames();

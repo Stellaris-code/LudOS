@@ -53,7 +53,9 @@ void set_gate(size_t num, uint32_t base, uint32_t limit, uint8_t access, uint8_t
 
 void init();
 
-extern entry entries[6];
+void flush();
+
+extern entry entries[9];
 extern ptr gdt_ptr;
 
 }

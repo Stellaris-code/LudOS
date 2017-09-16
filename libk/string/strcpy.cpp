@@ -32,3 +32,12 @@ char *strcpy(char *__restrict dest, const char *__restrict src)
         ;
     return ret;
 }
+
+char *strncpy(char *__restrict dest, const char *__restrict src, size_t n)
+{
+    char *ret = dest;
+    size_t i = 0;
+    while (i++ < n && (*dest++ = *src++))
+        ;
+    return ret;
+}

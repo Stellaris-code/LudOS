@@ -37,7 +37,7 @@ SOFTWARE.
 namespace gdt
 {
 
-entry entries[6];
+entry entries[9];
 ptr gdt_ptr;
 
 void set_gate(size_t num, uint32_t base, uint32_t limit, uint8_t access, uint8_t gran)
@@ -75,9 +75,14 @@ void init()
     set_gate(4, 0, 0xFFFFFFFF, 0xF2, 0xCF); // User mode data segment
     set_gate(5, reinterpret_cast<uint32_t>(&tss), sizeof(tss), 0x89, 0xCF);
 
-    gdt_flush(reinterpret_cast<uint32_t>(&gdt_ptr));
+    flush();
 
-    puts("GDT initialized.");
+    //puts("GDT initialized.");
+}
+
+void flush()
+{
+    gdt_flush(reinterpret_cast<uint32_t>(&gdt_ptr));
 }
 
 }

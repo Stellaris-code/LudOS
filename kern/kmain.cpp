@@ -23,17 +23,12 @@ SOFTWARE.
 
 */
 
-// TODO : APM
-// TODO : ACPI
-// TODO : disque
-// TODO : ext2
+// TODO : FAT32
 // TODO : scrolling terminal char par char
 // TODO : system calls
 // TODO : user mode
 // TODO : POC calculatrice
-// TODO : utiliser une vraie implémentation de printf (newlib ?)
-
-// FIXME : bug si clavier utilisé avant init
+// TODO : Paging
 
 #ifndef __cplusplus
 #error Must be compiler using C++ !
@@ -43,86 +38,27 @@ SOFTWARE.
 #define DEBUG
 #endif
 
-#include "multiboot/multiboot_kern.hpp"
-
-#include "i686/pc/gdt.hpp"
-#include "i686/pc/devices/pic.hpp"
-#include "i686/pc/idt.hpp"
-#include "i686/pc/devices/pit.hpp"
-#include "i686/pc/devices/speaker.hpp"
-#include "i686/pc/devices/keyboard.hpp"
-#include "i686/pc/fpu.hpp"
-#include "i686/pc/cpuinfo.hpp"
-#include "i686/pc/cpuid.hpp"
-#include "i686/pc/smbios.hpp"
-#include "i686/pc/paging.hpp"
-#include "i686/pc/bios/bda.hpp"
-#include "i686/pc/serialdebug.hpp"
-
-#include "utils/addr.hpp"
-#include "utils/bitarray.hpp"
-#include "utils/dynarray.hpp"
-
-#include "timer.hpp"
-
-#include "ext/liballoc/liballoc.h"
-
-#include "utils/logging.hpp"
 #include "greet.hpp"
-#include "halt.hpp"
 
-extern "C" multiboot_header mbd;
-extern "C" uint32_t kernel_physical_end;
+#ifdef ARCH_i686
+#include "i686/pc/init.hpp"
+#endif
 
+#ifdef ARCH_i686
 extern "C"
 void kmain(uint32_t magic, const multiboot_info_t* mbd_info)
+#else
+void kmain()
+#endif
 {
-    serial::debug::init(BDA::com1_port());
-    serial::debug::write(BDA::com1_port(), "Serial COM1 : Booting LudOS v%d...\n", 1);
-
-    TerminalImpl hwterminal(reinterpret_cast<uint16_t*>(phys(0xB8000)), 80, 25);
-    Terminal::impl = &hwterminal;
-
-    init_printf(nullptr, [](void*, char c){putchar(c);});
-
-    multiboot::check(magic, mbd, mbd_info);
-    gdt::init();
-    pic::init();
-    idt::init();
-    PIT::init(100);
-    FPU::init();
-    multiboot::parse_info(mbd_info);
-
-    log("CPU clock speed : ~%llu MHz\n", clock_speed());
-    detect_cpu();
-    log("plop\n");
-    // paging fucks up i/o
-    Paging::init();
-
-
-    Speaker::beep(200);
-
-
-
-    SMBIOS::locate();
-    SMBIOS::bios_info();
-    SMBIOS::cpu_info();
-
-    Keyboard::init();
-    Keyboard::handle_char = [](uint8_t c){Terminal::put_char(c);};
-    Keyboard::set_kbdmap(kbdmap_fr);
+#ifdef ARCH_i686
+    i686::pc::init(magic, mbd_info);
+#endif
 
     greet();
 
-    char* ptr = (char*)kmalloc(256*1000*1000);
-    liballoc_dump();
-    ptr[4] = 'c';
-    kfree(ptr);
-    liballoc_dump();
-
     while (1)
     {
-//        log("dd\n");
-        NOP();
+        nop();
     }
 }

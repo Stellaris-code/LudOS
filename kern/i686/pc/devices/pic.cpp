@@ -61,6 +61,9 @@ void init()
     io_wait();
     outb(PIC_SLAVE_DATA, 0);
     io_wait();
+
+    set_mask(1); // disable keyboard interrupts before keyboard initialization
+
     puts("PIC Init done.");
 }
 
@@ -93,7 +96,7 @@ void set_mask(uint8_t irq)
     outb(port, value);
 }
 
-void IRQ_clear_mask(uint8_t irq)
+void clear_mask(uint8_t irq)
 {
     uint16_t port;
     uint8_t value;

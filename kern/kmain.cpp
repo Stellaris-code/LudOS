@@ -23,16 +23,12 @@ SOFTWARE.
 
 */
 
-// TODO : disque
 // TODO : FAT32
 // TODO : scrolling terminal char par char
 // TODO : system calls
 // TODO : user mode
 // TODO : POC calculatrice
 // TODO : Paging
-
-// FIXME : bug si clavier utilisé avant init
-// FIXME : le terminal fait encore des siennes
 
 #ifndef __cplusplus
 #error Must be compiler using C++ !

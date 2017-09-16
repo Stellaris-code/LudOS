@@ -34,17 +34,14 @@ SOFTWARE.
 
 #include "utils/minmax.hpp"
 
+// TODO : remettre les bips quand le beep ne sera plus bloquant
+
 TerminalImpl::TerminalImpl(uint16_t* term_buf, size_t iwidth, size_t iheight, size_t imax_history)
     : terminal_buffer(term_buf), width(iwidth), height(iheight), max_history(imax_history),
       history(width, height*max_history)
 {
+    push_color(vga_entry_color(VGA_COLOR_LIGHT_GREY, VGA_COLOR_BLACK));
     clear();
-}
-
-
-void TerminalImpl::set_color(uint8_t color)
-{
-    terminal_color = color;
 }
 
 
@@ -80,7 +77,7 @@ void TerminalImpl::put_char(uint8_t c)
             --terminal_column;
         }
 
-        put_entry_at(' ', terminal_color, terminal_column, terminal_row);
+        put_entry_at(' ', color(), terminal_column, terminal_row);
 
         check_pos();
     }
@@ -97,7 +94,7 @@ void TerminalImpl::put_char(uint8_t c)
     }
     else if (isprint(c))
     {
-        put_entry_at(c, terminal_color, terminal_column, terminal_row);
+        put_entry_at(c, color(), terminal_column, terminal_row);
         ++terminal_column;
     }
 
@@ -122,7 +119,7 @@ void TerminalImpl::write_string(const char *data)
 
 void TerminalImpl::clear()
 {
-    memsetw(terminal_buffer, vga_entry(' ', terminal_color), height*width*4);
+    memsetw(terminal_buffer, vga_entry(' ', color()), height*width*4);
 }
 
 
@@ -132,7 +129,7 @@ void TerminalImpl::scroll_up()
     {
         memcpy(terminal_buffer + (y-1)*width, terminal_buffer + y*width, width*4); // copy line below
     }
-    memsetw(terminal_buffer + (height-1)*width, vga_entry(' ', terminal_color), width*4); // clear scrolled line
+    memsetw(terminal_buffer + (height-1)*width, vga_entry(' ', color()), width*4); // clear scrolled line
     --terminal_row;
     update_cursor();
 }
@@ -140,15 +137,13 @@ void TerminalImpl::scroll_up()
 
 void TerminalImpl::push_color(uint8_t color)
 {
-    old_terminal_color = terminal_color;
-    set_color(color);
+    color_stack.push(color);
 }
 
 
 void TerminalImpl::pop_color()
 {
-
-    set_color(old_terminal_color);
+    color_stack.pop();
 }
 
 
@@ -186,6 +181,11 @@ void TerminalImpl::show_history(int page)
             }
         }
     }
+}
+
+uint8_t TerminalImpl::color() const
+{
+    return color_stack.top();
 }
 
 

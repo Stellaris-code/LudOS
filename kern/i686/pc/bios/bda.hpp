@@ -42,7 +42,7 @@ namespace BDA
 
     uint16_t kbd_state();
 
-    uint8_t *kbd_buffer(); // TODO : array !
+    uint8_t *kbd_buffer();
 
     uint8_t disp_mode();
 

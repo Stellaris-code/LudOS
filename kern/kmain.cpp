@@ -24,7 +24,6 @@ SOFTWARE.
 */
 
 // TODO : FAT32
-// TODO : scrolling terminal char par char
 // TODO : system calls
 // TODO : user mode
 // TODO : POC calculatrice

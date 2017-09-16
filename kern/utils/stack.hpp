@@ -1,7 +1,7 @@
 /*
-historybuffer.cpp
+stack.hpp
 
-Copyright (c) 11 Yann BOUCHER (yann)
+Copyright (c) 16 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,43 +22,32 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
+#ifndef STACK_HPP
+#define STACK_HPP
 
-#include "historybuffer.hpp"
+#include "vector.hpp"
 
-#include "i686/pc/serialdebug.hpp"
-
-#include <assert.h>
-#include <string.h>
-
-HistoryBuffer::HistoryBuffer(size_t line_width, size_t height)
-    : m_line_width(line_width), m_data(height)
+template <typename T>
+class stack
 {
-}
+public:
+    bool empty() const  { return m_vec.empty(); }
+    size_t size() const { return m_vec.size(); }
 
-uint16_t HistoryBuffer::get_char(size_t x, size_t y) const
-{
-    if (full())
+    void push(const T& val) { m_vec.push_back(val); }
+    T pop()
     {
-        assert_msg(y < m_data.size() && x < m_data[0].size(), "Invalid access of history buffer %p at (%zd, %zd) !", this, x, y);
-
-        return m_data[(m_front + y) % m_data.size()][x];
+        T val = m_vec.back();
+        m_vec.pop_back();
+        return val;
     }
-    else
+    const T& top() const
     {
-        assert_msg(y < m_data.size() && x < m_data[0].size(), "Invalid access of history buffer %p at (%zd, %zd) with m_front %zd !", this, x, y, m_front);
-        return m_data[y][x];
+        return m_vec.back();
     }
-}
 
-void HistoryBuffer::add(const vector<uint16_t>& line)
-{
-    m_data[m_front] = line;
+private:
+    vector<T> m_vec;
+};
 
-    ++m_front;
-
-    if (m_front == m_data.size())
-    {
-        m_front = 0;
-        m_full = true;
-    }
-}
+#endif // STACK_HPP

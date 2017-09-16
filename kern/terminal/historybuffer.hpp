@@ -42,7 +42,7 @@ public:
     {
         if (full())
         {
-            return m_data.size()/m_line_width;
+            return m_data.size();
         }
         else
         {
@@ -57,12 +57,11 @@ public:
 
 private:
     const size_t m_line_width;
-    const size_t m_height;
 
     size_t m_front { 0 };
     bool m_full { false };
 
-    vector<uint16_t> m_data;
+    vector<vector<uint16_t>> m_data;
 };
 
 #endif // HISTORYBUFFER_HPP

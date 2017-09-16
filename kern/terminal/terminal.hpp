@@ -27,10 +27,10 @@ SOFTWARE.
 
 #include <stdint.h>
 #include "utils/addr.hpp"
+#include "utils/stack.hpp"
 #include "vga.hpp"
 
 #include "historybuffer.hpp"
-// TODO : use a stack for push()/pop()
 
 class TerminalImpl
 {
@@ -38,7 +38,6 @@ public:
     TerminalImpl(uint16_t* term_buf, size_t iwidth, size_t iheight, size_t imax_history = 5);
 
 public:
-    void set_color(uint8_t color);
     void put_entry_at(uint8_t c, uint8_t color, size_t x, size_t y);
     void put_char(uint8_t c);
     void write(const char* data, size_t size);
@@ -49,6 +48,7 @@ public:
     void pop_color();
     void show_history(int page);
     uint8_t current_history() const { return current_history_page; }
+    uint8_t color() const;
 
 private:
     void new_line();
@@ -63,9 +63,9 @@ public:
 private:
     size_t terminal_row { 0 };
     size_t terminal_column { 0 };
-    uint8_t terminal_color { vga_entry_color(VGA_COLOR_LIGHT_GREY, VGA_COLOR_BLACK) };
-    uint8_t old_terminal_color { vga_entry_color(VGA_COLOR_LIGHT_GREY, VGA_COLOR_BLACK) };
     uint16_t* terminal_buffer { reinterpret_cast<uint16_t*>(phys(0xB8000)) };
+
+    stack<uint8_t> color_stack;
 
     const size_t width;
     const size_t height;
@@ -79,7 +79,6 @@ private:
 class Terminal
 {
 public:
-    static void set_color(uint8_t color) { impl->set_color(color); }
     static void put_entry_at(uint8_t c, uint8_t color, size_t x, size_t y) { impl->put_entry_at(c, color, x, y); }
     static void put_char(uint8_t c) { impl->put_char(c); };
     static void write(const char* data, size_t size) { impl->write(data, size); };
@@ -92,7 +91,7 @@ public:
     static uint8_t current_history() { return impl->current_history(); }
 
 public:
-    static inline TerminalImpl* impl {nullptr};
+    static inline TerminalImpl* impl { nullptr };
 };
 
 #endif // TERMINAL_HPP

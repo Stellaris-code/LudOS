@@ -25,132 +25,156 @@ SOFTWARE.
 #ifndef VECTOR_HPP
 #define VECTOR_HPP
 
-#include <assert.h>
+#include "i686/pc/serialdebug.hpp"
 
 #include <stdint.h>
 
-template <class _Tp>
-struct vector
+template <typename T>
+class vector
 {
 public:
-    // types:
-    typedef vector __self;
-    typedef _Tp                                   value_type;
-    typedef value_type&                           reference;
-    typedef const value_type&                     const_reference;
-    typedef value_type*                           iterator;
-    typedef const value_type*                     const_iterator;
-    typedef value_type*                           pointer;
-    typedef const value_type*                     const_pointer;
-    typedef size_t                                size_type;
-    typedef ptrdiff_t                             difference_type;
+    using iterator = T*;
+
+    vector()
+    {
+        reserve(16);
+    }
+
+    vector(size_t size, T val = T())
+    {
+        reserve(16);
+        resize(size);
+        fill(val);
+    }
+
+    vector(const vector<T>& other)
+    {
+        *this = other;
+    }
+
+    ~vector()
+    {
+        delete[] m_base;
+    }
+
+public:
+    size_t size() const { return m_size; }
+    size_t capacity() const { return m_capacity; }
+    bool empty() const { return size() == 0; }
+
+    vector<T>& operator=(const vector<T>& other)
+    {
+        resize(other.size());
+        for (size_t i { 0 }; i < size(); ++i)
+        {
+            (*this)[i] = other[i];
+        }
+
+        return *this;
+    }
+
+    iterator begin() const
+    {
+        return &m_base[0];
+    }
+    iterator end() const
+    {
+        return &m_base[size()];
+    }
+
+    T& front()
+    {
+        return (*this)[0];
+    }
+    const T& front() const
+    {
+        return (*this)[0];
+    }
+    T& back()
+    {
+        return (*this)[size()-1];
+    }
+    const T& back() const
+    {
+        return (*this)[size()-1];
+    }
+
+    T& operator[](size_t n)
+    {
+        return m_base[n];
+    }
+
+    const T& operator[](size_t n) const
+    {
+        return m_base[n];
+    }
+
+    void clear()
+    {
+        resize(0);
+    }
+
+    void push_back(const T& val)
+    {
+        resize(size()+1);
+        back() = val;
+    }
+
+    void pop_back()
+    {
+        resize(size()-1);
+    }
+
+    void fill(const T& val)
+    {
+        for (size_t i { 0 }; i < size(); ++i)
+        {
+            (*this)[i] = val;
+        }
+    }
+
+    void resize(size_t n)
+    {
+        if (capacity() < n)
+        {
+            realloc(2 * n);
+        }
+        m_size = n;
+    }
+
+    void reserve(size_t n)
+    {
+        if (n > capacity())
+        {
+            realloc(n);
+        }
+    }
+
+    void shrink_to_fit()
+    {
+        realloc(size());
+    }
 
 private:
-    size_t                  __size_;
-    value_type *            __base_;
-    inline vector() noexcept :  __size_(0), __base_(nullptr) {}
-
-    static inline value_type* __allocate (size_t count)
+    void realloc(size_t n)
     {
-        return new _Tp[count];
+        m_capacity = n;
+
+        T* newbuf = new T[n];
+        for (size_t i { 0 }; i < size(); ++i)
+        {
+            newbuf[i] = (*this)[i];
+        }
+
+        delete[] m_base;
+
+        m_base = newbuf;
     }
 
-    static inline void __deallocate (value_type* val) noexcept
-    {
-        delete[] val;
-    }
-
-public:
-
-    explicit vector(size_type __c);
-    vector(size_type __c, const value_type& __v);
-    vector(const vector& __d);
-
-    vector& operator=(const vector&) = delete;
-    ~vector();
-
-    // capacity:
-    inline size_type size()     const noexcept { return __size_; }
-    inline size_type max_size() const noexcept { return __size_; }
-    inline bool      empty()    const noexcept { return __size_ == 0; }
-
-    // element access:
-    inline reference       operator[](size_type __n)       { return data()[__n]; }
-    inline const_reference operator[](size_type __n) const { return data()[__n]; }
-
-    inline reference       front()       { return data()[0]; }
-    inline const_reference front() const { return data()[0]; }
-    inline reference       back()        { return data()[__size_-1]; }
-    inline const_reference back()  const { return data()[__size_-1]; }
-
-    inline const_reference at(size_type __n) const;
-    inline reference       at(size_type __n);
-
-    // data access:
-    inline _Tp*       data()       noexcept { return __base_; }
-    inline const _Tp* data() const noexcept { return __base_; }
+private:
+    T* m_base { nullptr };
+    size_t m_capacity { 0 };
+    size_t m_size { 0 };
 };
-
-template <class _Tp>
-inline
-vector<_Tp>::vector(size_type __c) : vector ()
-{
-    __base_ = __allocate (__c);
-    __size_ = __c;
-    value_type *__data = data ();
-    for ( __size_ = 0; __size_ < __c; ++__size_, ++__data )
-        ::new (__data) value_type;
-}
-
-template <class _Tp>
-inline
-vector<_Tp>::vector(size_type __c, const value_type& __v) : vector ()
-{
-    __base_ = __allocate (__c);
-    __size_ = __c;
-    value_type *__data = data ();
-    for ( __size_ = 0; __size_ < __c; ++__size_, ++__data )
-        ::new (__data) value_type (__v);
-}
-
-template <class _Tp>
-inline
-vector<_Tp>::vector(const vector& __d) : vector ()
-{
-    size_t sz = __d.size();
-    __base_ = __allocate (sz);
-    value_type *__data = data ();
-    auto src = __d.begin();
-    for ( __size_ = 0; __size_ < sz; ++__size_, ++__data, ++src )
-        ::new (__data) value_type (*src);
-}
-
-template <class _Tp>
-inline
-vector<_Tp>::~vector()
-{
-    value_type *__data = data () + __size_;
-    for ( size_t i = 0; i < __size_; ++i )
-        (--__data)->value_type::~value_type();
-    __deallocate ( __base_ );
-}
-
-template <class _Tp>
-inline
-typename vector<_Tp>::reference
-vector<_Tp>::at(size_type __n)
-{
-    assert_msg(__n < __size_, "vector::at out_of_range");
-    return data()[__n];
-}
-
-template <class _Tp>
-inline
-typename vector<_Tp>::const_reference
-vector<_Tp>::at(size_type __n) const
-{
-    assert_msg(__n < __size_, "vector::at out_of_range");
-    return data()[__n];
-}
 
 #endif // VECTOR_HPP

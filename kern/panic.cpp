@@ -40,8 +40,6 @@ SOFTWARE.
 
 #include "halt.hpp"
 
-// TODO : gérer si le terminal est mort
-
 [[noreturn]]
 void panic(const char *fmt, ...)
 {
@@ -56,17 +54,22 @@ void panic(const char *fmt, ...)
         va_end(va);
     }
 
-    Terminal::set_color(VGA_COLOR_RED);
-
-    //Speaker::beep(300);
-
-    puts("\nKERNEL PANIC : ");
-
+    if (Terminal::impl)
     {
-        va_list va;
-        va_start(va, fmt);
-        tfp_format(nullptr, [](void*, char c){putchar(c);  serial::debug::write("%c", c);}, fmt, va);
-        va_end(va);
+
+        Terminal::push_color(VGA_COLOR_RED);
+
+        //Speaker::beep(300);
+
+        puts("\nKERNEL PANIC : ");
+
+        {
+            va_list va;
+            va_start(va, fmt);
+            tfp_format(nullptr, [](void*, char c){putchar(c);  serial::debug::write("%c", c);}, fmt, va);
+            va_end(va);
+        }
+
     }
 
     halt();

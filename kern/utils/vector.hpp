@@ -38,7 +38,7 @@ public:
         reserve(16);
     }
 
-    vector(size_t size, T val = T())
+    explicit vector(size_t size, T val = T())
     {
         reserve(16);
         resize(size);
@@ -69,6 +69,11 @@ public:
         }
 
         return *this;
+    }
+
+    T* data()
+    {
+        return &m_base[0];
     }
 
     iterator begin() const
@@ -153,6 +158,18 @@ public:
         realloc(size());
     }
 
+    vector<T>& operator+=(const vector<T>& other)
+    {
+        *this = *this + other;
+        return *this;
+    }
+
+    vector<T>& operator+=(const T& other)
+    {
+        push_back(other);
+        return *this;
+    }
+
 private:
     void realloc(size_t n)
     {
@@ -174,5 +191,18 @@ private:
     size_t m_capacity { 0 };
     size_t m_size { 0 };
 };
+
+
+template <typename T>
+vector<T> operator+(const vector<T>& lhs, const vector<T>& rhs)
+{
+    vector<T> result = lhs;
+    for (const auto& el : rhs)
+    {
+        result.push_back(el);
+    }
+
+    return result;
+}
 
 #endif // VECTOR_HPP

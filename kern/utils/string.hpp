@@ -1,7 +1,7 @@
 /*
-ide_pio.hpp
+string.hpp
 
-Copyright (c) 15 Yann BOUCHER (yann)
+Copyright (c) 16 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,39 +22,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef IDE_PIO_HPP
-#define IDE_PIO_HPP
+#ifndef STRING_HPP
+#define STRING_HPP
 
-#include <stdint.h>
+#include "vector.hpp"
 
-namespace ide
-{
-namespace pio
-{
+using string = vector<uint8_t>;
 
-    enum DriveType : uint8_t
-    {
-        Master = 0xE0,
-        Slave = 0xF0
-    };
-
-    void init();
-
-    bool read(DriveType type, uint32_t block, uint8_t count, uint8_t* buf);
-    bool write(DriveType type, uint32_t block, uint8_t count, const uint8_t* buf);
-
-    uint8_t error_register();
-    uint8_t status_register();
-
-    namespace detail
-    {
-        void common(DriveType type, uint32_t block, uint8_t count);
-        void poll();
-        void flush();
-        bool error_set();
-        void clear_error();
-    }
-}
-}
-
-#endif // IDE_PIO_HPP
+#endif // STRING_HPP

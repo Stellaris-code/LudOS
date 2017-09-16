@@ -1,7 +1,7 @@
 /*
-ide_pio.hpp
+diskinterface.hpp
 
-Copyright (c) 15 Yann BOUCHER (yann)
+Copyright (c) 16 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,39 +22,25 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef IDE_PIO_HPP
-#define IDE_PIO_HPP
+#ifndef DISKINTERFACE_HPP
+#define DISKINTERFACE_HPP
 
 #include <stdint.h>
 
-namespace ide
+class DiskInterface
 {
-namespace pio
-{
-
-    enum DriveType : uint8_t
+public:
+    enum class Error
     {
-        Master = 0xE0,
-        Slave = 0xF0
+        OK,
+        Unknown
     };
 
-    void init();
+public:
+    static inline bool (*read)(size_t disk_num, uint32_t sector, uint8_t count, uint8_t* buf);
+    static inline bool (*write)(size_t disk_num, uint32_t sector, uint8_t count, const uint8_t* buf);
 
-    bool read(DriveType type, uint32_t block, uint8_t count, uint8_t* buf);
-    bool write(DriveType type, uint32_t block, uint8_t count, const uint8_t* buf);
+    static inline Error last_error { Error::OK };
+};
 
-    uint8_t error_register();
-    uint8_t status_register();
-
-    namespace detail
-    {
-        void common(DriveType type, uint32_t block, uint8_t count);
-        void poll();
-        void flush();
-        bool error_set();
-        void clear_error();
-    }
-}
-}
-
-#endif // IDE_PIO_HPP
+#endif // DISKINTERFACE_HPP

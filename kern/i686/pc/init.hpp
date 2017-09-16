@@ -101,6 +101,8 @@ inline void init(uint32_t magic, const multiboot_info_t* mbd_info)
         err("ACPI Initialization error ! Message : '%s'\n", AcpiFormatException(status));
     }
 
+    ide::pio::init();
+
     Keyboard::handle_char = [](uint8_t c){Terminal::put_char(c);};
     Keyboard::set_kbdmap(kbdmap_fr);
     Keyboard::init();

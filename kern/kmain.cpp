@@ -28,6 +28,8 @@ SOFTWARE.
 // TODO : user mode
 // TODO : POC calculatrice
 // TODO : Paging
+// TODO : VFS
+// TODO : affichage du nom des exceptions
 
 #ifndef __cplusplus
 #error Must be compiler using C++ !
@@ -43,6 +45,8 @@ SOFTWARE.
 #include "i686/pc/init.hpp"
 #endif
 
+#include "fs/fat.hpp"
+
 #ifdef ARCH_i686
 extern "C"
 void kmain(uint32_t magic, const multiboot_info_t* mbd_info)
@@ -55,6 +59,12 @@ void kmain()
 #endif
 
     greet();
+
+    auto fs = fat::read_fat_fs(0);
+    if (fs.valid)
+    {
+        log("FAT %zd filesystem found on drive %zd\n", fs.type, fs.drive);
+    }
 
     while (1)
     {

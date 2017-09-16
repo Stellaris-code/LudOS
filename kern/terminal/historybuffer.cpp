@@ -25,8 +25,6 @@ SOFTWARE.
 
 #include "historybuffer.hpp"
 
-#include "i686/pc/serialdebug.hpp"
-
 #include <assert.h>
 #include <string.h>
 

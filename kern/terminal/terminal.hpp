@@ -87,6 +87,7 @@ public:
     static void scroll_up() { impl->scroll_up(); }
     static void push_color(uint8_t color) { impl->push_color(color); }
     static void pop_color() { impl->pop_color(); }
+    static uint8_t color() { return impl->color(); }
     static void show_history(int page) { impl->show_history(page); }
     static uint8_t current_history() { return impl->current_history(); }
 

@@ -25,8 +25,6 @@ SOFTWARE.
 #ifndef VECTOR_HPP
 #define VECTOR_HPP
 
-#include "i686/pc/serialdebug.hpp"
-
 #include <stdint.h>
 
 template <typename T>

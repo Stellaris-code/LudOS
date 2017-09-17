@@ -1,7 +1,7 @@
 /*
-swap.hpp
+memchr.c
 
-Copyright (c) 29 Yann BOUCHER (yann)
+Copyright (c) 17 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,17 +22,17 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef SWAP_HPP
-#define SWAP_HPP
 
-// TODO : implement using move !
+#include <string.h>
 
-template <typename T>
-inline void swap(T& lhs, T& rhs)
+#include <stddef.h>
+void *memchr(const void *s, int c, size_t n)
 {
-    T temp = lhs;
-    lhs = rhs;
-    rhs = temp;
+    unsigned char *p = (unsigned char*)s;
+    while( n-- )
+        if( *p != (unsigned char)c )
+            p++;
+        else
+            return p;
+    return 0;
 }
-
-#endif // SWAP_HPP

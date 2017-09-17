@@ -25,28 +25,33 @@ SOFTWARE.
 
 #include "fat.hpp"
 
+#include <string.h>
+
+#include <vector.hpp>
+
 #include "diskinterface.hpp"
 
 #include "utils/logging.hpp"
-#include "utils/vector.hpp"
-#include "utils/string.hpp"
+#include "string.hpp"
+#include "utils/vecutils.hpp"
 
-fat::FATInfo fat::read_fat_fs(size_t drive)
+fat::FATInfo fat::read_fat_fs(size_t drive, size_t base_sector)
 {
-    vector<uint8_t> first_sector(512);
+    std::vector<uint8_t> first_sector(512);
 
-    DiskInterface::read(drive, 0, 1, first_sector.data());
+    DiskInterface::read(drive, base_sector, 1, first_sector.data());
 
     BS bootsector = *reinterpret_cast<BS*>(first_sector.data());
 
     FATInfo info;
+    info.base_sector = base_sector;
     info.bootsector = bootsector;
     info.ext16 = *reinterpret_cast<extBS_16*>(bootsector.extended_section);
     info.ext32 = *reinterpret_cast<extBS_32*>(bootsector.extended_section);
 
     if (bootsector.bootjmp[0] != 0xEB && bootsector.bootjmp[0] != 0xE9)
     {
-        warn("Drive %zd is not at FAT drive\n");
+        warn("Drive %zd is not at FAT drive\n", drive);
         info.valid = false;
 
         return info;
@@ -93,7 +98,7 @@ size_t fat::detail::first_sector_of_cluster(size_t cluster, const fat::FATInfo &
     return ((cluster - 2) * info.bootsector.sectors_per_cluster) + info.first_data_sector;
 }
 
-void fat::detail::read_FAT_sector(vector<uint8_t> &FAT, size_t sector, size_t drive)
+void fat::detail::read_FAT_sector(std::vector<uint8_t> &FAT, size_t sector, size_t drive)
 {
     DiskInterface::read(drive, sector, 1, FAT.data());
 }
@@ -117,9 +122,9 @@ uint32_t fat::detail::next_cluster(size_t cluster, const fat::FATInfo &info)
     uint32_t fat_sector = info.first_fat_sector + (fat_offset / 512);
     uint32_t ent_offset = fat_offset % 512;
 
-    vector<uint8_t> FAT(512);
+    std::vector<uint8_t> FAT(512);
 
-    read_FAT_sector(FAT, fat_sector, info.drive);
+    read_FAT_sector(FAT, fat_sector + info.base_sector, info.drive);
 
     uint32_t table_value = *reinterpret_cast<uint32_t*>(&FAT[ent_offset]) & 0x0FFFFFFF;
 
@@ -134,7 +139,7 @@ uint32_t fat::detail::next_cluster(size_t cluster, const fat::FATInfo &info)
     return table_value;
 }
 
-vector<fat::Entry> fat::root_entries(const fat::FATInfo &info)
+std::vector<vfs::node> fat::root_entries(const fat::FATInfo &info)
 {
     if (info.type == FATType::FAT32)
     {
@@ -146,17 +151,17 @@ vector<fat::Entry> fat::root_entries(const fat::FATInfo &info)
     }
 }
 
-vector<fat::Entry> fat::detail::read_cluster_entries(size_t first_sector, const fat::FATInfo &info)
+std::vector<vfs::node> fat::detail::read_cluster_entries(size_t first_sector, const fat::FATInfo &info)
 {
-    vector<uint8_t> data(512 * info.bootsector.sectors_per_cluster);
-    DiskInterface::read(info.drive, first_sector, info.bootsector.sectors_per_cluster, data.data());
+    std::vector<uint8_t> data(512 * info.bootsector.sectors_per_cluster);
+    DiskInterface::read(info.drive, first_sector + info.base_sector, info.bootsector.sectors_per_cluster, data.data());
 
-    vector<Entry> entries;
+    std::vector<vfs::node> entries;
 
     Entry* entry = reinterpret_cast<Entry*>(data.data());
-    Entry* entry_end = reinterpret_cast<Entry*>(data.end());
+    Entry* entry_end = reinterpret_cast<Entry*>(data.data()+data.size());
 
-    string longname_buf;
+    std::string longname_buf;
 
     while (entry < entry_end && entry->filename[0] != '\0')
     {
@@ -166,21 +171,21 @@ vector<fat::Entry> fat::detail::read_cluster_entries(size_t first_sector, const 
             continue;
         }
 
-        if (entry->attributes == 0x0F)
+        if (entry->attributes & ATTR_LFN)
         {
-            string vec;
+            std::string vec;
             // Don't forget we are dealing with UCS2 encoding (16-bit)
             for (size_t i { 0 }; i < sizeof(entry->name1)/2; ++i)
             {
-                vec += entry->name1[i*2];
+                vec.push_back(entry->name1[i*2]);
             }
             for (size_t i { 0 }; i < sizeof(entry->name2)/2; ++i)
             {
-                vec += entry->name2[i*2];
+                vec.push_back(entry->name2[i*2]);
             }
             for (size_t i { 0 }; i < sizeof(entry->name3)/2; ++i)
             {
-                vec += entry->name3[i*2];
+                vec.push_back(entry->name3[i*2]);
             }
 
             longname_buf = vec + longname_buf;
@@ -188,11 +193,28 @@ vector<fat::Entry> fat::detail::read_cluster_entries(size_t first_sector, const 
             ++entry;
             continue;
         }
+        else if (entry->attributes & ATTR_DIRECTORY)
+        {
+            size_t cluster = entry->low_cluster_bits | (entry->high_cluster_bits << 16);
+
+            const char* filename = reinterpret_cast<const char*>(entry->filename);
+
+            if (std::string(filename, 8) == ".       ")
+            {
+                // Current dir
+            }
+            else if (std::string(filename, 8) == "..      ")
+            {
+                // Root dir
+            }
+            else
+            {
+                entries = entries + read_cluster_entries(detail::first_sector_of_cluster(cluster, info), info);
+            }
+        }
         else
         {
-            log("Long name : %s\n", longname_buf.data());
-
-            entries.push_back(*entry);
+            entries.push_back(detail::entry_to_vfs_node(*entry, info, longname_buf));
 
             longname_buf.clear();
         }
@@ -202,19 +224,19 @@ vector<fat::Entry> fat::detail::read_cluster_entries(size_t first_sector, const 
     return entries;
 }
 
-vector<uint8_t> fat::detail::read_cluster(size_t first_sector, const fat::FATInfo &info)
+std::vector<uint8_t> fat::detail::read_cluster(size_t first_sector, const fat::FATInfo &info)
 {
-    vector<uint8_t> data(512 * info.bootsector.sectors_per_cluster);
-    DiskInterface::read(info.drive, first_sector, info.bootsector.sectors_per_cluster, data.data());
+    std::vector<uint8_t> data(512 * info.bootsector.sectors_per_cluster);
+    DiskInterface::read(info.drive, first_sector + info.base_sector, info.bootsector.sectors_per_cluster, data.data());
 
     return data;
 }
 
-vector<uint8_t> fat::detail::read_cluster_chain(size_t cluster, const fat::FATInfo& info)
+std::vector<uint8_t> fat::detail::read_cluster_chain(size_t cluster, const fat::FATInfo& info)
 {
     uint32_t table_entry = next_cluster(cluster, info);
 
-    vector<uint8_t> next_entries;
+    std::vector<uint8_t> next_entries;
     if (info.type == FATType::FAT12 && table_entry >= 0xFF7)
     {
         next_entries = {};
@@ -235,7 +257,59 @@ vector<uint8_t> fat::detail::read_cluster_chain(size_t cluster, const fat::FATIn
     return read_cluster(first_sector_of_cluster(cluster, info), info) + next_entries;
 }
 
-vector<uint8_t> fat::read(const fat::Entry &entry, const FATInfo &info)
+std::vector<uint8_t> fat::read(const fat::Entry &entry, const FATInfo &info)
 {
-    return detail::read_cluster_chain(entry.low_cluster_bits | (entry.high_cluster_bits << 16), info);
+    return read(entry, info, entry.size);
+}
+
+std::vector<uint8_t> fat::read(const fat::Entry &entry, const FATInfo &info, size_t nbytes)
+{
+    if (!(entry.attributes & ATTR_DIRECTORY))
+    {
+        std::vector<uint8_t> data;
+        data = detail::read_cluster_chain(entry.low_cluster_bits | (entry.high_cluster_bits << 16), info);
+
+        data.resize(std::min<size_t>(entry.size, nbytes));
+        return data;
+    }
+    else
+    {
+        return {};
+    }
+}
+
+vfs::node fat::detail::entry_to_vfs_node(const fat::Entry &entry, const FATInfo& info, const std::string& long_name)
+{
+    vfs::node node;
+    if (!long_name.empty())
+    {
+        node.filename = long_name;
+    }
+    else
+    {
+        for (auto c : entry.filename)
+        {
+            node.filename.push_back(c);
+        }
+        for (auto c : entry.extension)
+        {
+            node.filename.push_back(c);
+        }
+        // TODO : reverse
+    }
+
+    node.flags = entry.attributes;
+    node.length = entry.size;
+    node.read = [entry, info](void* buf, size_t bytes)->size_t
+    {
+        auto data = fat::read(entry, info, bytes);
+        for (size_t i { 0 }; i < data.size(); ++i)
+        {
+            reinterpret_cast<uint8_t*>(buf)[i] = data[i];
+        }
+
+        return data.size();
+    };
+
+    return node;
 }

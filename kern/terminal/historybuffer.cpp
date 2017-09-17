@@ -48,7 +48,7 @@ uint16_t HistoryBuffer::get_char(size_t x, size_t y) const
     }
 }
 
-void HistoryBuffer::add(const vector<uint16_t>& line)
+void HistoryBuffer::add(const std::vector<uint16_t>& line)
 {
     m_data[m_front] = line;
 

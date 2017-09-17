@@ -35,12 +35,15 @@ file(GLOB_RECURSE ACPICA_HEADERS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "external/
 file(GLOB_RECURSE CPP_SOURCES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "kern/cpp_runtime/*.cpp")
 file(GLOB_RECURSE LIBK_SOURCES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "libk/*.c" "libk/*.cpp")
 file(GLOB_RECURSE LIBK_HEADERS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "libk/*.h" "libk/*.hpp")
+file(GLOB_RECURSE LIBCPP_SOURCES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "external/libc++/*.cpp" "external/libc++/*.c")
+file(GLOB_RECURSE LIBCPP_HEADERS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "external/libc++/*.hpp" "external/libc++/*.h")
 file(GLOB_RECURSE HEADERS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "kern/*.hpp" "kern/*.h" "kern/*.tpp")
 file(GLOB_RECURSE LD_SCRIPTS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "*.ld")
 
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/kern")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/kern/external")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/libk")
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}/external/libc++")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/external/acpica")
 
 set(GENERIC_SRCS ${KERN_TERMINAL_SOURCES} ${CPP_SOURCES} ${KERN_BIOS_SOURCES} ${KERN_MB_SOURCES} ${KERN_BASE_SOURCES})
@@ -58,11 +61,13 @@ add_library(libk ${LIBK_SOURCES} ${LIBK_HEADERS})
 target_compile_definitions(libk
     PUBLIC __is_libk)
 
+add_library(libcpp ${LIBCPP_SOURCES} ${LIBCPP_HEADERS})
+
 add_library(acpica ${ACPICA_SOURCES} ${ACPICA_HEADERS})
 set_target_properties(acpica PROPERTIES LINKER_LANGUAGE C)
 target_link_libraries(acpica libk)
 
-target_link_libraries(${PROJECT_NAME} libk acpica gcc)
+target_link_libraries(${PROJECT_NAME} libk libcpp acpica gcc)
 
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
     COMMAND "./multiboot-check.sh" $<TARGET_FILE:${PROJECT_NAME}>

@@ -1,7 +1,7 @@
 /*
-array.hpp
+time.hpp
 
-Copyright (c) 26 Yann BOUCHER (yann)
+Copyright (c) 17 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,12 +22,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef ARRAY_HPP
-#define ARRAY_HPP
+#ifndef TIME_HPP
+#define TIME_HPP
 
 #include <stdint.h>
 
-template<class T, size_t N>
-constexpr size_t size(T (&)[N]) { return N; }
+using time_t = uint64_t;
 
-#endif // ARRAY_HPP
+#endif // TIME_HPP

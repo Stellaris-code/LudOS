@@ -1,7 +1,7 @@
 /*
-stack.hpp
+acpitimer.hpp
 
-Copyright (c) 16 Yann BOUCHER (yann)
+Copyright (c) 17 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,32 +22,44 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef STACK_HPP
-#define STACK_HPP
+#ifndef ACPITIMER_HPP
+#define ACPITIMER_HPP
 
-#include "vector.hpp"
+#include <stdint.h>
 
-template <typename T>
-class stack
+#include "acpi.h"
+
+#include "nop.hpp"
+
+class ACPITimer
 {
 public:
-    bool empty() const  { return m_vec.empty(); }
-    size_t size() const { return m_vec.size(); }
+    static inline UINT32 ticks()
+    {
+        UINT32 ticks;
+        AcpiGetTimer(&ticks);
 
-    void push(const T& val) { m_vec.push_back(val); }
-    T pop()
-    {
-        T val = m_vec.back();
-        m_vec.pop_back();
-        return val;
-    }
-    const T& top() const
-    {
-        return m_vec.back();
+        return ticks;
     }
 
-private:
-    vector<T> m_vec;
+    static inline UINT32 elapsed_time(UINT32 start, UINT32 end)
+    {
+        UINT32 duration;
+        AcpiGetTimerDuration(start, end, &duration);
+
+        return duration;
+    }
+
+    // ms
+    static inline void sleep(UINT32 time)
+    {
+        UINT32 start = ticks();
+        while (elapsed_time(start, ticks()) < time*1000) { nop(); }
+
+        return;
+    }
+
+    static inline bool active { false };
 };
 
-#endif // STACK_HPP
+#endif // ACPITIMER_HPP

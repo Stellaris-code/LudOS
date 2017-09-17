@@ -1,7 +1,7 @@
 /*
-string.hpp
+wops.c
 
-Copyright (c) 16 Yann BOUCHER (yann)
+Copyright (c) 17 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,11 +22,41 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef STRING_HPP
-#define STRING_HPP
 
-#include "vector.hpp"
+#include <wchar.h>
 
-using string = vector<uint8_t>;
+wchar_t *wmemcpy(wchar_t *d, const wchar_t *s, size_t n)
+{
+        wchar_t *a = d;
+        while (n--) *d++ = *s++;
+        return a;
+}
 
-#endif // STRING_HPP
+wchar_t *wmemmove(wchar_t *d, const wchar_t *s, size_t n)
+{
+        if ((size_t)(d-s) < n) {
+                while (n--) d[n] = s[n];
+                return d;
+        }
+        return wmemcpy(d, s, n);
+}
+
+
+wchar_t *wmemset(wchar_t *d, wchar_t c, size_t n)
+{
+        wchar_t *ret = d;
+        while (n--) *d++ = c;
+        return ret;
+}
+
+int wmemcmp(const wchar_t *l, const wchar_t *r, size_t n)
+{
+        for (; n && *l==*r; n--, l++, r++);
+        return n ? *l-*r : 0;
+}
+
+wchar_t *wmemchr(const wchar_t *s, wchar_t c, size_t n)
+{
+        for (; n && *s != c; n--, s++);
+        return n ? (wchar_t *)s : 0;
+}

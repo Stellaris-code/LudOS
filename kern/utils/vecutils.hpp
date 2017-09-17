@@ -1,7 +1,7 @@
 /*
-minmax.hpp
+vecutils.hpp
 
-Copyright (c) 29 Yann BOUCHER (yann)
+Copyright (c) 17 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,19 +22,21 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef MINMAX_HPP
-#define MINMAX_HPP
+#ifndef VECUTILS_HPP
+#define VECUTILS_HPP
+
+#include "vector.hpp"
 
 template <typename T>
-inline T min(const T& a, const T& b)
+std::vector<T> operator+(const std::vector<T>& lhs, const std::vector<T>& rhs)
 {
-    return (a < b) ? a : b;
+    std::vector<T> result = lhs;
+    for (const auto& el : rhs)
+    {
+        result.push_back(el);
+    }
+
+    return result;
 }
 
-template <typename T>
-inline T max(const T& a, const T& b)
-{
-    return (a > b) ? a : b;
-}
-
-#endif // MINMAX_HPP
+#endif // VECUTILS_HPP

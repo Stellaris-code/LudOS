@@ -29,6 +29,8 @@ SOFTWARE.
 // TODO : POC calculatrice
 // TODO : Paging
 // TODO : VFS
+// TODO : initialisation PS/2
+// TODO : Ctrl+Alt+Suppr = reset
 // TODO : affichage du nom des exceptions
 
 #ifndef __cplusplus
@@ -46,6 +48,7 @@ SOFTWARE.
 #endif
 
 #include "fs/fat.hpp"
+#include "fs/vfs.hpp"
 
 #ifdef ARCH_i686
 extern "C"
@@ -59,11 +62,24 @@ void kmain()
 #endif
 
     greet();
-
-    auto fs = fat::read_fat_fs(0);
+    auto fs = fat::read_fat_fs(0, 0);
     if (fs.valid)
     {
-        log("FAT %zd filesystem found on drive %zd\n", fs.type, fs.drive);
+        log("FAT %zd filesystem found on drive %zd\n", (size_t)fs.type, fs.drive);
+
+        auto entries = fat::root_entries(fs);
+        log("%zd\n", entries.size());
+        for (const auto& entry : entries)
+        {
+            std::vector<uint8_t> data(entry.length);
+            entry.read(data.data(), data.size());
+            data.push_back('\0'); // sentinel value
+            log("name : %s\n%s\n", entry.filename.data(), data.data());
+        }
+    }
+    else
+    {
+        warn ("No FAT fs found\n");
     }
 
     while (1)

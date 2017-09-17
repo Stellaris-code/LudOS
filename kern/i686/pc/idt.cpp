@@ -25,10 +25,11 @@ SOFTWARE.
 
 #include "idt.hpp"
 
+#include <type_traits.hpp>
+
 #include <string.h>
 #include <stdio.h>
 
-#include "utils/array.hpp"
 #include "utils/logging.hpp"
 
 #include "i686/pc/interrupts.hpp"
@@ -55,10 +56,10 @@ void init()
 {
     puts("Initializing ISRs");
 
-    idt_ptr.limit = sizeof(entry) * size(idt_entries) -1;
+    idt_ptr.limit = sizeof(entry) * std::extent_v<decltype(idt_entries)> -1;
     idt_ptr.base  = reinterpret_cast<uint32_t>(&idt_entries);
 
-    memset(&idt_entries, 0, sizeof(entry)*size(idt_entries));
+    memset(&idt_entries, 0, sizeof(entry)*std::extent_v<decltype(idt_entries)>);
 
     set_gate( 0, reinterpret_cast<uint32_t>(isr0) , 0x08, 0x8E);
     set_gate( 1, reinterpret_cast<uint32_t>(isr1) , 0x08, 0x8E);

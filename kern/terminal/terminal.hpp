@@ -27,7 +27,7 @@ SOFTWARE.
 
 #include <stdint.h>
 #include "utils/addr.hpp"
-#include "utils/stack.hpp"
+#include "stack.hpp"
 #include "vga.hpp"
 
 #include "historybuffer.hpp"
@@ -65,7 +65,7 @@ private:
     size_t terminal_column { 0 };
     uint16_t* terminal_buffer { reinterpret_cast<uint16_t*>(phys(0xB8000)) };
 
-    stack<uint8_t> color_stack;
+    std::stack<uint8_t> color_stack;
 
     const size_t width;
     const size_t height;

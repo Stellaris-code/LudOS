@@ -27,12 +27,8 @@ SOFTWARE.
 #include <string.h>
 #include <ctype.h>
 
-#include "utils/dynarray.hpp"
-
 #include "io.hpp"
 #include "halt.hpp"
-
-#include "utils/minmax.hpp"
 
 // TODO : remettre les bips quand le beep ne sera plus bloquant
 
@@ -199,7 +195,7 @@ void TerminalImpl::new_line()
 
 void TerminalImpl::add_line_to_history()
 {
-    vector<uint16_t> line(width);
+    std::vector<uint16_t> line(width);
     for (size_t i { 0 }; i < width; ++i)
     {
         line[i] = terminal_buffer[terminal_row*width + i];

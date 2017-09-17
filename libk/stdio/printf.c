@@ -541,4 +541,23 @@ int tfp_sprintf(char *str, const char *format, ...)
     va_end(ap);
     return retval;
 }
+
+int tfp_swprintf(wchar_t *str, size_t len, const wchar_t *fmt, ...)
+{
+    va_list ap;
+    int retval;
+
+    va_start(ap, fmt);
+    struct _vsprintf_putcf_data data;
+
+    data.dest = (char*)str;
+    data.num_chars = 0;
+    tfp_format(&data, _vsprintf_putcf, (char*)fmt, ap);
+    data.dest[data.num_chars] = '\0';
+    return data.num_chars;
+
+    va_end(ap);
+    return retval;
+}
+
 #endif

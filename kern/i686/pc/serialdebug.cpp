@@ -25,7 +25,7 @@ SOFTWARE.
 
 #include "serialdebug.hpp"
 
-#include "utils/array.hpp"
+#include <type_traits.hpp>
 
 #include "i686/pc/bios/bda.hpp"
 #include "io.hpp"
@@ -54,7 +54,7 @@ void write(uint16_t comport, const char *fmt, ...)
 
     va_list va;
     va_start(va, fmt);
-    kvsnprintf(buf, size(buf), fmt, va);
+    kvsnprintf(buf, std::extent_v<decltype(buf)>, fmt, va);
     va_end(va);
 
     char* str = buf;
@@ -73,7 +73,7 @@ void write(const char *fmt, ...)
 
     va_list va;
     va_start(va, fmt);
-    kvsnprintf(buf, size(buf), fmt, va);
+    kvsnprintf(buf, std::extent_v<decltype(buf)>, fmt, va);
     va_end(va);
 
     char* str = buf;

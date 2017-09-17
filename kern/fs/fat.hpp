@@ -27,8 +27,18 @@ SOFTWARE.
 
 #include <stdint.h>
 
-#include "utils/vector.hpp"
-#include "utils/string.hpp"
+#include <vector.hpp>
+#include "string.hpp"
+
+#include "vfs.hpp"
+
+#define ATTR_READ_ONLY 0x01
+#define ATTR_HIDDEN 0x02
+#define ATTR_SYSTEM 0x04
+#define ATTR_VOLUME_ID 0x08
+#define ATTR_DIRECTORY 0x10
+#define ATTR_ARCHIVE 0x20
+#define ATTR_LFN (ATTR_READ_ONLY|ATTR_HIDDEN|ATTR_SYSTEM|ATTR_VOLUME_ID)
 
 namespace fat
 {
@@ -152,6 +162,7 @@ struct extBS_16
 struct FATInfo
 {
     bool valid;
+    size_t base_sector;
     BS bootsector;
     extBS_16 ext16;
     extBS_32 ext32;
@@ -169,24 +180,27 @@ struct FATInfo
 namespace detail
 {
 
-void read_FAT_sector(vector<uint8_t>& FAT, size_t sector, size_t drive);
+void read_FAT_sector(std::vector<uint8_t>& FAT, size_t sector, size_t drive);
 
 size_t first_sector_of_cluster(size_t cluster, const FATInfo& info);
 
 uint32_t next_cluster(size_t cluster, const FATInfo& info);
 
-vector<Entry> read_cluster_entries(size_t first_sector, const FATInfo& info);
+std::vector<vfs::node> read_cluster_entries(size_t first_sector, const FATInfo& info);
 
-vector<uint8_t> read_cluster_chain(size_t cluster, const FATInfo& info);
+std::vector<uint8_t> read_cluster_chain(size_t cluster, const FATInfo& info);
 
-vector<uint8_t> read_cluster(size_t first_sector, const fat::FATInfo &info);
+std::vector<uint8_t> read_cluster(size_t first_sector, const fat::FATInfo &info);
+
+vfs::node entry_to_vfs_node(const Entry& entry, const FATInfo &info, const std::string &long_name);
 }
 
-FATInfo read_fat_fs(size_t drive);
+FATInfo read_fat_fs(size_t drive, size_t base_sector);
 
-vector<Entry> root_entries(const FATInfo& info);
+std::vector<vfs::node> root_entries(const FATInfo& info);
 
-vector<uint8_t> read(const Entry& entry, const fat::FATInfo& info);
+std::vector<uint8_t> read(const Entry& entry, const fat::FATInfo& info);
+std::vector<uint8_t> read(const Entry& entry, const fat::FATInfo& info, size_t nbytes);
 
 }
 

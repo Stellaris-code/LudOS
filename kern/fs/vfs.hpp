@@ -1,7 +1,7 @@
 /*
-historybuffer.hpp
+vfs.hpp
 
-Copyright (c) 11 Yann BOUCHER (yann)
+Copyright (c) 17 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,45 +22,29 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef HISTORYBUFFER_HPP
-#define HISTORYBUFFER_HPP
+#ifndef VFS_HPP
+#define VFS_HPP
 
 #include <stdint.h>
 
-#include <vector.hpp>
+#include <string.hpp>
+#include <functional.hpp>
 
-class HistoryBuffer
+namespace vfs
 {
-public:
-    HistoryBuffer(size_t line_width, size_t height);
 
-    uint16_t get_char(size_t x, size_t y) const;
-    void add(const std::vector<uint16_t> &line);
-
-    size_t size() const
-    {
-        if (full())
-        {
-            return m_data.size();
-        }
-        else
-        {
-            return m_front;
-        }
-    }
-
-    bool full() const
-    {
-        return m_full;
-    }
-
-private:
-    const size_t m_line_width;
-
-    size_t m_front { 0 };
-    bool m_full { false };
-
-    std::vector<std::vector<uint16_t>> m_data;
+struct node
+{
+    std::string filename;
+    uint32_t perms;
+    uint32_t uid;
+    uint32_t gid;
+    uint32_t flags;
+    uint32_t length;
+    std::function<size_t(void*, size_t)> read;
+    std::function<std::vector<node>()> readdir;
 };
 
-#endif // HISTORYBUFFER_HPP
+}
+
+#endif // VFS_HPP

@@ -26,6 +26,10 @@ SOFTWARE.
 #define KEYBOARD_HPP
 
 #include <stdint.h>
+
+#include <vector.hpp>
+#include <functional.hpp>
+
 #include "../registers.hpp"
 
 #include "kbdmaps.hpp"
@@ -65,16 +69,16 @@ public:
 
     static void set_kbdmap(const uint8_t* map);
 
-private:
-    static void isr(const registers* const);
     static void wait();
 
-public:
-    static inline void (*handle_char)(uint8_t); // callback
-    static inline void (*kbd_event)(const Event&);
+private:
+    static void isr(const registers* const);
 
-    typedef bool(*key_handler)(const Event&); // if return false : skip handling
-    static inline key_handler handlers[256];
+public:
+    static inline std::vector<std::function<void(uint8_t)>> char_handlers;
+    static inline std::vector<std::function<void(const Event&)>> kbd_events;
+
+    static inline std::function<bool(const Event&)> handlers[256];
 
     static inline bool lshift { false };
     static inline bool rshift { false };

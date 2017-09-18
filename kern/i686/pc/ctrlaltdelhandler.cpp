@@ -1,7 +1,7 @@
 /*
-timer.hpp
+ctrlaltdelhandler.cpp
 
-Copyright (c) 26 Yann BOUCHER (yann)
+Copyright (c) 18 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,53 +22,41 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef TIMER_HPP
-#define TIMER_HPP
 
-#include <stdint.h>
-#include "i686/pc/registers.hpp"
+#include "ctrlaltdelhandler.hpp"
 
-#include "nop.hpp"
+#include "utils/logging.hpp"
 
-#include <functional.hpp>
+#include "powermanagement.hpp"
 
-#include "panic.hpp"
-#include <stdio.h>
+#include "io.hpp"
 
-class Timer
+bool CtrlAltDelHandler::handler(const Keyboard::Event& ev)
 {
-public:
-    static inline void set_frequency(uint32_t freq)
+    if (ev.ctrl && ev.alt)
     {
-        Timer::m_freq = freq;
-        if (!m_set_frequency_callback)
+        Keyboard::wait();
+        uint8_t code;
+        while (true)
         {
-            panic("set_frequency_callback is not set !");
+            code = inb(KBD_PORT);
+            if (code == 0xE0)
+            {
+                reset();
+                // shouldn't happend
+                return false;
+            }
+            else if (code == 0xD3) // D3 : keypad dot, disanbiguate
+            {
+                return true;
+            }
         }
-        m_set_frequency_callback(freq);
     }
 
-    // time in ms
-    static inline void sleep(uint32_t time)
-    {
-        uint32_t interval = time/(1000/freq());
-        m_ticks = 0;
-        while (m_ticks < interval) { nop(); }
-    }
+    return true;
+}
 
-    static inline uint32_t ticks()
-    {
-        return m_ticks;
-    }
-
-    static inline uint32_t freq()
-    {
-        return m_freq;
-    }
-
-    static inline std::function<void(uint32_t)> m_set_frequency_callback;
-    static inline uint32_t m_ticks { 0 };
-    static inline uint32_t m_freq { 0 };
-};
-
-#endif // TIMER_HPP
+void CtrlAltDelHandler::reset()
+{
+    ::reset();
+}

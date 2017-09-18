@@ -28,10 +28,12 @@ SOFTWARE.
 #include <stdint.h>
 
 #include <string.hpp>
+#include <vector.hpp>
 #include <functional.hpp>
 
-namespace vfs
+class vfs
 {
+public:
 
 struct node
 {
@@ -42,9 +44,16 @@ struct node
     uint32_t flags;
     uint32_t length;
     std::function<size_t(void*, size_t)> read;
+    std::function<size_t(const void*, size_t)> write;
     std::function<std::vector<node>()> readdir;
 };
 
-}
+public:
+
+static void init();
+
+static inline std::vector<node> descriptors;
+
+};
 
 #endif // VFS_HPP

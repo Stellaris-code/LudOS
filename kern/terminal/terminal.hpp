@@ -30,6 +30,8 @@ SOFTWARE.
 #include "stack.hpp"
 #include "vga.hpp"
 
+#include <functional.hpp>
+
 #include "historybuffer.hpp"
 
 class TerminalImpl
@@ -57,8 +59,8 @@ private:
     void update_cursor();
 
 public:
-    void (*move_cursor_callback)(size_t, size_t, size_t);
-    void (*beep_callback)(size_t);
+    std::function<void(size_t, size_t, size_t)> move_cursor_callback;
+    std::function<void(size_t)> beep_callback;
 
 private:
     size_t terminal_row { 0 };

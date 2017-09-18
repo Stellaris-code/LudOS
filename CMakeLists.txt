@@ -67,6 +67,8 @@ add_library(acpica ${ACPICA_SOURCES} ${ACPICA_HEADERS})
 set_target_properties(acpica PROPERTIES LINKER_LANGUAGE C)
 target_link_libraries(acpica libk)
 
+include(ExternalProject)
+
 target_link_libraries(${PROJECT_NAME} libk libcpp acpica gcc)
 
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD

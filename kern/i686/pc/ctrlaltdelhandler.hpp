@@ -1,7 +1,7 @@
 /*
-timer.hpp
+ctrlaltdelhandler.hpp
 
-Copyright (c) 26 Yann BOUCHER (yann)
+Copyright (c) 18 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,53 +22,18 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef TIMER_HPP
-#define TIMER_HPP
+#ifndef CTRLALTDELHANDLER_HPP
+#define CTRLALTDELHANDLER_HPP
 
-#include <stdint.h>
-#include "i686/pc/registers.hpp"
+#include "devices/keyboard.hpp"
 
-#include "nop.hpp"
-
-#include <functional.hpp>
-
-#include "panic.hpp"
-#include <stdio.h>
-
-class Timer
+class CtrlAltDelHandler
 {
 public:
-    static inline void set_frequency(uint32_t freq)
-    {
-        Timer::m_freq = freq;
-        if (!m_set_frequency_callback)
-        {
-            panic("set_frequency_callback is not set !");
-        }
-        m_set_frequency_callback(freq);
-    }
+    static bool handler(const Keyboard::Event&);
 
-    // time in ms
-    static inline void sleep(uint32_t time)
-    {
-        uint32_t interval = time/(1000/freq());
-        m_ticks = 0;
-        while (m_ticks < interval) { nop(); }
-    }
-
-    static inline uint32_t ticks()
-    {
-        return m_ticks;
-    }
-
-    static inline uint32_t freq()
-    {
-        return m_freq;
-    }
-
-    static inline std::function<void(uint32_t)> m_set_frequency_callback;
-    static inline uint32_t m_ticks { 0 };
-    static inline uint32_t m_freq { 0 };
+private:
+    static void reset();
 };
 
-#endif // TIMER_HPP
+#endif // CTRLALTDELHANDLER_HPP

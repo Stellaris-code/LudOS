@@ -28,10 +28,13 @@ SOFTWARE.
 #include "io.hpp"
 #include "../isr.hpp"
 #include "pic.hpp"
+
 #include "utils/logging.hpp"
+
 #include <stdio.h>
 #include <ctype.h>
-#include <atoi.h>
+
+#include <vector.hpp>
 
 #include "nop.hpp"
 
@@ -40,30 +43,6 @@ SOFTWARE.
 void Keyboard::init()
 {
     isr::register_handler(IRQ1, &Keyboard::isr);
-
-    handlers[0x48] = [](const Event&)
-    {
-        //kprintf("Hey\n");
-        wait();
-        uint8_t code = inb(KBD_PORT);
-        if (code == 0xE0)
-        {
-            Terminal::show_history(Terminal::current_history()+10);
-            return false;
-        }
-        return true;
-    };
-    handlers[0x50] = [](const Event&)
-    {
-        wait();
-        uint8_t code = inb(KBD_PORT);
-        if (code == 0xE0)
-        {
-            Terminal::show_history(Terminal::current_history()-10);
-            return false;
-        }
-        return true;
-    };
 
     log("Keyboard initialized\n");
 
@@ -168,13 +147,24 @@ void Keyboard::isr(const registers * const)
     Event event {(lshift || rshift), alt, ctrl, false, caps_lock, scroll_lock, num_lock, pressed, unaltered_key};
     if ((!handlers[unaltered_key] || handlers[unaltered_key](event)) && is_handle_char)
     {
-        handle_char(kbdmap
-                    [key * 4 + (((lshift || rshift) ^ caps_lock) ? 1 : alt ? 2 : num_lock ? 3 : 0)]);
+        uint8_t c = kbdmap
+                [key * 4 + (((lshift || rshift) ^ caps_lock) ? 1 : alt ? 2 : num_lock ? 3 : 0)];
+
+        for (auto& handle_char : char_handlers)
+        {
+            if (handle_char)
+            {
+                handle_char(c);
+            }
+        }
     }
     Terminal::push_color(0);Terminal::pop_color();
-    if (kbd_event)
+    for (auto& kbd_event : kbd_events)
     {
-        kbd_event(event);
+        if (kbd_event)
+        {
+            kbd_event(event);
+        }
     }
 }
 

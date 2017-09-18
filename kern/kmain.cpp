@@ -23,15 +23,14 @@ SOFTWARE.
 
 */
 
-// TODO : FAT32
+// TODO : FAT32 write
 // TODO : system calls
 // TODO : user mode
 // TODO : POC calculatrice
 // TODO : Paging
 // TODO : VFS
 // TODO : initialisation PS/2
-// TODO : Ctrl+Alt+Suppr = reset
-// TODO : affichage du nom des exceptions
+// TODO : enum pour les key qui se mappe au keymap
 
 #ifndef __cplusplus
 #error Must be compiler using C++ !
@@ -61,7 +60,8 @@ void kmain()
     i686::pc::init(magic, mbd_info);
 #endif
 
-    greet();
+    vfs::init();
+
     auto fs = fat::read_fat_fs(0, 0);
     if (fs.valid)
     {
@@ -81,6 +81,8 @@ void kmain()
     {
         warn ("No FAT fs found\n");
     }
+
+    greet();
 
     while (1)
     {

@@ -27,6 +27,8 @@ SOFTWARE.
 
 #include <stdint.h>
 
+#include <functional.hpp>
+
 class DiskInterface
 {
 public:
@@ -37,8 +39,8 @@ public:
     };
 
 public:
-    static inline bool (*read)(size_t disk_num, uint32_t sector, uint8_t count, uint8_t* buf);
-    static inline bool (*write)(size_t disk_num, uint32_t sector, uint8_t count, const uint8_t* buf);
+    static inline std::function<bool(size_t disk_num, uint32_t sector, uint8_t count, uint8_t* buf)> read;
+    static inline std::function<bool(size_t disk_num, uint32_t sector, uint8_t count, const uint8_t* buf)> write;
 
     static inline Error last_error { Error::OK };
 };

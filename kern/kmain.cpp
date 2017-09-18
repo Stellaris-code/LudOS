@@ -23,12 +23,14 @@ SOFTWARE.
 
 */
 
-// TODO : FAT32
-// TODO : scrolling terminal char par char
+// TODO : FAT32 write
 // TODO : system calls
 // TODO : user mode
 // TODO : POC calculatrice
 // TODO : Paging
+// TODO : VFS
+// TODO : initialisation PS/2
+// TODO : enum pour les key qui se mappe au keymap
 
 #ifndef __cplusplus
 #error Must be compiler using C++ !
@@ -44,6 +46,9 @@ SOFTWARE.
 #include "i686/pc/init.hpp"
 #endif
 
+#include "fs/fat.hpp"
+#include "fs/vfs.hpp"
+
 #ifdef ARCH_i686
 extern "C"
 void kmain(uint32_t magic, const multiboot_info_t* mbd_info)
@@ -54,6 +59,28 @@ void kmain()
 #ifdef ARCH_i686
     i686::pc::init(magic, mbd_info);
 #endif
+
+    vfs::init();
+
+    auto fs = fat::read_fat_fs(0, 0);
+    if (fs.valid)
+    {
+        log("FAT %zd filesystem found on drive %zd\n", (size_t)fs.type, fs.drive);
+
+        auto entries = fat::root_entries(fs);
+        log("%zd\n", entries.size());
+        for (const auto& entry : entries)
+        {
+            std::vector<uint8_t> data(entry.length);
+            entry.read(data.data(), data.size());
+            data.push_back('\0'); // sentinel value
+            log("name : %s\n%s\n", entry.filename.data(), data.data());
+        }
+    }
+    else
+    {
+        warn ("No FAT fs found\n");
+    }
 
     greet();
 

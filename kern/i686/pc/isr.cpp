@@ -37,25 +37,66 @@ SOFTWARE.
 
 isr::isr_t handlers[256] { nullptr };
 
+
+constexpr const char *exception_messages[] = {
+    "Division by zero",				/* 0 */
+    "Debug",
+    "Non-maskable interrupt",
+    "Breakpoint",
+    "Detected overflow",
+    "Out-of-bounds",				/* 5 */
+    "Invalid opcode",
+    "No coprocessor",
+    "Double fault",
+    "Coprocessor segment overrun",
+    "Bad TSS",						/* 10 */
+    "Segment not present",
+    "Stack fault",
+    "General protection fault",
+    "Page fault",
+    "Unknown interrupt",			/* 15 */
+    "Coprocessor fault",
+    "Alignment check",
+    "Machine check",
+    "SIMD Floating-point exception",
+    "Virtualization exception",     /* 20 */
+    "Reserved",
+    "Reserved",
+    "Reserved",
+    "Reserved",
+    "Reserved",
+    "Reserved",
+    "Reserved",
+    "Reserved",
+    "Reserved",                     /* 29 */
+    "Security exception",
+    "Reserved"
+};
+
 extern "C"
 const registers* isr_handler(const registers* const regs)
 {
-    if (regs->int_no == 8) // double fault
+    if (regs->int_no < std::extent_v<decltype(exception_messages)>)
     {
-        cli();
-        // assume terminal is broken
-        dump_serial(regs);
-        serial::debug::write("Double fault, aborting\n");
-        halt();
-        return regs;
-    }
+        if (regs->int_no == 8) // double fault
+        {
+            cli();
+            // assume terminal is broken
+            dump_serial(regs);
+            serial::debug::write("Double fault, aborting\n");
+            halt();
+            return regs;
+        }
 
-    serial::debug::write("eip : 0x%lx\n", regs->eip);
-    dump_serial(regs);
-    dump(regs);
-    panic("Unhandeld interrupt 0x%lx with error code 0x%lx at 0x%lx\n"
-          "edx : 0x%lx\ncr2 : 0x%lx", regs->int_no, regs->err_code, regs->eip, regs->edx, cr2());
-    // handle here
+        serial::debug::write("eip : 0x%lx\n", regs->eip);
+        dump_serial(regs);
+        dump(regs);
+
+        panic("Unhandeld interrupt (type : '%s') 0x%lx with error code 0x%lx at 0x%lx\n"
+              "edx : 0x%lx\ncr2 : 0x%lx", exception_messages[regs->int_no], regs->int_no, regs->err_code, regs->eip, regs->edx, cr2());
+        // handle here
+
+    }
 
     return regs;
 }

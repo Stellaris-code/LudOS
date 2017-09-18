@@ -1,7 +1,7 @@
 /*
-swap.hpp
+diskinterface.hpp
 
-Copyright (c) 29 Yann BOUCHER (yann)
+Copyright (c) 16 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,17 +22,27 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef SWAP_HPP
-#define SWAP_HPP
+#ifndef DISKINTERFACE_HPP
+#define DISKINTERFACE_HPP
 
-// TODO : implement using move !
+#include <stdint.h>
 
-template <typename T>
-inline void swap(T& lhs, T& rhs)
+#include <functional.hpp>
+
+class DiskInterface
 {
-    T temp = lhs;
-    lhs = rhs;
-    rhs = temp;
-}
+public:
+    enum class Error
+    {
+        OK,
+        Unknown
+    };
 
-#endif // SWAP_HPP
+public:
+    static inline std::function<bool(size_t disk_num, uint32_t sector, uint8_t count, uint8_t* buf)> read;
+    static inline std::function<bool(size_t disk_num, uint32_t sector, uint8_t count, const uint8_t* buf)> write;
+
+    static inline Error last_error { Error::OK };
+};
+
+#endif // DISKINTERFACE_HPP

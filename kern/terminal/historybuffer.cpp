@@ -25,44 +25,36 @@ SOFTWARE.
 
 #include "historybuffer.hpp"
 
-#include "i686/pc/serialdebug.hpp"
-
 #include <assert.h>
 #include <string.h>
 
 HistoryBuffer::HistoryBuffer(size_t line_width, size_t height)
-    : m_line_width(line_width), m_height(height),
-      m_data(line_width*height, 0)
+    : m_line_width(line_width), m_data(height)
 {
-
 }
 
 uint16_t HistoryBuffer::get_char(size_t x, size_t y) const
 {
-    const size_t index = y*m_line_width + x;
     if (full())
     {
-        assert_msg(index < m_data.size(), "Invalid access of history buffer %p at index %zd !", this, index);
+        assert_msg(y < m_data.size() && x < m_data[0].size(), "Invalid access of history buffer %p at (%zd, %zd) !", this, x, y);
 
-        return m_data[(m_front + index) % m_data.size()];
+        return m_data[(m_front + y) % m_data.size()][x];
     }
     else
     {
-        assert_msg(index < m_data.size(), "Invalid access of history buffer %p at index %zd with m_front %zd !", this, index, m_front);
-        return m_data[index];
+        assert_msg(y < m_data.size() && x < m_data[0].size(), "Invalid access of history buffer %p at (%zd, %zd) with m_front %zd !", this, x, y, m_front);
+        return m_data[y][x];
     }
 }
 
-void HistoryBuffer::add(const vector<uint16_t>& line)
+void HistoryBuffer::add(const std::vector<uint16_t>& line)
 {
-    for (size_t i { 0 }; i < line.size(); ++i)
-    {
-        m_data[m_front*m_line_width+i] = line[i];
-    }
+    m_data[m_front] = line;
 
     ++m_front;
 
-    if (m_front == m_height)
+    if (m_front == m_data.size())
     {
         m_front = 0;
         m_full = true;

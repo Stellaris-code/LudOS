@@ -1,7 +1,7 @@
 /*
-new.hpp
+memchr.c
 
-Copyright (c) 11 Yann BOUCHER (yann)
+Copyright (c) 17 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,14 +22,17 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef NEW_HPP
-#define NEW_HPP
 
-#include <stdint.h>
+#include <string.h>
 
-inline void *operator new(size_t, void *p)     throw() { return p; }
-inline void *operator new[](size_t, void *p)   throw() { return p; }
-inline void  operator delete  (void *, void *) throw() { };
-inline void  operator delete[](void *, void *) throw() { };
-
-#endif // NEW_HPP
+#include <stddef.h>
+void *memchr(const void *s, int c, size_t n)
+{
+    unsigned char *p = (unsigned char*)s;
+    while( n-- )
+        if( *p != (unsigned char)c )
+            p++;
+        else
+            return p;
+    return 0;
+}

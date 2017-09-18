@@ -27,12 +27,13 @@ SOFTWARE.
 
 #include <stdio.h>
 
+#include <type_traits.hpp>
+
 #include "gdt.hpp"
 #include "panic.hpp"
 #include "tss.hpp"
 #include "utils/addr.hpp"
 #include "utils/logging.hpp"
-#include "utils/array.hpp"
 
 namespace gdt
 {
@@ -60,7 +61,7 @@ void set_gate(size_t num, uint32_t base, uint32_t limit, uint8_t access, uint8_t
 
 void init()
 {
-    gdt_ptr.limit = (sizeof(entry) * size(entries)) - 1;
+    gdt_ptr.limit = (sizeof(entry) * std::extent_v<decltype(entries)>) - 1;
     gdt_ptr.base  = reinterpret_cast<uint32_t>(&entries);
 
     tss.trap = 0x00;

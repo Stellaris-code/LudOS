@@ -26,7 +26,8 @@ SOFTWARE.
 #define DMIDECODE_H
 
 #include <stdint.h>
-#include "utils/array.hpp"
+
+#include <type_traits.hpp>
 
 static inline const char *dmi_processor_family(uint32_t type)
 {

@@ -1,7 +1,7 @@
 /*
-array.hpp
+vfs.hpp
 
-Copyright (c) 26 Yann BOUCHER (yann)
+Copyright (c) 17 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,12 +22,38 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef ARRAY_HPP
-#define ARRAY_HPP
+#ifndef VFS_HPP
+#define VFS_HPP
 
 #include <stdint.h>
 
-template<class T, size_t N>
-constexpr size_t size(T (&)[N]) { return N; }
+#include <string.hpp>
+#include <vector.hpp>
+#include <functional.hpp>
 
-#endif // ARRAY_HPP
+class vfs
+{
+public:
+
+struct node
+{
+    std::string filename;
+    uint32_t perms;
+    uint32_t uid;
+    uint32_t gid;
+    uint32_t flags;
+    uint32_t length;
+    std::function<size_t(void*, size_t)> read;
+    std::function<size_t(const void*, size_t)> write;
+    std::function<std::vector<node>()> readdir;
+};
+
+public:
+
+static void init();
+
+static inline std::vector<node> descriptors;
+
+};
+
+#endif // VFS_HPP

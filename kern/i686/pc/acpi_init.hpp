@@ -27,6 +27,8 @@ SOFTWARE.
 
 #include "acpi.h"
 
+#include "devices/acpitimer.hpp"
+
 ACPI_STATUS acpi_init()
 {
     ACPI_STATUS status;
@@ -60,6 +62,8 @@ ACPI_STATUS acpi_init()
     {
         return status;
     }
+
+    ACPITimer::active = true;
 
     return AE_OK;
 }

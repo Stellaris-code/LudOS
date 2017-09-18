@@ -30,6 +30,8 @@ SOFTWARE.
 
 #include "nop.hpp"
 
+#include <functional.hpp>
+
 #include "panic.hpp"
 #include <stdio.h>
 
@@ -64,7 +66,7 @@ public:
         return m_freq;
     }
 
-    static inline void(*m_set_frequency_callback)(uint32_t); // set_frequency
+    static inline std::function<void(uint32_t)> m_set_frequency_callback;
     static inline uint32_t m_ticks { 0 };
     static inline uint32_t m_freq { 0 };
 };

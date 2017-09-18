@@ -45,6 +45,8 @@ SOFTWARE.
 
 #include "powermanagement.hpp"
 
+#include "ctrlaltdelhandler.hpp"
+
 #include "terminal/terminal.hpp"
 
 #include "acpi_init.hpp"
@@ -101,8 +103,36 @@ inline void init(uint32_t magic, const multiboot_info_t* mbd_info)
         err("ACPI Initialization error ! Message : '%s'\n", AcpiFormatException(status));
     }
 
-    Keyboard::handle_char = [](uint8_t c){Terminal::put_char(c);};
+    ide::pio::init();
+
     Keyboard::set_kbdmap(kbdmap_fr);
+    Keyboard::handlers[0x48] = [](const Keyboard::Event&)
+    {
+        //kprintf("Hey\n");
+        Keyboard::wait();
+        uint8_t code = inb(KBD_PORT);
+        if (code == 0xE0)
+        {
+            Terminal::show_history(Terminal::current_history()+10);
+            return false;
+        }
+        return true;
+    };
+    Keyboard::handlers[0x50] = [](const Keyboard::Event&)
+    {
+        Keyboard::wait();
+        uint8_t code = inb(KBD_PORT);
+        if (code == 0xE0)
+        {
+            Terminal::show_history(Terminal::current_history()-10);
+            return false;
+        }
+        return true;
+    };
+
+    Keyboard::handlers[0x52] = CtrlAltDelHandler::handler;
+
+    //Keyboard::handle_char = [](uint8_t c){Terminal::put_char(c);};
     Keyboard::init();
 }
 }

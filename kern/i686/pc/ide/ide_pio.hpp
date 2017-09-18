@@ -38,6 +38,8 @@ namespace pio
         Slave = 0xF0
     };
 
+    void init();
+
     bool read(DriveType type, uint32_t block, uint8_t count, uint8_t* buf);
     bool write(DriveType type, uint32_t block, uint8_t count, const uint8_t* buf);
 

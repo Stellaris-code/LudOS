@@ -27,6 +27,7 @@ SOFTWARE.
 
 #include "utils/logging.hpp"
 
+#include "diskinterface.hpp"
 #include "io.hpp"
 #include "utils/bitops.hpp"
 #include "nop.hpp"
@@ -46,14 +47,14 @@ bool ide::pio::read(ide::pio::DriveType type, uint32_t block, uint8_t count, uin
     detail::common(type, block, count);
 
     outb(0x1F7, 0x20);
-    for (size_t sector { 1 }; sector <= count; ++sector)
+    for (size_t sector { 0 }; sector < count; ++sector)
     {
         detail::poll(); // TODO : use IRQ !
         for (size_t i { 0 }; i < 256; ++i)
         {
             uint32_t tmpword = inw(0x1F0);
-            buf[sector*i * 2] = tmpword & 0xFF;
-            buf[sector*i * 2 + 1] = (tmpword >> 8) & 0xFF;
+            buf[sector*512+i * 2] = tmpword & 0xFF;
+            buf[sector*512+i * 2 + 1] = (tmpword >> 8) & 0xFF;
         }
     }
 
@@ -129,4 +130,31 @@ uint8_t ide::pio::error_register()
 uint8_t ide::pio::status_register()
 {
     return inb(0x1F7);
+}
+
+void ide::pio::init()
+{
+    DiskInterface::read = [](size_t disk_num, uint32_t sector, uint8_t count, uint8_t* buf)
+    {
+        auto status = read(disk_num == 0 ? Master : Slave, sector, count, buf);
+        if (!status)
+        {
+            DiskInterface::last_error = DiskInterface::Error::Unknown;
+        }
+
+        return status;
+    };
+
+    DiskInterface::write = [](size_t disk_num, uint32_t sector, uint8_t count, const uint8_t* buf)
+    {
+        auto status = write(disk_num == 0 ? Master : Slave, sector, count, buf);
+        if (!status)
+        {
+            DiskInterface::last_error = DiskInterface::Error::Unknown;
+        }
+
+        return status;
+    };
+
+    log("IDE PIO initialized.\n");
 }

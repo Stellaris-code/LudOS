@@ -71,5 +71,5 @@ void PIT::set_pcspeaker_frequency(uint16_t freq)
 
 void PIT::irq_callback(const registers * const)
 {
-    ++Timer::m_ticks;
+    Timer::irq_callback();
 }

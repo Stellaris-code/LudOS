@@ -31,12 +31,17 @@ SOFTWARE.
 #include "nop.hpp"
 
 #include <functional.hpp>
+#include <vector.hpp>
+#include <algorithm.hpp>
 
 #include "panic.hpp"
 #include <stdio.h>
 
 class Timer
 {
+
+    friend class PIT;
+
 public:
     static inline void set_frequency(uint32_t freq)
     {
@@ -56,6 +61,12 @@ public:
         while (m_ticks < interval) { nop(); }
     }
 
+    // time in ms
+    static inline void register_callback(uint32_t duration, std::function<void()> callback, bool oneshot = true)
+    {
+        m_callbacks.emplace_back(m_ticks, duration/(1000/freq()), callback, oneshot);
+    }
+
     static inline uint32_t ticks()
     {
         return m_ticks;
@@ -67,6 +78,51 @@ public:
     }
 
     static inline std::function<void(uint32_t)> m_set_frequency_callback;
+
+private:
+    static inline void irq_callback()
+    {
+        ++m_ticks;
+        handle_callbacks();
+    }
+
+    static inline void handle_callbacks()
+    {
+        for (auto& callback : m_callbacks)
+        {
+            if (m_ticks - callback.start >= callback.duration)
+            {
+                callback.callback();
+                if (callback.oneshot)
+                {
+                    callback.to_be_deleted = true;
+                }
+            }
+        }
+
+        // remove used callbacks
+        m_callbacks.erase(std::remove_if(m_callbacks.begin(), m_callbacks.end(), [](const Callback& c) { return c.to_be_deleted;}), m_callbacks.end());
+    }
+private:
+
+    struct Callback
+    {
+        Callback() = default;
+
+        Callback(uint32_t istart, uint32_t iduration, std::function<void()> icallback, bool ioneshot)
+            : start(istart), duration(iduration), callback(icallback), oneshot(ioneshot), to_be_deleted(false)
+        {
+
+        }
+
+        uint32_t start;
+        uint32_t duration;
+        std::function<void()> callback;
+        bool oneshot;
+        bool to_be_deleted { false };
+    };
+
+    static inline std::vector<Callback> m_callbacks;
     static inline uint32_t m_ticks { 0 };
     static inline uint32_t m_freq { 0 };
 };

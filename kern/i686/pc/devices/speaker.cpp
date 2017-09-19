@@ -31,8 +31,7 @@ SOFTWARE.
 void Speaker::beep(uint32_t time, uint16_t freq)
 {
     play_sound(freq);
-    Timer::sleep(time);
-    stop();
+    Timer::register_callback(time, []{stop();});
 }
 
 void Speaker::play_sound(uint16_t freq)

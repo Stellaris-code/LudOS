@@ -30,8 +30,6 @@ SOFTWARE.
 #include "io.hpp"
 #include "halt.hpp"
 
-// TODO : remettre les bips quand le beep ne sera plus bloquant
-
 TerminalImpl::TerminalImpl(uint16_t* term_buf, size_t iwidth, size_t iheight, size_t imax_history)
     : terminal_buffer(term_buf), width(iwidth), height(iheight), max_history(imax_history),
       history(width, height*max_history)
@@ -85,7 +83,7 @@ void TerminalImpl::put_char(uint8_t c)
     {
         if (beep_callback)
         {
-            beep_callback(200);
+            beep_callback(100);
         }
     }
     else if (isprint(c))
@@ -149,7 +147,7 @@ void TerminalImpl::show_history(int page)
     {
         if (beep_callback)
         {
-            //beep_callback(200);
+            beep_callback(100);
         }
         page = 0;
     }
@@ -158,7 +156,7 @@ void TerminalImpl::show_history(int page)
     {
         if (beep_callback)
         {
-            //beep_callback(200);
+            beep_callback(100);
         }
         page = history.size() - height; // avoir un plafond, une limite
 

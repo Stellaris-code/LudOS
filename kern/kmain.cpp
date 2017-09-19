@@ -31,6 +31,7 @@ SOFTWARE.
 // TODO : VFS
 // TODO : initialisation PS/2
 // TODO : enum pour les key qui se mappe au keymap
+// TODO : Son
 
 #ifndef __cplusplus
 #error Must be compiler using C++ !

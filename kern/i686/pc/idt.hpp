@@ -27,9 +27,6 @@ SOFTWARE.
 
 #include <stdint.h>
 
-extern "C"
-void idt_flush(uint32_t addr);
-
 namespace idt
 {
 

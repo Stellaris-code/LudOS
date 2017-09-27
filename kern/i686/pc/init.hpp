@@ -32,7 +32,7 @@ SOFTWARE.
 #include "i686/pc/idt.hpp"
 #include "i686/pc/devices/pit.hpp"
 #include "i686/pc/devices/speaker.hpp"
-#include "i686/pc/devices/keyboard.hpp"
+#include "i686/pc/devices/ps2keyboard.hpp"
 #include "i686/pc/fpu.hpp"
 #include "i686/pc/cpuinfo.hpp"
 #include "i686/pc/cpuid.hpp"
@@ -105,35 +105,35 @@ inline void init(uint32_t magic, const multiboot_info_t* mbd_info)
 
     ide::pio::init();
 
-    Keyboard::set_kbdmap(kbdmap_fr);
-    Keyboard::handlers[0x48] = [](const Keyboard::Event&)
-    {
-        //kprintf("Hey\n");
-        Keyboard::wait();
-        uint8_t code = inb(KBD_PORT);
-        if (code == 0xE0)
-        {
-            Terminal::show_history(Terminal::current_history()+10);
-            return false;
-        }
-        return true;
-    };
-    Keyboard::handlers[0x50] = [](const Keyboard::Event&)
-    {
-        Keyboard::wait();
-        uint8_t code = inb(KBD_PORT);
-        if (code == 0xE0)
-        {
-            Terminal::show_history(Terminal::current_history()-10);
-            return false;
-        }
-        return true;
-    };
+//    Keyboard::set_kbdmap(kbdmap_fr);
+//    Keyboard::handlers[0xE0-1].emplace_back([](const Keyboard::Event&)
+//    {
+//        Keyboard::wait();
+//        uint8_t code = inb(KBD_PORT);
+//        if (code == 0x49)
+//        {
+//            Terminal::show_history(Terminal::current_history()+10);
+//            return false;
+//        }
+//        return true;
+//    });
 
-    Keyboard::handlers[0x52] = CtrlAltDelHandler::handler;
+//    Keyboard::handlers[0xE0-1].emplace_back([](const Keyboard::Event&)
+//    {
+//        Keyboard::wait();
+//        uint8_t code = inb(KBD_PORT);
+//        if (code == 0x51)
+//        {
+//            Terminal::show_history(Terminal::current_history()-10);
+//            return false;
+//        }
+//        return true;
+//    });
 
-    //Keyboard::handle_char = [](uint8_t c){Terminal::put_char(c);};
-    Keyboard::init();
+//    Keyboard::handlers[0xE0-1].emplace_back(CtrlAltDelHandler::handler);
+
+//    Keyboard::char_handlers.emplace_back([](uint8_t c){Terminal::put_char(c);});
+    PS2Keyboard::init();
 }
 }
 }

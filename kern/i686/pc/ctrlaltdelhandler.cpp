@@ -31,32 +31,24 @@ SOFTWARE.
 
 #include "io.hpp"
 
-bool CtrlAltDelHandler::handler(const Keyboard::Event& ev)
-{
-    if (ev.ctrl && ev.alt)
-    {
-        Keyboard::wait();
-        uint8_t code;
-        while (true)
-        {
-            code = inb(KBD_PORT);
-            if (code == 0xE0)
-            {
-                reset();
-                // shouldn't happend
-                return false;
-            }
-            else if (code == 0xD3) // D3 : keypad dot, disanbiguate
-            {
-                return true;
-            }
-        }
-    }
+//bool CtrlAltDelHandler::handler(const Keyboard::Event& ev)
+//{
+//    if (ev.ctrl && ev.alt)
+//    {
+//        Keyboard::wait();
+//        uint8_t code = inb(KBD_PORT);
+//        if (code == 0xD3)
+//        {
+//            reset();
+//            // shouldn't happend
+//            return false;
+//        }
+//    }
 
-    return true;
-}
+//    return true;
+//}
 
-void CtrlAltDelHandler::reset()
-{
-    ::reset();
-}
+//void CtrlAltDelHandler::reset()
+//{
+//    ::reset();
+//}

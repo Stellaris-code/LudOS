@@ -30,6 +30,7 @@ SOFTWARE.
 #include "halt.hpp"
 
 #include "utils/logging.hpp"
+#include "utils/builtins.hpp"
 
 #include "io.hpp"
 
@@ -61,6 +62,7 @@ inline void reset()
 
         halt();
     }
+    unreachable();
 }
 
 [[noreturn]]

@@ -89,8 +89,6 @@ const registers* isr_handler(const registers* const regs)
         }
 
         serial::debug::write("eip : 0x%lx\n", regs->eip);
-        dump_serial(regs);
-        dump(regs);
 
         panic("Unhandeld interrupt (type : '%s') 0x%lx with error code 0x%lx at 0x%lx\n"
               "edx : 0x%lx\ncr2 : 0x%lx", exception_messages[regs->int_no], regs->int_no, regs->err_code, regs->eip, regs->edx, cr2());

@@ -30,7 +30,25 @@ SOFTWARE.
 #include "panic.hpp"
 #endif
 
+#include "utils/builtins.hpp"
 
+__attribute__((__noreturn__))
+void abort_impl(const char* file, size_t line, const char* fun)
+{
+#if defined(__is_libk)
+        panic("Abort called at file '%s', line %d, function '%s'", file, line, fun);
+#else
+        // TODO: Abnormally terminate the process as if by SIGABRT.
+        kprintf("abort()\n");
+#error not implemented yet
+#endif
+        while (1) { }
+        unreachable();
+}
+
+#undef abort
+
+extern "C"
 __attribute__((__noreturn__))
 void abort(void)
 {
@@ -42,5 +60,21 @@ void abort(void)
 #error not implemented yet
 #endif
         while (1) { }
-        __builtin_unreachable();
+        unreachable();
+}
+
+extern "C"
+__attribute__((__noreturn__))
+void _abort(void)
+{
+#if defined(__is_libk)
+        kprintf("caller : 0x%x\n", __builtin_return_address(0));
+        panic("Abort called");
+#else
+        // TODO: Abnormally terminate the process as if by SIGABRT.
+        kprintf("abort()\n");
+#error not implemented yet
+#endif
+        while (1) { }
+        unreachable();
 }

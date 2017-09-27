@@ -45,6 +45,7 @@ size_t Meminfo::free_frames()
         }
     }
 
+
     return counter;
 }
 
@@ -64,6 +65,7 @@ multiboot_memory_map_t *Meminfo::largest_frame()
             msf = mmap;
         }
     }
+
 
     return msf;
 }

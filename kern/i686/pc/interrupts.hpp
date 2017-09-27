@@ -25,6 +25,8 @@ SOFTWARE.
 #ifndef INTERRUPTS_HPP
 #define INTERRUPTS_HPP
 
+#include <stdint.h>
+
 inline void cli()
 {
     asm volatile ("cli");
@@ -42,6 +44,11 @@ inline bool interrupts_enabled()
                    "pop %0"
                    : "=g"(flags) );
     return flags & (1 << 9);
+}
+
+inline void interrupt(uint8_t code)
+{
+    asm volatile ("int %0" : :"i"(code));
 }
 
 #endif // INTERRUPTS_HPP

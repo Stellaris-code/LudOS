@@ -27,12 +27,14 @@ SOFTWARE.
 
 #include "i686/pc/interrupts.hpp"
 
+#include "utils/builtins.hpp"
+
 [[noreturn]]
 inline void halt()
 {
     cli();
     while (true) {}
-    __builtin_unreachable();
+    unreachable();
 }
 
 #endif // HALT_HPP

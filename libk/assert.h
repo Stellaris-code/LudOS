@@ -28,17 +28,18 @@ SOFTWARE.
 #include "utils/defs.hpp"
 
 #ifndef assert
-#define assert(cond) ::impl_assert(cond, #cond, __FILE__, __LINE__, __FUNCTION__)
+#define assert(cond) impl_assert(cond, #cond, __FILE__, __LINE__, __FUNCTION__)
 #endif
 
 #ifndef assert_mesg
-#define assert_msg(cond, fmt, ...) ::impl_assert_msg(cond, #cond, __FILE__, __LINE__, __FUNCTION__, fmt, ##__VA_ARGS__);
+#define assert_msg(cond, fmt, ...) impl_assert_msg(cond, #cond, __FILE__, __LINE__, __FUNCTION__, fmt, ##__VA_ARGS__);
 #endif
 
 #ifndef __ASSERT_H
 #define __ASSERT_H
 
 #include <stdint.h>
+#include <stdbool.h>
 
 #ifndef NDEBUG
 #define error_impl panic
@@ -47,8 +48,17 @@ SOFTWARE.
 #endif
 //"Reason : '" msg "'\n"
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
 void impl_assert(bool cond, const char* strcond, const char* file, size_t line, const char* fun);
 PRINTF_FMT(6, 7)
 void impl_assert_msg(bool cond, const char* strcond, const char* file, size_t line, const char* fun, const char* fmt, ...);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // __ASSERT_H

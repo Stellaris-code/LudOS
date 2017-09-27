@@ -30,29 +30,65 @@ SOFTWARE.
 #include <string.hpp>
 #include <vector.hpp>
 #include <functional.hpp>
+#include <variant.hpp>
 
 class vfs
 {
 public:
+    struct node;
 
-struct node
-{
-    std::string filename;
-    uint32_t perms;
-    uint32_t uid;
-    uint32_t gid;
-    uint32_t flags;
-    uint32_t length;
-    std::function<size_t(void*, size_t)> read;
-    std::function<size_t(const void*, size_t)> write;
-    std::function<std::vector<node>()> readdir;
-};
+    struct file
+    {
+        uint32_t perms;
+        uint32_t uid;
+        uint32_t gid;
+        uint32_t flags;
+        uint32_t length;
+        std::function<size_t(void*, size_t)> read;
+        std::function<size_t(const void*, size_t)> write;
+        std::function<std::vector<node>()> readdir;
+    };
+
+    struct symlink
+    {
+        node* link;
+    };
+
+    struct node
+    {
+        std::string filename;
+        std::variant<file, symlink> data;
+
+        file& get_file()
+        {
+            if (auto* target = std::get_if<file>(&data))
+            {
+                return *target;
+            }
+            else
+            {
+                return std::get<symlink>(data).link->get_file();
+            }
+        }
+
+        const file& get_file() const
+        {
+            if (const auto* target = std::get_if<file>(&data))
+            {
+                return *target;
+            }
+            else
+            {
+                return std::get<symlink>(data).link->get_file();
+            }
+        }
+    };
 
 public:
 
-static void init();
+    static void init();
 
-static inline std::vector<node> descriptors;
+    static inline std::vector<node> descriptors;
 
 };
 

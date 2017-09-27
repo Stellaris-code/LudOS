@@ -742,7 +742,15 @@ void* PREFIX(calloc)(size_t nobj, size_t size)
        return p;
 }
 
+void    *malloc(size_t t)
+{
+    return kmalloc(t);
+}
 
+void free(void* ptr)
+{
+    kfree(ptr);
+}
 
 void*   PREFIX(realloc)(void *p, size_t size)
 {

@@ -27,62 +27,68 @@ SOFTWARE.
 
 #include "utils/logging.hpp"
 
-#include "i686/pc/devices/keyboard.hpp"
+//#include "i686/pc/devices/ps2keyboard.hpp"
 
-void vfs::init()
-{
-    descriptors.resize(3); // for std streams
+//void vfs::init()
+//{
+//    descriptors.resize(3); // for std streams
 
-    node stdin;
-    stdin.filename = "/dev/stdin";
-    stdin.read = [](void* data, size_t size)->size_t
-    {
-        std::vector<uint8_t> buf;
+//    node stdin_node;
+//    file stdin;
+//    stdin_node.filename = "/dev/stdin";
+//    stdin.read = [](void* data, size_t size)->size_t
+//    {
+//        std::vector<uint8_t> buf;
 
-        Keyboard::char_handlers.emplace_back([&buf, size](uint8_t c)
-        {
-            buf.push_back(c);
-        });
+//        Keyboard::char_handlers.emplace_back([&buf, size](uint8_t c)
+//        {
+//            buf.push_back(c);
+//        });
 
-        while (buf.size() < size);
+//        while (buf.size() < size);
 
-        Keyboard::char_handlers.pop_back();
+//        Keyboard::char_handlers.pop_back();
 
-        for (size_t i { 0 }; i < buf.size(); ++i)
-        {
-            reinterpret_cast<uint8_t*>(data)[i] = buf[i];
-        }
+//        for (size_t i { 0 }; i < buf.size(); ++i)
+//        {
+//            reinterpret_cast<uint8_t*>(data)[i] = buf[i];
+//        }
 
-        return buf.size();
-    };
+//        return buf.size();
+//    };
+//    stdin_node.data = stdin;
 
-    descriptors[0] = stdin;
+//    descriptors[0] = stdin_node;
 
-    node stdout;
-    stdout.filename = "/dev/stdout";
-    stdout.write = [](const void* data, size_t size)->size_t
-    {
-        std::string str(reinterpret_cast<const char*>(data), size);
+//    node stdout_node;
+//    file stdout;
+//    stdout_node.filename = "/dev/stdout";
+//    stdout.write = [](const void* data, size_t size)->size_t
+//    {
+//        std::string str(reinterpret_cast<const char*>(data), size);
 
-        kprintf("%s", str.c_str());
+//        kprintf("%s", str.c_str());
 
-        return size;
-    };
+//        return size;
+//    };
+//    stdout_node.data = stdout;
 
-    descriptors[1] = stdout;
+//    descriptors[1] = stdout_node;
 
-    node stderr;
-    stderr.filename = "/dev/stderr";
-    stderr.write = [](const void* data, size_t size)->size_t
-    {
-        std::string str(reinterpret_cast<const char*>(data), size);
+//    node stderr_node;
+//    file stderr;
+//    stderr_node.filename = "/dev/stderr";
+//    stderr.write = [](const void* data, size_t size)->size_t
+//    {
+//        std::string str(reinterpret_cast<const char*>(data), size);
 
-        err("%s", str.c_str());
+//        err("%s", str.c_str());
 
-        return size;
-    };
+//        return size;
+//    };
+//    stderr_node.data = stderr;
 
-    descriptors[2] = stderr;
+//    descriptors[2] = stderr_node;
 
-    log("VFS initialized.\n");
-}
+//    log("VFS initialized.\n");
+//}

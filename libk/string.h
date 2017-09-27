@@ -47,7 +47,13 @@ char *strncpy(char * __restrict dest, const char * __restrict src, size_t n);
 char *strcat ( char * destination, const char * source );
 int strcmp(const char* str1, const char* str2);
 int strncmp(const char* str1, const char* str2, size_t n);
+char * strdup(const char *str1);
+const char* strstr( const char* str, const char* target );
 char * strerror(int errnum);
+char * _strerror_r(
+        int errnum,
+        int internal,
+        int *errptr);
 int posix_memalign(void **res, size_t align, size_t len);
 
 long long strtoll(const char *str, char **endptr, int base);

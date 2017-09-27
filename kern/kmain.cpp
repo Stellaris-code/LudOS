@@ -29,12 +29,19 @@ SOFTWARE.
 // TODO : POC calculatrice
 // TODO : Paging
 // TODO : VFS
-// TODO : initialisation PS/2
-// TODO : enum pour les key qui se mappe au keymap
+// TODO : DMA
 // TODO : Son
+// TODO : Floppy controler
+// TODO : getevn() setenv()
+
+// TODO : syscalls:
+/// screen_clr()
+/// screen_move_cursor(x, y)
+/// screen_push_color(col)
+/// screen_pop_color()
 
 #ifndef __cplusplus
-#error Must be compiler using C++ !
+#error Must be compiled using C++ !
 #endif
 
 #ifndef NDEBUG
@@ -43,12 +50,17 @@ SOFTWARE.
 
 #include "greet.hpp"
 
+#include "messagebus.hpp"
+#include "drivers/kbd/kbd_mappings.hpp"
+#include "drivers/kbd/text_handler.hpp"
+
 #ifdef ARCH_i686
 #include "i686/pc/init.hpp"
 #endif
 
 #include "fs/fat.hpp"
 #include "fs/vfs.hpp"
+#include "diskinterface.hpp"
 
 #ifdef ARCH_i686
 extern "C"
@@ -61,7 +73,20 @@ void kmain()
     i686::pc::init(magic, mbd_info);
 #endif
 
-    vfs::init();
+    //vfs::init();
+
+    DiskInterface::scan();
+
+    //    for (size_t j { 0 }; j < 8; ++j)
+    //    {
+    //        uint8_t buf[512];
+    //        DiskInterface::read(j, 0, 1, buf);
+    //        for (size_t i { 0 }; i < 8; ++i)
+    //        {
+    //            kprintf("0x%x : 0x%x\n", i, buf[i]);
+    //        }
+    //        kprintf("\n");
+    //    }
 
     auto fs = fat::read_fat_fs(0, 0);
     if (fs.valid)
@@ -72,8 +97,9 @@ void kmain()
         log("%zd\n", entries.size());
         for (const auto& entry : entries)
         {
-            std::vector<uint8_t> data(entry.length);
-            entry.read(data.data(), data.size());
+            auto& file = entry.get_file();
+            std::vector<uint8_t> data(file.length);
+            file.read(data.data(), data.size());
             data.push_back('\0'); // sentinel value
             log("name : %s\n%s\n", entry.filename.data(), data.data());
         }
@@ -84,6 +110,14 @@ void kmain()
     }
 
     greet();
+
+    kbd::install_mapping(kbd::mappings::azerty());
+    kbd::TextHandler::init();
+
+    MessageBus::register_handler<kbd::TextEnteredEvent>([](const kbd::TextEnteredEvent& e)
+    {
+        putchar(e.c);
+    });
 
     while (1)
     {

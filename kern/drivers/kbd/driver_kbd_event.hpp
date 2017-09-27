@@ -1,5 +1,5 @@
 /*
-guards.hpp
+keystroke_event.hpp
 
 Copyright (c) 23 Yann BOUCHER (yann)
 
@@ -22,33 +22,38 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
+#ifndef KEYSTROKE_EVENT_HPP
+#define KEYSTROKE_EVENT_HPP
 
-namespace __cxxabiv1
+#include <stdint.h>
+
+struct DriverKbdEvent
 {
-/* guard variables */
+    union
+    {
+        uint8_t pos;
+        struct
+        {
+            uint8_t x : 5;
+            uint8_t y : 3;
+        };
+    };
 
-/* The ABI requires a 64-bit type.  */
-__extension__ typedef volatile int __guard __attribute__((mode(__DI__)));
+    enum
+    {
+        Pressed,
+        Released
+    } state;
+};
 
-extern "C" int __cxa_guard_acquire (__guard *);
-extern "C" void __cxa_guard_release (__guard *);
-extern "C" void __cxa_guard_abort (__guard *);
-
-extern "C" int __cxa_guard_acquire (__guard *g)
+namespace kbd
 {
-    while (__sync_bool_compare_and_swap(g, 1, 0));
-    __sync_synchronize();
-    return !*g;
+
+inline uint8_t pos(uint8_t row, uint8_t col)
+{
+    return ((col & 0b111) << 5) | (row & 0b11111);
 }
 
-extern "C" void __cxa_guard_release (__guard *g)
-{
-    __sync_synchronize();
-    *g = 1;
 }
 
-extern "C" void __cxa_guard_abort (__guard *)
-{
-
-}
-}
+#endif // KEYSTROKE_EVENT_HPP

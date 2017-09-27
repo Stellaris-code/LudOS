@@ -11,9 +11,13 @@
 #include "new.hpp"
 #include "typeinfo.hpp"
 
+#ifdef _LIBCPP_BUILDING_HAS_NO_ABI_LIBRARY
+#error dd
+#endif
+
 #if defined(LIBCXXRT) || defined(LIBCXX_BUILDING_LIBCXXABI) || \
   (defined(__APPLE__) && !defined(_LIBCPP_BUILDING_HAS_NO_ABI_LIBRARY))
-  #include <cxxabi.h>
+  #include <../external/libcxxrt/src/cxxabi.h>
   using namespace __cxxabiv1;
   #define HAVE_DEPENDENT_EH_ABI 1
 #endif

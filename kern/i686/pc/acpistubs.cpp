@@ -32,9 +32,8 @@ SOFTWARE.
 
 #include "timer.hpp"
 #include "timestamp.hpp"
-
+#include "pci.hpp"
 #include "isr.hpp"
-
 #include "io.hpp"
 
 #include <stdlib.h>
@@ -163,9 +162,16 @@ AcpiOsReadPciConfiguration (
         UINT64                  *Value,
         UINT32                  Width)
 {
-    warn("AcpiOsReadPciConfiguration : not implemented yet");
-
-    return AE_NOT_IMPLEMENTED;
+    if (Width != 16)
+    {
+        warn("AcpiOsReadPciConfiguration : not implemented yet for Width %d\n", Width);
+        return AE_NOT_IMPLEMENTED;
+    }
+    else
+    {
+        *Value = pci::read_reg(PciId->Bus, PciId->Device, PciId->Function, Reg);
+        return AE_OK;
+    }
 }
 
 ACPI_STATUS
@@ -175,7 +181,16 @@ AcpiOsWritePciConfiguration (
         UINT64                  Value,
         UINT32                  Width)
 {
-    warn("AcpiOsWritePciConfiguration : not implemented yet");
+    if (Width != 16)
+    {
+        warn("AcpiOsWritePciConfiguration : not implemented yet for Width %d\n", Width);
+        return AE_NOT_IMPLEMENTED;
+    }
+    else
+    {
+        pci::write_reg(PciId->Bus, PciId->Device, PciId->Function, Reg, Value);
+        return AE_OK;
+    }
 
     return AE_NOT_IMPLEMENTED;
 }
@@ -215,9 +230,9 @@ ACPI_STATUS AcpiOsSignalSemaphore(ACPI_SEMAPHORE handle, UINT32 units)
 
 ACPI_CPU_FLAGS AcpiOsAcquireLock(ACPI_SPINLOCK lock)
 {
-//    LOCK_VAL(lock);
+    //    LOCK_VAL(lock);
 
-//    return AE_OK;
+    //    return AE_OK;
     return AE_NOT_IMPLEMENTED;
 }
 

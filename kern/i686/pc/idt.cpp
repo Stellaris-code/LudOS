@@ -37,6 +37,9 @@ SOFTWARE.
 namespace idt
 {
 
+extern "C"
+void idt_flush(uint32_t addr);
+
 entry idt_entries[256];
 ptr  idt_ptr;
 

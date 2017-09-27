@@ -64,6 +64,9 @@ public:
 public:
     static void init();
 
+    static void enable();
+    static void disable();
+
     static void set_leds(uint8_t leds);
     static void toggle_led(uint8_t led, bool value = true);
 
@@ -78,7 +81,7 @@ public:
     static inline std::vector<std::function<void(uint8_t)>> char_handlers;
     static inline std::vector<std::function<void(const Event&)>> kbd_events;
 
-    static inline std::function<bool(const Event&)> handlers[256];
+    static inline std::vector<std::function<bool(const Event&)>> handlers[256];
 
     static inline bool lshift { false };
     static inline bool rshift { false };

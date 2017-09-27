@@ -16,7 +16,7 @@
 /* For _LIBCPPABI_VERSION */
 #if !defined(_LIBCPP_BUILDING_HAS_NO_ABI_LIBRARY) && \
     (defined(LIBCXX_BUILDING_LIBCXXABI) || defined(__APPLE__) || defined(LIBCXXRT))
-#include <cxxabi.h>
+#include <../external/libcxxrt/src/cxxabi.h>
 #endif
 
 static_assert(sizeof(std::__libcpp_refstring) == sizeof(const char *), "");

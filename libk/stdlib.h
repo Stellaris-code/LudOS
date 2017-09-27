@@ -29,12 +29,20 @@ SOFTWARE.
 
 #include "external/liballoc/liballoc.h"
 
+//#define malloc kmalloc
+//#define free kfree
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 __attribute__((__noreturn__))
-void abort(void);
+void abort_impl(const char* file, size_t line, const char* fun);
+
+__attribute__((__noreturn__))
+void _abort();
+
+#define abort() abort_impl(__FILE__, __LINE__, __PRETTY_FUNCTION__)
 
 #ifdef __cplusplus
 }

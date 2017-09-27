@@ -36,6 +36,7 @@ SOFTWARE.
 #include "i686/pc/devices/speaker.hpp"
 #include "i686/pc/serialdebug.hpp"
 #include "i686/pc/interrupts.hpp"
+#include "i686/pc/registers.hpp"
 #endif
 
 #include "halt.hpp"
@@ -44,6 +45,7 @@ SOFTWARE.
 void panic(const char *fmt, ...)
 {
     serial::debug::write("Kernel Panic !\n");
+    serial::debug::write("caller : 0x%x\n", __builtin_return_address(0));
 
     cli();
 
@@ -54,22 +56,32 @@ void panic(const char *fmt, ...)
         va_end(va);
     }
 
+    serial::debug::write("\n");
+
+    auto regs = get_registers();
+
+    dump_serial(regs);
+
     if (Terminal::impl)
     {
 
         Terminal::push_color(VGA_COLOR_RED);
 
-        //Speaker::beep(300);
+        Speaker::beep(300);
 
         puts("\nKERNEL PANIC : ");
+        kprintf("caller : 0x%x\n", __builtin_return_address(0));
 
         {
             va_list va;
             va_start(va, fmt);
-            tfp_format(nullptr, [](void*, char c){putchar(c);  serial::debug::write("%c", c);}, fmt, va);
+            tfp_format(nullptr, [](void*, char c){putchar(c);}, fmt, va);
             va_end(va);
         }
 
+        puts("\n");
+
+        dump(regs);
     }
 
     halt();

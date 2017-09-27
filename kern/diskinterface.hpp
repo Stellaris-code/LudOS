@@ -41,6 +41,7 @@ public:
 public:
     static inline std::function<bool(size_t disk_num, uint32_t sector, uint8_t count, uint8_t* buf)> read;
     static inline std::function<bool(size_t disk_num, uint32_t sector, uint8_t count, const uint8_t* buf)> write;
+    static inline std::function<std::vector<uint32_t>()> scan;
 
     static inline Error last_error { Error::OK };
 };

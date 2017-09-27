@@ -25,15 +25,15 @@ SOFTWARE.
 #ifndef CTRLALTDELHANDLER_HPP
 #define CTRLALTDELHANDLER_HPP
 
-#include "devices/keyboard.hpp"
+//#include "devices/keyboard.hpp"
 
-class CtrlAltDelHandler
-{
-public:
-    static bool handler(const Keyboard::Event&);
+//class CtrlAltDelHandler
+//{
+//public:
+//    static bool handler(const Keyboard::Event&);
 
-private:
-    static void reset();
-};
+//private:
+//    static void reset();
+//};
 
 #endif // CTRLALTDELHANDLER_HPP

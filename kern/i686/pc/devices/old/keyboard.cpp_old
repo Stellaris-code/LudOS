@@ -38,15 +38,34 @@ SOFTWARE.
 
 #include "nop.hpp"
 
-#include "terminal/terminal.hpp"
-
 void Keyboard::init()
 {
     isr::register_handler(IRQ1, &Keyboard::isr);
 
     log("Keyboard initialized\n");
 
+    disable();
+
+    /* flush device buffer */
+    while (inb(0x64) & 0x1) {
+        inb(0x60);
+    }
+
+    enable();
+}
+
+void Keyboard::enable()
+{
+    outb(KBD_PORT, 0xAE);
+    outb(KBD_PORT, 0xA8);
     pic::clear_mask(1); // enable keyboard interrupts
+}
+
+void Keyboard::disable()
+{
+    pic::set_mask(1); // disable keyboard interrupts
+    outb(KBD_PORT, 0xAD);
+    outb(KBD_PORT, 0xA7);
 }
 
 void Keyboard::set_leds(uint8_t leds)
@@ -145,7 +164,12 @@ void Keyboard::isr(const registers * const)
     }
 
     Event event {(lshift || rshift), alt, ctrl, false, caps_lock, scroll_lock, num_lock, pressed, unaltered_key};
-    if ((!handlers[unaltered_key] || handlers[unaltered_key](event)) && is_handle_char)
+    bool okay { true };
+    for (auto& handler : handlers[unaltered_key])
+    {
+        okay &= (!handler || handler(event));
+    }
+    if (okay && is_handle_char)
     {
         uint8_t c = kbdmap
                 [key * 4 + (((lshift || rshift) ^ caps_lock) ? 1 : alt ? 2 : num_lock ? 3 : 0)];
@@ -158,7 +182,7 @@ void Keyboard::isr(const registers * const)
             }
         }
     }
-    Terminal::push_color(0);Terminal::pop_color();
+
     for (auto& kbd_event : kbd_events)
     {
         if (kbd_event)

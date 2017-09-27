@@ -93,6 +93,7 @@ private:
             if (m_ticks - callback.start >= callback.duration)
             {
                 callback.callback();
+                callback.start = m_ticks;
                 if (callback.oneshot)
                 {
                     callback.to_be_deleted = true;

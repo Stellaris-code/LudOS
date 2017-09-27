@@ -27,6 +27,7 @@ SOFTWARE.
 
 #include <string.h>
 
+#include <algorithm.hpp>
 #include <vector.hpp>
 
 #include "diskinterface.hpp"
@@ -281,6 +282,7 @@ std::vector<uint8_t> fat::read(const fat::Entry &entry, const FATInfo &info, siz
 vfs::node fat::detail::entry_to_vfs_node(const fat::Entry &entry, const FATInfo& info, const std::string& long_name)
 {
     vfs::node node;
+    vfs::file file;
     if (!long_name.empty())
     {
         node.filename = long_name;
@@ -295,12 +297,12 @@ vfs::node fat::detail::entry_to_vfs_node(const fat::Entry &entry, const FATInfo&
         {
             node.filename.push_back(c);
         }
-        // TODO : reverse
+        std::reverse(node.filename.begin(), node.filename.end());
     }
 
-    node.flags = entry.attributes;
-    node.length = entry.size;
-    node.read = [entry, info](void* buf, size_t bytes)->size_t
+    file.flags = entry.attributes;
+    file.length = entry.size;
+    file.read = [entry, info](void* buf, size_t bytes)->size_t
     {
         auto data = fat::read(entry, info, bytes);
         for (size_t i { 0 }; i < data.size(); ++i)
@@ -310,6 +312,8 @@ vfs::node fat::detail::entry_to_vfs_node(const fat::Entry &entry, const FATInfo&
 
         return data.size();
     };
+
+    node.data = file;
 
     return node;
 }

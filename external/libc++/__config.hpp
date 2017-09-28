@@ -12,7 +12,7 @@
 #define _LIBCPP_CONFIG
 
 #define _LIBCPP_BUILDING_LIBRARY
-#define _LIBCPP_HAS_NO_EXCEPTIONS
+#define _LIBCPP_NO_EXCEPTIONS
 #define _LIBCPP_HAS_NO_THREADS
 
 #if defined(_MSC_VER) && !defined(__clang__)

@@ -1,7 +1,7 @@
 /*
-ctrlaltdelhandler.hpp
+keyboard.hpp
 
-Copyright (c) 18 Yann BOUCHER (yann)
+Copyright (c) 27 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,18 +22,38 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef CTRLALTDELHANDLER_HPP
-#define CTRLALTDELHANDLER_HPP
+#ifndef KEYBOARD_HPP
+#define KEYBOARD_HPP
 
-//#include "devices/keyboard.hpp"
+#include "text_handler.hpp"
 
-//class CtrlAltDelHandler
-//{
-//public:
-//    static bool handler(const Keyboard::Event&);
+class Keyboard
+{
+    public:
+        static bool shift()
+        {
+            return kbd::TextHandler::lshift || kbd::TextHandler::rshift;
+        }
 
-//private:
-//    static void reset();
-//};
+        static bool alt()
+        {
+            return kbd::TextHandler::lalt || kbd::TextHandler::ralt;
+        }
 
-#endif // CTRLALTDELHANDLER_HPP
+        static bool caps()
+        {
+            return (shift() ^ kbd::TextHandler::capslock);
+        }
+
+        static bool numlock()
+        {
+            return kbd::TextHandler::numlock;
+        }
+
+        static bool ctrl()
+        {
+            return kbd::TextHandler::lctrl || kbd::TextHandler::rctrl;
+        }
+};
+
+#endif // KEYBOARD_HPP

@@ -1,7 +1,7 @@
 /*
-ctrlaltdelhandler.cpp
+mouse.cpp
 
-Copyright (c) 18 Yann BOUCHER (yann)
+Copyright (c) 28 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -23,32 +23,33 @@ SOFTWARE.
 
 */
 
-#include "ctrlaltdelhandler.hpp"
+#include "mouse.hpp"
 
-#include "utils/logging.hpp"
+#include "messagebus.hpp"
 
-#include "powermanagement.hpp"
+void Mouse::init()
+{
+    MessageBus::register_handler<MousePacket>([](const MousePacket& e)
+    {
+        if (e.x != 0 || e.y != 0)
+        {
+            MessageBus::send<MouseMoveEvent>({e.x, e.y});
+        }
 
-#include "io.hpp"
+        if (e.wheel != 0)
+        {
+            MessageBus::send<MouseScrollEvent>({e.wheel});
+        }
 
-//bool CtrlAltDelHandler::handler(const Keyboard::Event& ev)
-//{
-//    if (ev.ctrl && ev.alt)
-//    {
-//        Keyboard::wait();
-//        uint8_t code = inb(KBD_PORT);
-//        if (code == 0xD3)
-//        {
-//            reset();
-//            // shouldn't happend
-//            return false;
-//        }
-//    }
+        if (e.left_button || e.mid_button || e.right_button || e.button_4 || e.button_5)
+        {
+            MessageBus::send<MouseClickEvent>({e.left_button, e.mid_button, e.right_button, e.button_4, e.button_5});
+        }
 
-//    return true;
-//}
-
-//void CtrlAltDelHandler::reset()
-//{
-//    ::reset();
-//}
+        left_pressed = e.left_button;
+        mid_pressed = e.mid_button;
+        right_pressed = e.right_button;
+        fourth_pressed = e.button_4;
+        fifth_pressed = e.button_5;
+    });
+}

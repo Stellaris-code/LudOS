@@ -30,17 +30,36 @@ SOFTWARE.
 
 #include "messagebus.hpp"
 #include "drivers/kbd/driver_kbd_event.hpp"
+#include "drivers/kbd/led_handler.hpp"
 #include "io.hpp"
 
 #include "utils/logging.hpp"
 
 void PS2Keyboard::init()
 {
-    isr::register_handler(IRQ1, &PS2Keyboard::isr);
+    isr::register_handler(IRQ1, &isr);
 
     init_assocs();
 
     enable();
+
+    MessageBus::register_handler<LEDChangeEvent>([](const LEDChangeEvent& e)
+    {
+        if (e.caps_led != LEDState::Ignore)
+        {
+            toggle_led(CAPS_LOCK_LED, e.caps_led == LEDState::On ? true : false);
+        }
+        if (e.scroll_led != LEDState::Ignore)
+        {
+            toggle_led(SCROLL_LOCK_LED, e.scroll_led == LEDState::On ? true : false);
+        }
+        if (e.num_led != LEDState::Ignore)
+        {
+            toggle_led(NUM_LOCK_LED, e.num_led == LEDState::On ? true : false);
+        }
+    });
+
+    set_leds(0);
 
     log("Keyboard driver initialized\n");
 }
@@ -59,10 +78,22 @@ void PS2Keyboard::disable()
 
 void PS2Keyboard::set_leds(uint8_t leds)
 {
+    poll_obf();
     outb(KBD_PORT, LED_CMD);
-    poll_ibf();
+    poll_obf();
     outb(KBD_PORT, leds);
-    poll_ibf();
+}
+
+void PS2Keyboard::poll_ibf()
+{
+    uint32_t timeout = 100000;
+    while (--timeout && !(inb(COMMAND_PORT) & 0x2));
+}
+
+void PS2Keyboard::poll_obf()
+{
+    uint32_t timeout = 100000;
+    while (--timeout && (inb(COMMAND_PORT) & 0x1) == 1);
 }
 
 void PS2Keyboard::toggle_led(uint8_t led, bool value)
@@ -78,6 +109,8 @@ void PS2Keyboard::isr(const registers *)
     uint8_t code = inb(0x60);
 
     auto key_state = DriverKbdEvent::Pressed;
+
+    // TODO : long_key_assocs
 
     if (code == 0xE0)
     {
@@ -108,11 +141,6 @@ void PS2Keyboard::send_command(uint8_t command, bool poll)
 {
     outb(COMMAND_PORT, command);
     if (poll) poll_ibf();
-}
-
-void PS2Keyboard::poll_ibf()
-{
-    while (!(inb(COMMAND_PORT) & 0x1));
 }
 
 void PS2Keyboard::init_assocs()
@@ -189,7 +217,7 @@ void PS2Keyboard::init_assocs()
     define_assoc(0x43, kbd::pos(9, 0), "F9");
     define_assoc(0x44, kbd::pos(10, 0),"F10");
     define_assoc(0x45, kbd::pos(17, 1),"numlock");
-    define_assoc(0x46, kbd::pos(14, 0),"scrolllock");
+    define_assoc(0x46, kbd::pos(15, 0),"scrolllock");
     define_assoc(0x47, kbd::pos(17, 2),"(keypad) 7");
     define_assoc(0x48, kbd::pos(18, 2),"(keypad) 8");
     define_assoc(0x49, kbd::pos(19, 2),"(keypad) 9");
@@ -221,8 +249,8 @@ void PS2Keyboard::init_assocs()
     define_e0_assoc(0x52, kbd::pos(14, 1), "insert");
     define_e0_assoc(0x53, kbd::pos(14, 2), "delete");
 
-    long_key_assocs.emplace_back(kbd::pos(13, 0), std::vector<uint8_t>{0xE0, 0x2A, 0xE0, 0xAA});
-    long_key_assocs.emplace_back(kbd::pos(15, 0), std::vector<uint8_t>{0xE1, 0x1D, 0x45, 0xE1, 0x9D, 0xC5});
+    long_key_assocs.emplace_back(kbd::pos(14, 0), std::vector<uint8_t>{0xE0, 0x2A, 0xE0, 0xAA});
+    long_key_assocs.emplace_back(kbd::pos(16, 0), std::vector<uint8_t>{0xE1, 0x1D, 0x45, 0xE1, 0x9D, 0xC5});
 }
 
 void PS2Keyboard::define_assoc(uint8_t i, uint8_t pos, const std::string &name)

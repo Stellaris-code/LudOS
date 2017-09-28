@@ -92,6 +92,7 @@ public:
     static uint8_t color() { return impl->color(); }
     static void show_history(int page) { impl->show_history(page); }
     static uint8_t current_history() { return impl->current_history(); }
+    static void scroll_history(int scroll) { show_history(current_history()+scroll); }
 
 public:
     static inline TerminalImpl* impl { nullptr };

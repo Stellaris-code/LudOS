@@ -1,5 +1,5 @@
 /*
-text_handler.hpp
+powermanagement.hpp
 
 Copyright (c) 27 Yann BOUCHER (yann)
 
@@ -22,48 +22,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
+#ifndef POWERMANAGEMENT_HPP
+#define POWERMANAGEMENT_HPP
 
-#ifndef TEXT_HANDLER
-#define TEXT_HANDLER
+#include "panic.hpp"
 
-#include <stdint.h>
+#include <functional.hpp>
 
-#include "kbd_mappings.hpp"
+std::function<void()> reset = []{panic("No reset callback defined!");};
+std::function<void()> shutdown = []{panic("No shutdown callback defined!");};
 
-class Keyboard;
-
-namespace kbd
-{
-
-struct TextEnteredEvent
-{
-    uint8_t c;
-};
-
-class TextHandler
-{
-    friend class ::Keyboard;
-
-public:
-    static void init();
-
-private:
-    static void handle_key(const kbd::KeyEvent& e);
-
-    static void handle_modifiers(const kbd::KeyEvent& e);
-
-private:
-    static inline bool lshift { false };
-    static inline bool rshift { false };
-    static inline bool lalt { false };
-    static inline bool ralt { false };
-    static inline bool lctrl { false };
-    static inline bool rctrl { false };
-    static inline bool capslock { false };
-    static inline bool alt { false };
-    static inline bool numlock { false };
-};
-
-}
-
-#endif
+#endif // POWERMANAGEMENT_HPP

@@ -59,7 +59,7 @@ kbd::Mapping kbd::mappings::azerty()
     def(7, 2, U);
     def(8, 2, I);
     def(9, 2, O);
-    def(10, 2, P);
+    def(10, 2,P);
     def(1, 3, Q);
     def(2, 3, S);
     def(3, 3, D);
@@ -69,7 +69,7 @@ kbd::Mapping kbd::mappings::azerty()
     def(7, 3, J);
     def(8, 3, K);
     def(9, 3, L);
-    def(10, 3, M);
+    def(10, 3,M);
     def(2, 4, W);
     def(3, 4, X);
     def(4, 4, C);
@@ -161,6 +161,7 @@ kbd::Mapping kbd::mappings::azerty()
     def(0, 3, MajLock);
     def(14, 0, PrintScreen);
     def(15, 0, ScrollLock);
+    def(16, 0, Pause);
     def(17, 1, NumLock);
 
     return map;

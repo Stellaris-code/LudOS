@@ -1,5 +1,5 @@
 /*
-text_handler.hpp
+mouse.hpp
 
 Copyright (c) 27 Yann BOUCHER (yann)
 
@@ -22,48 +22,60 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-
-#ifndef TEXT_HANDLER
-#define TEXT_HANDLER
+#ifndef MOUSE_HPP
+#define MOUSE_HPP
 
 #include <stdint.h>
 
-#include "kbd_mappings.hpp"
-
-class Keyboard;
-
-namespace kbd
+struct MousePacket
 {
-
-struct TextEnteredEvent
-{
-    uint8_t c;
+    int16_t x;
+    int16_t y;
+    int16_t wheel;
+    bool left_button : 1;
+    bool mid_button : 1;
+    bool right_button : 1;
+    bool button_4 : 1;
+    bool button_5 : 1;
 };
 
-class TextHandler
+struct MouseMoveEvent
 {
-    friend class ::Keyboard;
+    int16_t x;
+    int16_t y;
+};
 
+struct MouseScrollEvent
+{
+    int16_t wheel;
+};
+
+struct MouseClickEvent
+{
+    bool left_button : 1;
+    bool mid_button : 1;
+    bool right_button : 1;
+    bool button_4 : 1;
+    bool button_5 : 1;
+};
+
+class Mouse
+{
 public:
     static void init();
 
-private:
-    static void handle_key(const kbd::KeyEvent& e);
+    static bool left_but() { return left_pressed; }
+    static bool mid_but() { return mid_pressed; }
+    static bool right_but() { return right_pressed; }
+    static bool fourth_but() { return fourth_pressed; }
+    static bool fifth_but() { return fifth_pressed; }
 
-    static void handle_modifiers(const kbd::KeyEvent& e);
-
 private:
-    static inline bool lshift { false };
-    static inline bool rshift { false };
-    static inline bool lalt { false };
-    static inline bool ralt { false };
-    static inline bool lctrl { false };
-    static inline bool rctrl { false };
-    static inline bool capslock { false };
-    static inline bool alt { false };
-    static inline bool numlock { false };
+    static inline bool left_pressed { false };
+    static inline bool mid_pressed { false };
+    static inline bool right_pressed { false };
+    static inline bool fourth_pressed { false };
+    static inline bool fifth_pressed { false };
 };
 
-}
-
-#endif
+#endif // MOUSE_HPP

@@ -188,4 +188,12 @@ void kbd::TextHandler::handle_modifiers(const kbd::KeyEvent &e)
     {
         ralt = e.state == kbd::KeyEvent::Pressed;
     }
+    else if (e.key == LControl)
+    {
+        lctrl = e.state == kbd::KeyEvent::Pressed;
+    }
+    else if (e.key == RControl)
+    {
+        rctrl = e.state == kbd::KeyEvent::Pressed;
+    }
 }

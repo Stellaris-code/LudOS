@@ -22,8 +22,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef POWERMANAGEMENT_HPP
-#define POWERMANAGEMENT_HPP
+#ifndef I686_POWERMANAGEMENT_HPP
+#define I686_POWERMANAGEMENT_HPP
 
 #include "acpi.h"
 
@@ -32,8 +32,12 @@ SOFTWARE.
 #include "utils/logging.hpp"
 #include "utils/builtins.hpp"
 
+#include <powermanagement.hpp>
+
 #include "io.hpp"
 
+namespace power
+{
 
 inline bool acpi_reset()
 {
@@ -88,6 +92,15 @@ inline void shutdown()
 
         halt(); // should not reach that point
     }
+}
+
+
+inline bool init()
+{
+    ::reset = power::reset;
+    ::shutdown = power::shutdown;
+}
+
 }
 
 #endif // POWERMANAGEMENT_HPP

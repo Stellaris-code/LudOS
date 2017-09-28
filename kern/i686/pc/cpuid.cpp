@@ -50,6 +50,7 @@ SOFTWARE.
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+
 /* You need to include a file with fairly(ish) compliant log prototype, Decimal and String support like %s and %d and this is truely all you need! */
 //#include <stdio.h> /* for log(); */
 

@@ -33,6 +33,7 @@ SOFTWARE.
 // TODO : Son
 // TODO : Floppy controler
 // TODO : getevn() setenv()
+// TODO : Souris
 
 // TODO : syscalls:
 /// screen_clr()
@@ -48,19 +49,11 @@ SOFTWARE.
 #define DEBUG
 #endif
 
-#include "greet.hpp"
-
-#include "messagebus.hpp"
-#include "drivers/kbd/kbd_mappings.hpp"
-#include "drivers/kbd/text_handler.hpp"
-
 #ifdef ARCH_i686
 #include "i686/pc/init.hpp"
 #endif
 
-#include "fs/fat.hpp"
-#include "fs/vfs.hpp"
-#include "diskinterface.hpp"
+#include "arch_indep_init.hpp"
 
 #ifdef ARCH_i686
 extern "C"
@@ -73,51 +66,7 @@ void kmain()
     i686::pc::init(magic, mbd_info);
 #endif
 
-    //vfs::init();
-
-    DiskInterface::scan();
-
-    //    for (size_t j { 0 }; j < 8; ++j)
-    //    {
-    //        uint8_t buf[512];
-    //        DiskInterface::read(j, 0, 1, buf);
-    //        for (size_t i { 0 }; i < 8; ++i)
-    //        {
-    //            kprintf("0x%x : 0x%x\n", i, buf[i]);
-    //        }
-    //        kprintf("\n");
-    //    }
-
-    auto fs = fat::read_fat_fs(0, 0);
-    if (fs.valid)
-    {
-        log("FAT %zd filesystem found on drive %zd\n", (size_t)fs.type, fs.drive);
-
-        auto entries = fat::root_entries(fs);
-        log("%zd\n", entries.size());
-        for (const auto& entry : entries)
-        {
-            auto& file = entry.get_file();
-            std::vector<uint8_t> data(file.length);
-            file.read(data.data(), data.size());
-            data.push_back('\0'); // sentinel value
-            log("name : %s\n%s\n", entry.filename.data(), data.data());
-        }
-    }
-    else
-    {
-        warn ("No FAT fs found\n");
-    }
-
-    greet();
-
-    kbd::install_mapping(kbd::mappings::azerty());
-    kbd::TextHandler::init();
-
-    MessageBus::register_handler<kbd::TextEnteredEvent>([](const kbd::TextEnteredEvent& e)
-    {
-        putchar(e.c);
-    });
+    arch_indep_init();
 
     while (1)
     {

@@ -1,7 +1,7 @@
 /*
-keyboard.hpp
+ps2mouse.hpp
 
-Copyright (c) 23 Yann BOUCHER (yann)
+Copyright (c) 27 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,27 +22,25 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef PS2KEYBOARD_HPP
-#define PS2KEYBOARD_HPP
+#ifndef PS2MOUSE_HPP
+#define PS2MOUSE_HPP
 
-#include "i686/pc/registers.hpp"
+#include "../registers.hpp"
 
-#include <array.hpp>
-#include <vector.hpp>
-#include <string.hpp>
-
-#define SCROLL_LOCK_LED 0b001
-#define NUM_LOCK_LED 0b010
-#define CAPS_LOCK_LED   0b100
+#define MOUSE_ENABLE 0xA8
+#define MOUSE_DISABLE 0xA7
+#define MOUSE_RESEND 0xFE
+#define MOUSE_WRITE 0xD4
 #define COMMAND_PORT 0x64
-#define KBD_PORT 0x60
-#define LED_CMD 0xED
-#define LED_ACK 0xFA
-#define KBD_ENABLE 0xAE
-#define KBD_DISABLE 0xAD
-#define KBD_RESEND 0xFE
+#define IN_COMPAQ_BYTE 0x20
+#define OUT_COMPAQ_BYTE 0x60
+#define DATA_PORT 0x60
+#define SET_DEFAULTS 0xF6
+#define ENABLE_DATA_REPORTING 0xF4
+#define SET_SAMPLE_RATE 0xF3
+#define GET_DEVICE_ID 0xF2
 
-class PS2Keyboard
+class PS2Mouse
 {
 public:
     static void init();
@@ -50,32 +48,22 @@ public:
     static void enable();
     static void disable();
 
-    static void set_leds(uint8_t leds);
-    static void toggle_led(uint8_t led, bool value);
+    static void set_sample_rate(uint8_t rate);
 
 private:
-    static void isr(const registers*);
+    static void isr(const registers* regs);
 
     static void send_command(uint8_t command, bool poll = true);
+    static void send_write(uint8_t val);
+    static uint8_t read();
+
+    static bool enable_intellimouse();
 
     static void poll_ibf();
     static void poll_obf();
 
-    static void init_assocs();
-
-    static void define_assoc(uint8_t i, uint8_t pos, const std::string& name);
-    static void define_e0_assoc(uint8_t i, uint8_t pos, const std::string& name);
-
 private:
-    static inline uint8_t leds { 0 };
-
-    static inline bool last_is_e0 { false };
-
-    static inline std::array<uint8_t, 256> key_assocs;
-
-    static inline std::array<uint8_t, 256> e0_key_assocs;
-
-    static inline std::vector<std::pair<uint8_t, std::vector<uint8_t>>> long_key_assocs;
+    static inline bool is_intellimouse { false };
 };
 
-#endif // KEYBOARD_HPP
+#endif // PS2MOUSE_HPP

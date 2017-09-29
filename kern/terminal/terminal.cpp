@@ -1,5 +1,5 @@
 /*
-TerminalImpl.cpp
+Terminal.cpp
 
 Copyright (c) 23 Yann BOUCHER (yann)
 
@@ -30,24 +30,24 @@ SOFTWARE.
 #include "io.hpp"
 #include "halt.hpp"
 
-TerminalImpl::TerminalImpl(uint16_t* term_buf, size_t iwidth, size_t iheight, size_t imax_history)
-    : terminal_buffer(term_buf), width(iwidth), height(iheight), max_history(imax_history),
-      history(width, height*max_history)
+Terminal* term;
+
+Terminal::Terminal(size_t iwidth, size_t iheight, size_t imax_history)
+    : _width(iwidth), _height(iheight), max_history(imax_history),
+      history(width(), height()*max_history)
 {
-    push_color(vga_entry_color(VGA_COLOR_LIGHT_GREY, VGA_COLOR_BLACK));
-    clear();
+    push_color(TermEntry{0xaaaaaa, 0});
 }
 
 
-void TerminalImpl::put_entry_at(uint8_t c, uint8_t color, size_t x, size_t y)
+void Terminal::put_entry_at(uint8_t c, TermEntry color, size_t x, size_t y)
 {
     check_pos();
-    const size_t index = y * width + x;
-    terminal_buffer[index] = vga_entry(c, color);
+    putchar_callback(x, y, c, color);
 }
 
 
-void TerminalImpl::put_char(uint8_t c)
+void Terminal::put_char(uint8_t c)
 {
     if (c == '\n')
     {
@@ -83,7 +83,7 @@ void TerminalImpl::put_char(uint8_t c)
     {
         if (beep_callback)
         {
-            beep_callback(100);
+            beep_callback(200);
         }
     }
     else if (isprint(c))
@@ -96,7 +96,7 @@ void TerminalImpl::put_char(uint8_t c)
 }
 
 
-void TerminalImpl::write(const char *data, size_t size)
+void Terminal::write(const char *data, size_t size)
 {
     for (size_t i = 0; i < size; i++)
     {
@@ -105,125 +105,140 @@ void TerminalImpl::write(const char *data, size_t size)
 }
 
 
-void TerminalImpl::write_string(const char *data)
+void Terminal::write_string(const char *data)
 {
     write(data, strlen(data));
 }
 
 
-void TerminalImpl::clear()
+void Terminal::clear()
 {
-    memsetw(terminal_buffer, vga_entry(' ', color()), height*width*4);
-}
-
-
-void TerminalImpl::scroll_up()
-{
-    for (size_t y { 1 }; y < height; ++y)
+    for (size_t i { 0 }; i < width(); ++i)
     {
-        memcpy(terminal_buffer + (y-1)*width, terminal_buffer + y*width, width*4); // copy line below
+        for (size_t j { 0 }; j < height(); ++j)
+        {
+            putchar_callback(i, j, ' ', color());
+        }
     }
-    memsetw(terminal_buffer + (height-1)*width, vga_entry(' ', color()), width*4); // clear scrolled line
-    --terminal_row;
-    update_cursor();
 }
 
 
-void TerminalImpl::push_color(uint8_t color)
+void Terminal::scroll_up()
+{
+//    for (size_t y { 1 }; y < height; ++y)
+//    {
+//        memcpy(terminal_buffer + (y-1)*width, terminal_buffer + y*width, width*4); // copy line below
+//    }
+//    memsetw(terminal_buffer + (height-1)*width, vga_entry(' ', color()), width*4); // clear scrolled line
+//    --terminal_row;
+//    update_cursor();
+//    new_line();
+//    scroll_history(-1);
+//    add_line_to_history();
+    scroll_history(-1);
+}
+
+
+void Terminal::push_color(TermEntry color)
 {
     color_stack.push(color);
 }
 
 
-void TerminalImpl::pop_color()
+void Terminal::pop_color()
 {
     color_stack.pop();
 }
 
 
-void TerminalImpl::show_history(int page)
+void Terminal::show_history(int page)
 {
     if (page < 0)
     {
         if (beep_callback)
         {
-            beep_callback(100);
+            beep_callback(200);
         }
         page = 0;
     }
 
-    if (static_cast<size_t>(page) > history.size() - height)
+    if (static_cast<size_t>(page) > history.size() - height())
     {
         if (beep_callback)
         {
-            beep_callback(100);
+            beep_callback(200);
         }
-        page = history.size() - height; // avoir un plafond, une limite
+        page = history.size() - height(); // avoir un plafond, une limite
 
     }
 
     current_history_page = page;
 
-    for (size_t i { 0 }; i < height-1; ++i) // ignore first line where everything is typed
+    for (size_t i { 0 }; i < height()-1; ++i) // ignore first line where everything is typed
     {
-        for (size_t j { 0 }; j < width; ++j)
+        for (size_t j { 0 }; j < width(); ++j)
         {
-            int index = history.size() - (height-i) -page;
+            int index = history.size() - (height()-i) -page;
             if (index >= 0)
             {
-                terminal_buffer[i*width+j] = history.get_char(j, index);
+                terminal_buffer[i*width()+j] = history.get_char(j, index);
             }
         }
     }
 }
 
-uint8_t TerminalImpl::color() const
+TermEntry Terminal::color() const
 {
     return color_stack.top();
 }
 
 
-void TerminalImpl::new_line()
+void Terminal::new_line()
 {
     add_line_to_history();
+    for (size_t i { 0 }; i < width(); ++i)
+    {
+        putchar_callback(i, terminal_row, ' ', color());
+    }
+
     terminal_column = 0;
     ++terminal_row;
 }
 
 
-void TerminalImpl::add_line_to_history()
+void Terminal::add_line_to_history()
 {
-    std::vector<uint16_t> line(width);
-    for (size_t i { 0 }; i < width; ++i)
+    std::vector<uint16_t> line(width());
+    for (size_t i { 0 }; i < width(); ++i)
     {
-        line[i] = terminal_buffer[terminal_row*width + i];
+        line[i] = terminal_buffer[terminal_row*width() + i];
     }
     history.add(line);
 }
 
 
-void TerminalImpl::check_pos()
+void Terminal::check_pos()
 {
-    if (terminal_column >= width)
+    if (terminal_column >= width())
     {
-        terminal_column = terminal_column%width;
+        terminal_column = terminal_column%width();
         add_line_to_history();
         ++terminal_row;
     }
-    if (terminal_row >= height)
+    if (terminal_row >= height())
     {
         scroll_up();
-        terminal_row = height-1;
+        terminal_row = height()-1;
     }
 
     update_cursor();
 }
 
-void TerminalImpl::update_cursor()
+void Terminal::update_cursor()
 {
     if (move_cursor_callback)
     {
-        move_cursor_callback(terminal_column, terminal_row, width);
+        move_cursor_callback(terminal_column, terminal_row, width());
     }
 }
 

@@ -27,6 +27,7 @@ SOFTWARE.
 
 #include <stdint.h>
 
+#include "color.hpp"
 
 /* Hardware text mode color constants. */
 enum vga_color : uint8_t
@@ -45,11 +46,11 @@ enum vga_color : uint8_t
     VGA_COLOR_LIGHT_CYAN = 11,
     VGA_COLOR_LIGHT_RED = 12,
     VGA_COLOR_LIGHT_MAGENTA = 13,
-    VGA_COLOR_LIGHT_BROWN = 14,
+    VGA_COLOR_YELLOW = 14,
     VGA_COLOR_WHITE = 15,
 };
 
-static inline uint8_t vga_entry_color(enum vga_color fg, enum vga_color bg)
+static inline uint8_t vga_entry_color(vga_color fg,  vga_color bg)
 {
     return fg | bg << 4;
 }
@@ -57,6 +58,45 @@ static inline uint8_t vga_entry_color(enum vga_color fg, enum vga_color bg)
 static inline uint16_t vga_entry(uint8_t uc, uint8_t color)
 {
     return static_cast<uint16_t>(uc) | static_cast<uint16_t>(color) << 8;
+}
+
+static inline vga_color color_to_vga(const Color& color)
+{
+    uint32_t rgb = color.r << 16 | color.g << 8 | color.b;
+
+    switch (rgb)
+    {
+    case 0x0000AA:
+        return VGA_COLOR_BLUE;
+    case 0x00aa00:
+        return VGA_COLOR_GREEN;
+    case 0x00aaaa:
+        return VGA_COLOR_CYAN;
+    case 0xaa0000:
+        return VGA_COLOR_RED;
+    case 0xaa00aa:
+        return VGA_COLOR_MAGENTA;
+    case 0xaa5500:
+        return VGA_COLOR_BROWN;
+    case 0xaaaaaa:
+        return VGA_COLOR_LIGHT_GREY;
+    case 0x555555:
+        return VGA_COLOR_DARK_GREY;
+    case 0x5555ff:
+        return VGA_COLOR_LIGHT_BLUE;
+    case 0x55ff55:
+        return VGA_COLOR_LIGHT_GREEN;
+    case 0x55ffff:
+        return VGA_COLOR_LIGHT_CYAN;
+    case 0xff5555:
+        return VGA_COLOR_LIGHT_RED;
+    case 0xff55ff:
+        return VGA_COLOR_LIGHT_MAGENTA;
+    case 0xffff55:
+        return VGA_COLOR_YELLOW;
+    case 0xffffff:
+        return VGA_COLOR_WHITE;
+    }
 }
 
 #endif // VGA_HPP

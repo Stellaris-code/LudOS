@@ -44,7 +44,7 @@ void log(const char * __restrict fmt, ...)
 
 void warn(const char * __restrict fmt, ...)
 {
-    Terminal::push_color(VGA_COLOR_LIGHT_RED);
+    term->push_color({0xff5555, 0});
 
     kprintf("[%f] ", uptime());
 
@@ -53,12 +53,12 @@ void warn(const char * __restrict fmt, ...)
     tfp_format(nullptr, [](void*, char c){putchar(c); serial::debug::write("%c", c);}, fmt, va);
     va_end(va);
 
-    Terminal::pop_color();
+    term->pop_color();
 }
 
 void err(const char * __restrict fmt, ...)
 {
-    Terminal::push_color(VGA_COLOR_RED);
+    term->push_color({0xaa0000, 0});
 
     kprintf("[%f] ", uptime());
 
@@ -67,5 +67,5 @@ void err(const char * __restrict fmt, ...)
     tfp_format(nullptr, [](void*, char c){putchar(c); serial::debug::write("%c", c);}, fmt, va);
     va_end(va);
 
-    Terminal::pop_color();
+    term->pop_color();
 }

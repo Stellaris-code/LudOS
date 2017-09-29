@@ -1,7 +1,7 @@
 /*
-greet.cpp
+color.hpp
 
-Copyright (c) 24 Yann BOUCHER (yann)
+Copyright (c) 29 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,21 +22,37 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
+#ifndef COLOR_HPP
+#define COLOR_HPP
 
-#include "greet.hpp"
-#include "halt.hpp"
+#include <stdint.h>
 
-#include <stdio.h>
-#include "terminal/terminal.hpp"
-
-void greet()
+struct Color
 {
-    puts("Welcome to : \n");
-    term->push_color({0x55ffff, 0x000000});
+    union
+    {
+        struct
+        {
+            uint8_t b;
+            uint8_t g;
+            uint8_t r;
+        };
+        uint32_t rgb;
+    };
 
-    puts(
-            #include "ludos_art.txt"
-        );
+    Color() = default;
+    Color(uint8_t ir, uint8_t ig, uint8_t ib)
+        : r(ir), g(ig), b(ib)
+    {}
+    Color(uint32_t irgb)
+        : rgb(irgb)
+    {}
+};
 
-    term->pop_color();
-}
+struct TermEntry
+{
+    Color fg;
+    Color bg;
+};
+
+#endif // COLOR_HPP

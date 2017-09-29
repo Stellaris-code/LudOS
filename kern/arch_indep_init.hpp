@@ -89,11 +89,11 @@ void arch_indep_init()
         {
             if (e.key == kbd::PageUp)
             {
-                Terminal::scroll_history(+10);
+                term->scroll_history(+10);
             }
             else if (e.key == kbd::PageDown)
             {
-                Terminal::scroll_history(-10);
+                term->scroll_history(-10);
             }
             else if (e.key == kbd::Delete && Keyboard::ctrl() && Keyboard::alt())
             {
@@ -108,11 +108,11 @@ void arch_indep_init()
     {
         if (e.wheel>0)
         {
-            Terminal::scroll_history(-3);
+            term->scroll_history(-3);
         }
         else if (e.wheel<0)
         {
-            Terminal::scroll_history(6);
+            term->scroll_history(6);
         }
     });
 }

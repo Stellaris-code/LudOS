@@ -62,10 +62,10 @@ void panic(const char *fmt, ...)
 
     dump_serial(regs);
 
-    if (Terminal::impl)
+    if (term)
     {
 
-        Terminal::push_color(VGA_COLOR_RED);
+        term->push_color({0xaa0000, 0});
 
         Speaker::beep(300);
 

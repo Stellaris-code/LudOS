@@ -45,6 +45,8 @@ SOFTWARE.
 #include "i686/pc/termio.hpp"
 #include "i686/pc/ide/ide_pio.hpp"
 
+#include "graphics/vga.hpp"
+
 #include "powermanagement.hpp"
 
 #include "terminal/terminal.hpp"
@@ -71,10 +73,17 @@ inline void init(uint32_t magic, const multiboot_info_t* mbd_info)
 
     serial::debug::write("Framebuffer address : 0x%lx\n", phys(framebuffer_addr));
 
-    static TerminalImpl hwterminal(reinterpret_cast<uint16_t*>(phys(framebuffer_addr)), 80, 25);
-    Terminal::impl = &hwterminal;
-    Terminal::impl->beep_callback = [](size_t ms){Speaker::beep(ms);};
-    Terminal::impl->move_cursor_callback = move_cursor;
+    static Terminal hwterminal(80, 25);
+    term = &hwterminal;
+    term->beep_callback = [](size_t ms){Speaker::beep(ms);};
+    term->move_cursor_callback = move_cursor;
+    term->putchar_callback = [framebuffer_addr](size_t x, size_t y, uint8_t c, TermEntry color)
+    {
+        auto fb = reinterpret_cast<uint16_t*>(phys(framebuffer_addr));
+        fb[y*term->width() + x] = vga_entry(c, vga_entry_color(color_to_vga(color.fg), color_to_vga(color.bg)));
+    };
+
+    term->clear();
 
     init_printf(nullptr, [](void*, char c){putchar(c);});
 

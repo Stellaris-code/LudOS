@@ -27,6 +27,8 @@ SOFTWARE.
 #include <string.h>
 #include <ctype.h>
 
+#include "i686/pc/serialdebug.hpp"
+
 #include "io.hpp"
 #include "halt.hpp"
 
@@ -34,9 +36,10 @@ Terminal* term;
 
 Terminal::Terminal(size_t iwidth, size_t iheight, size_t imax_history)
     : _width(iwidth), _height(iheight), max_history(imax_history),
-      history(width(), height()*max_history)
+      history(_width, _height*max_history)
 {
     push_color(TermEntry{0xaaaaaa, 0});
+    cur_line.resize(width());
 }
 
 
@@ -44,6 +47,10 @@ void Terminal::put_entry_at(uint8_t c, TermEntry color, size_t x, size_t y)
 {
     check_pos();
     putchar_callback(x, y, c, color);
+    if (y == terminal_row)
+    {
+        cur_line[x] = {c, color};
+    }
 }
 
 
@@ -120,21 +127,16 @@ void Terminal::clear()
             putchar_callback(i, j, ' ', color());
         }
     }
+
+    for (auto& el : cur_line)
+    {
+        el = {' ', {0xffffff, 0}};
+    }
 }
 
 
 void Terminal::scroll_up()
 {
-//    for (size_t y { 1 }; y < height; ++y)
-//    {
-//        memcpy(terminal_buffer + (y-1)*width, terminal_buffer + y*width, width*4); // copy line below
-//    }
-//    memsetw(terminal_buffer + (height-1)*width, vga_entry(' ', color()), width*4); // clear scrolled line
-//    --terminal_row;
-//    update_cursor();
-//    new_line();
-//    scroll_history(-1);
-//    add_line_to_history();
     scroll_history(-1);
 }
 
@@ -176,12 +178,12 @@ void Terminal::show_history(int page)
 
     for (size_t i { 0 }; i < height()-1; ++i) // ignore first line where everything is typed
     {
-        for (size_t j { 0 }; j < width(); ++j)
+        int index = history.size() - (height()-i) -page;
+        if (index >= 0)
         {
-            int index = history.size() - (height()-i) -page;
-            if (index >= 0)
+            for (size_t j { 0 }; j < width(); ++j)
             {
-                terminal_buffer[i*width()+j] = history.get_char(j, index);
+                putchar_callback(j, i, history.get_char(j, index).c, history.get_char(j, index).color);
             }
         }
     }
@@ -199,6 +201,7 @@ void Terminal::new_line()
     for (size_t i { 0 }; i < width(); ++i)
     {
         putchar_callback(i, terminal_row, ' ', color());
+        cur_line[i] = {' ', color()};
     }
 
     terminal_column = 0;
@@ -208,12 +211,7 @@ void Terminal::new_line()
 
 void Terminal::add_line_to_history()
 {
-    std::vector<uint16_t> line(width());
-    for (size_t i { 0 }; i < width(); ++i)
-    {
-        line[i] = terminal_buffer[terminal_row*width() + i];
-    }
-    history.add(line);
+    history.add(cur_line);
 }
 
 

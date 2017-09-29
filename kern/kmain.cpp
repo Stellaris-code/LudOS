@@ -33,7 +33,6 @@ SOFTWARE.
 // TODO : Son
 // TODO : Floppy controler
 // TODO : getevn() setenv()
-// TODO : Souris
 
 // TODO : syscalls:
 /// screen_clr()

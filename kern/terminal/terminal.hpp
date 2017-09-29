@@ -70,7 +70,8 @@ public:
 private:
     size_t terminal_row { 0 };
     size_t terminal_column { 0 };
-    uint16_t* terminal_buffer { reinterpret_cast<uint16_t*>(phys(0xB8000)) };
+
+    std::vector<HistoryBuffer::Entry> cur_line;
 
     std::stack<TermEntry> color_stack;
 

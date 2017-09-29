@@ -33,7 +33,7 @@ HistoryBuffer::HistoryBuffer(size_t line_width, size_t height)
 {
 }
 
-uint16_t HistoryBuffer::get_char(size_t x, size_t y) const
+HistoryBuffer::Entry HistoryBuffer::get_char(size_t x, size_t y) const
 {
     if (full())
     {
@@ -48,7 +48,7 @@ uint16_t HistoryBuffer::get_char(size_t x, size_t y) const
     }
 }
 
-void HistoryBuffer::add(const std::vector<uint16_t>& line)
+void HistoryBuffer::add(const std::vector<Entry>& line)
 {
     m_data[m_front] = line;
 

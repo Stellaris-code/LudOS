@@ -31,6 +31,11 @@ SOFTWARE.
 #include <vector.hpp>
 #include <functional.hpp>
 #include <variant.hpp>
+#include <optional.hpp>
+#include <type_traits.hpp>
+#include <unordered_map.hpp>
+
+#include "utils/stlutils.hpp"
 
 class vfs
 {
@@ -44,9 +49,20 @@ public:
         uint32_t gid;
         uint32_t flags;
         uint32_t length;
-        std::function<size_t(void*, size_t)> read;
-        std::function<size_t(const void*, size_t)> write;
-        std::function<std::vector<node>()> readdir;
+        bool is_dir : 1;
+
+        std::vector<node> vfs_children;
+
+        virtual size_t read(void* buf, size_t n) const { return 0; }
+        virtual size_t write(const void* buf, size_t n) { return 0; }
+        virtual std::vector<node> readdir_impl() const { return {}; }
+        virtual node* mkdir(const std::string& str) { return nullptr; }
+        virtual node* touch(const std::string& str) { return nullptr; }
+
+        std::vector<node> readdir() const
+        {
+            return merge(vfs_children, readdir_impl());
+        }
     };
 
     struct symlink
@@ -56,40 +72,89 @@ public:
 
     struct node
     {
-        std::string filename;
-        std::variant<file, symlink> data;
+        std::string name;
+        // TODO : consider unique_ptr ?
+        std::variant<std::shared_ptr<file>, symlink> data;
 
-        file& get_file()
+        bool is_dir() const
         {
-            if (auto* target = std::get_if<file>(&data))
+            return get_file().is_dir;
+        }
+
+        template <typename T = file>
+        T& get_file()
+        {
+            if (auto target = std::get_if<std::shared_ptr<file>>(&data))
             {
-                return *target;
+                if constexpr (std::is_same_v<T, file>)
+                {
+                    if ((*target) == nullptr) abort();
+                    return *(*target);
+                }
+                else
+                {
+                    auto ptr = dynamic_cast<T*>(target->get());
+                    if (ptr == nullptr) abort();
+                    return *ptr;
+                }
             }
             else
             {
-                return std::get<symlink>(data).link->get_file();
+                return std::get<symlink>(data).link->get_file<T>();
             }
         }
 
-        const file& get_file() const
+        template <typename T = file>
+        const T& get_file() const
         {
-            if (const auto* target = std::get_if<file>(&data))
+            if (auto target = std::get_if<std::shared_ptr<file>>(&data))
             {
-                return *target;
+                if constexpr (std::is_same_v<T, file>)
+                {
+                    if ((*target) == nullptr) abort();
+                    return *(*target);
+                }
+                else
+                {
+                    auto ptr = dynamic_cast<T>(*target);
+                    if (ptr == nullptr) abort();
+                    return *ptr;
+                }
             }
             else
             {
-                return std::get<symlink>(data).link->get_file();
+                return std::get<symlink>(data).link->get_file<T>();
             }
+        }
+
+        file* operator->()
+        {
+            return &get_file();
+        }
+        const file* operator->() const
+        {
+            return &get_file();
         }
     };
+
+    static size_t new_descriptor(const vfs::node& node);
 
 public:
 
     static void init();
 
+    static void mount_dev();
+
+    static std::optional<vfs::node> find(const std::string& path);
+
+    static bool mount(const vfs::node& node, const std::string& mountpoint);
+
+    static void traverse(const vfs::node& node, size_t indent = 0);
+    static void traverse(const std::string& path);
+
     static inline std::vector<node> descriptors;
 
+    static inline vfs::node root;
 };
 
 #endif // VFS_HPP

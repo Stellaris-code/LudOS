@@ -28,11 +28,10 @@ SOFTWARE.
 // TODO : user mode
 // TODO : POC calculatrice
 // TODO : Paging
-// TODO : VFS
 // TODO : DMA
 // TODO : Son
 // TODO : Floppy controler
-// TODO : getevn() setenv()
+// TODO : AHCI
 
 // TODO : syscalls:
 /// screen_clr()
@@ -52,7 +51,7 @@ SOFTWARE.
 #include "i686/pc/init.hpp"
 #endif
 
-#include "arch_indep_init.hpp"
+#include "init.hpp"
 
 #ifdef ARCH_i686
 extern "C"
@@ -65,7 +64,7 @@ void kmain()
     i686::pc::init(magic, mbd_info);
 #endif
 
-    arch_indep_init();
+    init();
 
     while (1)
     {

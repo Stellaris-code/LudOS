@@ -49,7 +49,7 @@ enum BusPort : uint16_t
     Fourth = 0x168
 };
 
-struct identify_data {
+struct [[gnu::packed]] identify_data {
     uint16_t flags;
     uint16_t unused1[9];
     char     serial[20];
@@ -67,7 +67,7 @@ struct identify_data {
     uint16_t unused6[38];
     uint64_t sectors_48;
     uint16_t unused7[152];
-} __attribute__((packed));
+};
 
 static_assert(sizeof(identify_data) == 512);
 

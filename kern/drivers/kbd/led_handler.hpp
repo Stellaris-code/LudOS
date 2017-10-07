@@ -26,7 +26,7 @@ SOFTWARE.
 #define LED_HANDLER_HPP
 
 #include "kbd_mappings.hpp"
-#include "messagebus.hpp"
+#include "utils/messagebus.hpp"
 
 enum class LEDState : uint8_t
 {

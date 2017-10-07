@@ -26,7 +26,7 @@ SOFTWARE.
 #define KBD_MAPPINGS_HPP
 
 #include "driver_kbd_event.hpp"
-#include "messagebus.hpp"
+#include "utils/messagebus.hpp"
 
 #include <array.hpp>
 #include <optional.hpp>

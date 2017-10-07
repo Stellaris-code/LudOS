@@ -25,10 +25,10 @@ SOFTWARE.
 
 #include "ps2keyboard.hpp"
 
-#include "i686/pc/isr.hpp"
+#include "../interrupts/isr.hpp"
 #include "i686/pc/devices/pic.hpp"
 
-#include "messagebus.hpp"
+#include "utils/messagebus.hpp"
 #include "drivers/kbd/driver_kbd_event.hpp"
 #include "drivers/kbd/led_handler.hpp"
 #include "io.hpp"

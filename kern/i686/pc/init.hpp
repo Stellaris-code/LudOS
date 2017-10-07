@@ -27,31 +27,33 @@ SOFTWARE.
 
 #include "multiboot/multiboot_kern.hpp"
 
-#include "i686/pc/gdt.hpp"
-#include "i686/pc/devices/pic.hpp"
-#include "i686/pc/idt.hpp"
-#include "i686/pc/devices/pit.hpp"
-#include "i686/pc/devices/speaker.hpp"
-#include "i686/pc/devices/ps2keyboard.hpp"
-#include "i686/pc/devices/ps2mouse.hpp"
-#include "i686/pc/fpu.hpp"
-#include "i686/pc/cpuinfo.hpp"
-#include "i686/pc/meminfo.hpp"
-#include "i686/pc/cpuid.hpp"
-#include "i686/pc/smbios.hpp"
-#include "i686/pc/paging.hpp"
-#include "i686/pc/bios/bda.hpp"
-#include "i686/pc/serialdebug.hpp"
-#include "i686/pc/termio.hpp"
-#include "i686/pc/ide/ide_pio.hpp"
+#include "gdt/gdt.hpp"
+#include "devices/pic.hpp"
+#include "interrupts/idt.hpp"
+#include "devices/pit.hpp"
+#include "devices/speaker.hpp"
+#include "devices/ps2keyboard.hpp"
+#include "devices/ps2mouse.hpp"
+#include "fpu/fpu.hpp"
+#include "cpu/cpuinfo.hpp"
+#include "mem/meminfo.hpp"
+#include "cpu/cpuid.hpp"
+#include "smbios/smbios.hpp"
+#include "mem/paging.hpp"
+#include "bios/bda.hpp"
+#include "serial/serialdebug.hpp"
+#include "io/termio.hpp"
+#include "pci/pci.hpp"
+#include "ide/ide_pio.hpp"
+#include "acpi/acpi_init.hpp"
+
+#include "common/defs.hpp"
 
 #include "graphics/vga.hpp"
 
-#include "powermanagement.hpp"
+#include "acpi/powermanagement.hpp"
 
 #include "terminal/terminal.hpp"
-
-#include "acpi_init.hpp"
 
 #include "utils/bitops.hpp"
 
@@ -73,7 +75,7 @@ inline void init(uint32_t magic, const multiboot_info_t* mbd_info)
 
     serial::debug::write("Framebuffer address : 0x%lx\n", phys(framebuffer_addr));
 
-    static Terminal hwterminal(80, 25);
+    static Terminal hwterminal(80, 25, 15);
     term = &hwterminal;
     term->beep_callback = [](size_t ms){Speaker::beep(ms);};
     term->move_cursor_callback = move_cursor;
@@ -85,12 +87,16 @@ inline void init(uint32_t magic, const multiboot_info_t* mbd_info)
 
     term->clear();
 
+
     init_printf(nullptr, [](void*, char c){putchar(c);});
 
     multiboot::check(magic, mbd, mbd_info);
 
     gdt::init();
     pic::init();
+
+    term->set_title("LudOS " LUDOS_VERSION_STRING " - build date " __DATE__);
+
     idt::init();
     PIT::init(100);
     FPU::init();
@@ -112,7 +118,9 @@ inline void init(uint32_t magic, const multiboot_info_t* mbd_info)
         err("ACPI Initialization error ! Message : '%s'\n", AcpiFormatException(status));
     }
 
-    power::init();
+    acpi::power::init();
+
+    pci::scan();
 
     ide::pio::init();
 

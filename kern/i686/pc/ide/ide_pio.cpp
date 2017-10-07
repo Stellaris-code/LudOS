@@ -27,10 +27,10 @@ SOFTWARE.
 
 #include "utils/logging.hpp"
 
-#include "diskinterface.hpp"
+#include "drivers/diskinterface.hpp"
 #include "io.hpp"
 #include "utils/bitops.hpp"
-#include "nop.hpp"
+#include "utils/nop.hpp"
 
 #include <array.hpp>
 #include <string.hpp>
@@ -144,7 +144,7 @@ uint8_t ide::pio::status_register(BusPort port)
 
 void ide::pio::init()
 {
-    DiskInterface::read = [](size_t disk_num, uint32_t sector, uint8_t count, uint8_t* buf)
+    DiskInterface::read_impl = [](size_t disk_num, uint32_t sector, uint8_t count, uint8_t* buf)
     {
         BusPort port;
         if (disk_num/2 == 0)
@@ -172,7 +172,7 @@ void ide::pio::init()
         return status;
     };
 
-    DiskInterface::write = [](size_t disk_num, uint32_t sector, uint8_t count, const uint8_t* buf)
+    DiskInterface::write_impl = [](size_t disk_num, uint32_t sector, uint8_t count, const uint8_t* buf)
     {
         BusPort port;
         if (disk_num/2 == 0)
@@ -200,9 +200,9 @@ void ide::pio::init()
         return status;
     };
 
-    DiskInterface::scan = []
+    DiskInterface::scan_impl = []
     {
-        auto results = scan();
+        auto results = ide::pio::scan();
         std::vector<uint32_t> drives;
 
         for (const auto& result : results)

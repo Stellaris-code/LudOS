@@ -26,8 +26,9 @@ SOFTWARE.
 
 #include <string.h>
 #include <ctype.h>
+#include <string.hpp>
 
-#include "i686/pc/serialdebug.hpp"
+#include "utils/logging.hpp"
 
 #include "io.hpp"
 #include "halt.hpp"
@@ -36,7 +37,7 @@ Terminal* term;
 
 Terminal::Terminal(size_t iwidth, size_t iheight, size_t imax_history)
     : _width(iwidth), _height(iheight), max_history(imax_history),
-      history(_width, _height*max_history)
+      history(_width, height()*max_history)
 {
     push_color(TermEntry{0xaaaaaa, 0});
     cur_line.resize(width());
@@ -46,7 +47,7 @@ Terminal::Terminal(size_t iwidth, size_t iheight, size_t imax_history)
 void Terminal::put_entry_at(uint8_t c, TermEntry color, size_t x, size_t y)
 {
     check_pos();
-    putchar_callback(x, y, c, color);
+    set_entry_at(c, color, x, y);
     if (y == terminal_row)
     {
         cur_line[x] = {c, color};
@@ -122,9 +123,9 @@ void Terminal::clear()
 {
     for (size_t i { 0 }; i < width(); ++i)
     {
-        for (size_t j { 0 }; j < height(); ++j)
+        for (size_t j { 0 }; j < height()+title_height; ++j)
         {
-            putchar_callback(i, j, ' ', color());
+            set_entry_at(' ', color(), i, j, true);
         }
     }
 
@@ -159,7 +160,7 @@ void Terminal::show_history(int page)
     {
         if (beep_callback)
         {
-            beep_callback(200);
+            //beep_callback(200);
         }
         page = 0;
     }
@@ -168,7 +169,7 @@ void Terminal::show_history(int page)
     {
         if (beep_callback)
         {
-            beep_callback(200);
+            //            beep_callback(200);
         }
         page = history.size() - height(); // avoir un plafond, une limite
 
@@ -176,14 +177,14 @@ void Terminal::show_history(int page)
 
     current_history_page = page;
 
-    for (size_t i { 0 }; i < height()-1; ++i) // ignore first line where everything is typed
+    for (size_t i { 0 }; i < height(); ++i)
     {
-        int index = history.size() - (height()-i) -page;
+        int index = history.size() - (height()-i) - page + title_height;
         if (index >= 0)
         {
             for (size_t j { 0 }; j < width(); ++j)
             {
-                putchar_callback(j, i, history.get_char(j, index).c, history.get_char(j, index).color);
+                set_entry_at(history.get_char(j, index-title_height).c, history.get_char(j, index-title_height).color, j, i-title_height);
             }
         }
     }
@@ -194,13 +195,44 @@ TermEntry Terminal::color() const
     return color_stack.top();
 }
 
+void Terminal::set_title(std::string str)
+{
+    if (str.size() >= width())
+    {
+        str.resize(width());
+    }
+
+    size_t offset = width()/2 - str.size()/2;
+
+    for (size_t i { 0 }; i < width(); ++i)
+    {
+        set_entry_at(' ', TermEntry{0x000000, 0x00aaaa}, i, 0, true);
+    }
+    for (size_t i { 0 }; i < str.size(); ++i)
+    {
+        set_entry_at(str[i], TermEntry{0x000000, 0x00aaaa}, offset+i, 0, true);
+    }
+}
+
+void Terminal::set_entry_at(uint8_t c, TermEntry color, size_t x, size_t y, bool absolute)
+{
+    if (!absolute)
+    {
+        putchar_callback(x, y + title_height, c, color);
+    }
+    else
+    {
+        putchar_callback(x, y, c, color);
+    }
+}
+
 
 void Terminal::new_line()
 {
     add_line_to_history();
     for (size_t i { 0 }; i < width(); ++i)
     {
-        putchar_callback(i, terminal_row, ' ', color());
+        set_entry_at(' ', color(), i, terminal_row);
         cur_line[i] = {' ', color()};
     }
 
@@ -236,7 +268,7 @@ void Terminal::update_cursor()
 {
     if (move_cursor_callback)
     {
-        move_cursor_callback(terminal_column, terminal_row, width());
+        move_cursor_callback(terminal_column, terminal_row+title_height, width());
     }
 }
 

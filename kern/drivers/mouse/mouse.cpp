@@ -25,7 +25,7 @@ SOFTWARE.
 
 #include "mouse.hpp"
 
-#include "messagebus.hpp"
+#include "utils/messagebus.hpp"
 
 void Mouse::init()
 {

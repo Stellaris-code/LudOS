@@ -28,8 +28,8 @@ SOFTWARE.
 #include "terminal/terminal.hpp"
 
 #ifdef ARCH_i686
-#include "i686/pc/serialdebug.hpp"
-#include "i686/pc/timestamp.hpp"
+#include "i686/pc/serial/serialdebug.hpp"
+#include "i686/pc/time/timestamp.hpp"
 #endif
 
 void log(const char * __restrict fmt, ...)
@@ -68,4 +68,12 @@ void err(const char * __restrict fmt, ...)
     va_end(va);
 
     term->pop_color();
+}
+
+void log_serial(const char * __restrict fmt, ...)
+{
+    va_list va;
+    va_start(va, fmt);
+    tfp_format(nullptr, [](void*, char c){serial::debug::write("%c", c);}, fmt, va);
+    va_end(va);
 }

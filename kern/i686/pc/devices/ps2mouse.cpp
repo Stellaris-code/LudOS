@@ -29,10 +29,10 @@ SOFTWARE.
 
 #include "drivers/mouse/mouse.hpp"
 
-#include "../isr.hpp"
+#include "../interrupts/isr.hpp"
 #include "pic.hpp"
 #include "io.hpp"
-#include "messagebus.hpp"
+#include "utils/messagebus.hpp"
 
 #include "utils/logging.hpp"
 

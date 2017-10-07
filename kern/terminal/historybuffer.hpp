@@ -36,8 +36,8 @@ class HistoryBuffer
 public:
     struct Entry
     {
-        uint8_t c;
-        TermEntry color;
+        uint8_t c { ' ' };
+        TermEntry color { 0x0, 0x0 };
     };
 
 public:

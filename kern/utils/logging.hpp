@@ -39,6 +39,9 @@ PRINTF_FMT(1, 2)
 void log(const char * __restrict fmt, ...);
 
 PRINTF_FMT(1, 2)
+void log_serial(const char * __restrict fmt, ...);
+
+PRINTF_FMT(1, 2)
 void warn(const char * __restrict fmt, ...);
 
 PRINTF_FMT(1, 2)

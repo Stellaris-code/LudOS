@@ -25,7 +25,7 @@ SOFTWARE.
 
 #include "text_handler.hpp"
 
-#include "messagebus.hpp"
+#include "utils/messagebus.hpp"
 
 void kbd::TextHandler::init()
 {

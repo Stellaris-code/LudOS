@@ -31,7 +31,7 @@ SOFTWARE.
 #include "utils/align.hpp"
 #include "utils/addr.hpp"
 
-#include "i686/pc/meminfo.hpp"
+#include "../mem/meminfo.hpp"
 
 #define CHECK_FLAG(flags,bit)   ((flags) & (1 << (bit)))
 
@@ -70,7 +70,7 @@ void parse_info(const multiboot_info_t* info)
     //kprintf("Multiboot flags : 0x%x\n", info->flags);
     if (CHECK_FLAG(info->flags, 1))
     {
-        log("Boot device : 0x%x\n", info->boot_device);
+        log("Boot device : 0x%x\n", static_cast<uint8_t>(info->boot_device>>24));
     }
     if (CHECK_FLAG(info->flags, 2))
     {

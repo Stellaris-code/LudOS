@@ -1,7 +1,7 @@
 FUNCTION(LOAD_PROFILE ISA PLATFORM)
 	# Obtain sources for the ISA
-	FILE(GLOB ISA_SRCS RELATIVE ${CMAKE_SOURCE_DIR} "kern/${ISA}/*.c" "kern/${ISA}/*.cpp" "kern/${ISA}/*.asm" )
-	FILE(GLOB PLATFORM_SRCS RELATIVE ${CMAKE_SOURCE_DIR} "kern/${ISA}/${PLATFORM}/*.c" "kern/${ISA}/${PLATFORM}/*.cpp" "kern/${ISA}/${PLATFORM}/*.asm")
+        FILE(GLOB_RECURSE ISA_SRCS RELATIVE ${CMAKE_SOURCE_DIR} "kern/${ISA}/*.c" "kern/${ISA}/*.cpp" "kern/${ISA}/*.asm" )
+        FILE(GLOB_RECURSE PLATFORM_SRCS RELATIVE ${CMAKE_SOURCE_DIR} "kern/${ISA}/${PLATFORM}/*.c" "kern/${ISA}/${PLATFORM}/*.cpp" "kern/${ISA}/${PLATFORM}/*.asm")
 
 	# Load flags associated with ISA and Profile
 	INCLUDE("${CMAKE_SOURCE_DIR}/kern/${ISA}/flags.cmake")

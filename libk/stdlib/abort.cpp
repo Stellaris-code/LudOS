@@ -36,6 +36,7 @@ __attribute__((__noreturn__))
 void abort_impl(const char* file, size_t line, const char* fun)
 {
 #if defined(__is_libk)
+    kprintf("caller : 0x%x\n", __builtin_return_address(0));
     panic("Abort called at file '%s', line %d, function '%s'", file, line, fun);
 #else
     // TODO: Abnormally terminate the process as if by SIGABRT.

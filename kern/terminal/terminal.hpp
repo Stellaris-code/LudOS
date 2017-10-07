@@ -54,9 +54,12 @@ public:
     TermEntry color() const;
 
     size_t width() const { return _width; }
-    size_t height() const { return _height; }
+    size_t height() const { return _height-title_height; }
+
+    void set_title(std::string str);
 
 private:
+    void set_entry_at(uint8_t c, TermEntry color, size_t x, size_t y, bool absolute = false);
     void new_line();
     void add_line_to_history();
     void check_pos();
@@ -70,6 +73,7 @@ public:
 private:
     size_t terminal_row { 0 };
     size_t terminal_column { 0 };
+    size_t title_height { 1 };
 
     std::vector<HistoryBuffer::Entry> cur_line;
 

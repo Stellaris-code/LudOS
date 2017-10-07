@@ -26,6 +26,9 @@ SOFTWARE.
 #define _STDIO_H 1
 
 #include <sys/cdefs.h>
+#include <stdint.h>
+
+#include "utils/defs.hpp"
 
 #define EOF (-1)
 
@@ -33,8 +36,21 @@ SOFTWARE.
 extern "C" {
 #endif
 
+typedef struct
+{
+    size_t fd;
+} FILE;
+
 void putchar(char c);
 void puts(const char*);
+
+int fprintf(FILE * stream, const char * format, ...) PRINTF_FMT(2, 3);
+FILE * fopen(const char * filename, const char * mode);
+int fclose( FILE * stream );
+
+extern FILE* stdin;
+extern FILE* stdout;
+extern FILE* stderr;
 
 #include "stdio/tinyprintf.h"
 

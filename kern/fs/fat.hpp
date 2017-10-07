@@ -32,6 +32,8 @@ SOFTWARE.
 
 #include "vfs.hpp"
 
+#include "utils/stlutils.hpp"
+
 #define ATTR_READ_ONLY 0x01
 #define ATTR_HIDDEN 0x02
 #define ATTR_SYSTEM 0x04
@@ -45,43 +47,43 @@ namespace fat
 
 union Entry
 {
-    struct
+    struct [[gnu::packed]]
     {
-    uint8_t filename[8];
-    uint8_t extension[3];
+        uint8_t filename[8];
+        uint8_t extension[3];
 
-    uint8_t attributes;
-    uint8_t nt_reserved;
+        uint8_t attributes;
+        uint8_t nt_reserved;
 
-    uint8_t creation_time_ts;
+        uint8_t creation_time_ts;
 
-    uint8_t hour : 5;
-    uint8_t min : 6;
-    uint8_t sec : 5;
+        uint8_t hour : 5;
+        uint8_t min : 6;
+        uint8_t sec : 5;
 
-    uint8_t year : 7;
-    uint8_t month : 4;
-    uint8_t day : 5;
+        uint8_t year : 7;
+        uint8_t month : 4;
+        uint8_t day : 5;
 
-    uint8_t last_access_year : 7;
-    uint8_t last_access_month : 4;
-    uint8_t last_access_day : 5;
+        uint8_t last_access_year : 7;
+        uint8_t last_access_month : 4;
+        uint8_t last_access_day : 5;
 
-    uint16_t high_cluster_bits;
+        uint16_t high_cluster_bits;
 
-    uint8_t last_modif_hour : 5;
-    uint8_t last_modif_min : 6;
-    uint8_t last_modif_sec : 5;
+        uint8_t last_modif_hour : 5;
+        uint8_t last_modif_min : 6;
+        uint8_t last_modif_sec : 5;
 
-    uint8_t last_modif_year : 7;
-    uint8_t last_modif_month : 4;
-    uint8_t last_modif_day : 5;
+        uint8_t last_modif_year : 7;
+        uint8_t last_modif_month : 4;
+        uint8_t last_modif_day : 5;
 
-    uint16_t low_cluster_bits;
+        uint16_t low_cluster_bits;
 
-    uint32_t size;
-    }  __attribute__((packed));
-    struct
+        uint32_t size;
+    };
+    struct [[gnu::packed]]
     {
         uint8_t ord;
         uint8_t name1[10];
@@ -91,7 +93,7 @@ union Entry
         uint8_t name2[12];
         uint16_t fstcluslo;
         uint8_t name3[4];
-    }  __attribute__((packed));
+    };
 
 };
 
@@ -106,7 +108,7 @@ enum class FATType
     ExFAT = 64
 };
 
-struct BS
+struct [[gnu::packed]] BS
 {
     uint8_t 		bootjmp[3];
     uint8_t 		oem_name[8];
@@ -126,9 +128,9 @@ struct BS
     //this will be cast to it's specific type once the driver actually knows what type of FAT this is.
     uint8_t		extended_section[54];
 
-} __attribute__((packed));
+};
 
-struct extBS_32
+struct [[gnu::packed]] extBS_32
 {
     //extended fat32 stuff
     uint32_t		table_size_32;
@@ -145,9 +147,9 @@ struct extBS_32
     uint8_t		volume_label[11];
     uint8_t		fat_type_label[8];
 
-} __attribute__((packed));
+};
 
-struct extBS_16
+struct [[gnu::packed]] extBS_16
 {
     //extended fat12 and fat16 stuff
     uint8_t		bios_drive_num;
@@ -157,7 +159,7 @@ struct extBS_16
     uint8_t		volume_label[11];
     uint8_t		fat_type_label[8];
 
-} __attribute__((packed));
+};
 
 struct FATInfo
 {
@@ -177,8 +179,12 @@ struct FATInfo
     size_t total_clusters;
 };
 
+std::vector<uint8_t> read(const Entry& entry, const fat::FATInfo& info);
+std::vector<uint8_t> read(const Entry& entry, const fat::FATInfo& info, size_t nbytes);
+
 namespace detail
 {
+
 
 void read_FAT_sector(std::vector<uint8_t>& FAT, size_t sector, size_t drive);
 
@@ -193,14 +199,95 @@ std::vector<uint8_t> read_cluster_chain(size_t cluster, const FATInfo& info);
 std::vector<uint8_t> read_cluster(size_t first_sector, const fat::FATInfo &info);
 
 vfs::node entry_to_vfs_node(const Entry& entry, const FATInfo &info, const std::string &long_name);
+
+struct fat_file : public vfs::file
+{
+    virtual size_t read(void* buf, size_t bytes) const override
+    {
+        if (is_dir)
+        {
+            return 0;
+        }
+
+        auto data = fat::read(entry, info, bytes);
+        for (size_t i { 0 }; i < data.size(); ++i)
+        {
+            reinterpret_cast<uint8_t*>(buf)[i] = data[i];
+        }
+
+        return data.size();
+    }
+
+    virtual size_t write(const void* buf, size_t n) override
+    {
+        if (is_dir)
+        {
+            return 0;
+        }
+
+        abort();
+    }
+
+    virtual std::vector<vfs::node> readdir_impl() const override
+    {
+        if (!is_dir)
+        {
+            return {};
+        }
+
+        if (is_root)
+        {
+            return fat_children;
+        }
+        else
+        {
+            return merge(detail::read_cluster_entries(detail::first_sector_of_cluster(cluster, info), info), fat_children);
+        }
+    }
+
+    virtual vfs::node* mkdir(const std::string& str) override
+    {
+        if (!is_dir)
+        {
+            return nullptr;
+        }
+
+        fat_children.emplace_back();
+        auto& back = fat_children.back();
+        back.get_file() = fat_file();
+        // TODO : allocate
+        back.name = str;
+        back->is_dir = true;
+        return &back;
+    }
+
+    virtual vfs::node* touch(const std::string& str) override
+    {
+        if (!is_dir)
+        {
+            return nullptr;
+        }
+
+        fat_children.emplace_back();
+        auto& back = fat_children.back();
+        back.get_file() = fat_file();
+        // TODO : allocate
+        back.name = str;
+        back->is_dir = false;
+        return &back;
+    }
+
+    size_t cluster;
+    bool is_root : 1;
+    std::vector<vfs::node> fat_children;
+    fat::Entry entry;
+    FATInfo info;
+};
 }
 
 FATInfo read_fat_fs(size_t drive, size_t base_sector);
 
-std::vector<vfs::node> root_entries(const FATInfo& info);
-
-std::vector<uint8_t> read(const Entry& entry, const fat::FATInfo& info);
-std::vector<uint8_t> read(const Entry& entry, const fat::FATInfo& info, size_t nbytes);
+vfs::node root_dir(const FATInfo& info);
 
 }
 

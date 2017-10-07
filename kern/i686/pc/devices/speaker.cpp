@@ -26,7 +26,7 @@ SOFTWARE.
 #include "speaker.hpp"
 #include "io.hpp"
 #include "pit.hpp"
-#include "timer.hpp"
+#include "time/timer.hpp"
 
 void Speaker::beep(uint32_t time, uint16_t freq)
 {

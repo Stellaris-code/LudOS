@@ -25,7 +25,7 @@ SOFTWARE.
 #ifndef PS2KEYBOARD_HPP
 #define PS2KEYBOARD_HPP
 
-#include "i686/pc/registers.hpp"
+#include "i686/pc/cpu/registers.hpp"
 
 #include <array.hpp>
 #include <vector.hpp>

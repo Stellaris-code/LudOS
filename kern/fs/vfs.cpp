@@ -138,8 +138,6 @@ std::optional<vfs::node> vfs::find(const std::string& path)
     {
         for (const auto& child : cur_node->readdir())
         {
-            kprintf("'%s'/'%s'\n", dir.c_str(), child.name.c_str());
-            if (child.name[8] == '\0') kprintf("->%d\n", child.name.size());
             if (child.name == dir)
             {
                 cur_node = child;

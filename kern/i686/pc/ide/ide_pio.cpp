@@ -51,7 +51,7 @@ void ide::pio::detail::common(BusPort port, uint8_t type, uint32_t block, uint8_
     }
 }
 
-bool ide::pio::read(BusPort port, ide::pio::DriveType type, uint32_t block, uint8_t count, uint8_t *buf)
+bool ide::pio::read(BusPort port, ide::DriveType type, uint32_t block, uint8_t count, uint8_t *buf)
 {
     detail::common(port, type, block, count);
     outb(port + 7, 0x20);
@@ -77,7 +77,7 @@ bool ide::pio::read(BusPort port, ide::pio::DriveType type, uint32_t block, uint
 }
 
 
-bool ide::pio::write(BusPort port, ide::pio::DriveType type, uint32_t block, uint8_t count, const uint8_t *buf)
+bool ide::pio::write(BusPort port, ide::DriveType type, uint32_t block, uint8_t count, const uint8_t *buf)
 {
     detail::common(port, type, block, count);
 
@@ -239,9 +239,9 @@ void ide::pio::init()
     log("IDE PIO initialized.\n");
 }
 
-bool ide::pio::detail::identify(ide::pio::BusPort port, ide::pio::DriveType type)
+std::optional<ide::identify_data> ide::pio::identify(BusPort port, DriveType type)
 {
-    common(port, type == Master ? 0xA0 : 0xB0, 0, 0);
+    detail::common(port, type == Master ? 0xA0 : 0xB0, 0, 0);
 
     outb(port + 7, 0xEC);
 
@@ -267,14 +267,14 @@ bool ide::pio::detail::identify(ide::pio::BusPort port, ide::pio::DriveType type
     if (status)
     {
 
-        poll(port);
+        detail::poll(port);
         do
         {
             status = inb(port + 7);
             if(status & 0x01)
             {
                 kprintf("ATA %s%s has ERR set. Disabled.\n", port_name, type==Master?" master":" slave");
-                return false;
+                return {};
             }
         } while(!(status & 0x08));
 
@@ -282,7 +282,7 @@ bool ide::pio::detail::identify(ide::pio::BusPort port, ide::pio::DriveType type
 
         std::array<uint16_t, 256> buffer;
 
-        poll(port);
+        detail::poll(port);
 
         for(size_t i = 0; i<256; i++)
         {
@@ -294,25 +294,25 @@ bool ide::pio::detail::identify(ide::pio::BusPort port, ide::pio::DriveType type
 
         kprintf("Firmware : %s, model : %s\n", std::string(id_data->firmware,8).c_str(), std::string(id_data->model, 40).c_str());
 
-        return true;
+        return *id_data;
     }
     else
     {
         kprintf("ATA %s%s doesn't exist.\n", port_name, type==Master?" master":" slave");
 
-        return false;
+        return {};
     }
 }
 
-std::vector<std::pair<ide::pio::BusPort, ide::pio::DriveType>> ide::pio::scan()
+std::vector<std::pair<ide::BusPort, ide::DriveType>> ide::pio::scan()
 {
-    std::vector<std::pair<ide::pio::BusPort, ide::pio::DriveType>> result;
+    std::vector<std::pair<ide::BusPort, ide::DriveType>> result;
 
     for (auto bus : {Primary, Secondary, Third, Fourth})
     {
         for (auto type : {Master, Slave})
         {
-            if (detail::identify(bus, type))
+            if (identify(bus, type))
             {
                 result.emplace_back(bus, type);
             }
@@ -320,3 +320,4 @@ std::vector<std::pair<ide::pio::BusPort, ide::pio::DriveType>> ide::pio::scan()
     }
     return result;
 }
+

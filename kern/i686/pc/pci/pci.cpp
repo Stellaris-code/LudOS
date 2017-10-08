@@ -29,6 +29,8 @@ SOFTWARE.
 
 #include "utils/logging.hpp"
 
+std::vector<pci::PciDevice> pci::devices;
+
 uint16_t pci::read_reg(uint16_t bus, uint16_t slot, uint16_t func, uint16_t offset)
 {
     uint32_t address = (uint32_t)((bus << 16) | (slot << 11) |
@@ -95,10 +97,13 @@ void pci::check_device(uint8_t bus, uint8_t device)
 
 void pci::check_function(uint8_t bus, uint8_t device, uint8_t function)
 {
+    auto dev = get_dev(bus, device, function);
     log("pci device %d on bus %d, function %d exists\n", device, bus, function);
-    log("   Vendor : '%s'\n", vendor_string(vendor_id(bus, device, function)).c_str());
-    log("   Device : '%s'\n", dev_string(vendor_id(bus, device, function), device_id(bus, device, function)).c_str());
-    log("   Class : '%s'\n", class_code_string(base_class(bus, device, function), sub_class(bus, device, function), prog_if(bus, device, function)).c_str());
+    log("   Vendor : '%s' (0x%x)\n", vendor_string(dev.vendorID).c_str(), dev.vendorID);
+    log("   Device : '%s' (0x%x)\n", dev_string(dev.vendorID, dev.deviceID).c_str(), dev.deviceID);
+    log("   Class : '%s'\n", class_code_string(dev.classCode, dev.subclass, dev.progIF).c_str());
+
+    pci::devices.emplace_back(dev);
 }
 
 void pci::scan()
@@ -126,4 +131,68 @@ uint8_t pci::sub_class(uint16_t bus, uint16_t slot, uint16_t func)
 uint8_t pci::prog_if(uint16_t bus, uint16_t slot, uint16_t func)
 {
     return read_reg(bus, slot, func, 9);
+}
+
+pci::PciDevice pci::get_dev(uint16_t bus, uint16_t slot, uint16_t func)
+{
+    PciDevice dev;
+    for (size_t i { 0 }; i < sizeof(dev); ++i)
+    {
+        uint8_t byte = read_reg(bus, slot, func, i);
+
+        reinterpret_cast<uint8_t*>(&dev)[i] = byte;
+    }
+
+    return dev;
+}
+
+std::vector<pci::PciDevice> pci::find_devices(uint8_t class_code, uint8_t sub_class)
+{
+    std::vector<pci::PciDevice> devices;
+
+    for (const auto& device : pci::devices)
+    {
+        if (device.classCode == class_code && device.subclass == sub_class)
+        {
+            devices.emplace_back(device);
+        }
+    }
+
+    return devices;
+}
+
+std::vector<pci::PciDevice> pci::find_devices(uint8_t class_code, uint8_t sub_class, uint8_t interface)
+{
+    std::vector<pci::PciDevice> devices;
+
+    for (const auto& device : pci::devices)
+    {
+        if (device.classCode == class_code && device.subclass == sub_class && device.progIF == interface)
+        {
+            devices.emplace_back(device);
+        }
+    }
+
+    return devices;
+}
+
+uint64_t pci::get_bar_val(const pci::PciDevice& dev, size_t bar_idx)
+{
+    if (bar_idx > 6) return 0;
+
+    auto type = bar_type(dev.bar[bar_idx]);
+
+    switch (type)
+    {
+        case BARType::IO16:
+            return dev.bar[bar_idx] & 0xFFFFFFFC;
+        case BARType::Mem16:
+            return dev.bar[bar_idx] & 0xFFF0;
+        case BARType::Mem32:
+            return dev.bar[bar_idx] & 0xFFFFFFF0;
+        case BARType::Mem64:
+            return (dev.bar[bar_idx] & 0xFFFFFFF0) + (uint64_t(dev.bar[bar_idx+1] & 0xFFFFFFFF) << 32);
+    }
+
+    return 0;
 }

@@ -69,7 +69,7 @@ inline void init()
 
                 vfs::mount_dev();
 
-                vfs::traverse("/");
+//              vfs::traverse("/");
 
                 std::optional<vfs::node> file = vfs::find("/boot/test.txt");
 

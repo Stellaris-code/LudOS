@@ -45,6 +45,7 @@ SOFTWARE.
 #include "io/termio.hpp"
 #include "pci/pci.hpp"
 #include "ide/ide_pio.hpp"
+#include "ahci/ahci.hpp"
 #include "acpi/acpi_init.hpp"
 
 #include "common/defs.hpp"
@@ -122,7 +123,10 @@ inline void init(uint32_t magic, const multiboot_info_t* mbd_info)
 
     pci::scan();
 
-    ide::pio::init();
+    if (!ahci::init())
+    {
+        ide::pio::init();
+    }
 
     PS2Keyboard::init();
     PS2Mouse::init();

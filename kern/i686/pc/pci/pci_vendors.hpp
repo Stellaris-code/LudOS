@@ -3,17 +3,21 @@
 
 #include <string.hpp>
 
+#include <stdio.h>
+
 inline std::string class_code_string(uint16_t base_class, uint16_t sub_class, uint16_t prog_if)
 {
     for (const auto& el : PciClassCodeTable)
     {
-        if (el.BaseClass == base_class && el.SubClass == sub_class && el.ProgIf == prog_if)
+        if (el.BaseClass == base_class && el.SubClass == sub_class && (el.ProgIf == 0xFF || el.ProgIf == prog_if))
         {
             return std::string(el.BaseDesc) + ":" + el.SubDesc + ":" + el.ProgDesc;
         }
     }
 
-    return "Unknown";
+    char buf[256];
+    ksnprintf(buf, 256, "Unknown (0x%x:0x%x:0x%x)", base_class, sub_class, prog_if);
+    return buf;
 }
 
 inline std::string dev_string(uint16_t ven_id, uint16_t dev_id)

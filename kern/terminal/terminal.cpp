@@ -177,7 +177,7 @@ void Terminal::show_history(int page)
 
     current_history_page = page;
 
-    for (size_t i { 0 }; i < height(); ++i)
+    for (size_t i { title_height }; i < height(); ++i)
     {
         int index = history.size() - (height()-i) - page + title_height;
         if (index >= 0)

@@ -145,6 +145,12 @@ static void li2a(long num, struct param *p)
 }
 #endif
 
+static void u2b(unsigned int num, struct param *p)
+{
+    char* bf = p->bf;
+
+}
+
 static void ui2a(unsigned int num, struct param *p)
 {
     int n = 0;
@@ -395,7 +401,8 @@ void tfp_format(void *putp, putcf putf, const char *fmt, va_list va)
 #endif
             case 'x':
             case 'X':
-                p.base = 16;
+            case 'b':
+                p.base = ch == 'b' ? 2 : 16;
                 p.uc = (ch == 'X')?1:0;
 #ifdef PRINTF_LONG_SUPPORT
 #ifdef PRINTF_LONG_LONG_SUPPORT

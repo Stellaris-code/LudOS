@@ -82,7 +82,7 @@ void pci::check_device(uint8_t bus, uint8_t device)
     if(vendorID == 0xFFFF) return;        // Device doesn't exist
     check_function(bus, device, function);
     uint8_t headerType = header_type(bus, device, function);
-    if( (headerType & 0x80) != 0)
+    if( (headerType & 0x80) != 0 || true)
     {
         /* It is a multi-function device, so check remaining functions */
         for(function = 1; function < 8; function++)
@@ -98,7 +98,7 @@ void pci::check_device(uint8_t bus, uint8_t device)
 void pci::check_function(uint8_t bus, uint8_t device, uint8_t function)
 {
     auto dev = get_dev(bus, device, function);
-    log("pci device %d on bus %d, function %d exists\n", device, bus, function);
+    log("%x:%x.%x\n", bus, device, function);
     log("   Vendor : '%s' (0x%x)\n", vendor_string(dev.vendorID).c_str(), dev.vendorID);
     log("   Device : '%s' (0x%x)\n", dev_string(dev.vendorID, dev.deviceID).c_str(), dev.deviceID);
     log("   Class : '%s'\n", class_code_string(dev.classCode, dev.subclass, dev.progIF).c_str());

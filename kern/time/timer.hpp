@@ -60,6 +60,15 @@ public:
         while (m_ticks < interval) { nop(); }
     }
 
+    static inline bool sleep_until(std::function<bool()> callback, uint32_t timeout = 0)
+    {
+        uint32_t interval = timeout/(1000/freq());
+        m_ticks = 0;
+        while (!callback() && (timeout == 0 || m_ticks < interval)) { nop(); }
+
+        return callback();
+    }
+
     // time in ms
     static inline void register_callback(uint32_t duration, std::function<void()> callback, bool oneshot = true)
     {

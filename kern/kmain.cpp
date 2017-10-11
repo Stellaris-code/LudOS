@@ -32,6 +32,7 @@ SOFTWARE.
 // TODO : Son
 // TODO : Floppy controler
 // TODO : AHCI
+// TODO : unifier l'interface PS/2
 
 // TODO : syscalls:
 /// screen_clr()

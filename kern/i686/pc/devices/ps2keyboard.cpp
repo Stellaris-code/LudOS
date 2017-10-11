@@ -86,13 +86,13 @@ void PS2Keyboard::set_leds(uint8_t leds)
 
 void PS2Keyboard::poll_ibf()
 {
-    uint32_t timeout = 100000;
+    uint32_t timeout = 100000/2;
     while (--timeout && !(inb(COMMAND_PORT) & 0x2));
 }
 
 void PS2Keyboard::poll_obf()
 {
-    uint32_t timeout = 100000;
+    uint32_t timeout = 100000/2;
     while (--timeout && (inb(COMMAND_PORT) & 0x1) == 1);
 }
 

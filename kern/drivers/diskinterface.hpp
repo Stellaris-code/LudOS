@@ -28,6 +28,7 @@ SOFTWARE.
 #include <stdint.h>
 
 #include <functional.hpp>
+#include <vector.hpp>
 
 class DiskInterface
 {
@@ -39,26 +40,42 @@ public:
     };
 
 public:
+
+    using ReadFunction  = std::function<bool(uint32_t sector, uint8_t count, uint8_t* buf)>;
+    using WriteFunction = std::function<bool(uint32_t sector, uint8_t count, const uint8_t* buf)>;
+
     static inline bool read(size_t disk_num, uint32_t sector, uint8_t count, uint8_t* buf)
     {
-        return read_impl(disk_num, sector, count, buf);
+        assert(disk_num < drive_count());
+        return m_read_funs[disk_num](sector, count, buf);
     }
 
     static inline bool write(size_t disk_num, uint32_t sector, uint8_t count, const uint8_t* buf)
     {
-        return write_impl(disk_num, sector, count, buf);
+        assert(disk_num < drive_count());
+        return m_write_funs[disk_num](sector, count, buf);
     }
 
-    static inline std::vector<uint32_t> scan()
+    static inline size_t drive_count()
     {
-        return scan_impl();
+        return m_drive_count;
     }
 
-    static inline std::function<bool(size_t disk_num, uint32_t sector, uint8_t count, uint8_t* buf)> read_impl;
-    static inline std::function<bool(size_t disk_num, uint32_t sector, uint8_t count, const uint8_t* buf)> write_impl;
-    static inline std::function<std::vector<uint32_t>()> scan_impl;
+    static inline size_t add_drive(ReadFunction read_fun, WriteFunction write_fun)
+    {
+        m_read_funs.emplace_back(read_fun);
+        m_write_funs.emplace_back(write_fun);
+
+        return ++m_drive_count;
+    }
 
     static inline Error last_error { Error::OK };
+
+private:
+    static inline std::vector<ReadFunction> m_read_funs;
+    static inline std::vector<WriteFunction> m_write_funs;
+
+    static inline size_t m_drive_count { 0 };
 };
 
 #endif // DISKINTERFACE_HPP

@@ -34,6 +34,7 @@ SOFTWARE.
 #include "devices/speaker.hpp"
 #include "devices/ps2keyboard.hpp"
 #include "devices/ps2mouse.hpp"
+#include "devices/rtc.hpp"
 #include "fpu/fpu.hpp"
 #include "cpu/cpuinfo.hpp"
 #include "mem/meminfo.hpp"
@@ -120,6 +121,8 @@ inline void init(uint32_t magic, const multiboot_info_t* mbd_info)
     }
 
     acpi::power::init();
+
+    rtc::init();
 
     pci::scan();
 

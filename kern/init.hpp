@@ -46,15 +46,15 @@ SOFTWARE.
 #include "utils/logging.hpp"
 #include "utils/messagebus.hpp"
 
+#include "time/time.hpp"
+
 inline void init()
 {
     vfs::init();
 
-    auto disks = DiskInterface::scan();
+    log("Available drives : %zd\n", DiskInterface::drive_count());
 
-    log("Available drives : %zd\n", disks.size());
-
-    for (auto disk : disks)
+    for (size_t disk { 0 }; disk < DiskInterface::drive_count(); ++disk)
     {
         log("Disk : %zd\n", disk);
         for (auto partition : mbr::read_partitions(disk))
@@ -69,7 +69,7 @@ inline void init()
 
                 vfs::mount_dev();
 
-//              vfs::traverse("/");
+                vfs::traverse("/");
 
                 std::optional<vfs::node> file = vfs::find("/boot/test.txt");
 

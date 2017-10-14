@@ -32,4 +32,6 @@ SOFTWARE.
 # define PRINTF_FMT(fmt_idx,arg1_idx)
 #endif
 
+#define CURRENT_YEAR 2017 // TODO : use CMake to generate the year
+
 #endif // DEFS_HPP

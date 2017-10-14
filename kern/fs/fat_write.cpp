@@ -1,7 +1,7 @@
 /*
-time.hpp
+fat_write.cpp
 
-Copyright (c) 17 Yann BOUCHER (yann)
+Copyright (c) 14 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,30 +22,39 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef TIME_HPP
-#define TIME_HPP
 
-#include <stdint.h>
+#include "fat.hpp"
 
-#include <functional.hpp>
+#include "panic.hpp"
 
-using time_t = uint64_t;
+#include "utils/stlutils.hpp"
+#include "drivers/diskinterface.hpp"
 
-struct Date
-{
-    uint32_t sec;
-    uint32_t min;
-    uint32_t hour;
-    uint32_t day;
-    uint32_t month;
-    uint32_t year;
-};
-
-namespace Time
+namespace fat::detail
 {
 
-static inline std::function<Date()> get_time_of_day;
+void write_cluster(const FATInfo& info, size_t cluster, const std::vector<uint8_t>& data)
+{
+    assert(data.size() == info.bootsector.sectors_per_cluster * info.bootsector.bytes_per_sector);
 
+    auto data_chunks = split(data, info.bootsector.bytes_per_sector);
+
+    for (size_t i { 0 }; i < info.bootsector.sectors_per_cluster; ++i)
+    {
+        DiskInterface::write(info.drive, first_sector_of_cluster(cluster, info) + i, info.bootsector.bytes_per_sector, data_chunks[i].data());
+    }
 }
 
-#endif // TIME_HPP
+void write(const fat::Entry &entry, const FATInfo &info, const std::vector<uint8_t>& data)
+{
+    if (data.size() > entry.size)
+    {
+        panic("Implement resizing");
+    }
+    else
+    {
+
+    }
+}
+
+};

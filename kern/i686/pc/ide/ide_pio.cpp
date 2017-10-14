@@ -144,97 +144,35 @@ uint8_t ide::pio::status_register(BusPort port)
 
 void ide::pio::init()
 {
-    DiskInterface::read_impl = [](size_t disk_num, uint32_t sector, uint8_t count, uint8_t* buf)
+    for (auto bus : {Primary, Secondary, Third, Fourth})
     {
-        BusPort port;
-        if (disk_num/2 == 0)
+        for (auto type : {Master, Slave})
         {
-            port = Primary;
-        }
-        else if (disk_num/2 == 1)
-        {
-            port = Secondary;
-        }
-        else if (disk_num/2 == 2)
-        {
-            port = Third;
-        }
-        else
-        {
-            port = Fourth;
-        }
-        auto status = read(port, disk_num&0x1 ? Slave : Master, sector, count, buf);
-        if (!status)
-        {
-            DiskInterface::last_error = DiskInterface::Error::Unknown;
-        }
-
-        return status;
-    };
-
-    DiskInterface::write_impl = [](size_t disk_num, uint32_t sector, uint8_t count, const uint8_t* buf)
-    {
-        BusPort port;
-        if (disk_num/2 == 0)
-        {
-            port = Primary;
-        }
-        else if (disk_num/2 == 1)
-        {
-            port = Secondary;
-        }
-        else if (disk_num/2 == 2)
-        {
-            port = Third;
-        }
-        else
-        {
-            port = Fourth;
-        }
-        auto status = write(port, disk_num&0x1 ? Slave : Master, sector, count, buf);
-        if (!status)
-        {
-            DiskInterface::last_error = DiskInterface::Error::Unknown;
-        }
-
-        return status;
-    };
-
-    DiskInterface::scan_impl = []
-    {
-        auto results = ide::pio::scan();
-        std::vector<uint32_t> drives;
-
-        for (const auto& result : results)
-        {
-            uint32_t drive;
-            if (result.first == Primary)
+            if (identify(bus, type))
             {
-                drive = 0;
-            }
-            else if (result.first == Secondary)
-            {
-                drive = 2;
-            }
-            else if (result.first == Third)
-            {
-                drive = 4;
-            }
-            else
-            {
-                drive = 6;
-            }
+                DiskInterface::add_drive([bus, type](uint32_t sector, uint8_t count, uint8_t* buf)
+                {
+                    auto status = read(bus, type, sector, count, buf);
+                    if (!status)
+                    {
+                        DiskInterface::last_error = DiskInterface::Error::Unknown;
+                    }
 
-            if (result.second == Slave)
-            {
-                drive += 1;
-            }
+                    return status;
+                },
+                [bus, type](uint32_t sector, uint8_t count, const uint8_t* buf)
+                {
+                    auto status = write(bus, type, sector, count, buf);
+                    if (!status)
+                    {
+                        DiskInterface::last_error = DiskInterface::Error::Unknown;
+                    }
 
-            drives.emplace_back(drive);
+                    return status;
+                });
+            }
         }
-
-        return drives;
-    };
+    }
 
     log("IDE PIO initialized.\n");
 }

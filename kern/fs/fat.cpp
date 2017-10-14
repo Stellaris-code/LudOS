@@ -105,38 +105,7 @@ void fat::detail::read_FAT_sector(std::vector<uint8_t> &FAT, size_t sector, size
 
 uint32_t fat::detail::next_cluster(size_t cluster, const fat::FATInfo &info)
 {
-    uint32_t fat_offset;
-    if (info.type == FATType::FAT12)
-    {
-        fat_offset = cluster + cluster / 2;
-    }
-    else if (info.type == FATType::FAT16)
-    {
-        fat_offset = cluster * 2;
-    }
-    else if (info.type == FATType::FAT32)
-    {
-        fat_offset = cluster * 4;
-    }
-
-    uint32_t fat_sector = info.first_fat_sector + (fat_offset / 512);
-    uint32_t ent_offset = fat_offset % 512;
-
-    std::vector<uint8_t> FAT(512);
-
-    read_FAT_sector(FAT, fat_sector + info.base_sector, info.drive);
-
-    uint32_t table_value = *reinterpret_cast<uint32_t*>(&FAT[ent_offset]) & 0x0FFFFFFF;
-
-    if (info.type == FATType::FAT12)
-    {
-        if(cluster & 0x0001)
-            table_value = table_value >> 4;
-        else
-            table_value = table_value & 0x0FFF;
-    }
-
-    return table_value;
+    return FAT_entry(get_FAT(info), info, cluster);
 }
 
 vfs::node fat::root_dir(const fat::FATInfo &info)
@@ -263,6 +232,10 @@ std::vector<uint8_t> fat::detail::read_cluster_chain(size_t cluster, const fat::
     {
         next_entries = {};
     }
+    else if (table_entry == 1) // Spec says to consider it as end of chain marker
+    {
+        next_entries = {};
+    }
     else
     {
         next_entries = read_cluster_chain(table_entry, info);
@@ -271,12 +244,12 @@ std::vector<uint8_t> fat::detail::read_cluster_chain(size_t cluster, const fat::
     return read_cluster(first_sector_of_cluster(cluster, info), info) + next_entries;
 }
 
-std::vector<uint8_t> fat::read(const fat::Entry &entry, const FATInfo &info)
+std::vector<uint8_t> fat::detail::read(const fat::Entry &entry, const FATInfo &info)
 {
     return read(entry, info, entry.size);
 }
 
-std::vector<uint8_t> fat::read(const fat::Entry &entry, const FATInfo &info, size_t nbytes)
+std::vector<uint8_t> fat::detail::read(const fat::Entry &entry, const FATInfo &info, size_t nbytes)
 {
     if (!(entry.attributes & ATTR_DIRECTORY))
     {
@@ -324,4 +297,66 @@ vfs::node fat::detail::entry_to_vfs_node(const fat::Entry &entry, const FATInfo&
     node.data = std::make_unique<fat_file>(file);
 
     return node;
+}
+
+std::vector<uint32_t> fat::detail::find_free_clusters(const FATInfo &info, size_t clusters)
+{
+    std::vector<uint32_t> clusters_vec;
+
+    auto FAT = get_FAT(info);
+
+    for (size_t cluster { 0 }; cluster < info.total_clusters; ++cluster)
+    {
+        uint32_t table_value = FAT_entry(FAT, info, cluster);
+
+        if (table_value == 0)
+        {
+            clusters_vec.emplace_back(cluster);
+        }
+
+        if (clusters_vec.size() == clusters)
+        {
+            return clusters_vec;
+        }
+    }
+
+    return clusters_vec;
+}
+
+std::vector<uint8_t> fat::detail::get_FAT(const FATInfo &info)
+{
+    std::vector<uint8_t> FAT(info.fat_size*info.bootsector.bytes_per_sector);
+
+    read_FAT_sector(FAT, info.first_fat_sector + info.base_sector, info.drive);
+
+    return FAT;
+}
+
+uint32_t fat::detail::FAT_entry(const std::vector<uint8_t>& FAT, const FATInfo &info, size_t cluster)
+{
+    uint32_t fat_offset = 0;
+    if (info.type == FATType::FAT12)
+    {
+        fat_offset = cluster + cluster / 2;
+    }
+    else if (info.type == FATType::FAT16)
+    {
+        fat_offset = cluster * 2;
+    }
+    else if (info.type == FATType::FAT32)
+    {
+        fat_offset = cluster * 4;
+    }
+    uint32_t ent_offset = fat_offset % info.bootsector.bytes_per_sector;
+    uint32_t table_value = *reinterpret_cast<const uint32_t*>(&FAT[ent_offset]) & 0x0FFFFFFF;
+
+    if (info.type == FATType::FAT12)
+    {
+        if(cluster & 0x0001)
+            table_value = table_value >> 4;
+        else
+            table_value = table_value & 0x0FFF;
+    }
+
+    return table_value;
 }

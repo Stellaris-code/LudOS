@@ -56,7 +56,7 @@ bool init()
     mem = detail::get_hbamem_ptr();
     if (!mem)
     {
-        err("No valid AHCI controller found, aborting !\n");
+        warn("No valid AHCI controller found\n");
         return false;
     }
 
@@ -87,7 +87,7 @@ bool init()
 
     if (port_count == 0)
     {
-        warn("No AHCI ports available, disabling\n");
+        warn("AHCI present but no ports available, disabling\n");
         return false;
     }
 
@@ -234,32 +234,21 @@ bool detail::issue_read_command(size_t port, uint64_t sector, size_t count, uint
 
 void detail::init_interface()
 {
-    DiskInterface::scan_impl = [&]
+    for (size_t port { 0 }; port < sizeof(mem->pi)*CHAR_BIT; ++port)
     {
-        std::vector<uint32_t> ports;
-
-        for (size_t i { 0 }; i < sizeof(mem->pi)*CHAR_BIT; ++i)
+        if (bit_check(mem->pi, port) && detail::get_port_type(port) != PortType::Null)
         {
-            if (bit_check(mem->pi, i) && detail::get_port_type(i) != PortType::Null)
+            DiskInterface::add_drive([port](uint32_t sector, uint8_t count, uint8_t* buf)->bool
             {
-                ports.emplace_back(i);
-            }
+                return detail::issue_read_command(port, sector, count, reinterpret_cast<uint16_t*>(buf));
+            },
+            [port](uint32_t sector, uint8_t count, const uint8_t* buf)->bool
+            {
+                err("Write not implemented yet for AHCI !\n");
+                return false;
+            });
         }
-
-        return ports;
-    };
-
-    DiskInterface::read_impl = [&](size_t port, uint32_t sector, uint8_t count, uint8_t* buf)->bool
-    {
-        return detail::issue_read_command(port, sector, count, reinterpret_cast<uint16_t*>(buf));
-    };
-
-    DiskInterface::write_impl = [&](size_t port, uint32_t sector, uint8_t count, const uint8_t* buf)->bool
-    {
-        err("Write not implemented for AHCI !\n");
-        return false;
-    };
+    }
 }
-
 
 }

@@ -28,10 +28,8 @@ SOFTWARE.
 // TODO : user mode
 // TODO : POC calculatrice
 // TODO : Paging
-// TODO : DMA
 // TODO : Son
-// TODO : Floppy controler
-// TODO : AHCI
+// TODO : Passer en IDE PCI : IDE UDMA
 // TODO : unifier l'interface PS/2
 
 // TODO : syscalls:

@@ -179,12 +179,15 @@ struct FATInfo
     size_t total_clusters;
 };
 
-std::vector<uint8_t> read(const Entry& entry, const fat::FATInfo& info);
-std::vector<uint8_t> read(const Entry& entry, const fat::FATInfo& info, size_t nbytes);
-
 namespace detail
 {
 
+std::vector<uint8_t> read(const Entry& entry, const fat::FATInfo& info);
+std::vector<uint8_t> read(const Entry& entry, const fat::FATInfo& info, size_t nbytes);
+
+void write(const fat::Entry &entry, const FATInfo &info, const std::vector<uint8_t>& data);
+
+void write_cluster(const FATInfo& info, size_t cluster, const std::vector<uint8_t>& data);
 
 void read_FAT_sector(std::vector<uint8_t>& FAT, size_t sector, size_t drive);
 
@@ -200,6 +203,13 @@ std::vector<uint8_t> read_cluster(size_t first_sector, const fat::FATInfo &info)
 
 vfs::node entry_to_vfs_node(const Entry& entry, const FATInfo &info, const std::string &long_name);
 
+std::vector<uint8_t> get_FAT(const FATInfo& info);
+uint32_t FAT_entry(const std::vector<uint8_t>& FAT, const FATInfo &info, size_t cluster);
+
+std::vector<uint32_t> find_free_clusters(const FATInfo& info, size_t clusters);
+
+void add_entry(const FATInfo& info, size_t cluster, Entry entry);
+
 struct fat_file : public vfs::file
 {
     virtual size_t read(void* buf, size_t bytes) const override
@@ -209,7 +219,7 @@ struct fat_file : public vfs::file
             return 0;
         }
 
-        auto data = fat::read(entry, info, bytes);
+        auto data = fat::detail::read(entry, info, bytes);
         for (size_t i { 0 }; i < data.size(); ++i)
         {
             reinterpret_cast<uint8_t*>(buf)[i] = data[i];

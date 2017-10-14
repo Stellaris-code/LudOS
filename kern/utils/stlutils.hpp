@@ -86,4 +86,26 @@ std::string inline trim(const std::string& str)
     return std::string(str.c_str(), strlen(str.c_str()));
 }
 
+template <typename Cont>
+std::vector<Cont> split(const Cont& cont, size_t chunk_size)
+{
+    std::vector<Cont> chunks;
+
+    size_t base = 0;
+
+    while (base + chunk_size <= cont.size())
+    {
+        chunks.emplace_back(cont.begin() + base, cont.begin() + base + chunk_size);
+
+        base += chunk_size;
+    }
+
+    if (base < cont.size())
+    {
+        chunks.emplace_back(cont.begin() + base, cont.end());
+    }
+
+    return chunks;
+}
+
 #endif // STLUTILS_HPP

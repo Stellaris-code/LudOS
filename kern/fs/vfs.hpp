@@ -44,12 +44,12 @@ public:
 
     struct file
     {
-        uint32_t perms;
-        uint32_t uid;
-        uint32_t gid;
-        uint32_t flags;
-        uint32_t length;
-        bool is_dir : 1;
+        uint32_t perms { 0 };
+        uint32_t uid { 0 };
+        uint32_t gid { 0 };
+        uint32_t flags { 0 };
+        uint32_t length { 0 };
+        bool is_dir { false };
 
         std::vector<node> vfs_children;
 

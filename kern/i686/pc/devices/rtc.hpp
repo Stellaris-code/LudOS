@@ -160,7 +160,7 @@ inline Date get_time()
 
 inline void init()
 {
-    Time::get_time_of_day = []{ return get_time(); };
+    Time::get_time_of_day_callback = []{ return get_time(); };
 }
 
 }

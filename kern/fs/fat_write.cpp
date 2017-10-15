@@ -30,13 +30,61 @@ SOFTWARE.
 #include "utils/stlutils.hpp"
 #include "utils/logging.hpp"
 #include "drivers/diskinterface.hpp"
+#include "time/time.hpp"
 
 namespace fat::detail
 {
 
-void fat_file::update_entry() const
+void fat_file::write_entry() const
 {
+    std::vector<uint8_t> data(info.bootsector.bytes_per_sector * info.bootsector.sectors_per_cluster);
 
+    DiskInterface::read(info.drive, entry_first_sector + info.base_sector,
+                        info.bootsector.sectors_per_cluster, data.data());
+
+    memcpy(data.data() + entry_idx * sizeof(Entry), reinterpret_cast<uint8_t*>(&entry), sizeof(Entry));
+
+    DiskInterface::write(info.drive, entry_first_sector + info.base_sector,
+                         info.bootsector.sectors_per_cluster, data.data());
+}
+
+void fat_file::update_access_date() const
+{
+    auto current_time = Time::get_time_of_day();
+
+    entry.last_access_day = current_time.day;
+    entry.last_access_month = current_time.month;
+    entry.last_access_year = current_time.year - 1980;
+
+    write_entry();
+}
+
+void fat_file::update_modif_date() const
+{
+    auto current_time = Time::get_time_of_day();
+
+    entry.last_modif_sec = current_time.sec / 2;
+    entry.last_modif_min = current_time.min;
+    entry.last_modif_hour = current_time.hour;
+    entry.last_modif_day = current_time.day;
+    entry.last_modif_month = current_time.month;
+    entry.last_modif_year = current_time.year - 1980;
+
+    write_entry();
+}
+
+void fat_file::set_creation_date() const
+{
+    auto current_time = Time::get_time_of_day();
+
+    entry.sec = current_time.sec / 2;
+    entry.min = current_time.min;
+    entry.hour = current_time.hour;
+    entry.day = current_time.day;
+    entry.month = current_time.month;
+    entry.year = current_time.year - 1980;
+
+    write_entry();
 }
 
 bool write_cluster(const FATInfo& info, size_t cluster, const std::vector<uint8_t>& data)
@@ -46,11 +94,17 @@ bool write_cluster(const FATInfo& info, size_t cluster, const std::vector<uint8_
     return DiskInterface::write(info.drive, first_sector_of_cluster(cluster, info) + info.base_sector, info.bootsector.sectors_per_cluster, data.data());
 }
 
-bool write(const fat::Entry &entry, const FATInfo &info, const std::vector<uint8_t>& data)
+bool write(fat::Entry &entry, const FATInfo &info, const std::vector<uint8_t>& data)
 {
     if (data.size() > entry.size)
     {
-        panic("Implement resizing");
+        err("Implement resizing\n");
+
+        size_t needed_clusters = (data.size() - entry.size) / (info.bootsector.sectors_per_cluster * info.bootsector.bytes_per_sector) + 1;
+
+        auto clusters = find_free_clusters(info, needed_clusters);
+
+        add_clusters(info, entry, clusters);
 
         return false;
     }
@@ -66,6 +120,9 @@ bool write(const fat::Entry &entry, const FATInfo &info, const std::vector<uint8
                 return false;
             }
         }
+
+        entry.size = data.size();
+
         return true;
     }
 }

@@ -186,13 +186,14 @@ namespace detail
 std::vector<uint8_t> read(const Entry& entry, const fat::FATInfo& info);
 std::vector<uint8_t> read(const Entry& entry, const fat::FATInfo& info, size_t nbytes);
 
-bool write(const fat::Entry &entry, const FATInfo &info, const std::vector<uint8_t>& data);
+bool write(fat::Entry &entry, const FATInfo &info, const std::vector<uint8_t>& data);
 
 bool write_cluster(const FATInfo& info, size_t cluster, const std::vector<uint8_t>& data);
 
 void read_FAT_sector(std::vector<uint8_t>& FAT, size_t sector, size_t drive);
 
 size_t first_sector_of_cluster(size_t cluster, const FATInfo& info);
+size_t sector_to_cluster(size_t first_sector, const fat::FATInfo &info);
 
 uint32_t next_cluster(size_t cluster, const FATInfo& info);
 
@@ -210,8 +211,8 @@ std::vector<uint8_t> get_FAT(const FATInfo& info);
 uint32_t FAT_entry(const std::vector<uint8_t>& FAT, const FATInfo &info, size_t cluster);
 
 std::vector<uint32_t> find_free_clusters(const FATInfo& info, size_t clusters);
-
 void add_entry(const FATInfo& info, size_t cluster, Entry entry);
+void add_clusters(const FATInfo& info, const Entry& entry, const std::vector<uint32_t>& clusters);
 
 struct fat_file : public vfs::file
 {
@@ -228,7 +229,7 @@ struct fat_file : public vfs::file
             reinterpret_cast<uint8_t*>(buf)[i] = data[i];
         }
 
-        update_entry();
+        update_access_date();
 
         return data.size();
     }
@@ -242,7 +243,8 @@ struct fat_file : public vfs::file
 
         fat::detail::write(entry, info, std::vector<uint8_t>(reinterpret_cast<const uint8_t*>(buf), reinterpret_cast<const uint8_t*>(buf) + n));
 
-        update_entry();
+        update_modif_date();
+        write_entry();
 
         return n;
     }
@@ -254,15 +256,13 @@ struct fat_file : public vfs::file
             return {};
         }
 
-        update_entry();
-
         if (is_root)
         {
             return fat_children;
         }
         else
         {
-            return merge(detail::read_cluster_entries(detail::first_sector_of_cluster(cluster, info), info), fat_children);
+            return merge(detail::read_cluster_entries(detail::first_sector_of_cluster(dir_cluster, info), info), fat_children);
         }
     }
 
@@ -279,8 +279,9 @@ struct fat_file : public vfs::file
         // TODO : allocate
         back.name = str;
         back->is_dir = true;
+        back.get_file<fat_file>().set_creation_date();
 
-        update_entry();
+        update_access_date();
 
         return &back;
     }
@@ -298,20 +299,26 @@ struct fat_file : public vfs::file
         // TODO : allocate
         back.name = str;
         back->is_dir = false;
+        back.get_file<fat_file>().set_creation_date();
 
-        update_entry();
+        update_access_date();
 
         return &back;
     }
 
-    size_t cluster;
-    bool is_root : 1;
-    std::vector<vfs::node> fat_children;
-    fat::Entry entry;
-    FATInfo info;
+    size_t dir_cluster { 0 };
+    size_t entry_first_sector { 0 };
+    size_t entry_idx { 0 };
+    bool is_root { false };
+    std::vector<vfs::node> fat_children {};
+    mutable fat::Entry entry {};
+    FATInfo info {};
 
 private:
-    void update_entry() const;
+    void write_entry() const;
+    void update_access_date() const;
+    void update_modif_date() const;
+    void set_creation_date() const;
 };
 }
 

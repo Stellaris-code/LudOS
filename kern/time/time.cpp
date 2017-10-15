@@ -1,7 +1,7 @@
 /*
-time.hpp
+time.cpp
 
-Copyright (c) 17 Yann BOUCHER (yann)
+Copyright (c) 15 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,40 +22,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef TIME_HPP
-#define TIME_HPP
 
-#include <stdint.h>
-
-#include <functional.hpp>
-
-using time_t = uint64_t;
-
-struct Date
-{
-    uint32_t sec;
-    uint32_t min;
-    uint32_t hour;
-    uint32_t day;
-    uint32_t month;
-    uint32_t year;
-};
+#include "time.hpp"
 
 namespace Time
 {
-
-extern std::function<Date()> get_time_of_day_callback;
-
-inline Date get_time_of_day()
-{
-    if (!get_time_of_day_callback)
-    {
-        abort();
-    }
-
-    return get_time_of_day_callback();
+std::function<Date()> get_time_of_day_callback;
 }
-
-}
-
-#endif // TIME_HPP

@@ -1,7 +1,7 @@
 /*
-time.hpp
+fat_util.cpp
 
-Copyright (c) 17 Yann BOUCHER (yann)
+Copyright (c) 15 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,40 +22,46 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef TIME_HPP
-#define TIME_HPP
 
-#include <stdint.h>
+#include "fat.hpp"
 
-#include <functional.hpp>
-
-using time_t = uint64_t;
-
-struct Date
+namespace fat::detail
 {
-    uint32_t sec;
-    uint32_t min;
-    uint32_t hour;
-    uint32_t day;
-    uint32_t month;
-    uint32_t year;
-};
-
-namespace Time
+std::vector<uint32_t> find_free_clusters(const FATInfo &info, size_t clusters)
 {
+    std::vector<uint32_t> clusters_vec;
 
-extern std::function<Date()> get_time_of_day_callback;
+    auto FAT = get_FAT(info);
 
-inline Date get_time_of_day()
-{
-    if (!get_time_of_day_callback)
+    for (size_t cluster { 0 }; cluster < info.total_clusters; ++cluster)
     {
-        abort();
+        uint32_t table_value = FAT_entry(FAT, info, cluster);
+
+        if (table_value == 0)
+        {
+            clusters_vec.emplace_back(cluster);
+        }
+
+        if (clusters_vec.size() == clusters)
+        {
+            return clusters_vec;
+        }
     }
 
-    return get_time_of_day_callback();
+    return clusters_vec;
 }
 
-}
+void add_clusters(const FATInfo& info, const Entry& entry, const std::vector<uint32_t>& clusters)
+{
+    auto entry_clusters = get_cluster_chain(entry.low_cluster_bits | (entry.high_cluster_bits << 16), info);
 
-#endif // TIME_HPP
+    auto FAT = get_FAT(info);
+
+    size_t next_cluster = FAT_entry(FAT, info, entry_clusters.back());
+
+    for (auto cluster : clusters)
+    {
+
+    }
+}
+}

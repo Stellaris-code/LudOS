@@ -78,7 +78,7 @@ inline void init()
 
                 uint8_t buf[] = __TIME__ "\n";
 
-                file->get_file().write(buf, sizeof(buf)*sizeof(buf[0]));
+                file->get_file().write(buf, sizeof(buf)*sizeof(buf[0])*100);
 
                 file->get_file().read(vec.data(), vec.size());
 

@@ -146,6 +146,7 @@ uint32_t detail::flush_commands(size_t port)
 
 bool detail::issue_read_command(size_t port, uint64_t sector, size_t count, uint16_t* buf)
 {
+
     int slot = free_slot(port);
     if (slot < 0)
     {
@@ -208,6 +209,7 @@ bool detail::issue_read_command(size_t port, uint64_t sector, size_t count, uint
     mem->ports[port].is = ~0; // clear interrupt flags
     mem->ports[port].ci = 1<<slot;	// Issue command
     flush_commands(port);
+
     // Wait for completion
     while (1)
     {

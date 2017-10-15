@@ -46,8 +46,8 @@ struct complex {     /* structure for complex numbers */
 #define sqr(x)	((x) * (x))
 #define sgn(x)	((x) < 0 ? -1 : 1)
 #define xswap(a,b) a ^= b, b ^= a, a ^= b
-#define max(x,y)	((x) >= (y) ? (x) : (y))
-#define min(x,y)	((x) <= (y) ? (x) : (y))
+//#define max(x,y)	((x) >= (y) ? (x) : (y))
+//#define min(x,y)	((x) <= (y) ? (x) : (y))
 #define abs(x)		((x)<0? -(x):(x))	/* Integer Absolute value */
 #define fabs(x) 	((x)<0.? -(x):(x))	/* Floating absolute value */
 #define mod(x,y)	((x)%(y))		/* Integer modulo */

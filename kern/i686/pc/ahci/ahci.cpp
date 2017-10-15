@@ -232,6 +232,94 @@ bool detail::issue_read_command(size_t port, uint64_t sector, size_t count, uint
     return true;
 }
 
+bool detail::issue_write_command(size_t port, uint64_t sector, size_t count, const uint16_t* buf)
+{
+    int slot = free_slot(port);
+    if (slot < 0)
+    {
+        warn("No more AHCI slots available\n");
+        return false;
+    }
+
+    CommandHeader *cmdheader = reinterpret_cast<CommandHeader*>(mem->ports[port].clb);
+    cmdheader += slot;
+
+    cmdheader->cfl = sizeof(FisRegH2D)/sizeof(uint32_t);	// Command FIS size
+    cmdheader->write = 1;		// Write to device
+    cmdheader->prdtl = ((count-1)>>4) + 1;	// PRDT entries count
+    cmdheader->atapi = false;
+
+    CommandTable *cmdtbl = reinterpret_cast<CommandTable*>(cmdheader->ctba);
+    memset(cmdtbl, 0, sizeof(CommandTable) +
+           (cmdheader->prdtl-1)*sizeof(PrdtEntry));
+    // 8K bytes (16 sectors) per PRDT
+    for (int i=0; i<cmdheader->prdtl-1; i++)
+    {
+        cmdtbl->entries[i].dba = static_cast<uint32_t>(reinterpret_cast<uintptr_t>(buf));
+        cmdtbl->entries[i].dbau = 0;
+        cmdtbl->entries[i].dbc = 8*1024;	// 8K bytes
+        cmdtbl->entries[i].i = 1;
+        buf += 4*1024;	// 4K words
+        count -= 16;	// 16 sectors
+    }
+    // Last entry
+    cmdtbl->entries[cmdheader->prdtl-1].dba = static_cast<uint32_t>(reinterpret_cast<uintptr_t>(buf));
+    cmdtbl->entries[cmdheader->prdtl-1].dbau = 0;
+    cmdtbl->entries[cmdheader->prdtl-1].dbc = count<<9;	// 512 bytes per sector
+    cmdtbl->entries[cmdheader->prdtl-1].i = 1;
+
+    // Setup command
+    FisRegH2D *cmdfis = reinterpret_cast<FisRegH2D*>(&cmdtbl->command_fis);
+
+    cmdfis->fis_type = FISType::RegH2D;
+    cmdfis->c = 1;	// Command
+    cmdfis->command = ata_write_dma_ex;
+
+    cmdfis->lba0 = sector&0xFF;
+    cmdfis->lba1 = (sector>>8)&0xFF;
+    cmdfis->lba2 = (sector>>16)&0xFF;
+    cmdfis->device = 1<<6;	// LBA mode
+
+    cmdfis->lba3 = (sector>>24)&0xFF;
+    cmdfis->lba4 = (sector>>32)&0xFF;
+    cmdfis->lba5 = (sector>>40)&0xFF;
+
+    cmdfis->countl = count&0xFF;
+    cmdfis->counth = (count>>8)&0xFF;
+
+    if (!Timer::sleep_until([&]{return !(mem->ports[port].tfd & (ata_busy | ata_drq));}, 500))
+    {
+        warn("AHCI port %d is hung\n", port);
+        return false;
+    }
+
+    mem->ports[port].is = ~0; // clear interrupt flags
+    mem->ports[port].ci = 1<<slot;	// Issue command
+    flush_commands(port);
+    // Wait for completion
+    while (1)
+    {
+        // In some longer duration reads, it may be helpful to spin on the DPS bit
+        // in the PxIS port field as well (1 << 5)
+        if (((mem->ports[port].sact | mem->ports[port].ci) & (1<<slot)) == 0)
+            break;
+        if (mem->ports[port].is & pxis_tfes)	// Task file error
+        {
+            warn("Write disk error on AHCI port %d\n", port);
+            return false;
+        }
+    }
+
+    // Check again
+    if (mem->ports[port].is & pxis_tfes)
+    {
+        warn("Write disk error on AHCI port %d\n", port);
+        return false;
+    }
+
+    return true;
+}
+
 void detail::init_interface()
 {
     for (size_t port { 0 }; port < sizeof(mem->pi)*CHAR_BIT; ++port)
@@ -244,8 +332,7 @@ void detail::init_interface()
             },
             [port](uint32_t sector, uint8_t count, const uint8_t* buf)->bool
             {
-                err("Write not implemented yet for AHCI !\n");
-                return false;
+                return detail::issue_write_command(port, sector, count, reinterpret_cast<const uint16_t*>(buf));
             });
         }
     }

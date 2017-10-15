@@ -55,6 +55,7 @@ namespace detail
 {
 void common(BusPort port, uint8_t type, uint32_t block, uint8_t count);
 void poll(BusPort port);
+void poll_bsy(BusPort port);
 void flush(BusPort port);
 bool error_set(BusPort port);
 void clear_error(BusPort port);

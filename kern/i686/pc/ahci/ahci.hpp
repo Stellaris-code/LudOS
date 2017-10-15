@@ -269,6 +269,7 @@ static constexpr uint32_t int_dhr_setup = 1<<0;
 static constexpr uint32_t pxis_tfes = 1<<30;
 
 static constexpr uint32_t ata_read_dma_ex = 0x25;
+static constexpr uint32_t ata_write_dma_ex = 0x35;
 static constexpr uint32_t ata_identify = 0xEC;
 
 static constexpr uint32_t ata_busy = 1<<7;
@@ -292,6 +293,7 @@ uint8_t get_interrupt_line();
 void get_ahci_ownership();
 
 bool issue_read_command(size_t port, uint64_t sector, size_t count, uint16_t* buf);
+bool issue_write_command(size_t port, uint64_t sector, size_t count, const uint16_t* buf);
 
 uint32_t flush_commands(size_t port);
 

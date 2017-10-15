@@ -75,6 +75,11 @@ inline void init()
 
                 std::vector<uint8_t> vec;
                 vec.resize(file->get_file().length);
+
+                uint8_t buf[] = __TIME__ "\n";
+
+                file->get_file().write(buf, sizeof(buf)*sizeof(buf[0]));
+
                 file->get_file().read(vec.data(), vec.size());
 
                 for (auto c : vec)

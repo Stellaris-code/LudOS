@@ -58,22 +58,29 @@ bool ide::pio::read(BusPort port, ide::DriveType type, uint32_t block, uint8_t c
 
     for (size_t sector { 0 }; sector < count; ++sector)
     {
+        detail::poll_bsy(port);
         detail::poll(port); // TODO : use IRQ !
+
         for (size_t i { 0 }; i < 256; ++i)
         {
             uint32_t tmpword = inw(port + 0);
             buf[sector*512+i * 2] = tmpword & 0xFF;
             buf[sector*512+i * 2 + 1] = (tmpword >> 8) & 0xFF;
+
+            if (detail::error_set(port)) // reads status register and resets INTRQ
+            {
+                bool stat = !detail::error_set(port);
+                if (!stat)
+                {
+                    detail::clear_error(port);
+
+                    return stat;
+                }
+            }
         }
     }
 
-    bool stat = !detail::error_set(port);
-    if (!stat)
-    {
-        detail::clear_error(port);
-    }
-
-    return stat;
+    return true;
 }
 
 
@@ -83,31 +90,31 @@ bool ide::pio::write(BusPort port, ide::DriveType type, uint32_t block, uint8_t 
 
     outb(port + 7, 0x30);
 
-    for (size_t sector { 1 }; sector <= count; ++sector)
+    detail::poll_bsy(port);
+    detail::poll(port);
+
+    for (int i = count * 256; --i >= 0;)
     {
-        for (size_t i { 0 }; i < 256; ++i)
+        outw(port + 0, *buf++);
+
+        detail::poll_bsy(port);
+        detail::poll(port);
+
+        if (detail::error_set(port))
         {
-            uint16_t tmpword = (buf[i*sector * 2 + 1] << 8) | buf[i*sector * 2];
-            outw(port + 0, tmpword);
-            if (detail::error_set(port))
+            bool stat = !detail::error_set(port);
+            if (!stat)
             {
-                err("Error during ide pio write : err : 0x%x, stat : 0x%x\n", error_register(port), status_register(port));
-                return false;
-            }
-            for (size_t k { 0 }; k < 3; ++k)
-            {
-                nop();
+                detail::clear_error(port);
+
+                return stat;
             }
         }
     }
 
-    bool stat = !detail::error_set(port);
-    if (!stat)
-    {
-        detail::clear_error(port);
-    }
+    outb(port + 7, 0xE7); // cache flush
 
-    return stat;
+    return true;
 }
 
 
@@ -115,6 +122,12 @@ void ide::pio::detail::poll(BusPort port)
 {
     size_t max_iters { 0x10000 };
     while (!(inb(port + 7) & 0x08) && max_iters-- > 0) { nop(); }
+}
+
+void ide::pio::detail::poll_bsy(BusPort port)
+{
+    size_t max_iters { 0x10000 };
+    while ((inb(port + 7) & 0x80) && max_iters-- > 0) { nop(); }
 }
 
 void ide::pio::detail::flush(BusPort port)

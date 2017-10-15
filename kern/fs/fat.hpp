@@ -33,6 +33,7 @@ SOFTWARE.
 #include "vfs.hpp"
 
 #include "utils/stlutils.hpp"
+#include "utils/logging.hpp"
 
 #define ATTR_READ_ONLY 0x01
 #define ATTR_HIDDEN 0x02
@@ -185,9 +186,9 @@ namespace detail
 std::vector<uint8_t> read(const Entry& entry, const fat::FATInfo& info);
 std::vector<uint8_t> read(const Entry& entry, const fat::FATInfo& info, size_t nbytes);
 
-void write(const fat::Entry &entry, const FATInfo &info, const std::vector<uint8_t>& data);
+bool write(const fat::Entry &entry, const FATInfo &info, const std::vector<uint8_t>& data);
 
-void write_cluster(const FATInfo& info, size_t cluster, const std::vector<uint8_t>& data);
+bool write_cluster(const FATInfo& info, size_t cluster, const std::vector<uint8_t>& data);
 
 void read_FAT_sector(std::vector<uint8_t>& FAT, size_t sector, size_t drive);
 
@@ -200,6 +201,8 @@ std::vector<vfs::node> read_cluster_entries(size_t first_sector, const FATInfo& 
 std::vector<uint8_t> read_cluster_chain(size_t cluster, const FATInfo& info);
 
 std::vector<uint8_t> read_cluster(size_t first_sector, const fat::FATInfo &info);
+
+std::vector<size_t> get_cluster_chain(size_t first_cluster, const fat::FATInfo& info);
 
 vfs::node entry_to_vfs_node(const Entry& entry, const FATInfo &info, const std::string &long_name);
 
@@ -225,6 +228,8 @@ struct fat_file : public vfs::file
             reinterpret_cast<uint8_t*>(buf)[i] = data[i];
         }
 
+        update_entry();
+
         return data.size();
     }
 
@@ -235,7 +240,11 @@ struct fat_file : public vfs::file
             return 0;
         }
 
-        abort();
+        fat::detail::write(entry, info, std::vector<uint8_t>(reinterpret_cast<const uint8_t*>(buf), reinterpret_cast<const uint8_t*>(buf) + n));
+
+        update_entry();
+
+        return n;
     }
 
     virtual std::vector<vfs::node> readdir_impl() const override
@@ -244,6 +253,8 @@ struct fat_file : public vfs::file
         {
             return {};
         }
+
+        update_entry();
 
         if (is_root)
         {
@@ -268,6 +279,9 @@ struct fat_file : public vfs::file
         // TODO : allocate
         back.name = str;
         back->is_dir = true;
+
+        update_entry();
+
         return &back;
     }
 
@@ -284,6 +298,9 @@ struct fat_file : public vfs::file
         // TODO : allocate
         back.name = str;
         back->is_dir = false;
+
+        update_entry();
+
         return &back;
     }
 
@@ -292,6 +309,9 @@ struct fat_file : public vfs::file
     std::vector<vfs::node> fat_children;
     fat::Entry entry;
     FATInfo info;
+
+private:
+    void update_entry() const;
 };
 }
 

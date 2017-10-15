@@ -87,7 +87,7 @@ std::string inline trim(const std::string& str)
 }
 
 template <typename Cont>
-std::vector<Cont> split(const Cont& cont, size_t chunk_size)
+std::vector<Cont> split(const Cont& cont, size_t chunk_size, bool fill = false)
 {
     std::vector<Cont> chunks;
 
@@ -103,6 +103,10 @@ std::vector<Cont> split(const Cont& cont, size_t chunk_size)
     if (base < cont.size())
     {
         chunks.emplace_back(cont.begin() + base, cont.end());
+        if (fill)
+        {
+            chunks.back().resize(chunk_size);
+        }
     }
 
     return chunks;

@@ -28,32 +28,45 @@ SOFTWARE.
 #include "panic.hpp"
 
 #include "utils/stlutils.hpp"
+#include "utils/logging.hpp"
 #include "drivers/diskinterface.hpp"
 
 namespace fat::detail
 {
 
-void write_cluster(const FATInfo& info, size_t cluster, const std::vector<uint8_t>& data)
+void fat_file::update_entry() const
+{
+
+}
+
+bool write_cluster(const FATInfo& info, size_t cluster, const std::vector<uint8_t>& data)
 {
     assert(data.size() == info.bootsector.sectors_per_cluster * info.bootsector.bytes_per_sector);
 
-    auto data_chunks = split(data, info.bootsector.bytes_per_sector);
-
-    for (size_t i { 0 }; i < info.bootsector.sectors_per_cluster; ++i)
-    {
-        DiskInterface::write(info.drive, first_sector_of_cluster(cluster, info) + i, info.bootsector.bytes_per_sector, data_chunks[i].data());
-    }
+    return DiskInterface::write(info.drive, first_sector_of_cluster(cluster, info) + info.base_sector, info.bootsector.sectors_per_cluster, data.data());
 }
 
-void write(const fat::Entry &entry, const FATInfo &info, const std::vector<uint8_t>& data)
+bool write(const fat::Entry &entry, const FATInfo &info, const std::vector<uint8_t>& data)
 {
     if (data.size() > entry.size)
     {
         panic("Implement resizing");
+
+        return false;
     }
     else
     {
+        auto clusters = get_cluster_chain(entry.low_cluster_bits | (entry.high_cluster_bits << 16), info);
+        auto data_chunks = split(data, info.bootsector.sectors_per_cluster * info.bootsector.bytes_per_sector * clusters.size(), true);
 
+        for (size_t i { 0 }; i < std::min(data_chunks.size(), clusters.size()); ++i)
+        {
+            if (!write_cluster(info, clusters[i], data_chunks[i]))
+            {
+                return false;
+            }
+        }
+        return true;
     }
 }
 

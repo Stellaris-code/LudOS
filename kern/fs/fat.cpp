@@ -139,16 +139,16 @@ std::vector<vfs::node> fat::detail::read_cluster_entries(size_t first_sector, co
 
     std::vector<vfs::node> entries;
 
-    Entry* entry = reinterpret_cast<Entry*>(data.data());
-    Entry* entry_end = reinterpret_cast<Entry*>(data.data()+data.size());
+    size_t entry_idx = 0;
+    Entry* cluster_entries = reinterpret_cast<Entry*>(data.data());
 
     std::string longname_buf;
-
-    while (entry < entry_end && entry->filename[0] != '\0')
+    do
     {
+        Entry* entry = cluster_entries + entry_idx;
+
         if (entry->filename[0] == 0xE5)
         {
-            ++entry;
             continue;
         }
 
@@ -171,19 +171,21 @@ std::vector<vfs::node> fat::detail::read_cluster_entries(size_t first_sector, co
 
             longname_buf = vec + longname_buf;
 
-            ++entry;
             continue;
         }
         else
         {
             entries.push_back(detail::entry_to_vfs_node(*entry, info, longname_buf));
 
+            size_t cluster = entry->low_cluster_bits | (entry->high_cluster_bits << 16);
+            entries.back().get_file<fat_file>().cluster = cluster;
+
             longname_buf.clear();
+
+            //log("Cluster offset : %d\n", entry_idx);
 
             if (entry->attributes & ATTR_DIRECTORY)
             {
-                size_t cluster = entry->low_cluster_bits | (entry->high_cluster_bits << 16);
-
                 const char* filename = reinterpret_cast<const char*>(entry->filename);
 
                 if (std::string(filename, 8) == ".       ")
@@ -192,18 +194,16 @@ std::vector<vfs::node> fat::detail::read_cluster_entries(size_t first_sector, co
                 }
                 else if (std::string(filename, 8) == "..      ")
                 {
-                    // Root dir
+                    // Parent dir
                 }
                 else
                 {
-                    entries.back().get_file<fat_file>().cluster = cluster;
                     entries.back()->is_dir = true;
                 }
             }
         }
+    } while ((++entry_idx) * sizeof(Entry) < data.size() && cluster_entries[entry_idx].filename[0] != '\0');
 
-        ++entry;
-    }
     return entries;
 }
 
@@ -242,6 +242,35 @@ std::vector<uint8_t> fat::detail::read_cluster_chain(size_t cluster, const fat::
     }
 
     return read_cluster(first_sector_of_cluster(cluster, info), info) + next_entries;
+}
+
+std::vector<size_t> fat::detail::get_cluster_chain(size_t first_cluster, const fat::FATInfo& info)
+{
+    uint32_t table_entry = next_cluster(first_cluster, info);
+
+    std::vector<size_t> next_clusters;
+    if (info.type == FATType::FAT12 && table_entry >= 0xFF7)
+    {
+        next_clusters = {};
+    }
+    else if (info.type == FATType::FAT16 && table_entry >= 0xFFF7)
+    {
+        next_clusters = {};
+    }
+    else if (info.type == FATType::FAT32 && table_entry >= 0x0FFFFFF7)
+    {
+        next_clusters = {};
+    }
+    else if (table_entry == 1) // Spec says to consider it as end of chain marker
+    {
+        next_clusters = {};
+    }
+    else
+    {
+        next_clusters = get_cluster_chain(table_entry, info);
+    }
+
+    return merge({first_cluster}, next_clusters);
 }
 
 std::vector<uint8_t> fat::detail::read(const fat::Entry &entry, const FATInfo &info)

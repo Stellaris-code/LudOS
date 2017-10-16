@@ -72,6 +72,10 @@ fat::FATInfo fat::read_fat_fs(size_t drive, size_t base_sector)
     if (info.total_clusters < 4085)
     {
         info.type = FATType::FAT12;
+
+        err("FAT12 is not supported !\n");
+        info.valid = false;
+        return info;
     }
     else if (info.total_clusters < 65525)
     {
@@ -101,11 +105,6 @@ size_t fat::detail::first_sector_of_cluster(size_t cluster, const fat::FATInfo &
 size_t fat::detail::sector_to_cluster(size_t first_sector, const fat::FATInfo &info)
 {
     return ((first_sector + 2) * info.bootsector.sectors_per_cluster - info.first_data_sector) / info.bootsector.sectors_per_cluster;
-}
-
-void fat::detail::read_FAT_sector(std::vector<uint8_t> &FAT, size_t sector, size_t drive)
-{
-    DiskInterface::read(drive, sector, 1, FAT.data());
 }
 
 uint32_t fat::detail::next_cluster(size_t cluster, const fat::FATInfo &info)
@@ -229,6 +228,7 @@ std::vector<uint8_t> fat::detail::read_cluster(size_t first_sector, const fat::F
 std::vector<uint8_t> fat::detail::read_cluster_chain(size_t cluster, const fat::FATInfo& info)
 {
     uint32_t table_entry = next_cluster(cluster, info);
+    //log("next : at 0x%x : 0x%x\n", cluster, table_entry);
 
     std::vector<uint8_t> next_entries;
     if (info.type == FATType::FAT12 && table_entry >= 0xFF7)
@@ -276,6 +276,11 @@ std::vector<size_t> fat::detail::get_cluster_chain(size_t first_cluster, const f
     {
         next_clusters = {};
     }
+    else if (table_entry == 0)
+    {
+        next_clusters = {};
+        warn("FAT fs : Missing end-of-cluster entry at 0x%x !\n", first_cluster);
+    }
     else
     {
         next_clusters = get_cluster_chain(table_entry, info);
@@ -295,6 +300,7 @@ std::vector<uint8_t> fat::detail::read(const fat::Entry &entry, const FATInfo &i
     {
         std::vector<uint8_t> data;
         data = detail::read_cluster_chain(entry.low_cluster_bits | (entry.high_cluster_bits << 16), info);
+        //log("size : %d (%d clusters)\n", data.size(), data.size()/info.bootsector.bytes_per_sector/info.bootsector.sectors_per_cluster);
 
         data.resize(std::min<size_t>(entry.size, nbytes));
         return data;
@@ -343,7 +349,7 @@ std::vector<uint8_t> fat::detail::get_FAT(const FATInfo &info)
 {
     std::vector<uint8_t> FAT(info.fat_size*info.bootsector.bytes_per_sector);
 
-    read_FAT_sector(FAT, info.first_fat_sector + info.base_sector, info.drive);
+    DiskInterface::read(info.drive, info.first_fat_sector + info.base_sector, info.fat_size, FAT.data());
 
     return FAT;
 }
@@ -364,7 +370,11 @@ uint32_t fat::detail::FAT_entry(const std::vector<uint8_t>& FAT, const FATInfo &
         fat_offset = cluster * 4;
     }
     uint32_t ent_offset = fat_offset % info.bootsector.bytes_per_sector;
-    uint32_t table_value = *reinterpret_cast<const uint32_t*>(&FAT[ent_offset]) & 0x0FFFFFFF;
+    uint32_t table_value = *reinterpret_cast<const uint16_t*>(&FAT[ent_offset]);
+    if (info.type == FATType::FAT32)
+    {
+        table_value = *reinterpret_cast<const uint32_t*>(&FAT[ent_offset]) & 0x0FFFFFFF;
+    }
 
     if (info.type == FATType::FAT12)
     {
@@ -375,4 +385,28 @@ uint32_t fat::detail::FAT_entry(const std::vector<uint8_t>& FAT, const FATInfo &
     }
 
     return table_value;
+}
+
+// TODO : fix this one, it sucks hard
+void fat::detail::set_FAT_entry(std::vector<uint8_t>& FAT, const FATInfo &info, size_t cluster, size_t value)
+{
+    uint32_t fat_offset = 0;
+
+    if (info.type == FATType::FAT16)
+    {
+        fat_offset = cluster * 2;
+    }
+    else if (info.type == FATType::FAT32)
+    {
+        fat_offset = cluster * 4;
+    }
+    uint32_t ent_offset = fat_offset % info.bootsector.bytes_per_sector;
+    if (info.type == FATType::FAT16)
+    {
+        *reinterpret_cast<uint16_t*>(&FAT[ent_offset]) = value;
+    }
+    else if (info.type == FATType::FAT32)
+    {
+        *reinterpret_cast<uint32_t*>(&FAT[ent_offset]) = value & 0x0FFFFFFF;
+    }
 }

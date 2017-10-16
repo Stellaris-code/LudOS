@@ -25,6 +25,8 @@ SOFTWARE.
 
 #include "fat.hpp"
 
+#include "panic.hpp"
+
 namespace fat::detail
 {
 std::vector<uint32_t> find_free_clusters(const FATInfo &info, size_t clusters)
@@ -39,6 +41,7 @@ std::vector<uint32_t> find_free_clusters(const FATInfo &info, size_t clusters)
 
         if (table_value == 0)
         {
+            //log("at 0x%x : 0x%x\n", cluster, table_value);
             clusters_vec.emplace_back(cluster);
         }
 
@@ -57,11 +60,74 @@ void add_clusters(const FATInfo& info, const Entry& entry, const std::vector<uin
 
     auto FAT = get_FAT(info);
 
-    size_t next_cluster = FAT_entry(FAT, info, entry_clusters.back());
+    size_t prev_cluster = entry_clusters.back();
 
     for (auto cluster : clusters)
     {
-
+        set_FAT_entry(FAT, info, prev_cluster, cluster);
+        //log("FAT at 0x%x is 0x%x/0x%x\n", prev_cluster, FAT_entry(FAT, info, prev_cluster), cluster);
+        prev_cluster = cluster;
     }
+
+    size_t end_of_chain;
+    switch (info.type)
+    {
+        case FATType::FAT12:
+            end_of_chain = 0xFFF;
+            break;
+        case FATType::FAT16:
+            end_of_chain = 0xFFFF;
+            break;
+        case FATType::FAT32:
+        default:
+            end_of_chain = 0x0FFFFFFF;
+            break;
+    }
+
+    set_FAT_entry(FAT, info, prev_cluster, end_of_chain);
+    //log("FAT at 0x%x is 0x%x/0x%x\n", prev_cluster, FAT_entry(FAT, info, prev_cluster), end_of_chain);
+
+    write_FAT(FAT, info);
+}
+
+size_t clusters(const FATInfo& info, size_t byte_size)
+{
+    const size_t bytes_per_cluster = info.bootsector.bytes_per_sector*info.bootsector.sectors_per_cluster;
+    return byte_size/bytes_per_cluster + (byte_size%bytes_per_cluster != 0);
+}
+
+void free_cluster_chain(const FATInfo& info, size_t first_cluster)
+{
+    auto cluster_chain = get_cluster_chain(first_cluster, info);
+    auto FAT = get_FAT(info);
+
+    size_t end_of_chain;
+    switch (info.type)
+    {
+        case FATType::FAT12:
+            end_of_chain = 0xFFF;
+            break;
+        case FATType::FAT16:
+            end_of_chain = 0xFFFF;
+            break;
+        case FATType::FAT32:
+        default:
+            end_of_chain = 0x0FFFFFFF;
+            break;
+    }
+
+    for (auto clu : cluster_chain)
+    {
+        if (clu == cluster_chain.front())
+        {
+            set_FAT_entry(FAT, info, clu, end_of_chain);
+        }
+        else
+        {
+            set_FAT_entry(FAT, info, clu, 0); // mark as free
+        }
+    }
+
+    write_FAT(FAT, info);
 }
 }

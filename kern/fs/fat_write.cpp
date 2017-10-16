@@ -94,37 +94,45 @@ bool write_cluster(const FATInfo& info, size_t cluster, const std::vector<uint8_
     return DiskInterface::write(info.drive, first_sector_of_cluster(cluster, info) + info.base_sector, info.bootsector.sectors_per_cluster, data.data());
 }
 
+
 bool write(fat::Entry &entry, const FATInfo &info, const std::vector<uint8_t>& data)
 {
+    // allocate new clusters
     if (data.size() > entry.size)
     {
-        err("Implement resizing\n");
-
         size_t needed_clusters = (data.size() - entry.size) / (info.bootsector.sectors_per_cluster * info.bootsector.bytes_per_sector) + 1;
-
         auto clusters = find_free_clusters(info, needed_clusters);
 
         add_clusters(info, entry, clusters);
-
-        return false;
     }
-    else
+    else if (clusters(info, data.size()) < get_cluster_chain(entry.low_cluster_bits | (entry.high_cluster_bits << 16), info).size())
     {
-        auto clusters = get_cluster_chain(entry.low_cluster_bits | (entry.high_cluster_bits << 16), info);
-        auto data_chunks = split(data, info.bootsector.sectors_per_cluster * info.bootsector.bytes_per_sector * clusters.size(), true);
-
-        for (size_t i { 0 }; i < std::min(data_chunks.size(), clusters.size()); ++i)
-        {
-            if (!write_cluster(info, clusters[i], data_chunks[i]))
-            {
-                return false;
-            }
-        }
-
-        entry.size = data.size();
-
-        return true;
+        // free unneeded clusters
+        const auto cluster_chain = get_cluster_chain(entry.low_cluster_bits | (entry.high_cluster_bits << 16), info);
+        const size_t first_cluster_to_free = cluster_chain[clusters(info, data.size())];
+        free_cluster_chain(info, first_cluster_to_free);
     }
+
+    auto clusters = get_cluster_chain(entry.low_cluster_bits | (entry.high_cluster_bits << 16), info);
+    auto data_chunks = split(data, info.bootsector.sectors_per_cluster * info.bootsector.bytes_per_sector, true);
+
+    for (size_t i { 0 }; i < std::min(data_chunks.size(), clusters.size()); ++i)
+    {
+        if (!write_cluster(info, clusters[i], data_chunks[i]))
+        {
+            return false;
+        }
+    }
+
+    entry.size = data.size();
+
+    return true;
 }
+
+void write_FAT(const std::vector<uint8_t>& FAT, const FATInfo& info)
+{
+    DiskInterface::write(info.drive, info.first_fat_sector + info.base_sector, info.fat_size, FAT.data());
+}
+
 
 };

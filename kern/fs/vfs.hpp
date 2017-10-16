@@ -48,7 +48,7 @@ public:
         uint32_t uid { 0 };
         uint32_t gid { 0 };
         uint32_t flags { 0 };
-        uint32_t length { 0 };
+        uint32_t length { 0 }; // TODO : make these functions
         bool is_dir { false };
 
         std::vector<node> vfs_children;

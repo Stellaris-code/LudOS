@@ -190,8 +190,6 @@ bool write(fat::Entry &entry, const FATInfo &info, const std::vector<uint8_t>& d
 
 bool write_cluster(const FATInfo& info, size_t cluster, const std::vector<uint8_t>& data);
 
-void read_FAT_sector(std::vector<uint8_t>& FAT, size_t sector, size_t drive);
-
 size_t first_sector_of_cluster(size_t cluster, const FATInfo& info);
 size_t sector_to_cluster(size_t first_sector, const fat::FATInfo &info);
 
@@ -209,10 +207,14 @@ vfs::node entry_to_vfs_node(const Entry& entry, const FATInfo &info, const std::
 
 std::vector<uint8_t> get_FAT(const FATInfo& info);
 uint32_t FAT_entry(const std::vector<uint8_t>& FAT, const FATInfo &info, size_t cluster);
+void set_FAT_entry(std::vector<uint8_t>& FAT, const FATInfo &info, size_t cluster, size_t value);
+void write_FAT(const std::vector<uint8_t>& FAT, const FATInfo& info);
 
 std::vector<uint32_t> find_free_clusters(const FATInfo& info, size_t clusters);
 void add_entry(const FATInfo& info, size_t cluster, Entry entry);
 void add_clusters(const FATInfo& info, const Entry& entry, const std::vector<uint32_t>& clusters);
+void free_cluster_chain(const FATInfo& info, size_t first_cluster);
+size_t clusters(const FATInfo& info, size_t byte_size);
 
 struct fat_file : public vfs::file
 {
@@ -245,6 +247,8 @@ struct fat_file : public vfs::file
 
         update_modif_date();
         write_entry();
+
+        length = entry.size;
 
         return n;
     }

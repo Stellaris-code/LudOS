@@ -14,7 +14,7 @@ idt_flush:
   global isr%1
   isr%1:
     push byte 0                 ; Push a dummy error code.
-    push byte %1                ; Push the interrupt number.
+    push %1                ; Push the interrupt number.
     jmp isr_common_stub         ; Go to our common handler code.
 %endmacro
 
@@ -23,7 +23,7 @@ idt_flush:
 %macro ISR_ERRCODE 1
   global isr%1
   isr%1:
-    push byte %1                ; Push the interrupt number
+    push %1                ; Push the interrupt number
     jmp isr_common_stub
 %endmacro
 
@@ -31,7 +31,7 @@ idt_flush:
   global irq%1
   irq%1:
     push byte 0
-    push byte %2
+    push %2
     jmp irq_common_stub
 %endmacro
 

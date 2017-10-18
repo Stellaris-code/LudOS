@@ -135,6 +135,28 @@ bool write(fat::Entry &entry, const FATInfo &info, const std::vector<uint8_t>& d
 void write_FAT(const std::vector<uint8_t>& FAT, const FATInfo& info)
 {
     DiskInterface::write(info.drive, info.first_fat_sector + info.base_sector, info.fat_size, FAT.data());
+    if (info.bootsector.table_count == 2)
+    {
+        // write to second table
+        DiskInterface::write(info.drive, info.first_fat_sector + info.base_sector + info.fat_size, info.fat_size, FAT.data());
+    }
+}
+
+void write_bs(const FATInfo& info)
+{
+    BS bootsector = info.bootsector;
+    memcpy(bootsector.extended_section, reinterpret_cast<const void*>(&info.ext16), 54);
+
+    std::vector<uint8_t> data(info.bootsector.bytes_per_sector);
+    DiskInterface::read(info.drive, 0, 1, data.data());
+
+    const uint8_t* ptr = reinterpret_cast<const uint8_t*>(&bootsector);
+    for (size_t i { 0 }; i < sizeof(bootsector)*sizeof(ptr[0]); ++i)
+    {
+        data[i] = ptr[i];
+    }
+
+    DiskInterface::write(info.drive, 0, 1, data.data());
 }
 
 }

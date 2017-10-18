@@ -27,6 +27,8 @@ SOFTWARE.
 
 #include "panic.hpp"
 
+#include "utils/bitops.hpp"
+
 namespace fat::detail
 {
 std::vector<uint32_t> find_free_clusters(const FATInfo &info, size_t clusters)
@@ -129,5 +131,34 @@ void free_cluster_chain(const FATInfo& info, size_t first_cluster)
     }
 
     write_FAT(FAT, info);
+}
+
+void set_dirty_bit(FATInfo info, bool value)
+{
+    if (info.type == FATType::FAT12 || info.type == FATType::FAT16)
+    {
+        info.ext16.dirty_flag = value;
+    }
+    else if (info.type == FATType::FAT32)
+    {
+        info.ext32.dirty_flag = value;
+    }
+
+    auto FAT = get_FAT(info);
+    auto second_entry = FAT_entry(FAT, info, 1);
+
+    if (info.type == FATType::FAT16)
+    {
+        bit_change(second_entry, 15, value);
+    }
+    else if (info.type == FATType::FAT32)
+    {
+        bit_change(second_entry, 27, value);
+    }
+    set_FAT_entry(FAT, info, 1, second_entry);
+
+    write_FAT(FAT, info);
+
+    write_bs(info);
 }
 }

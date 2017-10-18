@@ -102,7 +102,7 @@ void init();
 
 void mount_dev();
 
-node *find(const std::string& path);
+std::shared_ptr<node> find(const std::string& path);
 
 bool mount(std::shared_ptr<node> node, const std::string& mountpoint);
 
@@ -110,7 +110,7 @@ void traverse(const vfs::node& node, size_t indent = 0);
 void traverse(const std::string& path);
 
 extern std::vector<std::reference_wrapper<node>> descriptors;
-extern vfs_root root;
+extern std::shared_ptr<vfs_root> root;
 };
 
 #endif // VFS_HPP

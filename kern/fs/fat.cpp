@@ -72,9 +72,9 @@ fat::FATInfo fat::read_fat_fs(size_t drive, size_t base_sector)
     if (info.total_clusters < 4085)
     {
         info.type = FATType::FAT12;
-
-        err("FAT12 is not supported !\n");
         info.valid = false;
+        err("FAT12 is not supported !\n");
+
         return info;
     }
     else if (info.total_clusters < 65525)
@@ -93,6 +93,8 @@ fat::FATInfo fat::read_fat_fs(size_t drive, size_t base_sector)
 
         return info;
     }
+
+    detail::set_dirty_bit(info, true);
 
     return info;
 }
@@ -402,4 +404,9 @@ void fat::detail::set_FAT_entry(std::vector<uint8_t>& FAT, const FATInfo &info, 
     {
         *reinterpret_cast<uint32_t*>(&FAT[ent_offset]) = value & 0x0FFFFFFF;
     }
+}
+
+void fat::unmount(const FATInfo& fs)
+{
+    detail::set_dirty_bit(fs, false);
 }

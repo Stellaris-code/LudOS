@@ -32,6 +32,8 @@ SOFTWARE.
 #include "utils/messagebus.hpp"
 #include "drivers/kbd/text_handler.hpp"
 
+#include "fat.hpp"
+
 #include <typeinfo.hpp>
 
 struct stdout_file : public vfs::node
@@ -82,18 +84,20 @@ namespace vfs
 {
 
 std::vector<std::reference_wrapper<node>> descriptors;
-vfs_root root;
+std::shared_ptr<vfs_root> root;
 
 void init()
 {
+    root = std::make_shared<vfs_root>();
+
     log("VFS initialized.\n");
 }
 
 void mount_dev()
 {
-    root.vfs_children.emplace_back(std::make_shared<node>());
-    root.vfs_children.back()->rename("dev");
-    root.vfs_children.back()->m_is_dir = true;
+    root->vfs_children.emplace_back(std::make_shared<node>());
+    root->vfs_children.back()->rename("dev");
+    root->vfs_children.back()->m_is_dir = true;
 
     static auto stdin_node = std::make_shared<stdin_file>();
     stdin_node->rename("stdin");
@@ -123,25 +127,25 @@ void mount_dev()
     }
 }
 
-vfs::node* find(const std::string& path)
+std::shared_ptr<vfs::node> find(const std::string& path)
 {
     if (path == "/")
     {
-        return &root;
+        return root;
     }
 
     auto dirs = path_list(path);
-    auto cur_dir = dirs.begin();
 
-    vfs::node* cur_node = &root;
+    std::shared_ptr<vfs::node> cur_node = root;
 
-    for (auto dir : dirs)
+    for (size_t i { 0 }; i < dirs.size(); ++i)
     {
-        for (const auto& child : cur_node->readdir())
+        const auto v = cur_node->readdir();
+        for (const auto& child : v)
         {
-            if (child->name() == dir)
+            if (child->name() == dirs[i])
             {
-                cur_node = child.get();
+                cur_node = child;
                 goto contin;
             }
         }

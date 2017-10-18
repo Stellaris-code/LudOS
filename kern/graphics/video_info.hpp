@@ -1,7 +1,7 @@
 /*
-kmain.cpp
+video_info.hpp
 
-Copyright (c) 23 Yann BOUCHER (yann)
+Copyright (c) 18 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,52 +22,22 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
+#ifndef VIDEO_INFO_HPP
+#define VIDEO_INFO_HPP
 
-// TODO : FAT32 write
-// TODO : system calls
-// TODO : user mode
-// TODO : POC calculatrice
-// TODO : Paging
-// TODO : Son
-// TODO : Passer en IDE PCI : IDE UDMA
-// TODO : unifier l'interface PS/2
-// FIXME : revoir l'architecture dégeulasse de l'ownership des nodes de readdir
+#include <stdint.h>
 
-// TODO : syscalls:
-/// screen_clr()
-/// screen_move_cursor(x, y)
-/// screen_push_color(col)
-/// screen_pop_color()
-
-#ifndef __cplusplus
-#error Must be compiled using C++ !
-#endif
-
-#ifndef NDEBUG
-#define DEBUG
-#endif
-
-#ifdef ARCH_i686
-#include "i686/pc/init.hpp"
-#endif
-
-#include "init.hpp"
-
-#ifdef ARCH_i686
-extern "C"
-void kmain(uint32_t magic, const multiboot_info_t* mbd_info)
-#else
-void kmain()
-#endif
+struct VideoInfo
 {
-#ifdef ARCH_i686
-    i686::pc::init(magic, mbd_info);
-#endif
-
-    init();
-
-    while (1)
+    uint32_t framebuffer_addr { 0 };
+    uint32_t width { 0 };
+    uint32_t height { 0 };
+    uint32_t depth { 0 };
+    enum
     {
-        nop();
-    }
-}
+        Text,
+        Graphics
+    } type;
+};
+
+#endif // VIDEO_INFO_HPP

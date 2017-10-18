@@ -142,7 +142,8 @@ struct [[gnu::packed]] extBS_32
     uint16_t		backup_BS_sector;
     uint8_t 		reserved_0[12];
     uint8_t		drive_number;
-    uint8_t 		reserved_1;
+    uint8_t         reserved1 : 7;
+    uint8_t 		dirty_flag : 1;
     uint8_t		boot_signature;
     uint32_t 		volume_id;
     uint8_t		volume_label[11];
@@ -154,7 +155,8 @@ struct [[gnu::packed]] extBS_16
 {
     //extended fat12 and fat16 stuff
     uint8_t		bios_drive_num;
-    uint8_t		reserved1;
+    uint8_t     reserved1 : 7;
+    uint8_t		dirty_flag : 1;
     uint8_t		boot_signature;
     uint32_t		volume_id;
     uint8_t		volume_label[11];
@@ -167,8 +169,11 @@ struct FATInfo
     bool valid;
     size_t base_sector;
     BS bootsector;
-    extBS_16 ext16;
-    extBS_32 ext32;
+    union
+    {
+        extBS_16 ext16;
+        extBS_32 ext32;
+    };
     FATType type;
     size_t drive;
     size_t total_sectors;
@@ -217,6 +222,9 @@ void add_entry(const FATInfo& info, size_t cluster, Entry entry);
 void add_clusters(const FATInfo& info, const Entry& entry, const std::vector<uint32_t>& clusters);
 void free_cluster_chain(const FATInfo& info, size_t first_cluster);
 size_t clusters(const FATInfo& info, size_t byte_size);
+
+void write_bs(const FATInfo& info);
+void set_dirty_bit(FATInfo info, bool value);
 
 }
 
@@ -324,13 +332,9 @@ struct fat_file : public vfs::node
         return &back;
     }
 
-    virtual bool is_dir() const override { return m_is_dir; }
-    virtual std::string name() const override { return m_name; }
     virtual size_t size() const override { return entry.size; }
 
     size_t dir_cluster { 0 };
-    bool m_is_dir { false };
-    std::string m_name {};
     size_t entry_first_sector { 0 };
     size_t entry_idx { 0 };
     bool is_root { false };
@@ -348,6 +352,24 @@ private:
 FATInfo read_fat_fs(size_t drive, size_t base_sector);
 
 fat_file root_dir(const FATInfo& info);
+
+void unmount(const FATInfo& fs);
+
+class RAIIWrapper
+{
+public:
+    RAIIWrapper(const FATInfo& info)
+        : m_info(info)
+    {}
+
+    ~RAIIWrapper()
+    {
+        unmount(m_info);
+    }
+
+private:
+    const FATInfo& m_info;
+};
 
 }
 

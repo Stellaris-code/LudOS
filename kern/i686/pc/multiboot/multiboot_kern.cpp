@@ -108,6 +108,18 @@ void parse_info(const multiboot_info_t* info)
     {
         log("Bootloader name : '%s'\n", reinterpret_cast<char*>(phys(info->boot_loader_name)));
     }
+
+    if (CHECK_FLAG(info->flags, 12))
+    {
+        log("Video Framebuffer address : 0x%x\n", info->framebuffer_addr);
+        log("Video type : %s\n", info->framebuffer_type == MULTIBOOT_FRAMEBUFFER_TYPE_RGB ? "RGB" :
+                                 info->framebuffer_type == MULTIBOOT_FRAMEBUFFER_TYPE_INDEXED ? "Indexed" : "EGA Text");
+        log("Video size : %dx%d\n", info->framebuffer_width, info->framebuffer_height);
+    }
+    else
+    {
+        log("No video mode associated, defaulting to 80x25 VGA text mode\n");
+    }
 }
 
 }

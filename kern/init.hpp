@@ -61,32 +61,34 @@ inline void init()
         {
             log("Partition %zd\n", partition.partition_number);
             auto fs = fat::read_fat_fs(disk, partition.relative_sector);
+            auto wrapper = fat::RAIIWrapper(fs);
             if (fs.valid)
             {
                 log("FAT %zd filesystem found on drive %zd, partition %d\n", (size_t)fs.type, fs.drive, partition.partition_number);
 
                 auto root = std::make_shared<fat::fat_file>(fat::root_dir(fs));
 
-                vfs::mount(root, "/boot");
-
                 vfs::mount_dev();
 
-                vfs::traverse("/");
-
-                if (auto file = vfs::find("/boot/test.txt"); file)
+                if (vfs::mount(root, "/boot"))
                 {
-                    std::string str = __TIME__ "\n";
+                    vfs::traverse("/");
 
-                    file->write(str.data(), str.size());
-
-                    std::vector<uint8_t> vec;
-                    vec.resize(file->size());
-
-                    file->read(vec.data(), vec.size());
-
-                    for (auto c : vec)
+                    if (auto file = vfs::find("/boot/test.txt"); file)
                     {
-                        putchar(c);
+                        std::string str = __TIME__ "\n";
+
+                        file->write(str.data(), str.size());
+
+                        std::vector<uint8_t> vec;
+                        vec.resize(file->size());
+
+                        file->read(vec.data(), vec.size());
+
+                        for (auto c : vec)
+                        {
+                            putchar(c);
+                        }
                     }
                 }
             }

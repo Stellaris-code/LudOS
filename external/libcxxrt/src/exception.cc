@@ -606,18 +606,18 @@ extern "C" void __cxa_free_exception(void *thrown_exception)
 {
 	__cxa_exception *ex = reinterpret_cast<__cxa_exception*>(thrown_exception) - 1;
 	// Free the object that was thrown, calling its destructor
-	if (0 != ex->exceptionDestructor)
-	{
-		try
-		{
-			ex->exceptionDestructor(thrown_exception);
-		}
-		catch(...)
-		{
-			// FIXME: Check that this is really what the spec says to do.
-			std::terminate();
-		}
-	}
+//	if (0 != ex->exceptionDestructor)
+//	{
+//		try
+//		{
+//			ex->exceptionDestructor(thrown_exception);
+//		}
+//		catch(...)
+//		{
+//			// FIXME: Check that this is really what the spec says to do.
+//			std::terminate();
+//		}
+//	}
 
 	free_exception(reinterpret_cast<char*>(ex));
 }

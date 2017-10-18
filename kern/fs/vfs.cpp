@@ -32,7 +32,9 @@ SOFTWARE.
 #include "utils/messagebus.hpp"
 #include "drivers/kbd/text_handler.hpp"
 
-struct stdout_file : public vfs::file
+#include <typeinfo.hpp>
+
+struct stdout_file : public vfs::node
 {
     virtual size_t write(const void* buf, size_t n) override
     {
@@ -41,7 +43,7 @@ struct stdout_file : public vfs::file
         return n;
     }
 };
-struct stderr_file : public vfs::file
+struct stderr_file : public vfs::node
 {
     virtual size_t write(const void* buf, size_t n) override
     {
@@ -52,7 +54,7 @@ struct stderr_file : public vfs::file
     }
 };
 
-struct stdin_file : public vfs::file
+struct stdin_file : public vfs::node
 {
     virtual size_t read(void* data, size_t size) const override
     {
@@ -76,71 +78,70 @@ struct stdin_file : public vfs::file
     }
 };
 
-void vfs::init()
+namespace vfs
 {
-    root.data = std::make_shared<file>();
-    root->is_dir = true;
 
+std::vector<std::reference_wrapper<node>> descriptors;
+vfs_root root;
+
+void init()
+{
     log("VFS initialized.\n");
 }
 
-void vfs::mount_dev()
+void mount_dev()
 {
-    root->vfs_children.emplace_back();
-    root->vfs_children.back().name = "dev";
-    root->vfs_children.back().data = std::make_shared<file>();
-    root->vfs_children.back()->is_dir = true;
+    root.vfs_children.emplace_back(std::make_shared<node>());
+    root.vfs_children.back()->rename("dev");
+    root.vfs_children.back()->m_is_dir = true;
 
-    node stdin_node;
-    stdin_node.name = "stdin";
-    stdin_node.data = std::make_shared<stdin_file>();
+    static auto stdin_node = std::make_shared<stdin_file>();
+    stdin_node->rename("stdin");
 
-    descriptors.emplace_back(stdin_node);
-    if (!mount(descriptors[0], "/dev/stdin"))
+    new_descriptor(*stdin_node);
+    if (!mount(stdin_node, "/dev/stdin"))
     {
         warn("Can't mount '/dev/stdin'\n");
     }
 
-    node stdout_node;
-    stdout_node.name = "stdout";
-    stdout_node.data = std::make_shared<stdout_file>();
+    static auto stdout_node = std::make_shared<stdout_file>();
+    stdout_node->rename("stdout");
 
-    descriptors.emplace_back(stdout_node);
-    if (!mount(descriptors[1], "/dev/stdout"))
+    new_descriptor(*stdout_node);
+    if (!mount(stdout_node, "/dev/stdout"))
     {
         warn("Can't mount '/dev/stdout'\n");
     }
 
-    node stderr_node;
-    stderr_node.name = "stderr";
-    stderr_node.data = std::make_shared<stderr_file>();
+    static auto stderr_node = std::make_shared<stderr_file>();
+    stderr_node->rename("stderr");
 
-    descriptors.emplace_back(stderr_node);
-    if (!mount(descriptors[2], "/dev/stderr"))
+    new_descriptor(*stderr_node);
+    if (!mount(stderr_node, "/dev/stderr"))
     {
         warn("Can't mount '/dev/stderr'\n");
     }
 }
 
-std::optional<vfs::node> vfs::find(const std::string& path)
+vfs::node* find(const std::string& path)
 {
     if (path == "/")
     {
-        return root;
+        return &root;
     }
 
     auto dirs = path_list(path);
     auto cur_dir = dirs.begin();
 
-    vfs::node cur_node = root;
+    vfs::node* cur_node = &root;
 
     for (auto dir : dirs)
     {
         for (const auto& child : cur_node->readdir())
         {
-            if (child.name == dir)
+            if (child->name() == dir)
             {
-                cur_node = child;
+                cur_node = child.get();
                 goto contin;
             }
         }
@@ -152,7 +153,7 @@ contin:;
     return cur_node;
 }
 
-bool vfs::mount(const vfs::node &node, const std::string &mountpoint)
+bool mount(std::shared_ptr<vfs::node> node, const std::string &mountpoint)
 {
     auto point = find(parent_path(mountpoint));
     if (!point)
@@ -165,14 +166,12 @@ bool vfs::mount(const vfs::node &node, const std::string &mountpoint)
         err("Mountpoint '%s' exists\n", mountpoint.c_str());
         return false;
     }
-    (*point)->vfs_children.emplace_back(node);
-    (*point)->vfs_children.back().name = filename(mountpoint);
-    (*point)->vfs_children.back().data = node.data;
-
+    point->vfs_children.emplace_back(node);
+    point->vfs_children.back()->rename(filename(mountpoint));
     return true;
 }
 
-void vfs::traverse(const vfs::node &node, size_t indent)
+void traverse(const vfs::node &node, size_t indent)
 {
     for (size_t i { 0 }; i < indent; ++i)
     {
@@ -183,23 +182,22 @@ void vfs::traverse(const vfs::node &node, size_t indent)
     {
         kprintf("\xc0\xc4");
     }
-    kprintf("%s", node.name.c_str());
+    kprintf("%s", node.name().c_str());
     if (node.is_dir())
     {
         kprintf("/");
     }
     kprintf("\n");
-
     if (node.is_dir())
     {
-        for (auto entry : node->readdir())
+        for (const auto& entry : node.readdir())
         {
-            vfs::traverse(entry, indent+1);
+            vfs::traverse(*entry, indent+1);
         }
     }
 }
 
-void vfs::traverse(const std::string &path)
+void traverse(const std::string &path)
 {
     if (!vfs::find(path))
     {
@@ -212,8 +210,10 @@ void vfs::traverse(const std::string &path)
     }
 }
 
-size_t vfs::new_descriptor(const vfs::node &node)
+size_t new_descriptor(vfs::node &node)
 {
     descriptors.emplace_back(node);
     return descriptors.size()-1;
+}
+
 }

@@ -36,125 +36,81 @@ SOFTWARE.
 #include <unordered_map.hpp>
 
 #include "utils/stlutils.hpp"
+#include "utils/logging.hpp"
+#include "panic.hpp"
 
-class vfs
+namespace vfs
 {
-public:
-    struct node;
+struct node
+{
+    virtual std::string name() const { return m_name; }
+    virtual void rename(const std::string& name) { m_name = name; }
+    virtual uint32_t permissions() const { return m_perms; }
+    virtual void set_permissions(uint32_t perms) { m_perms = perms; }
+    virtual uint32_t uid() const { return m_uid; }
+    virtual void set_uid(uint32_t uid) { m_uid = uid; }
+    virtual uint32_t gid() const { return m_gid; }
+    virtual void set_gid(uint32_t gid) { m_gid = gid; }
+    virtual uint32_t flags() const { return m_flags; }
+    virtual void set_flags(uint32_t flags) { m_flags = flags; }
 
-    struct file
+    virtual size_t read(void* buf, size_t n) const { return 0; }
+    virtual size_t write(const void* buf, size_t n) { return 0; }
+    virtual std::vector<std::shared_ptr<node>> readdir_impl() { return {}; }
+    virtual node* mkdir(const std::string& str) { return nullptr; };
+    virtual node* touch(const std::string& str) { return nullptr; }
+    virtual size_t size() const { return 0; }
+    virtual bool is_dir() const { return m_is_dir; }
+
+    std::vector<std::shared_ptr<node>> readdir()
     {
-        uint32_t perms { 0 };
-        uint32_t uid { 0 };
-        uint32_t gid { 0 };
-        uint32_t flags { 0 };
-        uint32_t length { 0 }; // TODO : make these functions
-        bool is_dir { false };
-
-        std::vector<node> vfs_children;
-
-        virtual size_t read(void* buf, size_t n) const { return 0; }
-        virtual size_t write(const void* buf, size_t n) { return 0; }
-        virtual std::vector<node> readdir_impl() const { return {}; }
-        virtual node* mkdir(const std::string& str) { return nullptr; }
-        virtual node* touch(const std::string& str) { return nullptr; }
-
-        std::vector<node> readdir() const
-        {
-            return merge(vfs_children, readdir_impl());
-        }
-    };
-
-    struct symlink
+        return merge(vfs_children, readdir_impl());
+    }
+    std::vector<std::shared_ptr<const node>> readdir() const
     {
-        node* link;
-    };
-
-    struct node
-    {
-        std::string name;
-        // TODO : consider unique_ptr ?
-        std::variant<std::shared_ptr<file>, symlink> data;
-
-        bool is_dir() const
+        std::vector<std::shared_ptr<const node>> vec;
+        for (const auto& el : const_cast<node*>(this)->readdir())
         {
-            return get_file().is_dir;
+            vec.emplace_back(el);
         }
 
-        template <typename T = file>
-        T& get_file()
-        {
-            if (auto target = std::get_if<std::shared_ptr<file>>(&data))
-            {
-                if constexpr (std::is_same_v<T, file>)
-                {
-                    if ((*target) == nullptr) abort();
-                    return *(*target);
-                }
-                else
-                {
-                    auto ptr = dynamic_cast<T*>(target->get());
-                    if (ptr == nullptr) abort();
-                    return *ptr;
-                }
-            }
-            else
-            {
-                return std::get<symlink>(data).link->get_file<T>();
-            }
-        }
+        return vec;
+    }
 
-        template <typename T = file>
-        const T& get_file() const
-        {
-            if (auto target = std::get_if<std::shared_ptr<file>>(&data))
-            {
-                if constexpr (std::is_same_v<T, file>)
-                {
-                    if ((*target) == nullptr) abort();
-                    return *(*target);
-                }
-                else
-                {
-                    auto ptr = dynamic_cast<T>(*target);
-                    if (ptr == nullptr) abort();
-                    return *ptr;
-                }
-            }
-            else
-            {
-                return std::get<symlink>(data).link->get_file<T>();
-            }
-        }
+    std::vector<std::shared_ptr<node>> vfs_children {};
 
-        file* operator->()
-        {
-            return &get_file();
-        }
-        const file* operator->() const
-        {
-            return &get_file();
-        }
-    };
+    uint32_t m_perms { 0 };
+    uint32_t m_uid { 0 };
+    uint32_t m_gid { 0 };
+    uint32_t m_flags { 0 };
 
-    static size_t new_descriptor(const vfs::node& node);
+    std::string m_name {};
+    bool m_is_dir { false };
+};
 
-public:
+size_t new_descriptor(node &node);
 
-    static void init();
+struct vfs_root : public node
+{
+    virtual std::string name() const override { return ""; }
+    virtual node* mkdir(const std::string& str) override { panic("not implemented"); }
+    virtual node* touch(const std::string& str) override { panic("not implemented"); }
+    virtual bool is_dir() const override { return true; }
+};
 
-    static void mount_dev();
+void init();
 
-    static std::optional<vfs::node> find(const std::string& path);
+void mount_dev();
 
-    static bool mount(const vfs::node& node, const std::string& mountpoint);
+node *find(const std::string& path);
 
-    static void traverse(const vfs::node& node, size_t indent = 0);
-    static void traverse(const std::string& path);
+bool mount(std::shared_ptr<node> node, const std::string& mountpoint);
 
-    static inline std::vector<node> descriptors;
+void traverse(const vfs::node& node, size_t indent = 0);
+void traverse(const std::string& path);
 
-    static inline vfs::node root;
+extern std::vector<std::reference_wrapper<node>> descriptors;
+extern vfs_root root;
 };
 
 #endif // VFS_HPP

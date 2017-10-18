@@ -32,7 +32,7 @@ SOFTWARE.
 #include "drivers/diskinterface.hpp"
 #include "time/time.hpp"
 
-namespace fat::detail
+namespace fat
 {
 
 void fat_file::write_entry() const
@@ -87,6 +87,9 @@ void fat_file::set_creation_date() const
     write_entry();
 }
 
+namespace detail
+{
+
 bool write_cluster(const FATInfo& info, size_t cluster, const std::vector<uint8_t>& data)
 {
     assert(data.size() == info.bootsector.sectors_per_cluster * info.bootsector.bytes_per_sector);
@@ -134,5 +137,5 @@ void write_FAT(const std::vector<uint8_t>& FAT, const FATInfo& info)
     DiskInterface::write(info.drive, info.first_fat_sector + info.base_sector, info.fat_size, FAT.data());
 }
 
-
-};
+}
+}

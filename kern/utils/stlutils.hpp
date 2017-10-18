@@ -27,6 +27,7 @@ SOFTWARE.
 
 #include <string.hpp>
 #include <vector.hpp>
+#include <functional.hpp>
 
 template <class ContainerT = std::vector<std::string>>
 inline ContainerT tokenize(const std::string& str, const std::string& delimiters = " ", bool trimEmpty = false)
@@ -110,6 +111,15 @@ std::vector<Cont> split(const Cont& cont, size_t chunk_size, bool fill = false)
     }
 
     return chunks;
+}
+
+template <typename T, typename U>
+std::vector<U> map(const std::vector<T>& cont, std::function<U(const T&)> fun)
+{
+    std::vector<U> result(cont.size());
+    std::transform(cont.begin(), cont.end(), result.begin(), fun);
+
+    return result;
 }
 
 #endif // STLUTILS_HPP

@@ -180,6 +180,8 @@ struct FATInfo
     size_t total_clusters;
 };
 
+struct fat_file;
+
 namespace detail
 {
 
@@ -195,7 +197,7 @@ size_t sector_to_cluster(size_t first_sector, const fat::FATInfo &info);
 
 uint32_t next_cluster(size_t cluster, const FATInfo& info);
 
-std::vector<vfs::node> read_cluster_entries(size_t first_sector, const FATInfo& info);
+std::vector<fat_file> read_cluster_entries(size_t first_sector, const FATInfo& info);
 
 std::vector<uint8_t> read_cluster_chain(size_t cluster, const FATInfo& info);
 
@@ -203,7 +205,7 @@ std::vector<uint8_t> read_cluster(size_t first_sector, const fat::FATInfo &info)
 
 std::vector<size_t> get_cluster_chain(size_t first_cluster, const fat::FATInfo& info);
 
-vfs::node entry_to_vfs_node(const Entry& entry, const FATInfo &info, const std::string &long_name);
+fat_file entry_to_vfs_node(const Entry& entry, const FATInfo &info, const std::string &long_name);
 
 std::vector<uint8_t> get_FAT(const FATInfo& info);
 uint32_t FAT_entry(const std::vector<uint8_t>& FAT, const FATInfo &info, size_t cluster);
@@ -216,11 +218,21 @@ void add_clusters(const FATInfo& info, const Entry& entry, const std::vector<uin
 void free_cluster_chain(const FATInfo& info, size_t first_cluster);
 size_t clusters(const FATInfo& info, size_t byte_size);
 
-struct fat_file : public vfs::file
+}
+
+struct fat_file : public vfs::node
 {
+    virtual void set_flags(uint32_t flags) override
+    {
+        m_flags = flags;
+        entry.attributes = flags;
+
+        write_entry();
+    }
+
     virtual size_t read(void* buf, size_t bytes) const override
     {
-        if (is_dir)
+        if (is_dir())
         {
             return 0;
         }
@@ -238,7 +250,7 @@ struct fat_file : public vfs::file
 
     virtual size_t write(const void* buf, size_t n) override
     {
-        if (is_dir)
+        if (is_dir())
         {
             return 0;
         }
@@ -248,42 +260,45 @@ struct fat_file : public vfs::file
         update_modif_date();
         write_entry();
 
-        length = entry.size;
-
         return n;
     }
 
-    virtual std::vector<vfs::node> readdir_impl() const override
+    virtual std::vector<std::shared_ptr<vfs::node>> readdir_impl() override
     {
-        if (!is_dir)
+        if (!is_dir())
         {
             return {};
         }
+        std::vector<fat_file> entries;
 
         if (is_root)
         {
-            return fat_children;
+            entries = fat_children;
         }
         else
         {
-            return merge(detail::read_cluster_entries(detail::first_sector_of_cluster(dir_cluster, info), info), fat_children);
+            entries = merge(detail::read_cluster_entries(detail::first_sector_of_cluster(dir_cluster, info), info), fat_children);
         }
+
+        return map<fat_file, std::shared_ptr<node>>(entries, [](const fat_file& file)->std::shared_ptr<node>
+        {
+            return std::make_shared<fat_file>(file);
+        });
     }
 
     virtual vfs::node* mkdir(const std::string& str) override
     {
-        if (!is_dir)
+        if (!is_dir())
         {
             return nullptr;
         }
 
         fat_children.emplace_back();
         auto& back = fat_children.back();
-        back.get_file() = fat_file();
         // TODO : allocate
-        back.name = str;
-        back->is_dir = true;
-        back.get_file<fat_file>().set_creation_date();
+        back.m_name = str;
+        back.m_is_dir = true;
+        back.set_creation_date();
 
         update_access_date();
 
@@ -292,29 +307,34 @@ struct fat_file : public vfs::file
 
     virtual vfs::node* touch(const std::string& str) override
     {
-        if (!is_dir)
+        if (!is_dir())
         {
             return nullptr;
         }
 
         fat_children.emplace_back();
         auto& back = fat_children.back();
-        back.get_file() = fat_file();
         // TODO : allocate
-        back.name = str;
-        back->is_dir = false;
-        back.get_file<fat_file>().set_creation_date();
+        back.m_name = str;
+        back.m_is_dir = false;
+        back.set_creation_date();
 
         update_access_date();
 
         return &back;
     }
 
+    virtual bool is_dir() const override { return m_is_dir; }
+    virtual std::string name() const override { return m_name; }
+    virtual size_t size() const override { return entry.size; }
+
     size_t dir_cluster { 0 };
+    bool m_is_dir { false };
+    std::string m_name {};
     size_t entry_first_sector { 0 };
     size_t entry_idx { 0 };
     bool is_root { false };
-    std::vector<vfs::node> fat_children {};
+    std::vector<fat_file> fat_children {};
     mutable fat::Entry entry {};
     FATInfo info {};
 
@@ -324,11 +344,10 @@ private:
     void update_modif_date() const;
     void set_creation_date() const;
 };
-}
 
 FATInfo read_fat_fs(size_t drive, size_t base_sector);
 
-vfs::node root_dir(const FATInfo& info);
+fat_file root_dir(const FATInfo& info);
 
 }
 

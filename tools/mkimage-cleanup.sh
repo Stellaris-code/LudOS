@@ -4,4 +4,4 @@ echo "Cleaning up"
 umount /mnt
 kpartx -d /dev/mapper/hdd
 dmsetup remove hdd
-losetup -d /dev/loop2
+losetup -d /dev/loop3

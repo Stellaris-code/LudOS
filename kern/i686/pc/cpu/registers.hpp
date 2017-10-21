@@ -30,7 +30,7 @@ SOFTWARE.
 #include "halt.hpp"
 #include <stdio.h>
 
-#include "../serial/serialdebug.hpp"
+#include "utils/logging.hpp"
 
 struct [[gnu::packed]] registers
 {
@@ -115,24 +115,24 @@ inline void dump_serial(const registers* regs)
 {
     if (regs)
     {
-        serial::debug::write("eip : 0x%x\n", static_cast<unsigned int>(regs->eip));
+        log_serial("%x\n", static_cast<unsigned int>(regs->eip));
 
-        serial::debug::write("int : 0x%x  err code : 0x%x\n", static_cast<unsigned int>(regs->int_no), static_cast<unsigned int>(regs->err_code));
+        log_serial("int : 0x%x  err code : 0x%x\n", static_cast<unsigned int>(regs->int_no), static_cast<unsigned int>(regs->err_code));
 
-        serial::debug::write("eax : 0x%x  ebx : 0x%x\n", static_cast<unsigned int>(regs->eax), static_cast<unsigned int>(regs->ebx));
+        log_serial("eax : 0x%x  ebx : 0x%x\n", static_cast<unsigned int>(regs->eax), static_cast<unsigned int>(regs->ebx));
 
-        serial::debug::write("ecx : 0x%x  edx : 0x%x\n", static_cast<unsigned int>(regs->ecx), static_cast<unsigned int>(regs->edx));
-        serial::debug::write("ebx : 0x%x  esi : 0x%x\n", static_cast<unsigned int>(regs->ebp), static_cast<unsigned int>(regs->esi));
-        serial::debug::write("edi : 0x%x\n\n", static_cast<unsigned int>(regs->edi));
+        log_serial("ecx : 0x%x  edx : 0x%x\n", static_cast<unsigned int>(regs->ecx), static_cast<unsigned int>(regs->edx));
+        log_serial("ebx : 0x%x  esi : 0x%x\n", static_cast<unsigned int>(regs->ebp), static_cast<unsigned int>(regs->esi));
+        log_serial("edi : 0x%x\n\n", static_cast<unsigned int>(regs->edi));
 
-        serial::debug::write("cr0 : 0x%x  cr2 : 0x%x\n", static_cast<unsigned int>(cr0()), static_cast<unsigned int>(cr2()));
-        serial::debug::write("cr3 : 0x%x  cr4 : 0x%x\n\n", static_cast<unsigned int>(cr3()), static_cast<unsigned int>(cr4()));
+        log_serial("cr0 : 0x%x  cr2 : 0x%x\n", static_cast<unsigned int>(cr0()), static_cast<unsigned int>(cr2()));
+        log_serial("cr3 : 0x%x  cr4 : 0x%x\n\n", static_cast<unsigned int>(cr3()), static_cast<unsigned int>(cr4()));
 
-        serial::debug::write("gs : 0x%x  fs : 0x%x\n", static_cast<unsigned int>(regs->gs), static_cast<unsigned int>(regs->fs));
-        serial::debug::write("es : 0x%x  ds : 0x%x\n\n", static_cast<unsigned int>(regs->es), static_cast<unsigned int>(regs->ds));
+        log_serial("gs : 0x%x  fs : 0x%x\n", static_cast<unsigned int>(regs->gs), static_cast<unsigned int>(regs->fs));
+        log_serial("es : 0x%x  ds : 0x%x\n\n", static_cast<unsigned int>(regs->es), static_cast<unsigned int>(regs->ds));
 
-        serial::debug::write("cs : 0x%x  eflags : 0x%x\n", static_cast<unsigned int>(regs->cs), static_cast<unsigned int>(regs->eflags));
-        serial::debug::write("ss : 0x%x  esp : 0x%x\n", static_cast<unsigned int>(regs->ss), static_cast<unsigned int>(regs->esp));
+        log_serial("cs : 0x%x  eflags : 0x%x\n", static_cast<unsigned int>(regs->cs), static_cast<unsigned int>(regs->eflags));
+        log_serial("ss : 0x%x  esp : 0x%x\n", static_cast<unsigned int>(regs->ss), static_cast<unsigned int>(regs->esp));
     }
 }
 

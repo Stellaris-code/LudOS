@@ -34,11 +34,13 @@ SOFTWARE.
 
 void log(const char * __restrict fmt, ...)
 {
+    term->push_color({0x00aa00, 0});
     kprintf("[%f] ", uptime());
+    term->pop_color();
 
     va_list va;
     va_start(va, fmt);
-    tfp_format(nullptr, [](void*, char c){putchar(c);}, fmt, va);
+    kvprintf(fmt, va);
     va_end(va);
 }
 
@@ -46,11 +48,13 @@ void warn(const char * __restrict fmt, ...)
 {
     term->push_color({0xff5555, 0});
 
+    term->push_color({0x00aa00, 0});
     kprintf("[%f] ", uptime());
+    term->pop_color();
 
     va_list va;
     va_start(va, fmt);
-    tfp_format(nullptr, [](void*, char c){putchar(c); serial::debug::write("%c", c);}, fmt, va);
+    tfp_format(nullptr, [](void*, char c){putchar(c); log_serial("%c", c);}, fmt, va);
     va_end(va);
 
     term->pop_color();
@@ -60,11 +64,13 @@ void err(const char * __restrict fmt, ...)
 {
     term->push_color({0xaa0000, 0});
 
+    term->push_color({0x00aa00, 0});
     kprintf("[%f] ", uptime());
+    term->pop_color();
 
     va_list va;
     va_start(va, fmt);
-    tfp_format(nullptr, [](void*, char c){putchar(c); serial::debug::write("%c", c);}, fmt, va);
+    tfp_format(nullptr, [](void*, char c){putchar(c); log_serial("%c", c);}, fmt, va);
     va_end(va);
 
     term->pop_color();

@@ -31,14 +31,23 @@ SOFTWARE.
 #include "io.hpp"
 #include "utils/bitops.hpp"
 #include "utils/nop.hpp"
+#include "utils/memutils.hpp"
+#include "time/timer.hpp"
 
 #include <array.hpp>
 #include <string.hpp>
 
-void ide::pio::detail::common(BusPort port, uint8_t type, uint32_t block, uint8_t count)
+void ide::pio::detail::common(BusPort port, uint8_t type, uint64_t block, uint16_t count)
 {
-    outb(port + 6, type | ((block >> 24) & 0x0F));
-    outb(port + 2, count);
+    outb(port + 6, 0x40 | type);
+
+    outb(port + 2, (count >> 8) & 0xFF);
+
+    outb(port + 3, (block >> 24) & 0xFF);
+    outb(port + 4, (block >> 32) & 0xFF);
+    outb(port + 5, (block >> 40) & 0xFF);
+
+    outb(port + 2, count & 0xFF);
 
     outb(port + 3, block & 0xFF);
     outb(port + 4, (block >> 8) & 0xFF);
@@ -51,54 +60,21 @@ void ide::pio::detail::common(BusPort port, uint8_t type, uint32_t block, uint8_
     }
 }
 
-bool ide::pio::read(BusPort port, ide::DriveType type, uint32_t block, uint8_t count, uint8_t *buf)
+bool ide::pio::detail::read_one(BusPort port, ide::DriveType type, uint64_t block, uint16_t *buf)
 {
-    detail::common(port, type, block, count);
-    outb(port + 7, 0x20);
+    detail::common(port, type, block, 1);
+    outb(port + 7, 0x24);
 
-    for (size_t sector { 0 }; sector < count; ++sector)
+    for (size_t i { 0 }; i < 256; ++i)
     {
-        detail::poll_bsy(port);
-        detail::poll(port); // TODO : use IRQ !
-
-        for (size_t i { 0 }; i < 256; ++i)
-        {
-            uint32_t tmpword = inw(port + 0);
-            buf[sector*512+i * 2] = tmpword & 0xFF;
-            buf[sector*512+i * 2 + 1] = (tmpword >> 8) & 0xFF;
-
-            if (detail::error_set(port)) // reads status register and resets INTRQ
-            {
-                bool stat = !detail::error_set(port);
-                if (!stat)
-                {
-                    detail::clear_error(port);
-
-                    return stat;
-                }
-            }
-        }
-    }
-
-    return true;
-}
-
-
-bool ide::pio::write(BusPort port, ide::DriveType type, uint32_t block, uint8_t count, const uint8_t *buf)
-{
-    detail::common(port, type, block, count);
-
-    outb(port + 7, 0x30);
-
-    detail::poll_bsy(port);
-    detail::poll(port);
-
-    for (int i = count * 256; --i >= 0;)
-    {
-        outw(port + 0, *buf++);
-
         detail::poll_bsy(port);
         detail::poll(port);
+
+        *buf++ = inw(port + 0);
+        //        if (i == 0)
+        //        {
+        //            err("sect %d, val : 0x%x\n", block, *(buf - 1));
+        //        }
 
         if (detail::error_set(port))
         {
@@ -112,7 +88,40 @@ bool ide::pio::write(BusPort port, ide::DriveType type, uint32_t block, uint8_t 
         }
     }
 
-    outb(port + 7, 0xE7); // cache flush
+    return true;
+}
+
+
+bool ide::pio::detail::write_one(BusPort port, ide::DriveType type, uint64_t block, const uint16_t *buf)
+{
+//    detail::common(port, type, block, 1);
+
+//    outb(port + 7, 0x34);
+
+//    detail::poll_bsy(port);
+//    detail::poll(port);
+
+//    for (size_t i { 0 }; i < 256; ++i)
+//    {
+////        detail::poll_bsy(port);
+////        //detail::poll(port);
+//        Timer::sleep(1);
+
+//        outw(port + 0, *buf++);
+
+//        if (detail::error_set(port))
+//        {
+//            bool stat = !detail::error_set(port);
+//            if (!stat)
+//            {
+//                detail::clear_error(port);
+
+//                return stat;
+//            }
+//        }
+//    }
+
+//    flush(port);
 
     return true;
 }
@@ -165,7 +174,7 @@ void ide::pio::init()
             {
                 DiskInterface::add_drive([bus, type](uint32_t sector, uint8_t count, uint8_t* buf)
                 {
-                    auto status = read(bus, type, sector, count, buf);
+                    auto status = read(bus, type, sector, count, reinterpret_cast<uint16_t*>(buf));
                     if (!status)
                     {
                         DiskInterface::last_error = DiskInterface::Error::Unknown;
@@ -175,7 +184,7 @@ void ide::pio::init()
                 },
                 [bus, type](uint32_t sector, uint8_t count, const uint8_t* buf)
                 {
-                    auto status = write(bus, type, sector, count, buf);
+                    auto status = write(bus, type, sector, count, reinterpret_cast<const uint16_t*>(buf));
                     if (!status)
                     {
                         DiskInterface::last_error = DiskInterface::Error::Unknown;
@@ -272,3 +281,22 @@ std::vector<std::pair<ide::BusPort, ide::DriveType>> ide::pio::scan()
     return result;
 }
 
+
+bool ide::pio::read(BusPort port, DriveType type, uint64_t block, size_t count, uint16_t *buf)
+{
+    for (size_t i { 0 }; i < count; ++i)
+    {
+        detail::read_one(port, type, block + i, buf);
+        buf += 256;
+    }
+}
+
+bool ide::pio::write(BusPort port, DriveType type, uint64_t block, size_t count, const uint16_t *buf)
+{
+    for (size_t i { 0 }; i < count; ++i)
+    {
+        //err("bob %d/%d\n",i, count);
+        detail::write_one(port, type, block + i, buf);
+        buf += 256;
+    }
+}

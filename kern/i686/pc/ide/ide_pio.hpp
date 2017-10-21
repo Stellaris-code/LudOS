@@ -41,8 +41,8 @@ namespace pio
 
 void init();
 
-bool read(BusPort port, DriveType type, uint32_t block, uint8_t count, uint8_t* buf);
-bool write(BusPort port, DriveType type, uint32_t block, uint8_t count, const uint8_t* buf);
+bool read(BusPort port, DriveType type, uint64_t block, size_t count, uint16_t* buf);
+bool write(BusPort port, DriveType type, uint64_t block, size_t count, const uint16_t* buf);
 
 uint8_t error_register(BusPort port);
 uint8_t status_register(BusPort port);
@@ -53,7 +53,9 @@ std::optional<identify_data> identify(BusPort port, DriveType type);
 
 namespace detail
 {
-void common(BusPort port, uint8_t type, uint32_t block, uint8_t count);
+void common(BusPort port, uint8_t type, uint64_t block, uint16_t count);
+bool read_one(BusPort port, DriveType type, uint64_t block, uint16_t* buf);
+bool write_one(BusPort port, DriveType type, uint64_t block, const uint16_t* buf);
 void poll(BusPort port);
 void poll_bsy(BusPort port);
 void flush(BusPort port);

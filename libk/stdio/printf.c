@@ -145,12 +145,6 @@ static void li2a(long num, struct param *p)
 }
 #endif
 
-static void u2b(unsigned int num, struct param *p)
-{
-    char* bf = p->bf;
-
-}
-
 static void ui2a(unsigned int num, struct param *p)
 {
     int n = 0;

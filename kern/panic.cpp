@@ -34,7 +34,6 @@ SOFTWARE.
 
 #ifdef ARCH_i686
 #include "i686/pc/devices/speaker.hpp"
-#include "i686/pc/serial/serialdebug.hpp"
 #include "i686/pc/interrupts/interrupts.hpp"
 #include "i686/pc/cpu/registers.hpp"
 #endif
@@ -44,19 +43,19 @@ SOFTWARE.
 [[noreturn]]
 void panic(const char *fmt, ...)
 {
-    serial::debug::write("Kernel Panic !\n");
-    serial::debug::write("caller : 0x%x\n", __builtin_return_address(0));
+    log_serial("Kernel Panic !\n");
+    log_serial("caller : 0x%x\n", __builtin_return_address(0));
 
     cli();
 
     {
         va_list va;
         va_start(va, fmt);
-        tfp_format(nullptr, [](void*, char c){serial::debug::write("%c", c);}, fmt, va);
+        tfp_format(nullptr, [](void*, char c){log_serial("%c", c);}, fmt, va);
         va_end(va);
     }
 
-    serial::debug::write("\n");
+    log_serial("\n");
 
     auto regs = get_registers();
 

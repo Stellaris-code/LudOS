@@ -30,6 +30,11 @@ SOFTWARE.
 #include <functional.hpp>
 #include <vector.hpp>
 
+#include "utils/memutils.hpp"
+
+// TODO : add possibility to remove disk
+// TODO : add info() call returns structs with size, etc...
+
 class DiskInterface
 {
 public:
@@ -41,16 +46,17 @@ public:
 
 public:
 
-    using ReadFunction  = std::function<bool(uint32_t sector, uint8_t count, uint8_t* buf)>;
-    using WriteFunction = std::function<bool(uint32_t sector, uint8_t count, const uint8_t* buf)>;
+    using ReadFunction  = std::function<bool(size_t sector, size_t count, uint8_t* buf)>;
+    using WriteFunction = std::function<bool(size_t sector, size_t count, const uint8_t* buf)>;
 
-    static inline bool read(size_t disk_num, uint32_t sector, uint8_t count, uint8_t* buf)
+    static inline bool read(size_t disk_num, size_t sector, size_t count, uint8_t* buf)
     {
         assert(disk_num < drive_count());
+
         return m_read_funs[disk_num](sector, count, buf);
     }
 
-    static inline bool write(size_t disk_num, uint32_t sector, uint8_t count, const uint8_t* buf)
+    static inline bool write(size_t disk_num, size_t sector, size_t count, const uint8_t* buf)
     {
         assert(disk_num < drive_count());
         return m_write_funs[disk_num](sector, count, buf);
@@ -67,6 +73,33 @@ public:
         m_write_funs.emplace_back(write_fun);
 
         return ++m_drive_count;
+    }
+
+    static inline size_t add_memory_drive(void* address)
+    {
+        add_drive([address](uint32_t sector, uint8_t count, uint8_t* buf)
+        {
+            memcpy(buf, reinterpret_cast<const uint8_t*>(address) + sector*512, count);
+            return true;
+        },
+        [address](uint32_t sector, uint8_t count, const uint8_t* buf)
+        {
+            memcpy(reinterpret_cast<uint8_t*>(address) + sector*512, buf, count);
+            return true;
+        });
+    }
+
+    static inline size_t add_memory_drive(const void* address)
+    {
+        add_drive([address](uint32_t sector, uint8_t count, uint8_t* buf)
+        {
+            memcpy(buf, reinterpret_cast<const uint8_t*>(address) + sector*512, count);
+            return true;
+        },
+        [address](uint32_t sector, uint8_t count, const uint8_t* buf)
+        {
+            return false;
+        });
     }
 
     static inline Error last_error { Error::OK };

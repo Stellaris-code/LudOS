@@ -45,12 +45,14 @@ SOFTWARE.
 
 #include "utils/logging.hpp"
 #include "utils/messagebus.hpp"
+#include "utils/memutils.hpp"
 
 #include "time/time.hpp"
 
 inline void init()
 {
     vfs::init();
+    vfs::mount_dev();
 
     log("Available drives : %zd\n", DiskInterface::drive_count());
 
@@ -68,9 +70,9 @@ inline void init()
 
                 auto root = std::make_shared<fat::fat_file>(fat::root_dir(fs));
 
-                vfs::mount_dev();
+                vfs::traverse("/");
 
-                if (vfs::mount(root, "/boot"))
+                if (false && vfs::mount(root, "/boot"))
                 {
                     vfs::traverse("/");
 
@@ -99,7 +101,6 @@ inline void init()
 
         }
     }
-
     greet();
 
     kbd::install_mapping(kbd::mappings::azerty());

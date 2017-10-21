@@ -30,6 +30,7 @@ SOFTWARE.
 
 #include "utils/align.hpp"
 #include "utils/addr.hpp"
+#include "utils/memutils.hpp"
 
 #include "../mem/meminfo.hpp"
 
@@ -76,7 +77,7 @@ void parse_info(const multiboot_info_t* info)
     {
         log("Command line : '%s'\n", reinterpret_cast<char*>(phys(info->cmdline)));
     }
-    /*if (CHECK_FLAG (info->flags, 3))
+    if (CHECK_FLAG (info->flags, 3))
     {
         multiboot_module_t * mod { reinterpret_cast<multiboot_module_t *>(phys(info->mods_addr)) };
 
@@ -88,7 +89,7 @@ void parse_info(const multiboot_info_t* info)
             kprintf(" Module end : 0x%x\n", mod->mod_end);
             kprintf(" Module cmdline : '%s'\n", reinterpret_cast<char*>(phys(mod->cmdline)));
         }
-    }*/
+    }
     if (CHECK_FLAG (info->flags, 6))
     {
         for (multiboot_memory_map_t *mmap = reinterpret_cast<multiboot_memory_map_t *>(phys(info->mmap_addr));

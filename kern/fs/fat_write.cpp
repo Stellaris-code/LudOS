@@ -148,7 +148,7 @@ void write_bs(const FATInfo& info)
     memcpy(bootsector.extended_section, reinterpret_cast<const void*>(&info.ext16), 54);
 
     std::vector<uint8_t> data(info.bootsector.bytes_per_sector);
-    DiskInterface::read(info.drive, 0, 1, data.data());
+    DiskInterface::read(info.drive, info.base_sector, 1, data.data());
 
     const uint8_t* ptr = reinterpret_cast<const uint8_t*>(&bootsector);
     for (size_t i { 0 }; i < sizeof(bootsector)*sizeof(ptr[0]); ++i)
@@ -156,7 +156,7 @@ void write_bs(const FATInfo& info)
         data[i] = ptr[i];
     }
 
-    DiskInterface::write(info.drive, 0, 1, data.data());
+    DiskInterface::write(info.drive, info.base_sector, 1, data.data());
 }
 
 }

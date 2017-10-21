@@ -28,6 +28,8 @@ SOFTWARE.
 #include <assert.h>
 #include <string.h>
 
+#include "utils/logging.hpp"
+
 HistoryBuffer::HistoryBuffer(size_t line_width, size_t height)
     : m_line_width(line_width), m_data(height)
 {
@@ -50,9 +52,7 @@ HistoryBuffer::Entry HistoryBuffer::get_char(size_t x, size_t y) const
 
 void HistoryBuffer::add(const std::vector<Entry>& line)
 {
-    m_data[m_front] = line;
-
-    ++m_front;
+    m_data[m_front++] = line;
 
     if (m_front == m_data.size())
     {

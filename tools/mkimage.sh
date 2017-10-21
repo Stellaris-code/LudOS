@@ -16,11 +16,11 @@ cat fdisk.conf | fdisk $DISK
 echo "Done partition."
 
 # Here's where we need to be root.
-losetup /dev/loop2 $DISK
+losetup /dev/loop3 $DISK
 
 IMAGE_SIZE=`wc -c < $DISK`
 IMAGE_SIZE_SECTORS=`expr $IMAGE_SIZE / 512`
-MAPPER_LINE="0 $IMAGE_SIZE_SECTORS linear 7:2 0"
+MAPPER_LINE="0 $IMAGE_SIZE_SECTORS linear 7:3 0"
 
 echo "$MAPPER_LINE" | dmsetup create hdd
 
@@ -42,14 +42,16 @@ insmod fat
 insmod iso9660
 menuentry "LudOS" {
 	multiboot /boot/LudOS.bin
+    module    /boot/initrd.img initrd
 }
 EOF
 
 echo "Installing kernel."
 cp -r ../build/bin/LudOS.bin /mnt/boot/
+cp -r ../isodir/boot/initrd.img /mnt/boot/
 
 echo "Installing grub."
-grub-install --boot-directory=/mnt/boot /dev/loop2
+grub-install --boot-directory=/mnt/boot /dev/loop3
 
 ./mkimage-cleanup.sh
 
@@ -58,6 +60,6 @@ if [ -n "$SUDO_USER" ] ; then
     chown $SUDO_USER:$SUDO_USER $DISK
 fi
 
-mv LudOS.img ../build/bin/LudOS.img
+mv $DISK ../build/bin/$DISK
 
 echo "Done. You can boot the disk image with qemu now."

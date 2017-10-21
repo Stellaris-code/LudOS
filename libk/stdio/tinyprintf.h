@@ -154,6 +154,7 @@ int tfp_vsnprintf(char *str, size_t size, const char *fmt, va_list ap);
 int tfp_snprintf(char *str, size_t size, const char *fmt, ...) \
      PRINTF_FMT(3, 4);
 int tfp_vsprintf(char *str, const char *fmt, va_list ap);
+void tfp_vprintf(const char *fmt, va_list ap);
 int tfp_sprintf(char *str, const char *fmt, ...) \
    PRINTF_FMT(2, 3);
 int tfp_swprintf(wchar_t *str, size_t len, const wchar_t *fmt, ...);
@@ -162,6 +163,7 @@ int tfp_swprintf(wchar_t *str, size_t len, const wchar_t *fmt, ...);
 #  define ksnprintf tfp_snprintf
 #  define kvsprintf tfp_vsprintf
 #  define ksprintf tfp_sprintf
+#  define kvprintf tfp_vprintf
 #  define kswprintf tfp_swprintf
 # endif
 #endif

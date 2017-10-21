@@ -177,14 +177,14 @@ void Terminal::show_history(int page)
 
     current_history_page = page;
 
-    for (size_t i { title_height }; i < height(); ++i)
+    for (size_t i { 0 }; i < height()-1; ++i)
     {
-        int index = history.size() - (height()-i) - page + title_height;
+        int index = history.size() - (height()-i) - page;
         if (index >= 0)
         {
             for (size_t j { 0 }; j < width(); ++j)
             {
-                set_entry_at(history.get_char(j, index-title_height).c, history.get_char(j, index-title_height).color, j, i-title_height);
+                set_entry_at(history.get_char(j, index).c, history.get_char(j, index).color, j, i);
             }
         }
     }
@@ -204,10 +204,14 @@ void Terminal::set_title(std::string str)
 
     size_t offset = width()/2 - str.size()/2;
 
-    for (size_t i { 0 }; i < width(); ++i)
+    for (size_t j { 0 }; j < title_height; ++j)
     {
-        set_entry_at(' ', TermEntry{0x000000, 0x00aaaa}, i, 0, true);
+        for (size_t i { 0 }; i < width(); ++i)
+        {
+            set_entry_at(' ', TermEntry{0x000000, 0x00aaaa}, i, j, true);
+        }
     }
+
     for (size_t i { 0 }; i < str.size(); ++i)
     {
         set_entry_at(str[i], TermEntry{0x000000, 0x00aaaa}, offset+i, 0, true);

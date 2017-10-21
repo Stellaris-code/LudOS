@@ -30,8 +30,8 @@ SOFTWARE.
 #include "isr.hpp"
 
 #include "io.hpp"
-#include "../serial/serialdebug.hpp"
 #include "terminal/terminal.hpp"
+#include "utils/logging.hpp"
 
 #include <stdio.h>
 
@@ -83,12 +83,12 @@ const registers* isr_handler(const registers* const regs)
             cli();
             // assume terminal is broken
             dump_serial(regs);
-            serial::debug::write("Double fault, aborting\n");
+            log_serial("Double fault, aborting\n");
             halt();
             return regs;
         }
 
-        serial::debug::write("eip : 0x%lx\n", regs->eip);
+        log_serial("eip : 0x%lx\n", regs->eip);
 
         panic("Unhandeld interrupt (type : '%s') 0x%lx with error code 0x%lx at 0x%lx\n"
               "edx : 0x%lx\ncr2 : 0x%lx", exception_messages[regs->int_no], regs->int_no, regs->err_code, regs->eip, regs->edx, cr2());

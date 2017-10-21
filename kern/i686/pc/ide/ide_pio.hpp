@@ -58,7 +58,7 @@ bool read_one(BusPort port, DriveType type, uint64_t block, uint16_t* buf);
 bool write_one(BusPort port, DriveType type, uint64_t block, const uint16_t* buf);
 void poll(BusPort port);
 void poll_bsy(BusPort port);
-void flush(BusPort port);
+bool flush(BusPort port);
 bool error_set(BusPort port);
 void clear_error(BusPort port);
 }

@@ -31,6 +31,8 @@ SOFTWARE.
 #include <vector.hpp>
 
 #include "utils/memutils.hpp"
+#include "utils/defs.hpp"
+#include "panic.hpp"
 
 // TODO : add possibility to remove disk
 // TODO : add info() call returns structs with size, etc...
@@ -59,7 +61,19 @@ public:
     static inline bool write(size_t disk_num, size_t sector, size_t count, const uint8_t* buf)
     {
         assert(disk_num < drive_count());
-        return m_write_funs[disk_num](sector, count, buf);
+        auto result = m_write_funs[disk_num](sector, count, buf);
+
+#ifdef LUDOS_TESTING
+        // check if write succeeded
+        std::vector<uint8_t> data(512 * count);
+        read(disk_num, sector, count, data.data());
+        for (size_t i { 0 }; i < data.size(); ++i)
+        {
+            if (buf[i] != data[i]) err("%d : 0x%x/0x%x\n", i, buf[i], data[i]);
+        }
+#endif
+
+        return result;
     }
 
     static inline size_t drive_count()

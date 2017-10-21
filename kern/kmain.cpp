@@ -44,9 +44,7 @@ SOFTWARE.
 #error Must be compiled using C++ !
 #endif
 
-#ifndef NDEBUG
-#define DEBUG
-#endif
+#include "utils/defs.hpp"
 
 #ifdef ARCH_i686
 #include "i686/pc/init.hpp"

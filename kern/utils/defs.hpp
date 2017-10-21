@@ -34,4 +34,12 @@ SOFTWARE.
 
 #define CURRENT_YEAR 2017 // TODO : use CMake to generate the year
 
+#ifndef NDEBUG
+#define LUDOS_DEBUG
+#endif
+
+#if 0
+#define LUDOS_TESTING
+#endif
+
 #endif // DEFS_HPP

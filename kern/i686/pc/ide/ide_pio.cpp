@@ -94,36 +94,30 @@ bool ide::pio::detail::read_one(BusPort port, ide::DriveType type, uint64_t bloc
 
 bool ide::pio::detail::write_one(BusPort port, ide::DriveType type, uint64_t block, const uint16_t *buf)
 {
-//    detail::common(port, type, block, 1);
+    detail::common(port, type, block, 1);
 
-//    outb(port + 7, 0x34);
+    outb(port + 7, 0x34);
 
-//    detail::poll_bsy(port);
-//    detail::poll(port);
+    detail::poll_bsy(port);
+    detail::poll(port);
 
-//    for (size_t i { 0 }; i < 256; ++i)
-//    {
-////        detail::poll_bsy(port);
-////        //detail::poll(port);
-//        Timer::sleep(1);
+    for (size_t i { 0 }; i < 256; ++i)
+    {
+        outw(port + 0, *buf++);
 
-//        outw(port + 0, *buf++);
+        if (detail::error_set(port))
+        {
+            bool stat = !detail::error_set(port);
+            if (!stat)
+            {
+                detail::clear_error(port);
 
-//        if (detail::error_set(port))
-//        {
-//            bool stat = !detail::error_set(port);
-//            if (!stat)
-//            {
-//                detail::clear_error(port);
+                return stat;
+            }
+        }
+    }
 
-//                return stat;
-//            }
-//        }
-//    }
-
-//    flush(port);
-
-    return true;
+    return flush(port);
 }
 
 
@@ -139,9 +133,28 @@ void ide::pio::detail::poll_bsy(BusPort port)
     while ((inb(port + 7) & 0x80) && max_iters-- > 0) { nop(); }
 }
 
-void ide::pio::detail::flush(BusPort port)
+bool ide::pio::detail::flush(BusPort port)
 {
-    outb(port + 7, 0xE7);
+    detail::poll_bsy(port);
+    detail::poll(port);
+
+    outb(port + 7, 0xEA);
+
+    detail::poll_bsy(port);
+    detail::poll(port);
+
+    if (detail::error_set(port))
+    {
+        bool stat = !detail::error_set(port);
+        if (!stat)
+        {
+            detail::clear_error(port);
+
+            return stat;
+        }
+    }
+
+    return true;
 }
 
 bool ide::pio::detail::error_set(BusPort port)
@@ -295,7 +308,6 @@ bool ide::pio::write(BusPort port, DriveType type, uint64_t block, size_t count,
 {
     for (size_t i { 0 }; i < count; ++i)
     {
-        //err("bob %d/%d\n",i, count);
         detail::write_one(port, type, block + i, buf);
         buf += 256;
     }

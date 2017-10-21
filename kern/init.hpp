@@ -72,7 +72,7 @@ inline void init()
 
                 vfs::traverse("/");
 
-                if (false && vfs::mount(root, "/boot"))
+                if (vfs::mount(root, "/boot"))
                 {
                     vfs::traverse("/");
 

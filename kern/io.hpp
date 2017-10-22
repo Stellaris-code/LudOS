@@ -35,6 +35,11 @@ uint8_t inb(uint16_t port);
 uint16_t inw(uint16_t port);
 uint32_t inl(uint16_t port);
 
+extern "C"
+void insw(uint16_t port, uint16_t* address, uint32_t repetitions);
+extern "C"
+void outsw(uint16_t port, const uint16_t* address, uint32_t repetitions);
+
 void io_wait();
 
 #endif // IO_HPP

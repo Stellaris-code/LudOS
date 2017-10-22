@@ -46,6 +46,7 @@ SOFTWARE.
 #include "utils/logging.hpp"
 #include "utils/messagebus.hpp"
 #include "utils/memutils.hpp"
+#include "halt.hpp"
 
 #include "time/time.hpp"
 
@@ -55,6 +56,12 @@ inline void init()
     vfs::mount_dev();
 
     log("Available drives : %zd\n", DiskInterface::drive_count());
+
+//    std::vector<uint8_t> data(512);
+//    DiskInterface::read(0, 0, 1, data.data());
+
+//    dump(data.data(), data.size());
+//    halt();
 
     for (size_t disk { 0 }; disk < DiskInterface::drive_count(); ++disk)
     {
@@ -69,8 +76,6 @@ inline void init()
                 log("FAT %zd filesystem found on drive %zd, partition %d\n", (size_t)fs.type, fs.drive, partition.partition_number);
 
                 auto root = std::make_shared<fat::fat_file>(fat::root_dir(fs));
-
-                vfs::traverse("/");
 
                 if (vfs::mount(root, "/boot"))
                 {
@@ -144,6 +149,11 @@ inline void init()
             term->scroll_history(6);
         }
     });
+
+//    std::vector<uint8_t> data(vfs::find("/boot/boot/initrd.img")->size());
+//    vfs::find("/boot/boot/initrd.img")->read(data.data(), data.size());
+
+//    dump(data.data(), 1024);
 }
 
 #endif // ARCH_INDEP_INIT_HPP

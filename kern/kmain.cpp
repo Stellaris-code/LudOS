@@ -32,7 +32,8 @@ SOFTWARE.
 // TODO : Passer en IDE PCI : IDE UDMA
 // TODO : unifier l'interface PS/2
 // FIXME : revoir l'architecture dégeulasse de l'ownership des nodes de readdir
-// FIXME : Terminal buggy with ATA PIO
+// BUG : Terminal scroll loops ?
+// TODO : ACPI shutdown request
 
 // TODO : syscalls:
 /// screen_clr()

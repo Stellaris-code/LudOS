@@ -63,7 +63,7 @@ public:
         assert(disk_num < drive_count());
         auto result = m_write_funs[disk_num](sector, count, buf);
 
-#ifdef LUDOS_TESTING
+#if  defined(LUDOS_TESTING)
         // check if write succeeded
         std::vector<uint8_t> data(512 * count);
         read(disk_num, sector, count, data.data());

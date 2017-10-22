@@ -52,7 +52,7 @@ fat::FATInfo fat::read_fat_fs(size_t drive, size_t base_sector)
 
     info.drive = drive;
 
-    if ((bootsector.bootjmp[0] != 0xEB && bootsector.bootjmp[0] != 0xE9) || bootsector.bytes_per_sector == 0)
+    if ((bootsector.bootjmp[0] != 0xEB && bootsector.bootjmp[0] != 0xE9) || bootsector.bytes_per_sector == 0 || bootsector.sectors_per_cluster == 0)
     {
         info.valid = false;
 
@@ -300,7 +300,6 @@ std::vector<uint8_t> fat::detail::read(const fat::Entry &entry, const FATInfo &i
     {
         std::vector<uint8_t> data;
         data = detail::read_cluster_chain(entry.low_cluster_bits | (entry.high_cluster_bits << 16), info);
-        //log("size : %d (%d clusters)\n", data.size(), data.size()/info.bootsector.bytes_per_sector/info.bootsector.sectors_per_cluster);
 
         data.resize(std::min<size_t>(entry.size, nbytes));
         return data;
@@ -365,6 +364,8 @@ uint32_t fat::detail::FAT_entry(const std::vector<uint8_t>& FAT, const FATInfo &
     {
         fat_offset = cluster * 4;
     }
+
+
     uint32_t ent_offset = fat_offset % info.bootsector.bytes_per_sector;
     uint32_t table_value = *reinterpret_cast<const uint16_t*>(&FAT[ent_offset]);
     if (info.type == FATType::FAT32)
@@ -395,6 +396,7 @@ void fat::detail::set_FAT_entry(std::vector<uint8_t>& FAT, const FATInfo &info, 
     {
         fat_offset = cluster * 4;
     }
+
     uint32_t ent_offset = fat_offset % info.bootsector.bytes_per_sector;
     if (info.type == FATType::FAT16)
     {

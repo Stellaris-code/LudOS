@@ -36,6 +36,7 @@ SOFTWARE.
 // TODO : v86 mode
 // TODO : TinyGL
 // TODO : HigherHalf
+// TODO : passer tuut dans i686/ avex kmain
 
 // TODO : syscalls:
 /// screen_clr()

@@ -285,7 +285,7 @@ double sin(double x)
  * Range: 0 to e308
  * Author: Max R. D^Arsteler
  */
-double log(double x)
+double math_log(double x)
 {
         typedef union {
                 double d;
@@ -367,27 +367,71 @@ double floor(double x)
 }
 
 
-/* CEIL.C
- * Returns smallest integer not less than x
- * Author: Max R. D^Arsteler 9/26/83
- */
+typedef union
+{
+    float f;
+    int i;
+} float_int;
+
 double ceil(double x)
 {
-        double y;
-        int ix;
+    float_int val;
+    val.f=x;
 
-        y = 0.0;
-        while (x >= 32768.0) {
-                y += 32768.0;
-                x -= 32768.0;
+    // Extract sign, exponent and mantissa
+    // Bias is removed from exponent
+    int sign=val.i >> 31;
+    int exponent=((val.i & 0x7fffffff) >> 23) - 127;
+    int mantissa=val.i & 0x7fffff;
+
+    // Is the exponent less than zero?
+    if(exponent<0)
+    {
+        // In this case, x is in the open interval (-1, 1)
+        if(x<=0.0f)
+            return 0.0f;
+        else
+            return 1.0f;
+    }
+    else
+    {
+        // Construct a bit mask that will mask off the
+        // fractional part of the mantissa
+        int mask=0x7fffff >> exponent;
+
+        // Is x already an integer (i.e. are all the
+        // fractional bits zero?)
+        if((mantissa & mask) == 0)
+            return x;
+        else
+        {
+            // If x is positive, we need to add 1 to it
+            // before clearing the fractional bits
+            if(!sign)
+            {
+                mantissa+=1 << (23-exponent);
+
+                // Did the mantissa overflow?
+                if(mantissa & 0x800000)
+                {
+                    // The mantissa can only overflow if all the
+                    // integer bits were previously 1 -- so we can
+                    // just clear out the mantissa and increment
+                    // the exponent
+                    mantissa=0;
+                    exponent++;
+                }
+            }
+
+            // Clear the fractional bits
+            mantissa&=~mask;
         }
-        while (x <= -32768.0) {
-                y -= 32768.0;
-                x += 32768.0;
-        }
-        if (x > 0.0) ix = (int) (x + 0.999999999999999);
-        else ix = (int) x;
-        return( y + (double) ix);
+    }
+
+    // Put sign, exponent and mantissa together again
+    val.i=(sign << 31) | ((exponent+127) << 23) | mantissa;
+
+    return val.f;
 }
 
 /* EXP.C

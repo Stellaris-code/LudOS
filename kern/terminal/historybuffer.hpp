@@ -29,13 +29,22 @@ SOFTWARE.
 
 #include <vector.hpp>
 
+#include "graphics/color.hpp"
+
 class HistoryBuffer
 {
 public:
+    struct Entry
+    {
+        uint8_t c { ' ' };
+        TermEntry color { 0x0, 0x0 };
+    };
+
+public:
     HistoryBuffer(size_t line_width, size_t height);
 
-    uint16_t get_char(size_t x, size_t y) const;
-    void add(const std::vector<uint16_t> &line);
+    Entry get_char(size_t x, size_t y) const;
+    void add(const std::vector<Entry> &line);
 
     size_t size() const
     {
@@ -60,7 +69,7 @@ private:
     size_t m_front { 0 };
     bool m_full { false };
 
-    std::vector<std::vector<uint16_t>> m_data;
+    std::vector<std::vector<Entry>> m_data;
 };
 
 #endif // HISTORYBUFFER_HPP

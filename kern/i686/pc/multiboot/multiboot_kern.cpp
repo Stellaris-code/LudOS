@@ -30,8 +30,9 @@ SOFTWARE.
 
 #include "utils/align.hpp"
 #include "utils/addr.hpp"
+#include "utils/memutils.hpp"
 
-#include "i686/pc/meminfo.hpp"
+#include "../mem/meminfo.hpp"
 
 #define CHECK_FLAG(flags,bit)   ((flags) & (1 << (bit)))
 
@@ -70,13 +71,13 @@ void parse_info(const multiboot_info_t* info)
     //kprintf("Multiboot flags : 0x%x\n", info->flags);
     if (CHECK_FLAG(info->flags, 1))
     {
-        log("Boot device : 0x%x\n", info->boot_device);
+        log("Boot device : 0x%x\n", static_cast<uint8_t>(info->boot_device>>24));
     }
     if (CHECK_FLAG(info->flags, 2))
     {
         log("Command line : '%s'\n", reinterpret_cast<char*>(phys(info->cmdline)));
     }
-    /*if (CHECK_FLAG (info->flags, 3))
+    if (CHECK_FLAG (info->flags, 3))
     {
         multiboot_module_t * mod { reinterpret_cast<multiboot_module_t *>(phys(info->mods_addr)) };
 
@@ -88,7 +89,7 @@ void parse_info(const multiboot_info_t* info)
             kprintf(" Module end : 0x%x\n", mod->mod_end);
             kprintf(" Module cmdline : '%s'\n", reinterpret_cast<char*>(phys(mod->cmdline)));
         }
-    }*/
+    }
     if (CHECK_FLAG (info->flags, 6))
     {
         for (multiboot_memory_map_t *mmap = reinterpret_cast<multiboot_memory_map_t *>(phys(info->mmap_addr));
@@ -107,6 +108,18 @@ void parse_info(const multiboot_info_t* info)
     if (CHECK_FLAG(info->flags, 9))
     {
         log("Bootloader name : '%s'\n", reinterpret_cast<char*>(phys(info->boot_loader_name)));
+    }
+
+    if (CHECK_FLAG(info->flags, 12))
+    {
+        log("Video Framebuffer address : 0x%x\n", info->framebuffer_addr);
+        log("Video type : %s\n", info->framebuffer_type == MULTIBOOT_FRAMEBUFFER_TYPE_RGB ? "RGB" :
+                                 info->framebuffer_type == MULTIBOOT_FRAMEBUFFER_TYPE_INDEXED ? "Indexed" : "EGA Text");
+        log("Video size : %dx%d\n", info->framebuffer_width, info->framebuffer_height);
+    }
+    else
+    {
+        log("No video mode associated, defaulting to 80x25 VGA text mode\n");
     }
 }
 

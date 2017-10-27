@@ -4024,8 +4024,8 @@ binomial_distribution<_IntType>::param_type::param_type(const result_type __t, c
         __r0_ = static_cast<result_type>((__t_ + 1) * __p_);
         __pr_ = exp(__libcpp_lgamma(__t_ + 1.) -
                            __libcpp_lgamma(__r0_ + 1.) -
-                           __libcpp_lgamma(__t_ - __r0_ + 1.) + __r0_ * log(__p_) +
-                           (__t_ - __r0_) * log(1 - __p_));
+                           __libcpp_lgamma(__t_ - __r0_ + 1.) + __r0_ * math_log(__p_) +
+                           (__t_ - __r0_) * math_log(1 - __p_));
         __odds_ratio_ = __p_ / (1 - __p_);
     }
 }
@@ -4686,7 +4686,7 @@ poisson_distribution<_IntType>::operator()(_URNG& __urng, const param_type& __pr
                 __del -= 4.8 * __del * __del * __del;
                 double __v = __difmuk / __x;
                 if (abs(__v) > 0.25)
-                    __px = __x * log(1 + __v) - __difmuk - __del;
+                    __px = __x * math_log(1 + __v) - __difmuk - __del;
                 else
                     __px = __x * __v * __v * (((((((.1250060 * __v + -.1384794) *
                            __v + .1421878) * __v + -.1661269) * __v + .2000118) *

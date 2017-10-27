@@ -27,29 +27,35 @@ SOFTWARE.
 
 #include "multiboot/multiboot_kern.hpp"
 
-#include "i686/pc/gdt.hpp"
-#include "i686/pc/devices/pic.hpp"
-#include "i686/pc/idt.hpp"
-#include "i686/pc/devices/pit.hpp"
-#include "i686/pc/devices/speaker.hpp"
-#include "i686/pc/devices/keyboard.hpp"
-#include "i686/pc/fpu.hpp"
-#include "i686/pc/cpuinfo.hpp"
-#include "i686/pc/cpuid.hpp"
-#include "i686/pc/smbios.hpp"
-#include "i686/pc/paging.hpp"
-#include "i686/pc/bios/bda.hpp"
-#include "i686/pc/serialdebug.hpp"
-#include "i686/pc/termio.hpp"
-#include "i686/pc/ide/ide_pio.hpp"
+#include "gdt/gdt.hpp"
+#include "devices/pic.hpp"
+#include "interrupts/idt.hpp"
+#include "devices/pit.hpp"
+#include "devices/speaker.hpp"
+#include "devices/ps2keyboard.hpp"
+#include "devices/ps2mouse.hpp"
+#include "devices/rtc.hpp"
+#include "fpu/fpu.hpp"
+#include "cpu/cpuinfo.hpp"
+#include "mem/meminfo.hpp"
+#include "cpu/cpuid.hpp"
+#include "smbios/smbios.hpp"
+#include "mem/paging.hpp"
+#include "bios/bda.hpp"
+#include "serial/serialdebug.hpp"
+#include "io/termio.hpp"
+#include "pci/pci.hpp"
+#include "ide/ide_pio.hpp"
+#include "ahci/ahci.hpp"
+#include "acpi/acpi_init.hpp"
 
-#include "powermanagement.hpp"
+#include "common/defs.hpp"
 
-#include "ctrlaltdelhandler.hpp"
+#include "graphics/vga.hpp"
+
+#include "acpi/powermanagement.hpp"
 
 #include "terminal/terminal.hpp"
-
-#include "acpi_init.hpp"
 
 #include "utils/bitops.hpp"
 
@@ -71,10 +77,17 @@ inline void init(uint32_t magic, const multiboot_info_t* mbd_info)
 
     serial::debug::write("Framebuffer address : 0x%lx\n", phys(framebuffer_addr));
 
-    static TerminalImpl hwterminal(reinterpret_cast<uint16_t*>(phys(framebuffer_addr)), 80, 25);
-    Terminal::impl = &hwterminal;
-    Terminal::impl->beep_callback = [](size_t ms){Speaker::beep(ms);};
-    Terminal::impl->move_cursor_callback = move_cursor;
+    static Terminal hwterminal(80, 25, 15);
+    term = &hwterminal;
+    term->beep_callback = [](size_t ms){Speaker::beep(ms);};
+    term->move_cursor_callback = move_cursor;
+    term->putchar_callback = [framebuffer_addr](size_t x, size_t y, uint8_t c, TermEntry color)
+    {
+        auto fb = reinterpret_cast<uint16_t*>(phys(framebuffer_addr));
+        fb[y*term->width() + x] = vga_entry(c, vga_entry_color(color_to_vga(color.fg), color_to_vga(color.bg)));
+    };
+
+    term->clear();
 
     init_printf(nullptr, [](void*, char c){putchar(c);});
 
@@ -82,6 +95,9 @@ inline void init(uint32_t magic, const multiboot_info_t* mbd_info)
 
     gdt::init();
     pic::init();
+
+    term->set_title("LudOS " LUDOS_VERSION_STRING " - build date " __DATE__);
+
     idt::init();
     PIT::init(100);
     FPU::init();
@@ -103,37 +119,19 @@ inline void init(uint32_t magic, const multiboot_info_t* mbd_info)
         err("ACPI Initialization error ! Message : '%s'\n", AcpiFormatException(status));
     }
 
-    ide::pio::init();
+    acpi::power::init();
 
-    Keyboard::set_kbdmap(kbdmap_fr);
-    Keyboard::handlers[0x48] = [](const Keyboard::Event&)
+    rtc::init();
+
+    pci::scan();
+
+    if (!ahci::init())
     {
-        //kprintf("Hey\n");
-        Keyboard::wait();
-        uint8_t code = inb(KBD_PORT);
-        if (code == 0xE0)
-        {
-            Terminal::show_history(Terminal::current_history()+10);
-            return false;
-        }
-        return true;
-    };
-    Keyboard::handlers[0x50] = [](const Keyboard::Event&)
-    {
-        Keyboard::wait();
-        uint8_t code = inb(KBD_PORT);
-        if (code == 0xE0)
-        {
-            Terminal::show_history(Terminal::current_history()-10);
-            return false;
-        }
-        return true;
-    };
+        ide::pio::init();
+    }
 
-    Keyboard::handlers[0x52] = CtrlAltDelHandler::handler;
-
-    //Keyboard::handle_char = [](uint8_t c){Terminal::put_char(c);};
-    Keyboard::init();
+    PS2Keyboard::init();
+    PS2Mouse::init();
 }
 }
 }

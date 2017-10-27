@@ -32,7 +32,7 @@ SOFTWARE.
 void putchar(char c)
 {
 #ifdef __is_libk
-        Terminal::put_char(c);
+        term->put_char(c);
 #else
         // TODO : do !
 #error Not implemented yet

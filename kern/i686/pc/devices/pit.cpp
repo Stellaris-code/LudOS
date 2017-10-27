@@ -27,9 +27,9 @@ SOFTWARE.
 
 #include <stdio.h>
 
-#include <io.hpp>
-#include "../isr.hpp"
-#include "timer.hpp"
+#include "io.hpp"
+#include "../interrupts/isr.hpp"
+#include "time/timer.hpp"
 
 void PIT::init(uint32_t freq)
 {
@@ -71,5 +71,5 @@ void PIT::set_pcspeaker_frequency(uint16_t freq)
 
 void PIT::irq_callback(const registers * const)
 {
-    ++Timer::m_ticks;
+    Timer::irq_callback();
 }

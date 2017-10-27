@@ -37,7 +37,7 @@ typedef unsigned long uint64_t;
 typedef long int64_t;
 typedef uint64_t size_t;
 typedef int32_t intptr_t;
-typedef uint32_t uintptr_t;
+typedef uint64_t uintptr_t;
 #endif
 
 #include_next <stdint.h>

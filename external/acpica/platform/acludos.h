@@ -156,7 +156,7 @@
 
 #include "acgcc.h"
 #include "acgccex.h"
-#include "spinlock.hpp"
+#include "tasking/spinlock.hpp"
 
 #define ACPI_USE_STANDARD_HEADERS
 #define ACPI_USE_SYSTEM_CLIBRARY

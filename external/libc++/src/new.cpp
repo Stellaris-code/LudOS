@@ -19,7 +19,8 @@
 #elif defined(LIBCXX_BUILDING_LIBCXXABI)
 #include <cxxabi.h>
 #elif defined(LIBCXXRT)
-#include <cxxabi.h>
+#include <../external/libcxxrt/src/cxxabi.h>
+#include "include/atomic_support.h"
 #include "support/runtime/new_handler_fallback.ipp"
 #elif defined(__GLIBCXX__)
 // nothing todo

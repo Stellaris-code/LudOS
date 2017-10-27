@@ -37,6 +37,8 @@ file(GLOB_RECURSE LIBK_SOURCES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "libk/*.c" "
 file(GLOB_RECURSE LIBK_HEADERS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "libk/*.h" "libk/*.hpp")
 file(GLOB_RECURSE LIBCPP_SOURCES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "external/libc++/*.cpp" "external/libc++/*.c")
 file(GLOB_RECURSE LIBCPP_HEADERS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "external/libc++/*.hpp" "external/libc++/*.h")
+file(GLOB_RECURSE LIBCXXRT_SOURCES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "external/libcxxrt/src/*.cc" "external/libcxxrt/src/*.c")
+file(GLOB_RECURSE LIBCXXRT_HEADERS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "external/libcxxrt/src/*.hpp" "external/libcxxrt/src/*.h")
 file(GLOB_RECURSE HEADERS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "kern/*.hpp" "kern/*.h" "kern/*.tpp")
 file(GLOB_RECURSE LD_SCRIPTS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "*.ld")
 
@@ -45,23 +47,33 @@ include_directories("${CMAKE_CURRENT_SOURCE_DIR}/kern/external")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/libk")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/external/libc++")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/external/acpica")
+#include_directories("${CMAKE_CURRENT_SOURCE_DIR}/external/libcxxrt/src")
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}/external/libunwind/include")
 
 set(GENERIC_SRCS ${KERN_TERMINAL_SOURCES} ${CPP_SOURCES} ${KERN_BIOS_SOURCES} ${KERN_MB_SOURCES} ${KERN_BASE_SOURCES})
 
 add_executable(${PROJECT_NAME} ${PLATFORM_SRCS} ${ISA_SRCS} ${GENERIC_SRCS} ${HEADERS} ${LD_SCRIPTS})
 
-set(CMAKE_C_FLAGS "${ISA_C_FLAGS} ${PLATFORM_C_FLAGS} -O0 -fstack-protector -m32 -std=c11 -ftree-vectorize -Wall -Wextra -Wcast-qual -Wmisleading-indentation -Wno-unused-parameter -Wno-implicit-int -Wnull-dereference -lgcc -static-libgcc -ffreestanding -fno-builtin -nostdlib -finline-functions -fno-stack-protector -fomit-frame-pointer -Werror=implicit-function-declaration -mno-sse -lgcc")
-set(CMAKE_CXX_FLAGS "${ISA_CXX_FLAGS} ${PLATFORM_CXX_FLAGS} -O0 -m32 -fstack-protector -std=c++17 -ftree-vectorize -Wall -Wold-style-cast -Wno-unused-parameter -Wextra -Wold-style-cast -Wcast-qual -Wmisleading-indentation -Wnull-dereference -lgcc -static-libgcc -ffreestanding -fno-builtin -nostdlib -finline-functions -fno-stack-protector -fomit-frame-pointer -Werror=implicit-function-declaration -mno-sse -fno-exceptions -fno-rtti -lgcc")
+set(CMAKE_C_FLAGS "${ISA_C_FLAGS} ${PLATFORM_C_FLAGS} -O0 -fstack-protector -m32 -std=c11 -Wall -Wextra -Wcast-qual -Wmisleading-indentation -Wno-unused-parameter -Wno-implicit-int -Wnull-dereference -lgcc -static-libgcc -ffreestanding -fno-builtin -nostdlib -fno-stack-protector -fomit-frame-pointer -Werror=implicit-function-declaration -mno-sse -lgcc")
+set(CMAKE_CXX_FLAGS "${ISA_CXX_FLAGS} ${PLATFORM_CXX_FLAGS} -O0 -m32 -fno-exceptions -fstack-protector -std=c++17 -Wall -Wold-style-cast -Wno-unused-parameter -Wextra -Wold-style-cast -Wcast-qual -Wmisleading-indentation -Wnull-dereference -lgcc -static-libgcc -ffreestanding -fno-builtin -nostdlib -fno-stack-protector -fomit-frame-pointer -Werror=implicit-function-declaration -mno-sse -lgcc")
 set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS
-  "-T ${PLATFORM_LAYOUT} -N ${ISA_LINKER_FLAGS} ${PLATFORM_LINKER_FLAGS} -lgcc -static-libgcc -Xlinker -Map=ld.map")
+  "-T ${PLATFORM_LAYOUT} -N ${ISA_LINKER_FLAGS} ${PLATFORM_LINKER_FLAGS} -lgcc -fexceptions -Xlinker -Map=ld.map ")
 set_target_properties(${PROJECT_NAME} PROPERTIES SUFFIX ".bin")
-set(CMAKE_ASM_NASM_LINK_EXECUTABLE "${ARCH}-elf-gcc -T ${PLATFORM_LAYOUT} -N ${ISA_LINKER_FLAGS} ${PLATFORM_LINKER_FLAGS} <OBJECTS> -o <TARGET>.bin")
+set(CMAKE_ASM_NASM_LINK_EXECUTABLE "${ARCH}-elf-gcc -T ${PLATFORM_LAYOUT} -N ${ISA_LINKER_FLAGS} --eh-frame-hdr --no-ld-generated-unwind-info ${PLATFORM_LINKER_FLAGS} <OBJECTS> -o <TARGET>.bin")
 
 add_library(libk ${LIBK_SOURCES} ${LIBK_HEADERS})
 target_compile_definitions(libk
     PUBLIC __is_libk)
 
+add_library(libcxxrt ${LIBCXXRT_SOURCES} ${LIBCXXRT_HEADERS})
+set_target_properties(libcxxrt PROPERTIES LINKER_LANGUAGE CXX)
+set_target_properties(libcxxrt PROPERTIES COMPILE_FLAGS "")
+
+set_source_files_properties(${LIBUNWIND_ASM_SOURCES}
+                            PROPERTIES LANGUAGE C)
+
 add_library(libcpp ${LIBCPP_SOURCES} ${LIBCPP_HEADERS})
+target_link_libraries(libcpp libcxxrt)
 
 add_library(acpica ${ACPICA_SOURCES} ${ACPICA_HEADERS})
 set_target_properties(acpica PROPERTIES LINKER_LANGUAGE C)
@@ -69,7 +81,9 @@ target_link_libraries(acpica libk)
 
 include(ExternalProject)
 
-target_link_libraries(${PROJECT_NAME} libk libcpp acpica gcc)
+target_link_libraries(${PROJECT_NAME} libk libcpp libcxxrt acpica)
+
+set(CMAKE_CXX_LINK_EXECUTABLE "/usr/local/cross/bin/${ARCH}-elf-ld -N --eh-frame-hdr -T ${PLATFORM_LAYOUT} <OBJECTS> -o <TARGET> <LINK_LIBRARIES>-L/usr/tooLargeForHome/cross_src/build-gcc/i686-elf/libgcc/ -lgcc")
 
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
     COMMAND "./multiboot-check.sh" $<TARGET_FILE:${PROJECT_NAME}>

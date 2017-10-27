@@ -27,33 +27,41 @@ SOFTWARE.
 
 #include <stdint.h>
 
+#include <vector.hpp>
+#include <utility.hpp>
+#include <optional.hpp>
+
+#include "ide_common.hpp"
+
 namespace ide
 {
+
 namespace pio
 {
 
-    enum DriveType : uint8_t
-    {
-        Master = 0xE0,
-        Slave = 0xF0
-    };
+void init();
 
-    void init();
+bool read(BusPort port, DriveType type, uint64_t block, size_t count, uint16_t* buf);
+bool write(BusPort port, DriveType type, uint64_t block, size_t count, const uint16_t* buf);
 
-    bool read(DriveType type, uint32_t block, uint8_t count, uint8_t* buf);
-    bool write(DriveType type, uint32_t block, uint8_t count, const uint8_t* buf);
+uint8_t error_register(BusPort port);
+uint8_t status_register(BusPort port);
 
-    uint8_t error_register();
-    uint8_t status_register();
+std::vector<std::pair<BusPort, DriveType>> scan();
 
-    namespace detail
-    {
-        void common(DriveType type, uint32_t block, uint8_t count);
-        void poll();
-        void flush();
-        bool error_set();
-        void clear_error();
-    }
+std::optional<identify_data> identify(BusPort port, DriveType type);
+
+namespace detail
+{
+void common(BusPort port, uint8_t type, uint64_t block, uint16_t count);
+bool read_one(BusPort port, DriveType type, uint64_t block, uint16_t* buf);
+bool write_one(BusPort port, DriveType type, uint64_t block, const uint16_t* buf);
+void poll(BusPort port);
+void poll_bsy(BusPort port);
+bool flush(BusPort port);
+bool error_set(BusPort port);
+void clear_error(BusPort port);
+}
 }
 }
 

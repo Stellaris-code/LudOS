@@ -29,7 +29,7 @@ SOFTWARE.
 
 #include "acpi.h"
 
-#include "nop.hpp"
+#include "utils/nop.hpp"
 
 class ACPITimer
 {

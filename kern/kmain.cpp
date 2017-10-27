@@ -28,26 +28,33 @@ SOFTWARE.
 // TODO : user mode
 // TODO : POC calculatrice
 // TODO : Paging
-// TODO : VFS
-// TODO : initialisation PS/2
-// TODO : enum pour les key qui se mappe au keymap
+// TODO : Son
+// TODO : Passer en IDE PCI : IDE UDMA
+// TODO : unifier l'interface PS/2
+// FIXME : revoir l'architecture dégeulasse de l'ownership des nodes de rea
+// TODO : passer bcp de choses en uintptr_t
+// TODO : v86 mode
+// TODO : TinyGL
+// TODO : HigherHalf
+// TODO : passer tuut dans i686/ avex kmain
+
+// TODO : syscalls:
+/// screen_clr()
+/// screen_move_cursor(x, y)
+/// screen_push_color(col)
+/// screen_pop_color()
 
 #ifndef __cplusplus
-#error Must be compiler using C++ !
+#error Must be compiled using C++ !
 #endif
 
-#ifndef NDEBUG
-#define DEBUG
-#endif
-
-#include "greet.hpp"
+#include "utils/defs.hpp"
 
 #ifdef ARCH_i686
 #include "i686/pc/init.hpp"
 #endif
 
-#include "fs/fat.hpp"
-#include "fs/vfs.hpp"
+#include "init.hpp"
 
 #ifdef ARCH_i686
 extern "C"
@@ -60,29 +67,7 @@ void kmain()
     i686::pc::init(magic, mbd_info);
 #endif
 
-    vfs::init();
-
-    auto fs = fat::read_fat_fs(0, 0);
-    if (fs.valid)
-    {
-        log("FAT %zd filesystem found on drive %zd\n", (size_t)fs.type, fs.drive);
-
-        auto entries = fat::root_entries(fs);
-        log("%zd\n", entries.size());
-        for (const auto& entry : entries)
-        {
-            std::vector<uint8_t> data(entry.length);
-            entry.read(data.data(), data.size());
-            data.push_back('\0'); // sentinel value
-            log("name : %s\n%s\n", entry.filename.data(), data.data());
-        }
-    }
-    else
-    {
-        warn ("No FAT fs found\n");
-    }
-
-    greet();
+    init();
 
     while (1)
     {

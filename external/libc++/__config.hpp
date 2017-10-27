@@ -12,9 +12,8 @@
 #define _LIBCPP_CONFIG
 
 #define _LIBCPP_BUILDING_LIBRARY
-#define _LIBCPP_HAS_NO_THREADS
-#define _LIBCPP_NO_RTTI
 #define _LIBCPP_NO_EXCEPTIONS
+#define _LIBCPP_HAS_NO_THREADS
 
 #if defined(_MSC_VER) && !defined(__clang__)
 #if !defined(_LIBCPP_HAS_NO_PRAGMA_SYSTEM_HEADER)
@@ -43,6 +42,8 @@
 #ifndef _LIBCPP_ABI_VERSION
 #define _LIBCPP_ABI_VERSION 1
 #endif
+
+#define LIBCXXRT
 
 #if defined(__ELF__)
 #define _LIBCPP_OBJECT_FORMAT_ELF   1
@@ -1245,7 +1246,6 @@ _LIBCPP_FUNC_VIS extern "C" void __sanitizer_annotate_contiguous_container(
       _Pragma("pop_macro(\"max\")")
 # endif
 #endif // defined(_LIBCPP_HAS_NO_PRAGMA_PUSH_POP_MACRO)
-
 
 #endif // __cplusplus
 

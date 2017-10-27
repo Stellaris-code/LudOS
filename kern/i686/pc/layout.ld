@@ -56,8 +56,9 @@ SECTIONS
     /DISCARD/ :
     {
         *(.comment)
-/*        *(.eh_frame) */
-    }
+        *(.eh_frame)
+    }   
+
 
     kernel_virtual_end = .;
     kernel_physical_end = .;

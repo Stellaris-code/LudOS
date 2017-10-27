@@ -395,7 +395,8 @@ void tfp_format(void *putp, putcf putf, const char *fmt, va_list va)
 #endif
             case 'x':
             case 'X':
-                p.base = 16;
+            case 'b':
+                p.base = ch == 'b' ? 2 : 16;
                 p.uc = (ch == 'X')?1:0;
 #ifdef PRINTF_LONG_SUPPORT
 #ifdef PRINTF_LONG_LONG_SUPPORT

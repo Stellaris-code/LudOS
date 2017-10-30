@@ -90,7 +90,7 @@ void init()
 {
     root = std::make_shared<vfs_root>();
 
-    log("VFS initialized.\n");
+    log(Info, "VFS initialized.\n");
 }
 
 void mount_dev()

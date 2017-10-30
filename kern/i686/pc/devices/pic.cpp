@@ -28,6 +28,7 @@ SOFTWARE.
 #include <stdio.h>
 
 #include "io.hpp"
+#include "panic.hpp"
 
 namespace pic
 {
@@ -39,6 +40,7 @@ void init()
     io_wait();
     outb(PIC_SLAVE_CMD,  0x10 + 0x01);
     io_wait();
+
     /* Setup master's vector offset */
     outb(PIC_MASTER_DATA, 0x20);
     io_wait();

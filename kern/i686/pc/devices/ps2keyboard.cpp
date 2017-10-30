@@ -25,7 +25,7 @@ SOFTWARE.
 
 #include "ps2keyboard.hpp"
 
-#include "../interrupts/isr.hpp"
+#include "i686/interrupts/isr.hpp"
 #include "i686/pc/devices/pic.hpp"
 
 #include "utils/messagebus.hpp"
@@ -61,7 +61,7 @@ void PS2Keyboard::init()
 
     set_leds(0);
 
-    log("Keyboard driver initialized\n");
+    log(Info, "Keyboard driver initialized\n");
 }
 
 void PS2Keyboard::enable()

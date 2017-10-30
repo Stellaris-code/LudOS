@@ -23,8 +23,8 @@ SOFTWARE.
 
 */
 
-#include "../cpu/registers.hpp"
-#include "../devices/pic.hpp"
+#include "i686/cpu/registers.hpp"
+#include "i686/pc/devices/pic.hpp"
 #include "halt.hpp"
 #include "panic.hpp"
 #include "isr.hpp"

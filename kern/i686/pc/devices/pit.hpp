@@ -27,7 +27,7 @@ SOFTWARE.
 
 #include <stdint.h>
 
-#include "i686/pc/cpu/registers.hpp"
+#include "i686/cpu/registers.hpp"
 
 class PIT
 {

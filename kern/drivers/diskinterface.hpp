@@ -91,7 +91,7 @@ public:
 
     static inline size_t add_memory_drive(void* address)
     {
-        add_drive([address](uint32_t sector, uint8_t count, uint8_t* buf)
+        return add_drive([address](uint32_t sector, uint8_t count, uint8_t* buf)
         {
             memcpy(buf, reinterpret_cast<const uint8_t*>(address) + sector*512, count);
             return true;
@@ -105,7 +105,7 @@ public:
 
     static inline size_t add_memory_drive(const void* address)
     {
-        add_drive([address](uint32_t sector, uint8_t count, uint8_t* buf)
+        return add_drive([address](uint32_t sector, uint8_t count, uint8_t* buf)
         {
             memcpy(buf, reinterpret_cast<const uint8_t*>(address) + sector*512, count);
             return true;

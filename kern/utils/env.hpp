@@ -1,7 +1,7 @@
 /*
-putchar.c
+env.hpp
 
-Copyright (c) 23 Yann BOUCHER (yann)
+Copyright (c) 30 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -23,18 +23,13 @@ SOFTWARE.
 
 */
 
-#include <stdio.h>
+#include <unordered_map.hpp>
+#include <string.hpp>
+#include <optional.hpp>
 
-#ifdef __is_libk
-#include <terminal/terminal.hpp>
-#endif
+extern std::unordered_map<std::string, std::string> kenv;
 
-void putchar(char c)
-{
-#ifdef __is_libk
-    if (term) term->put_char(c);
-#else
-    // TODO : do !
-#error Not implemented yet
-#endif
-}
+void read_from_cmdline(const std::string& cmdline);
+
+std::optional<std::string> kgetenv(std::string s);
+void ksetenv(const std::string& key, std::string val);

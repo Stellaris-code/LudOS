@@ -29,19 +29,27 @@ SOFTWARE.
 
 #ifdef ARCH_i686
 #include "i686/pc/serial/serialdebug.hpp"
-#include "i686/pc/time/timestamp.hpp"
+#include "i686/time/timestamp.hpp"
 #endif
 
-void log(const char * __restrict fmt, ...)
-{
-    term->push_color({0x00aa00, 0});
-    kprintf("[%f] ", uptime());
-    term->pop_color();
+#include "utils/env.hpp"
+#include "utils/stlutils.hpp"
 
-    va_list va;
-    va_start(va, fmt);
-    kvprintf(fmt, va);
-    va_end(va);
+LoggingLevel log_level = Debug;
+
+void log(LoggingLevel level, const char * __restrict fmt, ...)
+{
+    if (level <= log_level)
+    {
+        term->push_color({0x00aa00, 0});
+        kprintf("[%f] ", uptime());
+        term->pop_color();
+
+        va_list va;
+        va_start(va, fmt);
+        kvprintf(fmt, va);
+        va_end(va);
+    }
 }
 
 void warn(const char * __restrict fmt, ...)
@@ -82,4 +90,28 @@ void log_serial(const char * __restrict fmt, ...)
     va_start(va, fmt);
     tfp_format(nullptr, [](void*, char c){serial::debug::write("%c", c);}, fmt, va);
     va_end(va);
+}
+
+void read_logging_config()
+{
+    if (kgetenv("loglevel"))
+    {
+        std::string level = strtolower(*kgetenv("loglevel"));
+        if (level == "always")
+        {
+            log_level = Always;
+        }
+        if (level == "notice")
+        {
+            log_level = Notice;
+        }
+        if (level == "info")
+        {
+            log_level = Info;
+        }
+        if (level == "debug")
+        {
+            log_level = Debug;
+        }
+    }
 }

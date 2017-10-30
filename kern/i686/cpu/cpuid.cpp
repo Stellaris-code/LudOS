@@ -52,7 +52,7 @@ SOFTWARE.
 
 
 /* You need to include a file with fairly(ish) compliant log prototype, Decimal and String support like %s and %d and this is truely all you need! */
-//#include <stdio.h> /* for log(); */
+//#include <stdio.h> /* for log(Debug, ); */
 
 #include "cpuid.hpp"
 
@@ -68,7 +68,7 @@ int detect_cpu()
 { /* or main() if your trying to port this as an independant application */
         unsigned long ebx, unused;
         cpuid(0, unused, ebx, unused, unused);
-        log("CPU Info :\n");
+        log(Debug, "CPU Info :\n");
         switch(ebx) {
                 case 0x756e6547: /* Intel Magic Code */
                 do_intel();
@@ -77,7 +77,7 @@ int detect_cpu()
                 do_amd();
                 break;
                 default:
-                log("Unknown x86 CPU Detected\n");
+                log(Debug, "Unknown x86 CPU Detected\n");
                 break;
         }
         return 0;
@@ -141,7 +141,7 @@ const char *Intel_Other[] = {
 
 /* Intel-specific information */
 int do_intel(void) {
-        log("Intel Specific Features:\n");
+        log(Debug, "Intel Specific Features:\n");
         unsigned long eax, ebx, ecx, edx, max_eax, signature, unused;
         int model, family, type, brand, stepping, reserved;
         int extended_family = -1;
@@ -153,45 +153,45 @@ int do_intel(void) {
         stepping = eax & 0xf;
         reserved = eax >> 14;
         signature = eax;
-        log(" Type %d - ", type);
+        log(Debug, " Type %d - ", type);
         switch(type) {
                 case 0:
-                kprintf("  Original OEM");
+                log(Debug, "  Original OEM");
                 break;
                 case 1:
-                kprintf("  Overdrive");
+                log(Debug, "  Overdrive");
                 break;
                 case 2:
-                kprintf("  Dual-capable");
+                log(Debug, "  Dual-capable");
                 break;
                 case 3:
-                kprintf("  Reserved");
+                log(Debug, "  Reserved");
                 break;
         }
-        kprintf("\n");
-        log(" Family %d - ", family);
+        log(Debug, "\n");
+        log(Debug, " Family %d - ", family);
         switch(family) {
                 case 3:
-                kprintf("  i386");
+                log(Debug, "  i386");
                 break;
                 case 4:
-                kprintf("  i486");
+                log(Debug, "  i486");
                 break;
                 case 5:
-                kprintf("  Pentium");
+                log(Debug, "  Pentium");
                 break;
                 case 6:
-                kprintf("  Pentium Pro");
+                log(Debug, "  Pentium Pro");
                 break;
                 case 15:
-                kprintf("  Pentium 4");
+                log(Debug, "  Pentium 4");
         }
-        kprintf("\n");
+        log(Debug, "\n");
         if(family == 15) {
                 extended_family = (eax >> 20) & 0xff;
-                log(" Extended family %d\n", extended_family);
+                log(Debug, " Extended family %d\n", extended_family);
         }
-        log(" Model %d - ", model);
+        log(Debug, " Model %d - ", model);
         switch(family) {
                 case 3:
                 break;
@@ -199,70 +199,70 @@ int do_intel(void) {
                 switch(model) {
                         case 0:
                         case 1:
-                        kprintf("  DX");
+                        log(Debug, "  DX");
                         break;
                         case 2:
-                        kprintf("  SX");
+                        log(Debug, "  SX");
                         break;
                         case 3:
-                        kprintf("  487/DX2");
+                        log(Debug, "  487/DX2");
                         break;
                         case 4:
-                        kprintf("  SL");
+                        log(Debug, "  SL");
                         break;
                         case 5:
-                        kprintf("  SX2");
+                        log(Debug, "  SX2");
                         break;
                         case 7:
-                        kprintf("  Write-back enhanced DX2");
+                        log(Debug, "  Write-back enhanced DX2");
                         break;
                         case 8:
-                        kprintf("  DX4");
+                        log(Debug, "  DX4");
                         break;
                 }
                 break;
                 case 5:
                 switch(model) {
                         case 1:
-                        kprintf("  60/66");
+                        log(Debug, "  60/66");
                         break;
                         case 2:
-                        kprintf("  75-200");
+                        log(Debug, "  75-200");
                         break;
                         case 3:
-                        kprintf("  for 486 system");
+                        log(Debug, "  for 486 system");
                         break;
                         case 4:
-                        kprintf("  MMX");
+                        log(Debug, "  MMX");
                         break;
                 }
                 break;
                 case 6:
                 switch(model) {
                         case 1:
-                        kprintf("  Pentium Pro");
+                        log(Debug, "  Pentium Pro");
                         break;
                         case 3:
-                        kprintf("  Pentium II Model 3");
+                        log(Debug, "  Pentium II Model 3");
                         break;
                         case 5:
-                        kprintf("  Pentium II Model 5/Xeon/Celeron");
+                        log(Debug, "  Pentium II Model 5/Xeon/Celeron");
                         break;
                         case 6:
-                        kprintf("  Celeron");
+                        log(Debug, "  Celeron");
                         break;
                         case 7:
-                        kprintf("  Pentium III/Pentium III Xeon - external L2 cache");
+                        log(Debug, "  Pentium III/Pentium III Xeon - external L2 cache");
                         break;
                         case 8:
-                        kprintf("  Pentium III/Pentium III Xeon - internal L2 cache");
+                        log(Debug, "  Pentium III/Pentium III Xeon - internal L2 cache");
                         break;
                 }
                 break;
                 case 15:
                 break;
         }
-        kprintf("\n");
+        log(Debug, "\n");
         cpuid(0x80000000, max_eax, unused, unused, unused);
         /* Quok said: If the max extended eax value is high enough to support the processor brand string
         (values 0x80000002 to 0x80000004), then we'll use that information to return the brand information.
@@ -270,7 +270,7 @@ int do_intel(void) {
         According to the Sept. 2006 Intel Arch Software Developer's Guide, if extended eax values are supported,
         then all 3 values for the processor brand string are supported, but we'll test just to make sure and be safe. */
         if(max_eax >= 0x80000004) {
-                log(" Brand: ");
+                log(Debug, " Brand: ");
                 if(max_eax >= 0x80000002) {
                         cpuid(0x80000002, eax, ebx, ecx, edx);
                         printregs(eax, ebx, ecx, edx);
@@ -283,20 +283,20 @@ int do_intel(void) {
                         cpuid(0x80000004, eax, ebx, ecx, edx);
                         printregs(eax, ebx, ecx, edx);
                 }
-                kprintf("\n");
+                log(Debug, "\n");
         } else if(brand > 0) {
-                log(" Brand %d - ", brand);
+                log(Debug, " Brand %d - ", brand);
                 if(brand < 0x18) {
                         if(signature == 0x000006B1 || signature == 0x00000F13) {
-                                kprintf("  %s\n", Intel_Other[brand]);
+                                log(Debug, "  %s\n", Intel_Other[brand]);
                         } else {
-                                kprintf("  %s\n", Intel[brand]);
+                                log(Debug, "  %s\n", Intel[brand]);
                         }
                 } else {
-                        kprintf("  Reserved\n");
+                        log(Debug, "  Reserved\n");
                 }
         }
-        log(" Stepping: %d Reserved: %d\n", stepping, reserved);
+        log(Debug, " Stepping: %d Reserved: %d\n", stepping, reserved);
         return 0;
 }
 
@@ -311,12 +311,12 @@ void printregs(int eax, int ebx, int ecx, int edx) {
                 string[j + 8] = ecx >> (8 * j);
                 string[j + 12] = edx >> (8 * j);
         }
-        kprintf("  %s", string);
+        log(Debug, "  %s", string);
 }
 
 /* AMD-specific information */
 int do_amd(void) {
-        log(" AMD Specific Features:\n");
+        log(Debug, " AMD Specific Features:\n");
         unsigned long extended, eax, ebx, ecx, edx, unused;
         int family, model, stepping, reserved;
         cpuid(1, eax, unused, unused, unused);
@@ -324,10 +324,10 @@ int do_amd(void) {
         family = (eax >> 8) & 0xf;
         stepping = eax & 0xf;
         reserved = eax >> 12;
-        log(" Family: %d Model: %d [", family, model);
+        log(Debug, " Family: %d Model: %d [", family, model);
         switch(family) {
                 case 4:
-                kprintf("  486 Model %d", model);
+                log(Debug, "  486 Model %d", model);
                 break;
                 case 5:
                 switch(model) {
@@ -337,16 +337,16 @@ int do_amd(void) {
                         case 3:
                         case 6:
                         case 7:
-                        kprintf("  K6 Model %d", model);
+                        log(Debug, "  K6 Model %d", model);
                         break;
                         case 8:
-                        kprintf("  K6-2 Model 8");
+                        log(Debug, "  K6-2 Model 8");
                         break;
                         case 9:
-                        kprintf("  K6-III Model 9");
+                        log(Debug, "  K6-III Model 9");
                         break;
                         default:
-                        kprintf("  K5/K6 Model %d", model);
+                        log(Debug, "  K5/K6 Model %d", model);
                         break;
                 }
                 break;
@@ -355,19 +355,19 @@ int do_amd(void) {
                         case 1:
                         case 2:
                         case 4:
-                        kprintf("  Athlon Model %d", model);
+                        log(Debug, "  Athlon Model %d", model);
                         break;
                         case 3:
-                        kprintf("  Duron Model 3");
+                        log(Debug, "  Duron Model 3");
                         break;
                         case 6:
-                        kprintf("  Athlon MP/Mobile Athlon Model 6");
+                        log(Debug, "  Athlon MP/Mobile Athlon Model 6");
                         break;
                         case 7:
-                        kprintf("  Mobile Duron Model 7");
+                        log(Debug, "  Mobile Duron Model 7");
                         break;
                         default:
-                        kprintf("  Duron/Athlon Model %d", model);
+                        log(Debug, "  Duron/Athlon Model %d", model);
                         break;
                 }
                 break;
@@ -379,19 +379,19 @@ int do_amd(void) {
         }
         if(extended >= 0x80000002) {
                 unsigned int j;
-                log(" Detected Processor Name: ");
+                log(Debug, " Detected Processor Name: ");
                 for(j = 0x80000002; j <= 0x80000004; j++) {
                         cpuid(j, eax, ebx, ecx, edx);
                         printregs(eax, ebx, ecx, edx);
                 }
-                kprintf("\n");
+                log(Debug, "\n");
         }
         if(extended >= 0x80000007) {
                 cpuid(0x80000007, unused, unused, unused, edx);
                 if(edx & 1) {
-                        log(" Temperature Sensing Diode Detected!\n");
+                        log(Debug, " Temperature Sensing Diode Detected!\n");
                 }
         }
-        log(" Stepping: %d Reserved: %d\n", stepping, reserved);
+        log(Debug, " Stepping: %d Reserved: %d\n", stepping, reserved);
         return 0;
 }

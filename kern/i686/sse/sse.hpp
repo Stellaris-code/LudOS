@@ -1,7 +1,7 @@
 /*
-putchar.c
+sse.hpp
 
-Copyright (c) 23 Yann BOUCHER (yann)
+Copyright (c) 29 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,19 +22,15 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
+#ifndef SSE_HPP
+#define SSE_HPP
 
-#include <stdio.h>
+// TODO : get SSE version
 
-#ifdef __is_libk
-#include <terminal/terminal.hpp>
-#endif
+extern "C"
+bool has_sse();
 
-void putchar(char c)
-{
-#ifdef __is_libk
-    if (term) term->put_char(c);
-#else
-    // TODO : do !
-#error Not implemented yet
-#endif
-}
+extern "C"
+void enable_sse();
+
+#endif // SSE_HPP

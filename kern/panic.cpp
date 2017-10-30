@@ -34,8 +34,8 @@ SOFTWARE.
 
 #ifdef ARCH_i686
 #include "i686/pc/devices/speaker.hpp"
-#include "i686/pc/interrupts/interrupts.hpp"
-#include "i686/pc/cpu/registers.hpp"
+#include "i686/interrupts/interrupts.hpp"
+#include "i686/cpu/registers.hpp"
 #endif
 
 #include "halt.hpp"

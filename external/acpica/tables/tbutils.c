@@ -441,7 +441,6 @@ AcpiTbParseRootTable (
      * so unmap the RSDP here before mapping other tables
      */
     AcpiOsUnmapMemory (Rsdp, sizeof (ACPI_TABLE_RSDP));
-
     /* Map the RSDT/XSDT table header to get the full table length */
 
     Table = AcpiOsMapMemory (Address, sizeof (ACPI_TABLE_HEADER));
@@ -449,6 +448,7 @@ AcpiTbParseRootTable (
     {
         return_ACPI_STATUS (AE_NO_MEMORY);
     }
+
     AcpiTbPrintTableHeader (Address, Table);
 
     /*

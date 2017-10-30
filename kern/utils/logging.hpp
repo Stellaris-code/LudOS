@@ -35,8 +35,18 @@ extern "C"
 {
 #endif
 
-PRINTF_FMT(1, 2)
-void log(const char * __restrict fmt, ...);
+typedef enum
+{
+    Always = 0,
+    Notice = 1,
+    Info = 2,
+    Debug = 3
+} LoggingLevel;
+
+extern LoggingLevel log_level;
+
+PRINTF_FMT(2, 3)
+void log(LoggingLevel level, const char * __restrict fmt, ...);
 
 PRINTF_FMT(1, 2)
 void log_serial(const char * __restrict fmt, ...);
@@ -46,6 +56,8 @@ void warn(const char * __restrict fmt, ...);
 
 PRINTF_FMT(1, 2)
 void err(const char * __restrict fmt, ...);
+
+void read_logging_config();
 
 #ifdef __cplusplus
 }

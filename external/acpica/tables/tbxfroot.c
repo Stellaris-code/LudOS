@@ -332,7 +332,6 @@ AcpiFindRootPointer (
             return_ACPI_STATUS (AE_OK);
         }
     }
-
     /*
      * 2) Search upper memory: 16-byte boundaries in E0000h-FFFFFh
      */

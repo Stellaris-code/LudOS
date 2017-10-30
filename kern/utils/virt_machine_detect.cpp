@@ -1,7 +1,7 @@
 /*
-fpu.cpp
+virt_machine_detect.cpp
 
-Copyright (c) 27 Yann BOUCHER (yann)
+Copyright (c) 29 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -23,32 +23,6 @@ SOFTWARE.
 
 */
 
-#include "fpu.hpp"
+#include "virt_machine_detect.hpp"
 
-#include "panic.hpp"
-#include "../cpu/cpuid.hpp"
-#include "utils/bitops.hpp"
-
-#include "utils/logging.hpp"
-
-void FPU::init()
-{
-    log("Initializing FPU...\n");
-
-    if (!check_cpuid() && !check_fpu_presence())
-    {
-        panic("No FPU found !\n");
-    }
-
-    setup_fpu();
-
-    log("FPU Initialized\n");
-}
-
-bool FPU::check_cpuid()
-{
-    unsigned long edx, unused;
-    cpuid(1, unused, unused, unused, edx);
-
-    return bit_check(edx, 0);
-}
+bool running_qemu = false;

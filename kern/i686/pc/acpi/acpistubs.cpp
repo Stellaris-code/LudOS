@@ -29,11 +29,12 @@ SOFTWARE.
 
 #include "panic.hpp"
 #include "utils/logging.hpp"
+#include "utils/addr.hpp"
 
 #include "time/timer.hpp"
-#include "i686/pc/time/timestamp.hpp"
+#include "i686/time/timestamp.hpp"
 #include "i686/pc/pci/pci.hpp"
-#include "i686/pc/interrupts/isr.hpp"
+#include "i686/interrupts/isr.hpp"
 #include "io.hpp"
 
 #include <stdlib.h>
@@ -74,7 +75,7 @@ ACPI_STATUS AcpiOsTableOverride(ACPI_TABLE_HEADER *ExistingTable, ACPI_TABLE_HEA
 
 void *AcpiOsMapMemory(ACPI_PHYSICAL_ADDRESS PhysicalAddress, ACPI_SIZE Length)
 {
-    return (void*)PhysicalAddress;
+    return (void*)phys(PhysicalAddress);
 }
 
 void AcpiOsUnmapMemory(void *where, ACPI_SIZE length)
@@ -84,7 +85,7 @@ void AcpiOsUnmapMemory(void *where, ACPI_SIZE length)
 
 ACPI_STATUS AcpiOsGetPhysicalAddress(void *LogicalAddress, ACPI_PHYSICAL_ADDRESS *PhysicalAddress)
 {
-    *PhysicalAddress = (ACPI_PHYSICAL_ADDRESS)LogicalAddress;
+    *PhysicalAddress = virt((ACPI_PHYSICAL_ADDRESS)LogicalAddress);
     return AE_OK;
 }
 
@@ -144,7 +145,7 @@ ACPI_STATUS AcpiOsSignal(UINT32 fun, void* info)
     }
     else if (fun == ACPI_SIGNAL_BREAKPOINT)
     {
-        log("ACPI Breakpoint : Message : '%s'\n", (const char*)info);
+        log(Notice, "ACPI Breakpoint : Message : '%s'\n", (const char*)info);
         asm ("xchgw %bx, %bx"); // bochs magic breakpoint
 
         return AE_OK;
@@ -197,15 +198,21 @@ AcpiOsWritePciConfiguration (
 
 void ACPI_INTERNAL_VAR_XFACE AcpiOsPrintf(const char* fmt, ...)
 {
-    va_list va;
-    va_start(va, fmt);
-    tfp_format(nullptr, [](void*, char c){putchar(c);}, fmt, va);
-    va_end(va);
+    if (log_level >= Debug)
+    {
+        va_list va;
+        va_start(va, fmt);
+        tfp_format(nullptr, [](void*, char c){putchar(c);}, fmt, va);
+        va_end(va);
+    }
 }
 
 void ACPI_INTERNAL_VAR_XFACE AcpiOsVprintf(const char* fmt, va_list args)
 {
-    tfp_format(nullptr, [](void*, char c){putchar(c);}, fmt, args);
+    if (log_level >= Debug)
+    {
+        tfp_format(nullptr, [](void*, char c){putchar(c);}, fmt, args);
+    }
 }
 
 ACPI_STATUS AcpiOsCreateSemaphore(UINT32 max, UINT32 initial, ACPI_SEMAPHORE* handle)
@@ -290,15 +297,15 @@ ACPI_STATUS AcpiOsReadPort(ACPI_IO_ADDRESS addr, UINT32* value, UINT32 width)
 {
     switch (width)
     {
-    case 8:
-        *value = inb(addr);
-        return AE_OK;
-    case 16:
-        *value = inw(addr);
-        return AE_OK;
-    case 32:
-        *value = inl(addr);
-        return AE_OK;
+        case 8:
+            *value = inb(addr);
+            return AE_OK;
+        case 16:
+            *value = inw(addr);
+            return AE_OK;
+        case 32:
+            *value = inl(addr);
+            return AE_OK;
     }
 
     return AE_ERROR;
@@ -308,15 +315,15 @@ ACPI_STATUS AcpiOsWritePort(ACPI_IO_ADDRESS addr, UINT32 value, UINT32 width)
 {
     switch (width)
     {
-    case 8:
-        outb(addr, value);
-        return AE_OK;
-    case 16:
-        outw(addr, value);
-        return AE_OK;
-    case 32:
-        outl(addr, value);
-        return AE_OK;
+        case 8:
+            outb(addr, value);
+            return AE_OK;
+        case 16:
+            outw(addr, value);
+            return AE_OK;
+        case 32:
+            outl(addr, value);
+            return AE_OK;
     }
 
     return AE_ERROR;

@@ -1,7 +1,7 @@
 /*
-kmain.cpp
+virt_machine_detect.hpp
 
-Copyright (c) 23 Yann BOUCHER (yann)
+Copyright (c) 29 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,52 +22,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
+#ifndef VIRT_MACHINE_DETECT_HPP
+#define VIRT_MACHINE_DETECT_HPP
 
-// TODO : FAT32 write
-// TODO : system calls
-// TODO : user mode
-// TODO : POC calculatrice
-// TODO : Paging
-// TODO : Son
-// TODO : Passer en IDE PCI : IDE UDMA
-// TODO : unifier l'interface PS/2
-// FIXME : revoir l'architecture dégeulasse de l'ownership des nodes de readdir
-// BUG : Terminal scroll loops ?
-// TODO : ACPI shutdown request
+extern bool running_qemu;
 
-// TODO : syscalls:
-/// screen_clr()
-/// screen_move_cursor(x, y)
-/// screen_push_color(col)
-/// screen_pop_color()
-
-#ifndef __cplusplus
-#error Must be compiled using C++ !
-#endif
-
-#include "utils/defs.hpp"
-
-#ifdef ARCH_i686
-#include "i686/pc/init.hpp"
-#endif
-
-#include "init.hpp"
-
-#ifdef ARCH_i686
-extern "C"
-void kmain(uint32_t magic, const multiboot_info_t* mbd_info)
-#else
-void kmain()
-#endif
-{
-#ifdef ARCH_i686
-    i686::pc::init(magic, mbd_info);
-#endif
-
-    init();
-
-    while (1)
-    {
-        nop();
-    }
-}
+#endif // VIRT_MACHINE_DETECT_HPP

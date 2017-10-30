@@ -36,7 +36,12 @@ extern "C" {
 #endif
 
 int memcmp(const void*, const void*, size_t);
-void* memcpy(void* __restrict, const void* __restrict, size_t);
+
+void* _naive_memcpy(void* __restrict dstptr, const void* __restrict srcptr, size_t size);
+void * _memcpy_mmx (void *v_to, const void *v_from, size_t len);
+
+extern void* (*memcpy)(void* __restrict, const void* __restrict, size_t);
+
 void* memmove(void*, const void*, size_t);
 void* memset(void*, uint8_t, size_t);
 void* memsetw(void*, uint16_t, size_t);

@@ -29,6 +29,8 @@ SOFTWARE.
 #include <vector.hpp>
 #include <functional.hpp>
 
+#include <ctype.h>
+
 template <class ContainerT = std::vector<std::string>>
 inline ContainerT tokenize(const std::string& str, const std::string& delimiters = " ", bool trimEmpty = false)
 {
@@ -76,8 +78,8 @@ Cont inline merge(const Cont& lhs, const Cont& rhs)
 {
     Cont cont = lhs;
     cont.insert(cont.end(),
-        rhs.begin(),
-        rhs.end());
+                rhs.begin(),
+                rhs.end());
 
     return cont;
 }
@@ -88,7 +90,7 @@ std::string inline trim(const std::string& str)
 }
 
 template <typename Cont>
-std::vector<Cont> split(const Cont& cont, size_t chunk_size, bool fill = false)
+inline std::vector<Cont> split(const Cont& cont, size_t chunk_size, bool fill = false)
 {
     std::vector<Cont> chunks;
 
@@ -114,12 +116,24 @@ std::vector<Cont> split(const Cont& cont, size_t chunk_size, bool fill = false)
 }
 
 template <typename T, typename U>
-std::vector<U> map(const std::vector<T>& cont, std::function<U(const T&)> fun)
+inline std::vector<U> map(const std::vector<T>& cont, std::function<U(const T&)> fun)
 {
     std::vector<U> result(cont.size());
     std::transform(cont.begin(), cont.end(), result.begin(), fun);
 
     return result;
+}
+
+inline std::string strtolower(std::string str)
+{
+    std::transform(str.begin(), str.end(),str.begin(), ::tolower);
+    return str;
+}
+
+inline std::string strtoupper(std::string str)
+{
+    std::transform(str.begin(), str.end(),str.begin(), ::toupper);
+    return str;
 }
 
 #endif // STLUTILS_HPP

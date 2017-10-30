@@ -25,7 +25,7 @@ SOFTWARE.
 #ifndef PS2MOUSE_HPP
 #define PS2MOUSE_HPP
 
-#include "i686/pc/cpu/registers.hpp"
+#include "i686/cpu/registers.hpp"
 
 #define MOUSE_ENABLE 0xA8
 #define MOUSE_DISABLE 0xA7

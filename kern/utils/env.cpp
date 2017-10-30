@@ -1,7 +1,7 @@
 /*
-putchar.c
+env.cpp
 
-Copyright (c) 23 Yann BOUCHER (yann)
+Copyright (c) 29 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -23,18 +23,38 @@ SOFTWARE.
 
 */
 
-#include <stdio.h>
+#include "env.hpp"
 
-#ifdef __is_libk
-#include <terminal/terminal.hpp>
-#endif
+#include "utils/stlutils.hpp"
+#include "utils/logging.hpp"
 
-void putchar(char c)
+std::unordered_map<std::string, std::string> kenv;
+
+void read_from_cmdline(const std::string& cmdline)
 {
-#ifdef __is_libk
-    if (term) term->put_char(c);
-#else
-    // TODO : do !
-#error Not implemented yet
-#endif
+    kenv.clear();
+
+    for (const auto& entry : tokenize(cmdline, " ", true))
+    {
+        auto values = tokenize(entry, "=");
+        if (values.size() == 1) values.emplace_back("");
+        ksetenv(values[0], values[1]);
+    }
+}
+
+std::optional<std::string> kgetenv(std::string s)
+{
+    if (kenv.find(s) != kenv.end())
+    {
+        return kenv[s];
+    }
+    else
+    {
+        return {};
+    }
+}
+
+void ksetenv(const std::string &key, std::string val)
+{
+    kenv[key] = val;
 }

@@ -31,6 +31,7 @@ SOFTWARE.
 #include "utils/align.hpp"
 #include "utils/addr.hpp"
 #include "utils/memutils.hpp"
+#include "utils/env.hpp"
 
 #include "../mem/meminfo.hpp"
 
@@ -43,13 +44,13 @@ void check(uint32_t magic, const multiboot_header &mbd, const multiboot_info* mb
 {
     if (mbd.magic != MULTIBOOT_HEADER_MAGIC || magic != MULTIBOOT_BOOTLOADER_MAGIC)
     {
-        log("0x%lx\n", magic);
+        log(Debug, "0x%lx\n", magic);
         panic("Multiboot2 Magic number is invalid ! Aborting");
         return;
     }
     if (reinterpret_cast<uintptr_t>(mbd_info) & 7)
     {
-        log("Unaligned mbi: 0x%lx\n", reinterpret_cast<uintptr_t>(mbd_info));
+        log(Debug, "Unaligned mbi: 0x%lx\n", reinterpret_cast<uintptr_t>(mbd_info));
         return;
     }
 }
@@ -69,25 +70,26 @@ void parse_info(const multiboot_info_t* info)
     //puts("Multiboot Info :");
 
     //kprintf("Multiboot flags : 0x%x\n", info->flags);
-    if (CHECK_FLAG(info->flags, 1))
-    {
-        log("Boot device : 0x%x\n", static_cast<uint8_t>(info->boot_device>>24));
-    }
     if (CHECK_FLAG(info->flags, 2))
     {
-        log("Command line : '%s'\n", reinterpret_cast<char*>(phys(info->cmdline)));
+        log(Info, "Command line : '%s'\n", reinterpret_cast<char*>(phys(info->cmdline)));
+        read_from_cmdline(reinterpret_cast<char*>(phys(info->cmdline)));
+    }
+    if (CHECK_FLAG(info->flags, 1))
+    {
+        log(Info, "Boot device : 0x%x\n", static_cast<uint8_t>(info->boot_device>>24));
     }
     if (CHECK_FLAG (info->flags, 3))
     {
         multiboot_module_t * mod { reinterpret_cast<multiboot_module_t *>(phys(info->mods_addr)) };
 
-        kprintf("Module count : %d\n", info->mods_count);
-        kprintf("Modules address : 0x%x\n", info->mods_addr);
+        log(Debug, "Module count : %d\n", info->mods_count);
+        log(Debug, "Modules address : 0x%x\n", info->mods_addr);
         for (size_t i = 0; i < info->mods_count; i++, mod++)
         {
-            kprintf(" Module start : 0x%x\n", mod->mod_start);
-            kprintf(" Module end : 0x%x\n", mod->mod_end);
-            kprintf(" Module cmdline : '%s'\n", reinterpret_cast<char*>(phys(mod->cmdline)));
+            log(Debug, " Module start : 0x%x\n", mod->mod_start);
+            log(Debug, " Module end : 0x%x\n", mod->mod_end);
+            log(Debug, " Module cmdline : '%s'\n", reinterpret_cast<char*>(phys(mod->cmdline)));
         }
     }
     if (CHECK_FLAG (info->flags, 6))
@@ -99,27 +101,27 @@ void parse_info(const multiboot_info_t* info)
                  + mmap->size + sizeof(mmap->size))
              )
         {
-            kprintf(" Base address : 0x%llx, ", mmap->addr);
-            kprintf("size : 0x%llx, ", mmap->len);
-            kprintf("type : %d\n", mmap->type);
+            log(Debug, " Base address : 0x%llx, ", mmap->addr);
+            log(Debug, "size : 0x%llx, ", mmap->len);
+            log(Debug, "type : %d\n", mmap->type);
 
         }
     }
     if (CHECK_FLAG(info->flags, 9))
     {
-        log("Bootloader name : '%s'\n", reinterpret_cast<char*>(phys(info->boot_loader_name)));
+        log(Info, "Bootloader name : '%s'\n", reinterpret_cast<char*>(phys(info->boot_loader_name)));
     }
 
     if (CHECK_FLAG(info->flags, 12))
     {
-        log("Video Framebuffer address : 0x%x\n", info->framebuffer_addr);
-        log("Video type : %s\n", info->framebuffer_type == MULTIBOOT_FRAMEBUFFER_TYPE_RGB ? "RGB" :
-                                 info->framebuffer_type == MULTIBOOT_FRAMEBUFFER_TYPE_INDEXED ? "Indexed" : "EGA Text");
-        log("Video size : %dx%d\n", info->framebuffer_width, info->framebuffer_height);
+        log(Info, "Video Framebuffer address : 0x%x\n", info->framebuffer_addr);
+        log(Info, "Video type : %s\n", info->framebuffer_type == MULTIBOOT_FRAMEBUFFER_TYPE_RGB ? "RGB" :
+                                                                                                  info->framebuffer_type == MULTIBOOT_FRAMEBUFFER_TYPE_INDEXED ? "Indexed" : "EGA Text");
+        log(Info, "Video size : %dx%d\n", info->framebuffer_width, info->framebuffer_height);
     }
     else
     {
-        log("No video mode associated, defaulting to 80x25 VGA text mode\n");
+        log(Info, "No video mode associated, defaulting to 80x25 VGA text mode\n");
     }
 }
 

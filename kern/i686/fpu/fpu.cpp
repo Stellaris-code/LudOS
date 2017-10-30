@@ -1,7 +1,7 @@
 /*
-io.cpp
+fpu.cpp
 
-Copyright (c) 23 Yann BOUCHER (yann)
+Copyright (c) 27 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -23,56 +23,32 @@ SOFTWARE.
 
 */
 
-#include "io.hpp"
+#include "fpu.hpp"
 
-#ifdef ARCH_i686
+#include "panic.hpp"
+#include "../cpu/cpuid.hpp"
+#include "utils/bitops.hpp"
 
-void outb(uint16_t port, uint8_t val)
+#include "utils/logging.hpp"
+
+void FPU::init()
 {
-    asm volatile ( "outb %0, %1" : : "a"(val), "Nd"(port) );
+    log(Debug, "Initializing FPU...\n");
+
+    if (!check_cpuid() && !check_fpu_presence())
+    {
+        panic("No FPU found !\n");
+    }
+
+    setup_fpu();
+
+    log(Info, "FPU Initialized\n");
 }
 
-void outw(uint16_t port, uint16_t val)
+bool FPU::check_cpuid()
 {
-    asm volatile ( "outw %0, %1" : : "a"(val), "Nd"(port) );
+    unsigned long edx, unused;
+    cpuid(1, unused, unused, unused, edx);
+
+    return bit_check(edx, 0);
 }
-
-void outl(uint16_t port, uint32_t val)
-{
-    asm volatile ( "outl %0, %1" : : "a"(val), "Nd"(port) );
-}
-
-uint8_t inb(uint16_t port)
-{
-    uint8_t ret;
-    asm volatile ( "inb %1, %0"
-                   : "=a"(ret)
-                   : "Nd"(port) );
-    return ret;
-}
-
-uint16_t inw(uint16_t port)
-{
-    uint16_t ret;
-    asm volatile ( "inw %1, %0"
-                   : "=a"(ret)
-                   : "Nd"(port) );
-    return ret;
-}
-
-uint32_t inl(uint16_t port)
-{
-    uint32_t ret;
-    asm volatile ( "inl %1, %0"
-                   : "=a"(ret)
-                   : "Nd"(port) );
-    return ret;
-}
-
-void io_wait()
-{
-    asm volatile ( "outb %%al, $0x80" : : "a"(0) );
-}
-
-#endif
-

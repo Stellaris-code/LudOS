@@ -70,7 +70,7 @@ inline void wait_update()
 
 inline Date get_time()
 {
-    uint8_t century;
+    uint8_t century = 0;
     uint8_t last_second;
     uint8_t last_minute;
     uint8_t last_hour;

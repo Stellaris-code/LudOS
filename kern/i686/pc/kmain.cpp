@@ -1,7 +1,7 @@
 /*
-env.hpp
+kmain.cpp
 
-Copyright (c) 30 Yann BOUCHER (yann)
+Copyright (c) 23 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -23,24 +23,42 @@ SOFTWARE.
 
 */
 
-#include <unordered_map.hpp>
-#include <string.hpp>
+// TODO : FAT32 write
+// TODO : system calls
+// TODO : user mode
+// TODO : POC calculatrice
+// TODO : Paging
+// TODO : Son
+// TODO : Passer en IDE PCI : IDE UDMA
+// TODO : unifier l'interface PS/2
+// FIXME : revoir l'architecture dégeulasse de l'ownership des nodes de readdir
+// BUG : Terminal scroll loops ?
+// TODO : ACPI shutdown request
+// TODO : passer bcp de choses en uintptr_t
+// TODO : v86 mode
+// TODO : TinyGL
+// TODO : HigherHalf
+// TODO : SSE
+// TODO : print stack on panic
 
-extern std::unordered_map<std::string, std::string> kenv;
+#ifndef __cplusplus
+#error Must be compiled using C++ !
+#endif
 
-inline std::string kgetenv(const std::string& s)
+#include "utils/defs.hpp"
+
+#include "i686/pc/init.hpp"
+#include "global_init.hpp"
+
+extern "C"
+void kmain(uint32_t magic, const multiboot_info_t* mbd_info)
 {
-    if (kenv.find(s) != kenv.end())
-    {
-        return kenv[s];
-    }
-    else
-    {
-        return "";
-    }
-}
+    i686::pc::init(magic, mbd_info);
 
-inline void ksetenv(const std::string& key, std::string val)
-{
-    kenv[key] = val;
+    global_init();
+
+    while (1)
+    {
+        nop();
+    }
 }

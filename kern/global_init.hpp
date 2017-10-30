@@ -46,16 +46,22 @@ SOFTWARE.
 #include "utils/logging.hpp"
 #include "utils/messagebus.hpp"
 #include "utils/memutils.hpp"
+#include "utils/virt_machine_detect.hpp"
 #include "halt.hpp"
 
 #include "time/time.hpp"
 
-inline void init()
+inline void global_init()
 {
+    if (running_qemu)
+    {
+        log(Debug, "Running QEMU\n");
+    }
+
     vfs::init();
     vfs::mount_dev();
 
-    log("Available drives : %zd\n", DiskInterface::drive_count());
+    log(Info, "Available drives : %zd\n", DiskInterface::drive_count());
 
 //    std::vector<uint8_t> data(512);
 //    DiskInterface::read(0, 0, 1, data.data());
@@ -65,15 +71,15 @@ inline void init()
 
     for (size_t disk { 0 }; disk < DiskInterface::drive_count(); ++disk)
     {
-        log("Disk : %zd\n", disk);
+        log(Info, "Disk : %zd\n", disk);
         for (auto partition : mbr::read_partitions(disk))
         {
-            log("Partition %zd\n", partition.partition_number);
+            log(Info, "Partition %zd\n", partition.partition_number);
             auto fs = fat::read_fat_fs(disk, partition.relative_sector);
             auto wrapper = fat::RAIIWrapper(fs);
             if (fs.valid)
             {
-                log("FAT %zd filesystem found on drive %zd, partition %d\n", (size_t)fs.type, fs.drive, partition.partition_number);
+                log(Info, "FAT %zd filesystem found on drive %zd, partition %d\n", fs.type, fs.drive, partition.partition_number);
 
                 auto root = std::make_shared<fat::fat_file>(fat::root_dir(fs));
 
@@ -101,7 +107,7 @@ inline void init()
             }
             else
             {
-                warn ("No FAT fs found on drive %zd, partition %d\n", fs.drive, partition.partition_number);
+                log(Debug, "No FAT fs found on drive %zd, partition %d\n", fs.drive, partition.partition_number);
             }
 
         }

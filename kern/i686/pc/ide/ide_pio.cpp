@@ -92,10 +92,9 @@ bool ide::pio::detail::write_one(BusPort port, ide::DriveType type, uint64_t blo
     outb(port + 7, 0x34);
 
     detail::poll_bsy(port);
-    detail::poll(port);
 
 #if 0
-    outsw(port + 0, buf, 1);
+    outsw(port + 0, buf, 256);
 #else
     for (size_t i { 0 }; i < 256; ++i)
     {
@@ -206,7 +205,7 @@ void ide::pio::init()
         }
     }
 
-    log("IDE PIO initialized.\n");
+    log(Info, "IDE PIO initialized.\n");
 }
 
 std::optional<ide::identify_data> ide::pio::identify(BusPort port, DriveType type)

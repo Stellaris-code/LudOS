@@ -27,23 +27,24 @@ SOFTWARE.
 
 #include "multiboot/multiboot_kern.hpp"
 
-#include "gdt/gdt.hpp"
+#include "i686/gdt/gdt.hpp"
 #include "devices/pic.hpp"
-#include "interrupts/idt.hpp"
+#include "i686/interrupts/idt.hpp"
 #include "devices/pit.hpp"
 #include "devices/speaker.hpp"
 #include "devices/ps2keyboard.hpp"
 #include "devices/ps2mouse.hpp"
 #include "devices/rtc.hpp"
-#include "fpu/fpu.hpp"
-#include "cpu/cpuinfo.hpp"
+#include "i686/fpu/fpu.hpp"
+#include "i686/cpu/cpuinfo.hpp"
+#include "i686/sse/sse.hpp"
 #include "mem/meminfo.hpp"
-#include "cpu/cpuid.hpp"
+#include "i686/cpu/cpuid.hpp"
 #include "smbios/smbios.hpp"
 #include "mem/paging.hpp"
 #include "bios/bda.hpp"
 #include "serial/serialdebug.hpp"
-#include "io/termio.hpp"
+#include "i686/io/termio.hpp"
 #include "pci/pci.hpp"
 #include "ide/ide_pio.hpp"
 #include "ahci/ahci.hpp"
@@ -58,6 +59,9 @@ SOFTWARE.
 #include "terminal/terminal.hpp"
 
 #include "utils/bitops.hpp"
+#include "utils/env.hpp"
+#include "utils/virt_machine_detect.hpp"
+#include "utils/logging.hpp"
 
 extern "C" multiboot_header mbd;
 
@@ -101,17 +105,38 @@ inline void init(uint32_t magic, const multiboot_info_t* mbd_info)
     idt::init();
     PIT::init(100);
     FPU::init();
+    if (has_sse())
+    {
+        log(Debug, "CPU is SSE capable\n");
+        enable_sse();
+        memcpy = _memcpy_mmx;
+    }
+    else
+    {
+#ifdef __SSE__
+        panic("No SSE support on this CPU\nThis kernel was built with SSE support, halting\n");
+#endif
+    }
 
     multiboot::parse_info(mbd_info);
 
-    log("CPU clock speed : ~%llu MHz\n", clock_speed());
-    detect_cpu();
-
-    Speaker::beep(200);
+    read_logging_config();
 
     SMBIOS::locate();
     SMBIOS::bios_info();
     SMBIOS::cpu_info();
+
+    // QEMU in -kernel mode doesn't read the cmdline
+    if (running_qemu)
+    {
+        read_from_cmdline("loglevel=debug");
+        read_logging_config();
+    }
+
+    log(Info, "CPU clock speed : ~%llu MHz\n", clock_speed());
+    detect_cpu();
+
+    Speaker::beep(200);
 
     auto status = acpi_init();
     if (ACPI_FAILURE(status))

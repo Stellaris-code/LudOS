@@ -33,7 +33,7 @@ SOFTWARE.
 #include "drivers/diskinterface.hpp"
 #include "time/timer.hpp"
 
-#include "../interrupts/isr.hpp"
+#include "i686/interrupts/isr.hpp"
 
 
 namespace ahci
@@ -56,7 +56,7 @@ bool init()
     mem = detail::get_hbamem_ptr();
     if (!mem)
     {
-        warn("No valid AHCI controller found\n");
+        log(Debug, "No valid AHCI controller found\n");
         return false;
     }
 
@@ -64,10 +64,10 @@ bool init()
 
     detail::get_ahci_ownership();
 
-    log("AHCI version : %d%d.%d%d\n", (mem->major_vs>>8)&0xFF, mem->major_vs&0xFF, (mem->minor_vs>>8)&0xFF, mem->minor_vs&0xFF);
-    log("AHCI capabilities : %b\n", mem->cap);
+    log(Info, "AHCI version : %d%d.%d%d\n", (mem->major_vs>>8)&0xFF, mem->major_vs&0xFF, (mem->minor_vs>>8)&0xFF, mem->minor_vs&0xFF);
+    log(Info, "AHCI capabilities : %b\n", mem->cap);
 
-    log("Available AHCI ports : \n");
+    log(Info, "Available AHCI ports : \n");
 
     size_t port_count { 0 };
 
@@ -78,10 +78,10 @@ bool init()
             detail::init_port(i);
             auto type = detail::get_port_type(i);
             if (type != detail::PortType::Null) ++port_count;
-            log("   Port %d, type %s\n", i, type == detail::PortType::SATA ? "SATA" :
-                                                                             type == detail::PortType::SATAPI ? "SATAPI" :
-                                                                                                                type == detail::PortType::SEMB ? "SEMB" :
-                                                                                                                                                 type == detail::PortType::PM ? "PM" : "Null");
+            log(Info, "   Port %d, type %s\n", i, type == detail::PortType::SATA ? "SATA" :
+                                                  type == detail::PortType::SATAPI ? "SATAPI" :
+                                                  type == detail::PortType::SEMB ? "SEMB" :
+                                                  type == detail::PortType::PM ? "PM" : "Null");
         }
     }
 
@@ -91,7 +91,7 @@ bool init()
         return false;
     }
 
-    log("AHCI interrupt line : %d\n", detail::get_interrupt_line());
+    log(Debug, "AHCI interrupt line : %d\n", detail::get_interrupt_line());
 
     isr::register_handler(detail::get_interrupt_line(), &detail::ahci_isr);
 
@@ -131,7 +131,7 @@ void detail::get_ahci_ownership()
 
 void detail::ahci_isr(const registers *reg)
 {
-    log("Interrupt !!\n");
+    log(Debug, "Interrupt !!\n");
 }
 
 uint32_t detail::flush_commands(size_t port)

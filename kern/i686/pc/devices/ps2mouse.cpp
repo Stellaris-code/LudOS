@@ -29,7 +29,7 @@ SOFTWARE.
 
 #include "drivers/mouse/mouse.hpp"
 
-#include "../interrupts/isr.hpp"
+#include "i686/interrupts/isr.hpp"
 #include "pic.hpp"
 #include "io.hpp"
 #include "utils/messagebus.hpp"
@@ -42,7 +42,7 @@ void PS2Mouse::init()
 
     isr::register_handler(IRQ12, &isr);
 
-    log("Mouse driver initialized\n");
+    log(Info, "Mouse driver initialized\n");
 }
 
 void PS2Mouse::isr(const registers *regs)
@@ -183,7 +183,7 @@ void PS2Mouse::enable()
 
     if (is_intellimouse)
     {
-        log("Intellimouse-compatible mouse detected\n");
+        log(Info, "Intellimouse-compatible mouse detected\n");
     }
 
     send_write(SET_DEFAULTS);

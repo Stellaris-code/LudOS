@@ -29,6 +29,9 @@ SOFTWARE.
 #include <stdarg.h>
 
 #include "utils/defs.hpp"
+#include "utils/demangle.hpp"
+#include "stack-trace.hpp"
+#include "elf/symbol_table.hpp"
 
 #include "terminal/terminal.hpp"
 
@@ -40,11 +43,32 @@ SOFTWARE.
 
 #include "halt.hpp"
 
+void print_stack_symbols()
+{
+    puts("Stack trace :");
+
+    auto trace = trace_stack(0);
+
+    for (size_t i { 0 }; i < trace.size(); ++i)
+    {
+        if (auto fun = elf::kernel_symbol_table.get_function(trace[i]); fun)
+        {
+            auto symbol = *fun;
+            kprintf("#%d   0x%x in %s\n", i+1, symbol.offset, demangle(symbol.name).c_str());
+        }
+        else
+        {
+            kprintf("#%d    0x%x in ????\n", i+1, trace[i]);
+        }
+    }
+
+    kprintf("\n");
+}
+
 [[noreturn]]
 void panic(const char *fmt, ...)
 {
     log_serial("Kernel Panic !\n");
-    log_serial("caller : 0x%x\n", __builtin_return_address(0));
 
     cli();
 
@@ -69,7 +93,6 @@ void panic(const char *fmt, ...)
         Speaker::beep(300);
 
         puts("\nKERNEL PANIC : ");
-        kprintf("caller : 0x%x\n", __builtin_return_address(0));
 
         {
             va_list va;
@@ -78,9 +101,13 @@ void panic(const char *fmt, ...)
             va_end(va);
         }
 
-        puts("\n");
+        kprintf("\n");
 
         dump(regs);
+
+        kprintf("\n");
+
+        print_stack_symbols();
     }
 
     halt();

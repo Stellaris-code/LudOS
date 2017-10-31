@@ -27,19 +27,17 @@ SOFTWARE.
 // TODO : system calls
 // TODO : user mode
 // TODO : POC calculatrice
+// TODO : windowing system avec alloc d'un canvas etc
 // TODO : Paging
 // TODO : Son
 // TODO : Passer en IDE PCI : IDE UDMA
-// TODO : unifier l'interface PS/2
 // FIXME : revoir l'architecture dégeulasse de l'ownership des nodes de readdir
 // BUG : Terminal scroll loops ?
-// TODO : ACPI shutdown request
-// TODO : passer bcp de choses en uintptr_t
-// TODO : v86 mode
+// FIXME : revoir les terminal pour permettre de pouvoir écrire dans un rapidement et afficher un autre
+// TODO : x86emu pour le modesetting
 // TODO : TinyGL
-// TODO : HigherHalf
-// TODO : SSE
 // TODO : print stack on panic
+// BUG : terminal multiline text is buggy
 
 #ifndef __cplusplus
 #error Must be compiled using C++ !

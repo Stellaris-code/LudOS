@@ -48,6 +48,7 @@ ACPI_STATUS AcpiOsInitialize()
 
 ACPI_STATUS AcpiOsTerminate()
 {
+    log(Notice, "ACPI shutdown\n");
     return AE_OK;
 }
 

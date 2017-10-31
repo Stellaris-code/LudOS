@@ -27,34 +27,33 @@ SOFTWARE.
 
 #include "multiboot/multiboot_kern.hpp"
 
-#include "i686/gdt/gdt.hpp"
 #include "devices/pic.hpp"
-#include "i686/interrupts/idt.hpp"
 #include "devices/pit.hpp"
 #include "devices/speaker.hpp"
 #include "devices/ps2keyboard.hpp"
 #include "devices/ps2mouse.hpp"
 #include "devices/rtc.hpp"
 #include "i686/fpu/fpu.hpp"
+#include "i686/interrupts/idt.hpp"
 #include "i686/cpu/cpuinfo.hpp"
-#include "i686/sse/sse.hpp"
-#include "mem/meminfo.hpp"
+#include "i686/simd/simd.hpp"
 #include "i686/cpu/cpuid.hpp"
+#include "i686/io/termio.hpp"
+#include "i686/gdt/gdt.hpp"
 #include "smbios/smbios.hpp"
+#include "mem/meminfo.hpp"
 #include "mem/paging.hpp"
 #include "bios/bda.hpp"
 #include "serial/serialdebug.hpp"
-#include "i686/io/termio.hpp"
 #include "pci/pci.hpp"
 #include "ide/ide_pio.hpp"
 #include "ahci/ahci.hpp"
 #include "acpi/acpi_init.hpp"
-
-#include "common/defs.hpp"
+#include "acpi/powermanagement.hpp"
 
 #include "graphics/vga.hpp"
 
-#include "acpi/powermanagement.hpp"
+#include "elf/symbol_table.hpp"
 
 #include "terminal/terminal.hpp"
 
@@ -62,6 +61,8 @@ SOFTWARE.
 #include "utils/env.hpp"
 #include "utils/virt_machine_detect.hpp"
 #include "utils/logging.hpp"
+#include "utils/defs.hpp"
+#include "utils/memutils.hpp"
 
 extern "C" multiboot_header mbd;
 
@@ -95,6 +96,9 @@ inline void init(uint32_t magic, const multiboot_info_t* mbd_info)
 
     init_printf(nullptr, [](void*, char c){putchar(c);});
 
+    auto elf_info = multiboot::elf_info(mbd_info);
+    elf::kernel_symbol_table = elf::get_symbol_table(elf_info.first, elf_info.second);
+
     multiboot::check(magic, mbd, mbd_info);
 
     gdt::init();
@@ -105,7 +109,7 @@ inline void init(uint32_t magic, const multiboot_info_t* mbd_info)
     idt::init();
     PIT::init(100);
     FPU::init();
-    if (has_sse())
+    if (simd_features() & SSE)
     {
         log(Debug, "CPU is SSE capable\n");
         enable_sse();
@@ -137,6 +141,8 @@ inline void init(uint32_t magic, const multiboot_info_t* mbd_info)
     detect_cpu();
 
     Speaker::beep(200);
+
+    panic("test\n");
 
     auto status = acpi_init();
     if (ACPI_FAILURE(status))

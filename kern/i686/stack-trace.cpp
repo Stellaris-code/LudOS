@@ -1,7 +1,7 @@
 /*
-sse.hpp
+stack-trace.cpp
 
-Copyright (c) 29 Yann BOUCHER (yann)
+Copyright (c) 31 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,15 +22,28 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef SSE_HPP
-#define SSE_HPP
 
-// TODO : get SSE version
+#include "stack-trace.hpp"
 
-extern "C"
-bool has_sse();
+struct [[gnu::packed]] stack_frame
+{
+    stack_frame* previous;
+    uintptr_t return_addr;
+};
 
-extern "C"
-void enable_sse();
+std::vector<uintptr_t> trace_stack(size_t frames)
+{
+    std::vector<uintptr_t> trace;
 
-#endif // SSE_HPP
+    stack_frame *fp;
+
+    asm("movl %%ebp, %[fp]" : [fp] "=r" (fp));
+
+    for(size_t i = 0; (frames != 0 ? i < frames : true) && fp;
+        fp = fp->previous, i++)
+    {
+        trace.emplace_back(reinterpret_cast<uintptr_t>(fp->return_addr));
+    }
+
+    return trace;
+}

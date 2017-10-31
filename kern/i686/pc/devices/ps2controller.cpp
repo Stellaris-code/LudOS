@@ -1,7 +1,7 @@
 /*
-interrupts.hpp
+ps2controller.cpp
 
-Copyright (c) 25 Yann BOUCHER (yann)
+Copyright (c) 30 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,33 +22,25 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef INTERRUPTS_HPP
-#define INTERRUPTS_HPP
 
-#include <stdint.h>
+#include "ps2controller.hpp"
 
-inline void cli()
+#include "io.hpp"
+
+void PS2Controller::send_command(uint8_t command, bool poll)
 {
-    asm volatile ("cli");
+    if (poll) poll_obf();
+    outb(CommandPort, command);
 }
 
-inline void sti()
+void PS2Controller::poll_ibf()
 {
-    asm volatile ("sti");
+    size_t timeout = poll_timeout;
+    while (--timeout && !(inb(CommandPort) & 0x2));
 }
 
-inline bool interrupts_enabled()
+void PS2Controller::poll_obf()
 {
-    uint32_t flags;
-    asm volatile ( "pushf\n\t"
-                   "pop %0"
-                   : "=g"(flags) );
-    return flags & (1 << 9);
+    size_t timeout = poll_timeout;
+    while (--timeout && (inb(CommandPort) & 0x1) == 1);
 }
-
-inline void interrupt(uint8_t code)
-{
-    asm volatile ("int %0" : :"i"(code));
-}
-
-#endif // INTERRUPTS_HPP

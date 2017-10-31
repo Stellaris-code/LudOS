@@ -47,8 +47,8 @@ include_directories("${CMAKE_CURRENT_SOURCE_DIR}/kern/external")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/libk")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/external/libc++")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/external/acpica")
-#include_directories("${CMAKE_CURRENT_SOURCE_DIR}/external/libcxxrt/src")
-include_directories("${CMAKE_CURRENT_SOURCE_DIR}/external/libunwind/include")
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}/external/libcxxrt/src")
+#include_directories("${CMAKE_CURRENT_SOURCE_DIR}/external/libunwind/include")
 
 set(GENERIC_SRCS ${KERN_TERMINAL_SOURCES} ${CPP_SOURCES} ${KERN_BIOS_SOURCES} ${KERN_MB_SOURCES} ${KERN_BASE_SOURCES})
 

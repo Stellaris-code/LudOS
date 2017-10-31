@@ -1,7 +1,7 @@
 /*
-interrupts.hpp
+elf.cpp
 
-Copyright (c) 25 Yann BOUCHER (yann)
+Copyright (c) 30 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,33 +22,47 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef INTERRUPTS_HPP
-#define INTERRUPTS_HPP
 
-#include <stdint.h>
+#include "elf/elf.hpp"
 
-inline void cli()
+#include "utils/logging.hpp"
+
+namespace elf
 {
-    asm volatile ("cli");
+
+const char *str_table(const Elf32_Shdr *hdr, size_t strtableidx)
+{
+    return reinterpret_cast<const char*>(hdr[strtableidx].sh_addr);
 }
 
-inline void sti()
+const char *lookup_str(const char *strtable, size_t offset)
 {
-    asm volatile ("sti");
+    return strtable + offset;
 }
 
-inline bool interrupts_enabled()
+const Elf32_Sym *symbol(const Elf32_Shdr *symtab, size_t num)
 {
-    uint32_t flags;
-    asm volatile ( "pushf\n\t"
-                   "pop %0"
-                   : "=g"(flags) );
-    return flags & (1 << 9);
+    size_t symtab_entries = symtab->sh_size / symtab->sh_entsize;
+    if(num >= symtab_entries)
+    {
+        warn("Symbol Index out of Range (%d:%u).\n", symtab, num);
+        return nullptr;
+    }
+
+    return &((const Elf32_Sym*)symtab->sh_addr)[num];
 }
 
-inline void interrupt(uint8_t code)
+const Elf32_Shdr *section(const Elf32_Shdr *base, size_t size, size_t type)
 {
-    asm volatile ("int %0" : :"i"(code));
+    for (size_t i { 0 }; i < size; ++i)
+    {
+        if (base[i].sh_type == type)
+        {
+            return base + i;
+        }
+    }
+
+    return nullptr;
 }
 
-#endif // INTERRUPTS_HPP
+}

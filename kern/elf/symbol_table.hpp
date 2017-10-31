@@ -1,7 +1,7 @@
 /*
-defs.hpp
+symbol_table.hpp
 
-Copyright (c) 05 Yann BOUCHER (yann)
+Copyright (c) 31 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,15 +22,51 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef __DEFS_HPP
-#define __DEFS_HPP
+#ifndef SYMBOL_TABLE_HPP
+#define SYMBOL_TABLE_HPP
 
-#define QUOTE(str) #str
-#define EXPAND_AND_QUOTE(str) QUOTE(str)
+#include <stdint.h>
 
-#define LUDOS_MINOR 0
-#define LUDOS_MAJOR 1
+#include <unordered_map.hpp>
+#include <string.hpp>
+#include <optional.hpp>
 
-#define LUDOS_VERSION_STRING "v" EXPAND_AND_QUOTE(LUDOS_MAJOR) "." EXPAND_AND_QUOTE(LUDOS_MINOR)
+#include "elf.hpp"
 
-#endif // __DEFS_HPP
+namespace elf
+{
+
+struct SymbolInfo
+{
+    std::string name;
+    std::string file;
+    uintptr_t offset;
+};
+
+struct SymbolTable
+{
+    std::optional<SymbolInfo> get_function(uintptr_t addr)
+    {
+        while (addr > 0)
+        {
+            if (table.find(addr) != table.end())
+            {
+                return table.at(addr);
+            }
+
+            --addr;
+        }
+
+        return {};
+    }
+
+    std::unordered_map<uintptr_t, SymbolInfo> table;
+};
+
+SymbolTable get_symbol_table(const Elf32_Shdr* base, size_t sh_num);
+
+extern SymbolTable kernel_symbol_table;
+
+}
+
+#endif // SYMBOL_TABLE_HPP

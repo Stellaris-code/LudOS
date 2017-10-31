@@ -93,20 +93,17 @@ inline void dump(const registers* regs)
         kprintf("eip : 0x%x\n", static_cast<unsigned int>(regs->eip));
 
         kprintf("int : 0x%x  err code : 0x%x\n", static_cast<unsigned int>(regs->int_no), static_cast<unsigned int>(regs->err_code));
-
-        kprintf("eax : 0x%x  ebx : 0x%x\n", static_cast<unsigned int>(regs->eax), static_cast<unsigned int>(regs->ebx));
-
-        kprintf("ecx : 0x%x  edx : 0x%x\n", static_cast<unsigned int>(regs->ecx), static_cast<unsigned int>(regs->edx));
-        kprintf("ebx : 0x%x  esi : 0x%x\n", static_cast<unsigned int>(regs->ebp), static_cast<unsigned int>(regs->esi));
+        kprintf("eax : 0x%x  ebx : 0x%x  ", static_cast<unsigned int>(regs->eax), static_cast<unsigned int>(regs->ebx));
+        kprintf("ecx : 0x%x  edx : 0x%x  ", static_cast<unsigned int>(regs->ecx), static_cast<unsigned int>(regs->edx));
+        kprintf("ebx : 0x%x  esi : 0x%x  ", static_cast<unsigned int>(regs->ebp), static_cast<unsigned int>(regs->esi));
         kprintf("edi : 0x%x\n\n", static_cast<unsigned int>(regs->edi));
 
-        kprintf("cr0 : 0x%x  cr2 : 0x%x\n", static_cast<unsigned int>(cr0()), static_cast<unsigned int>(cr2()));
+        kprintf("cr0 : 0x%x  cr2 : 0x%x  ", static_cast<unsigned int>(cr0()), static_cast<unsigned int>(cr2()));
         kprintf("cr3 : 0x%x  cr4 : 0x%x\n\n", static_cast<unsigned int>(cr3()), static_cast<unsigned int>(cr4()));
 
-        kprintf("gs : 0x%x  fs : 0x%x\n", static_cast<unsigned int>(regs->gs), static_cast<unsigned int>(regs->fs));
-        kprintf("es : 0x%x  ds : 0x%x\n\n", static_cast<unsigned int>(regs->es), static_cast<unsigned int>(regs->ds));
-
-        kprintf("cs : 0x%x  eflags : 0x%x\n", static_cast<unsigned int>(regs->cs), static_cast<unsigned int>(regs->eflags));
+        kprintf("gs : 0x%x  fs : 0x%x  ", static_cast<unsigned int>(regs->gs), static_cast<unsigned int>(regs->fs));
+        kprintf("es : 0x%x  ds : 0x%x\n", static_cast<unsigned int>(regs->es), static_cast<unsigned int>(regs->ds));
+        kprintf("cs : 0x%x  eflags : 0x%x  ", static_cast<unsigned int>(regs->cs), static_cast<unsigned int>(regs->eflags));
         kprintf("ss : 0x%x  esp : 0x%x\n", static_cast<unsigned int>(regs->ss), static_cast<unsigned int>(regs->esp));
     }
 }
@@ -115,12 +112,10 @@ inline void dump_serial(const registers* regs)
 {
     if (regs)
     {
-        log_serial("%x\n", static_cast<unsigned int>(regs->eip));
+        log_serial("eip : 0x%x\n", static_cast<unsigned int>(regs->eip));
 
         log_serial("int : 0x%x  err code : 0x%x\n", static_cast<unsigned int>(regs->int_no), static_cast<unsigned int>(regs->err_code));
-
         log_serial("eax : 0x%x  ebx : 0x%x\n", static_cast<unsigned int>(regs->eax), static_cast<unsigned int>(regs->ebx));
-
         log_serial("ecx : 0x%x  edx : 0x%x\n", static_cast<unsigned int>(regs->ecx), static_cast<unsigned int>(regs->edx));
         log_serial("ebx : 0x%x  esi : 0x%x\n", static_cast<unsigned int>(regs->ebp), static_cast<unsigned int>(regs->esi));
         log_serial("edi : 0x%x\n\n", static_cast<unsigned int>(regs->edi));
@@ -129,8 +124,7 @@ inline void dump_serial(const registers* regs)
         log_serial("cr3 : 0x%x  cr4 : 0x%x\n\n", static_cast<unsigned int>(cr3()), static_cast<unsigned int>(cr4()));
 
         log_serial("gs : 0x%x  fs : 0x%x\n", static_cast<unsigned int>(regs->gs), static_cast<unsigned int>(regs->fs));
-        log_serial("es : 0x%x  ds : 0x%x\n\n", static_cast<unsigned int>(regs->es), static_cast<unsigned int>(regs->ds));
-
+        log_serial("es : 0x%x  ds : 0x%x\n", static_cast<unsigned int>(regs->es), static_cast<unsigned int>(regs->ds));
         log_serial("cs : 0x%x  eflags : 0x%x\n", static_cast<unsigned int>(regs->cs), static_cast<unsigned int>(regs->eflags));
         log_serial("ss : 0x%x  esp : 0x%x\n", static_cast<unsigned int>(regs->ss), static_cast<unsigned int>(regs->esp));
     }

@@ -31,17 +31,6 @@ SOFTWARE.
 #include <vector.hpp>
 #include <string.hpp>
 
-#define SCROLL_LOCK_LED 0b001
-#define NUM_LOCK_LED 0b010
-#define CAPS_LOCK_LED   0b100
-#define COMMAND_PORT 0x64
-#define KBD_PORT 0x60
-#define LED_CMD 0xED
-#define LED_ACK 0xFA
-#define KBD_ENABLE 0xAE
-#define KBD_DISABLE 0xAD
-#define KBD_RESEND 0xFE
-
 class PS2Keyboard
 {
 public:
@@ -55,11 +44,6 @@ public:
 
 private:
     static void isr(const registers*);
-
-    static void send_command(uint8_t command, bool poll = true);
-
-    static void poll_ibf();
-    static void poll_obf();
 
     static void init_assocs();
 

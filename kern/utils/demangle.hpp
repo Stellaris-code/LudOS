@@ -1,7 +1,7 @@
 /*
-interrupts.hpp
+demangle.hpp
 
-Copyright (c) 25 Yann BOUCHER (yann)
+Copyright (c) 31 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,33 +22,27 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef INTERRUPTS_HPP
-#define INTERRUPTS_HPP
+#ifndef DEMANGLE_HPP
+#define DEMANGLE_HPP
 
-#include <stdint.h>
+#include <string.hpp>
 
-inline void cli()
+#include <cxxabi.h>
+
+inline std::string demangle(const std::string& symbol)
 {
-    asm volatile ("cli");
+    int status = -1;
+    char* demangled_cstr = abi::__cxa_demangle(symbol.c_str(), nullptr, nullptr, &status);
+
+    std::string result = symbol;
+
+    if (status == 0)
+    {
+        result = demangled_cstr;
+        kfree(demangled_cstr);
+    }
+
+    return result;
 }
 
-inline void sti()
-{
-    asm volatile ("sti");
-}
-
-inline bool interrupts_enabled()
-{
-    uint32_t flags;
-    asm volatile ( "pushf\n\t"
-                   "pop %0"
-                   : "=g"(flags) );
-    return flags & (1 << 9);
-}
-
-inline void interrupt(uint8_t code)
-{
-    asm volatile ("int %0" : :"i"(code));
-}
-
-#endif // INTERRUPTS_HPP
+#endif // DEMANGLE_HPP

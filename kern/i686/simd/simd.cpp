@@ -1,7 +1,7 @@
 /*
-interrupts.hpp
+sse.cpp
 
-Copyright (c) 25 Yann BOUCHER (yann)
+Copyright (c) 30 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,33 +22,31 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef INTERRUPTS_HPP
-#define INTERRUPTS_HPP
 
-#include <stdint.h>
+#include "simd.hpp"
 
-inline void cli()
+#include "i686/cpu/cpuid.hpp"
+
+uint16_t simd_features()
 {
-    asm volatile ("cli");
-}
+    uint32_t ecx, edx, unused;
+    cpuid(1, unused, unused, ecx, edx);
 
-inline void sti()
-{
-    asm volatile ("sti");
-}
+    uint16_t result;
 
-inline bool interrupts_enabled()
-{
-    uint32_t flags;
-    asm volatile ( "pushf\n\t"
-                   "pop %0"
-                   : "=g"(flags) );
-    return flags & (1 << 9);
-}
+    if (edx & (1<<25)) result |= SSE;
+    if (edx & (1<<26)) result |= SSE2;
+    if (ecx & (1<< 0)) result |= SSE3;
+    if (ecx & (1<< 9)) result |= SSSE3;
+    if (ecx & (1<<19)) result |= SSE41;
+    if (ecx & (1<<20)) result |= SSE42;
+    if (ecx & (1<< 6)) result |= SSE4A;
 
-inline void interrupt(uint8_t code)
-{
-    asm volatile ("int %0" : :"i"(code));
-}
+    if (ecx & (1<<11)) result |= XOP;
+    if (ecx & (1<<16)) result |= FMA4;
+    if (ecx & (1<<29)) result |= CVT16;
+    if (ecx & (1<<28)) result |= AVX;
+    if (ecx & (1<<26)) result |= XSAVE;
 
-#endif // INTERRUPTS_HPP
+    return result;
+}

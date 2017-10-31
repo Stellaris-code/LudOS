@@ -25,15 +25,16 @@ SOFTWARE.
 
 #include "multiboot_kern.hpp"
 
-#include "utils/logging.hpp"
 #include "panic.hpp"
 
 #include "utils/align.hpp"
 #include "utils/addr.hpp"
 #include "utils/memutils.hpp"
 #include "utils/env.hpp"
-
-#include "../mem/meminfo.hpp"
+#include "utils/logging.hpp"
+#include "elf/elf.hpp"
+#include "i686/pc/mem/meminfo.hpp"
+#include "halt.hpp"
 
 #define CHECK_FLAG(flags,bit)   ((flags) & (1 << (bit)))
 
@@ -123,6 +124,19 @@ void parse_info(const multiboot_info_t* info)
     {
         log(Info, "No video mode associated, defaulting to 80x25 VGA text mode\n");
     }
+}
+
+std::pair<const elf::Elf32_Shdr *, size_t> elf_info(const multiboot_info_t *info)
+{
+    if (!CHECK_FLAG (info->flags, 5))
+    {
+        return {nullptr, 0};
+    }
+
+    multiboot_elf_section_header_table_t elf_info = info->u.elf_sec;
+    auto shdr = reinterpret_cast<const elf::Elf32_Shdr*>(phys(elf_info.addr));
+
+    return {shdr, elf_info.num};
 }
 
 }

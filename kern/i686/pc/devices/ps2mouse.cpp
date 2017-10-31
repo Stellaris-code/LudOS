@@ -31,10 +31,25 @@ SOFTWARE.
 
 #include "i686/interrupts/isr.hpp"
 #include "pic.hpp"
+#include "ps2controller.hpp"
 #include "io.hpp"
 #include "utils/messagebus.hpp"
 
 #include "utils/logging.hpp"
+
+enum PS2MouseCommands : uint8_t
+{
+    MouseEnable = 0xA8,
+    MouseDisable = 0xA7,
+    MouseResend = 0xFE,
+    MouseWrite = 0xD4,
+    InCompaqByte = 0x20,
+    OutCompaqByte = 0x60,
+    SetDefaults = 0xF6,
+    EnableDataReporting = 0xF4,
+    SetSampleRate = 0xF3,
+    GetDeviceID = 0xF2
+};
 
 void PS2Mouse::init()
 {
@@ -47,7 +62,7 @@ void PS2Mouse::init()
 
 void PS2Mouse::isr(const registers *regs)
 {
-    uint8_t status = inb(COMMAND_PORT);
+    uint8_t status = inb(CommandPort);
     size_t packet_counter { 0 };
 
     struct PS2MousePacket
@@ -77,7 +92,7 @@ void PS2Mouse::isr(const registers *regs)
 
     while (status & 1)
     {
-        int8_t mouse_in = inb(DATA_PORT);
+        int8_t mouse_in = inb(DataPort);
 
         if (status & 0x20)
         {
@@ -85,7 +100,7 @@ void PS2Mouse::isr(const registers *regs)
 
             ++packet_counter;
         }
-        status = inb(COMMAND_PORT);
+        status = inb(CommandPort);
     }
 
     if (!is_intellimouse)
@@ -107,24 +122,18 @@ void PS2Mouse::isr(const registers *regs)
     }
 }
 
-void PS2Mouse::send_command(uint8_t command, bool poll)
-{
-    if (poll) poll_obf();
-    outb(COMMAND_PORT, command);
-}
-
 void PS2Mouse::send_write(uint8_t val)
 {
-    poll_obf();
-    outb(COMMAND_PORT, MOUSE_WRITE);
-    poll_obf();
-    outb(DATA_PORT, val);
+    PS2Controller::poll_obf();
+    PS2Controller::send_command(MouseWrite);
+    PS2Controller::poll_obf();
+    outb(DataPort, val);
 }
 
 uint8_t PS2Mouse::read()
 {
-    poll_ibf();
-    return inb(DATA_PORT);
+    PS2Controller::poll_ibf();
+    return inb(DataPort);
 }
 
 bool PS2Mouse::enable_intellimouse()
@@ -133,8 +142,8 @@ bool PS2Mouse::enable_intellimouse()
     set_sample_rate(100);
     set_sample_rate(80);
 
-    poll_obf();
-    send_write(GET_DEVICE_ID);
+    PS2Controller::poll_obf();
+    send_write(GetDeviceID);
     read();
 
     bool result = read() == 0x03;
@@ -144,40 +153,28 @@ bool PS2Mouse::enable_intellimouse()
     return result;
 }
 
-void PS2Mouse::poll_ibf()
-{
-    uint32_t timeout = 100000/2;
-    while (--timeout && !(inb(COMMAND_PORT) & 0x2));
-}
-
-void PS2Mouse::poll_obf()
-{
-    uint32_t timeout = 100000/2;
-    while (--timeout && (inb(COMMAND_PORT) & 0x1) == 1);
-}
-
 void PS2Mouse::enable()
 {
     pic::clear_mask(12); // enable mouse interrupts
 
     cli();
 
-    poll_obf();
-    send_command(MOUSE_ENABLE, false);
+    PS2Controller::poll_obf();
+    PS2Controller::send_command(MouseEnable, false);
 
-    poll_obf();
-    send_command(IN_COMPAQ_BYTE, false);
+    PS2Controller::poll_obf();
+    PS2Controller::send_command(InCompaqByte, false);
 
-    poll_ibf();
-    uint8_t byte = inb(DATA_PORT);
+    PS2Controller::poll_ibf();
+    uint8_t byte = inb(DataPort);
 
     byte |= 0b10;
     byte &= 0b11011111;
-    poll_obf();
-    send_command(OUT_COMPAQ_BYTE, false);
+    PS2Controller::poll_obf();
+    PS2Controller::send_command(OutCompaqByte, false);
 
-    poll_obf();
-    outb(DATA_PORT, byte);
+    PS2Controller::poll_obf();
+    outb(DataPort, byte);
 
     is_intellimouse = enable_intellimouse();
 
@@ -186,9 +183,9 @@ void PS2Mouse::enable()
         log(Info, "Intellimouse-compatible mouse detected\n");
     }
 
-    send_write(SET_DEFAULTS);
+    send_write(SetDefaults);
     read();
-    send_write(ENABLE_DATA_REPORTING);
+    send_write(EnableDataReporting);
     read();
 
     sti();
@@ -199,14 +196,14 @@ void PS2Mouse::disable()
     cli();
 
     pic::set_mask(12); // disable mouse interrupts
-    send_command(MOUSE_DISABLE, false);
+    PS2Controller::send_command(MouseDisable, false);
 
     sti();
 }
 
 void PS2Mouse::set_sample_rate(uint8_t rate)
 {
-    send_write(SET_SAMPLE_RATE);
+    send_write(SetSampleRate);
     if (read() != 0xFA) return;
 
     send_write(rate);

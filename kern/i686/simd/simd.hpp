@@ -1,7 +1,7 @@
 /*
-interrupts.hpp
+sse.hpp
 
-Copyright (c) 25 Yann BOUCHER (yann)
+Copyright (c) 29 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,33 +22,32 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef INTERRUPTS_HPP
-#define INTERRUPTS_HPP
+#ifndef SSE_HPP
+#define SSE_HPP
 
 #include <stdint.h>
 
-inline void cli()
+enum SIMDType : uint16_t
 {
-    asm volatile ("cli");
-}
+    MMX  =1<<0,
+    SSE  =1<<1,
+    SSE2 =1<<2,
+    SSE3 =1<<3,
+    SSSE3=1<<4,
+    SSE41=1<<5,
+    SSE42=1<<6,
+    SSE4A=1<<7,
+    XOP  =1<<8,
+    FMA4 =1<<9,
+    CVT16=1<<10,
+    AVX  =1<<11,
+    XSAVE=1<<12,
+    AVX512=1<<13
+};
 
-inline void sti()
-{
-    asm volatile ("sti");
-}
+uint16_t simd_features();
 
-inline bool interrupts_enabled()
-{
-    uint32_t flags;
-    asm volatile ( "pushf\n\t"
-                   "pop %0"
-                   : "=g"(flags) );
-    return flags & (1 << 9);
-}
+extern "C"
+void enable_sse();
 
-inline void interrupt(uint8_t code)
-{
-    asm volatile ("int %0" : :"i"(code));
-}
-
-#endif // INTERRUPTS_HPP
+#endif // SSE_HPP

@@ -76,7 +76,7 @@ void detail::init_port(size_t port)
 
 void detail::reset_port(size_t port)
 {
-    log("Resetting AHCI port %d\n", port);
+    log(Debug, "Resetting AHCI port %d\n", port);
 
     mem->ports[port].cmd &= ~pxcmd_st; // clear st bit
 

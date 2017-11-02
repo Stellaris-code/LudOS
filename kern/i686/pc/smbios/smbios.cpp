@@ -25,13 +25,16 @@ SOFTWARE.
 
 #include "smbios.hpp"
 
-#include "../external/dmidecode.hpp"
+#include "i686/pc/external/dmidecode.hpp"
 
-#include "../serial/serialdebug.hpp"
+#include "i686/pc/serial/serialdebug.hpp"
 
 #include "utils/addr.hpp"
 #include "utils/bitops.hpp"
+#include "utils/virt_machine_detect.hpp"
 #include "panic.hpp"
+
+#include <string.h>
 
 SMBIOSEntryPoint *SMBIOS::locate()
 {
@@ -54,15 +57,15 @@ SMBIOSEntryPoint *SMBIOS::locate()
     }
     if (reinterpret_cast<uintptr_t>(mem) >= phys(0x100000))
     {
-        warn("SMBIOS not found !\n");
+        log(Debug, "no SMBIOS found\n");
         return nullptr;
     }
     else
     {
-        log("SMBIOS found at : %p\n", mem);
+        log(Debug, "SMBIOS found at : %p\n", mem);
         entry_point = reinterpret_cast<SMBIOSEntryPoint*>(mem);
-        log(" SMBIOS version : %d.%d\n", entry_point->MajorVersion, entry_point->MinorVersion);
-        log(" SMBIOS entries : %d\n", entry_point->NumberOfStructures);
+        log(Debug, " SMBIOS version : %d.%d\n", entry_point->MajorVersion, entry_point->MinorVersion);
+        log(Debug, " SMBIOS entries : %d\n", entry_point->NumberOfStructures);
         return entry_point;
     }
 }
@@ -85,9 +88,9 @@ SMBIOSBIOSInfo* SMBIOS::bios_info()
 
                 uint8_t* tag_end = reinterpret_cast<uint8_t*>(mem + tag->length - 1);
 
-                log(" BIOS Vendor : %s\n", get_string(tag_end, info->vendor));
-                log(" BIOS Version : %s\n",get_string(tag_end, info->version));
-                log(" BIOS Release date : %s\n", get_string(tag_end, info->release_date));
+                log(Debug, " BIOS Vendor : %s\n", get_string(tag_end, info->vendor));
+                log(Debug, " BIOS Version : %s\n",get_string(tag_end, info->version));
+                log(Debug, " BIOS Release date : %s\n", get_string(tag_end, info->release_date));
 
                 return info;
             }
@@ -123,34 +126,38 @@ SMBIOSCPUInfo *SMBIOS::cpu_info()
 
                 uint8_t* tag_end = reinterpret_cast<uint8_t*>(mem + tag->length - 1);
 
-                log(" Processor Type : ");
+                log(Debug, " Processor Type : ");
                 switch (info->cpu_type)
                 {
                 case 0:
                 case 1:
                 case 2:
                 default:
-                    kprintf("Unknown\n");
+                    log(Debug, "Unknown\n");
                     break;
                 case 3:
-                    kprintf("CPU\n");
+                    log(Debug, "CPU\n");
                     break;
                 case 4:
-                    kprintf("Math processor\n");
+                    log(Debug, "Math processor\n");
                     break;
                 case 5:
-                    kprintf("DSP processor\n");
+                    log(Debug, "DSP processor\n");
                     break;
                 case 6:
-                    kprintf("Video processor\n");
+                    log(Debug, "Video processor\n");
                     break;
                 }
 
-                log(" Processor family : %s\n", dmi_processor_family(info->family));
-                log(" Processor socket : %s\n", get_string(tag_end, info->socket+1));
-                log(" Processor manufacturer : %s\n", get_string(tag_end, info->manufacturer+1));
-                log(" Processor version : %s\n", get_string(tag_end, info->version+1));
-                log(" Processor voltage : ");
+                log(Debug, " Processor family : %s\n", dmi_processor_family(info->family));
+                log(Debug, " Processor socket : %s\n", get_string(tag_end, info->socket+1));
+                log(Debug, " Processor manufacturer : %s\n", get_string(tag_end, info->manufacturer+1));
+                if (strncmp(get_string(tag_end, info->manufacturer+1), "QEMU", 4) == 0)
+                {
+                    running_qemu = true;
+                }
+                log(Debug, " Processor version : %s\n", get_string(tag_end, info->version+1));
+                log(Debug, " Processor voltage : ");
                 if (bit_check(info->voltage, 7))
                 {
                     kprintf("%.1fv\n", (info->voltage & 0b1111111)/10.0);
@@ -160,7 +167,7 @@ SMBIOSCPUInfo *SMBIOS::cpu_info()
                     kprintf("%.1fv\n", info->voltage == 0 ? 5 : info->voltage == 1 ? 3.3 : info->voltage == 2 ? 2.9 : -1);
                 }
 
-                log(" Processor speed : %dMHz\n", info->curr_speed);
+                log(Debug, " Processor speed : %dMHz\n", info->curr_speed);
 
                 return info;
             }

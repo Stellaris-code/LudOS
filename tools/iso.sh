@@ -14,7 +14,7 @@ cat > isodir/boot/grub/grub.cfg << EOF
 insmod fat
 insmod iso9660
 menuentry "LudOS" {
-	multiboot /boot/LudOS.kernel
-}
+	multiboot /boot/LudOS.kernel loglevel=info
+} 
 EOF
 grub-mkrescue -o build/iso/LudOS.iso isodir

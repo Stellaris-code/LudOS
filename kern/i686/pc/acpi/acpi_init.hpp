@@ -28,6 +28,7 @@ SOFTWARE.
 #include "acpi.h"
 
 #include "i686/pc/devices/acpitimer.hpp"
+#include "halt.hpp"
 
 ACPI_STATUS acpi_init()
 {

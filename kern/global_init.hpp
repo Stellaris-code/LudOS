@@ -1,0 +1,165 @@
+/*
+arch_indep_init.hpp
+
+Copyright (c) 27 Yann BOUCHER (yann)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+*/
+#ifndef ARCH_INDEP_INIT_HPP
+#define ARCH_INDEP_INIT_HPP
+
+#include "fs/fat.hpp"
+#include "fs/vfs.hpp"
+#include "fs/mbr.hpp"
+#include "fs/pathutils.hpp"
+
+#include "misc/greet.hpp"
+
+#include "drivers/kbd/kbd_mappings.hpp"
+#include "drivers/kbd/text_handler.hpp"
+#include "drivers/kbd/keyboard.hpp"
+#include "drivers/kbd/led_handler.hpp"
+#include "drivers/mouse/mouse.hpp"
+#include "drivers/diskinterface.hpp"
+
+#include "power/powermanagement.hpp"
+
+#include "terminal/terminal.hpp"
+
+#include "utils/logging.hpp"
+#include "utils/messagebus.hpp"
+#include "utils/memutils.hpp"
+#include "utils/virt_machine_detect.hpp"
+#include "halt.hpp"
+
+#include "time/time.hpp"
+
+inline void global_init()
+{
+    if (running_qemu)
+    {
+        log(Debug, "Running QEMU\n");
+    }
+
+    vfs::init();
+    vfs::mount_dev();
+
+    log(Info, "Available drives : %zd\n", DiskInterface::drive_count());
+
+//    std::vector<uint8_t> data(512);
+//    DiskInterface::read(0, 0, 1, data.data());
+
+//    dump(data.data(), data.size());
+//    halt();
+
+    for (size_t disk { 0 }; disk < DiskInterface::drive_count(); ++disk)
+    {
+        log(Info, "Disk : %zd\n", disk);
+        for (auto partition : mbr::read_partitions(disk))
+        {
+            log(Info, "Partition %zd\n", partition.partition_number);
+            auto fs = fat::read_fat_fs(disk, partition.relative_sector);
+            auto wrapper = fat::RAIIWrapper(fs);
+            if (fs.valid)
+            {
+                log(Info, "FAT %zd filesystem found on drive %zd, partition %d\n", fs.type, fs.drive, partition.partition_number);
+
+                auto root = std::make_shared<fat::fat_file>(fat::root_dir(fs));
+
+                if (vfs::mount(root, "/boot"))
+                {
+                    vfs::traverse("/");
+
+                    if (auto file = vfs::find("/boot/test.txt"); file)
+                    {
+                        std::string str = __TIME__ "\n";
+
+                        file->write(str.data(), str.size());
+
+                        std::vector<uint8_t> vec;
+                        vec.resize(file->size());
+
+                        file->read(vec.data(), vec.size());
+
+                        for (auto c : vec)
+                        {
+                            putchar(c);
+                        }
+                    }
+                }
+            }
+            else
+            {
+                log(Debug, "No FAT fs found on drive %zd, partition %d\n", fs.drive, partition.partition_number);
+            }
+
+        }
+    }
+    greet();
+
+    kbd::install_mapping(kbd::mappings::azerty());
+    kbd::TextHandler::init();
+    kbd::install_led_handler();
+
+    MessageBus::register_handler<kbd::TextEnteredEvent>([](const kbd::TextEnteredEvent& e)
+    {
+        putchar(e.c);
+    });
+
+    MessageBus::register_handler<kbd::KeyEvent>([](const kbd::KeyEvent& e)
+    {
+        if (e.state == kbd::KeyEvent::Pressed)
+        {
+            if (e.key == kbd::PageUp)
+            {
+                term->scroll_history(+10);
+            }
+            else if (e.key == kbd::PageDown)
+            {
+                term->scroll_history(-10);
+            }
+            else if (e.key == kbd::Delete && Keyboard::ctrl() && Keyboard::alt())
+            {
+                reset();
+            }
+        }
+    });
+
+    Mouse::init();
+
+    MessageBus::register_handler<MouseScrollEvent>([](const MouseScrollEvent& e)
+    {
+        if (e.wheel>0)
+        {
+            term->scroll_history(-3);
+        }
+        else if (e.wheel<0)
+        {
+            term->scroll_history(6);
+        }
+    });
+
+//    std::vector<uint8_t> data(vfs::find("/boot/boot/initrd.img")->size());
+//    vfs::find("/boot/boot/initrd.img")->read(data.data(), data.size());
+
+//    dump(data.data(), 1024);
+}
+
+#endif // ARCH_INDEP_INIT_HPP

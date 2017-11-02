@@ -41,7 +41,7 @@ cat > /mnt/boot/grub/grub.cfg << EOF
 insmod fat
 insmod iso9660
 menuentry "LudOS" {
-	multiboot /boot/LudOS.bin
+	multiboot /boot/LudOS.bin loglevel=info
     module    /boot/initrd.img initrd
 }
 EOF

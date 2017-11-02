@@ -25,15 +25,32 @@ SOFTWARE.
 
 #include "ps2keyboard.hpp"
 
-#include "../interrupts/isr.hpp"
+#include "i686/interrupts/isr.hpp"
 #include "i686/pc/devices/pic.hpp"
 
 #include "utils/messagebus.hpp"
 #include "drivers/kbd/driver_kbd_event.hpp"
 #include "drivers/kbd/led_handler.hpp"
+#include "ps2controller.hpp"
 #include "io.hpp"
 
 #include "utils/logging.hpp"
+
+enum PS2KeyboardLeds : uint8_t
+{
+    ScrollLockLed = 0b001,
+    NumLockLed = 0b010,
+    CapsLockLed = 0b100
+};
+
+enum PS2KeyboardCommands : uint8_t
+{
+    LedCommand = 0xED,
+    LedAck = 0xFA,
+    KeyboardEnable = 0xAE,
+    KeyboardDisable = 0xAD,
+    KeyboardResend = 0xFE
+};
 
 void PS2Keyboard::init()
 {
@@ -47,53 +64,41 @@ void PS2Keyboard::init()
     {
         if (e.caps_led != LEDState::Ignore)
         {
-            toggle_led(CAPS_LOCK_LED, e.caps_led == LEDState::On ? true : false);
+            toggle_led(CapsLockLed, e.caps_led == LEDState::On ? true : false);
         }
         if (e.scroll_led != LEDState::Ignore)
         {
-            toggle_led(SCROLL_LOCK_LED, e.scroll_led == LEDState::On ? true : false);
+            toggle_led(ScrollLockLed, e.scroll_led == LEDState::On ? true : false);
         }
         if (e.num_led != LEDState::Ignore)
         {
-            toggle_led(NUM_LOCK_LED, e.num_led == LEDState::On ? true : false);
+            toggle_led(NumLockLed, e.num_led == LEDState::On ? true : false);
         }
     });
 
     set_leds(0);
 
-    log("Keyboard driver initialized\n");
+    log(Info, "Keyboard driver initialized\n");
 }
 
 void PS2Keyboard::enable()
 {
-    send_command(KBD_ENABLE, false);
+    PS2Controller::send_command(KeyboardEnable, false);
     pic::clear_mask(1); // enable keyboard interrupts
 }
 
 void PS2Keyboard::disable()
 {
     pic::set_mask(1); // disable keyboard interrupts
-    send_command(KBD_DISABLE, false);
+    PS2Controller::send_command(KeyboardDisable, false);
 }
 
 void PS2Keyboard::set_leds(uint8_t leds)
 {
-    poll_obf();
-    outb(KBD_PORT, LED_CMD);
-    poll_obf();
-    outb(KBD_PORT, leds);
-}
-
-void PS2Keyboard::poll_ibf()
-{
-    uint32_t timeout = 100000/2;
-    while (--timeout && !(inb(COMMAND_PORT) & 0x2));
-}
-
-void PS2Keyboard::poll_obf()
-{
-    uint32_t timeout = 100000/2;
-    while (--timeout && (inb(COMMAND_PORT) & 0x1) == 1);
+    PS2Controller::poll_obf();
+    outb(DataPort, LedCommand);
+    PS2Controller::poll_obf();
+    outb(DataPort, leds);
 }
 
 void PS2Keyboard::toggle_led(uint8_t led, bool value)
@@ -135,12 +140,6 @@ void PS2Keyboard::isr(const registers *)
 
         last_is_e0 = false;
     }
-}
-
-void PS2Keyboard::send_command(uint8_t command, bool poll)
-{
-    outb(COMMAND_PORT, command);
-    if (poll) poll_ibf();
 }
 
 void PS2Keyboard::init_assocs()

@@ -27,7 +27,7 @@ SOFTWARE.
 
 #include <stdint.h>
 
-#include "../cpu/registers.hpp"
+#include "i686/cpu/registers.hpp"
 
 namespace ahci
 {

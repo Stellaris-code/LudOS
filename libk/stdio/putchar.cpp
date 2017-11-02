@@ -32,9 +32,9 @@ SOFTWARE.
 void putchar(char c)
 {
 #ifdef __is_libk
-        term->put_char(c);
+    if (term) term->put_char(c);
 #else
-        // TODO : do !
+    // TODO : do !
 #error Not implemented yet
 #endif
 }

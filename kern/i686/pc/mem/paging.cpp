@@ -95,7 +95,7 @@ uintptr_t Paging::alloc_page_frame(size_t number)
             {
                 mem_bitmap[i] = true;
             }
-            return page_addr*page_size;
+            return phys(page_addr*page_size);
         }
     }
     return 0;
@@ -103,7 +103,7 @@ uintptr_t Paging::alloc_page_frame(size_t number)
 
 bool Paging::release_page_frame(uintptr_t p_addr, size_t number)
 {
-    size_t base_page = p_addr/page_size;
+    size_t base_page = virt(p_addr)/page_size;
     bool released = false;
 
     for (size_t i { 0 }; i < number; ++i)
@@ -132,13 +132,13 @@ void Paging::init_mem_bitmap()
     for (size_t i { 0 }; i < free_frames; ++i)
     {
         multiboot_memory_map_t* mem_zone = Meminfo::frame(i);
-        for (size_t pg = page(mem_zone->addr); pg < page(mem_zone->addr+mem_zone->len) && pg < ram_maxpage; ++pg)
+        for (size_t pg = page(mem_zone->addr); pg < page(mem_zone->addr)+mem_zone->len && pg < ram_maxpage; ++pg)
         {
             mem_bitmap[pg] = false;
         }
     }
     // Mark kernel space as unavailable
-    for (size_t i { page(0) }; i < page(reinterpret_cast<uintptr_t>(&kernel_physical_end)); ++i)
+    for (size_t i { page(0) }; i < page(virt(reinterpret_cast<uintptr_t>(&kernel_physical_end))); ++i)
     {
         mem_bitmap[i] = true;
     }

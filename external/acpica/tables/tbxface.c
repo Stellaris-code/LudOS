@@ -259,7 +259,6 @@ AcpiInitializeTables (
     {
         return_ACPI_STATUS (AE_NOT_FOUND);
     }
-
     /*
      * Get the root table (RSDT or XSDT) and extract all entries to the local
      * Root Table Array. This array contains the information of the RSDT/XSDT

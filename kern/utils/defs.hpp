@@ -42,4 +42,12 @@ SOFTWARE.
 #define LUDOS_TESTING
 #endif
 
+#define QUOTE(str) #str
+#define EXPAND_AND_QUOTE(str) QUOTE(str)
+
+#define LUDOS_MINOR 1
+#define LUDOS_MAJOR 0
+
+#define LUDOS_VERSION_STRING "v" EXPAND_AND_QUOTE(LUDOS_MAJOR) "." EXPAND_AND_QUOTE(LUDOS_MINOR)
+
 #endif // DEFS_HPP

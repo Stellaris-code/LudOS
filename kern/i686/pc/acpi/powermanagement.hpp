@@ -99,6 +99,8 @@ inline bool init()
 {
     ::reset = power::reset;
     ::shutdown = power::shutdown;
+
+    return true;
 }
 
 }

@@ -65,26 +65,19 @@ bool ide::pio::detail::read_one(BusPort port, ide::DriveType type, uint64_t bloc
     detail::common(port, type, block, 1);
     outb(port + 7, 0x24);
 
-    for (size_t i { 0 }; i < 256; ++i)
+    detail::poll_bsy(port);
+    detail::poll(port);
+
+    insw(port + 0, buf, 256);
+
+    if (detail::error_set(port))
     {
-        detail::poll_bsy(port);
-        detail::poll(port);
-
-        *buf++ = inw(port + 0);
-        //        if (i == 0)
-        //        {
-        //            err("sect %d, val : 0x%x\n", block, *(buf - 1));
-        //        }
-
-        if (detail::error_set(port))
+        bool stat = !detail::error_set(port);
+        if (!stat)
         {
-            bool stat = !detail::error_set(port);
-            if (!stat)
-            {
-                detail::clear_error(port);
+            detail::clear_error(port);
 
-                return stat;
-            }
+            return stat;
         }
     }
 
@@ -99,21 +92,24 @@ bool ide::pio::detail::write_one(BusPort port, ide::DriveType type, uint64_t blo
     outb(port + 7, 0x34);
 
     detail::poll_bsy(port);
-    detail::poll(port);
 
+#if 0
+    outsw(port + 0, buf, 256);
+#else
     for (size_t i { 0 }; i < 256; ++i)
     {
         outw(port + 0, *buf++);
+    }
+#endif
 
-        if (detail::error_set(port))
+    if (detail::error_set(port))
+    {
+        bool stat = !detail::error_set(port);
+        if (!stat)
         {
-            bool stat = !detail::error_set(port);
-            if (!stat)
-            {
-                detail::clear_error(port);
+            detail::clear_error(port);
 
-                return stat;
-            }
+            return stat;
         }
     }
 
@@ -209,7 +205,7 @@ void ide::pio::init()
         }
     }
 
-    log("IDE PIO initialized.\n");
+    log(Info, "IDE PIO initialized.\n");
 }
 
 std::optional<ide::identify_data> ide::pio::identify(BusPort port, DriveType type)

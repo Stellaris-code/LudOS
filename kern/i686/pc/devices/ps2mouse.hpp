@@ -25,20 +25,7 @@ SOFTWARE.
 #ifndef PS2MOUSE_HPP
 #define PS2MOUSE_HPP
 
-#include "i686/pc/cpu/registers.hpp"
-
-#define MOUSE_ENABLE 0xA8
-#define MOUSE_DISABLE 0xA7
-#define MOUSE_RESEND 0xFE
-#define MOUSE_WRITE 0xD4
-#define COMMAND_PORT 0x64
-#define IN_COMPAQ_BYTE 0x20
-#define OUT_COMPAQ_BYTE 0x60
-#define DATA_PORT 0x60
-#define SET_DEFAULTS 0xF6
-#define ENABLE_DATA_REPORTING 0xF4
-#define SET_SAMPLE_RATE 0xF3
-#define GET_DEVICE_ID 0xF2
+#include "i686/cpu/registers.hpp"
 
 class PS2Mouse
 {
@@ -53,14 +40,10 @@ public:
 private:
     static void isr(const registers* regs);
 
-    static void send_command(uint8_t command, bool poll = true);
     static void send_write(uint8_t val);
     static uint8_t read();
 
     static bool enable_intellimouse();
-
-    static void poll_ibf();
-    static void poll_obf();
 
 private:
     static inline bool is_intellimouse { false };

@@ -98,10 +98,10 @@ void pci::check_device(uint8_t bus, uint8_t device)
 void pci::check_function(uint8_t bus, uint8_t device, uint8_t function)
 {
     auto dev = get_dev(bus, device, function);
-    log("%x:%x.%x\n", bus, device, function);
-    log("   Vendor : '%s' (0x%x)\n", vendor_string(dev.vendorID).c_str(), dev.vendorID);
-    log("   Device : '%s' (0x%x)\n", dev_string(dev.vendorID, dev.deviceID).c_str(), dev.deviceID);
-    log("   Class : '%s'\n", class_code_string(dev.classCode, dev.subclass, dev.progIF).c_str());
+    log(Debug, "%x:%x.%x\n", bus, device, function);
+    log(Debug, "   Vendor : '%s' (0x%x)\n", vendor_string(dev.vendorID).c_str(), dev.vendorID);
+    log(Debug, "   Device : '%s' (0x%x)\n", dev_string(dev.vendorID, dev.deviceID).c_str(), dev.deviceID);
+    log(Debug, "   Class : '%s'\n", class_code_string(dev.classCode, dev.subclass, dev.progIF).c_str());
 
     pci::devices.emplace_back(dev);
 }

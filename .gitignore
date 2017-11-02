@@ -7,6 +7,7 @@ isodir/
 
 !build/bin/LudOS.bin 
 !build/bin/c.img
+!isodir/boot/initrd.img
 
 CMakeCache.txt
 CMakeLists.txt.user

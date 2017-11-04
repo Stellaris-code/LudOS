@@ -242,12 +242,12 @@ std::optional<ide::identify_data> ide::pio::identify(BusPort port, DriveType typ
             status = inb(port + 7);
             if(status & 0x01)
             {
-                kprintf("ATA %s%s has ERR set. Disabled.\n", port_name, type==Master?" master":" slave");
+                log(Debug, "ATA %s%s has ERR set. Disabled.\n", port_name, type==Master?" master":" slave");
                 return {};
             }
         } while(!(status & 0x08));
 
-        kprintf("ATA %s%s is online.\n", port_name, type==Master?" master":" slave");
+        log(Debug, "ATA %s%s is online.\n", port_name, type==Master?" master":" slave");
 
         std::array<uint16_t, 256> buffer;
 
@@ -261,13 +261,13 @@ std::optional<ide::identify_data> ide::pio::identify(BusPort port, DriveType typ
         identify_data* id_data;
         id_data = reinterpret_cast<identify_data*>(buffer.data());
 
-        kprintf("Firmware : %s, model : %s\n", std::string(id_data->firmware,8).c_str(), std::string(id_data->model, 40).c_str());
+        log(Debug, "Firmware : %s, model : %s\n", std::string(id_data->firmware,8).c_str(), std::string(id_data->model, 40).c_str());
 
         return *id_data;
     }
     else
     {
-        kprintf("ATA %s%s doesn't exist.\n", port_name, type==Master?" master":" slave");
+        log(Debug, "ATA %s%s doesn't exist.\n", port_name, type==Master?" master":" slave");
 
         return {};
     }

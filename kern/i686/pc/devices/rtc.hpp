@@ -32,6 +32,7 @@ SOFTWARE.
 #include "utils/defs.hpp"
 #include "utils/logging.hpp"
 #include "io.hpp"
+#include "time/time.hpp"
 
 #include "acpi.h"
 
@@ -68,7 +69,7 @@ inline void wait_update()
 }
 }
 
-inline Date get_time()
+inline Time::Date get_time()
 {
     uint8_t century = 0;
     uint8_t last_second;
@@ -155,12 +156,7 @@ inline Date get_time()
         if(year < CURRENT_YEAR) year += 100;
     }
 
-    return Date{second, minute, hour, day, month, year};
-}
-
-inline void init()
-{
-    Time::get_time_of_day_callback = []{ return get_time(); };
+    return Time::Date{second, minute, hour, day, month, year};
 }
 
 }

@@ -27,6 +27,10 @@ SOFTWARE.
 
 #include "utils/defs.hpp"
 
+#include "i686/cpu/registers.hpp"
+
+extern const registers* panic_regs;
+
 [[noreturn]]
 PRINTF_FMT(1, 2)
 void panic(const char* __restrict fmt, ...);

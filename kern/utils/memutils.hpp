@@ -29,12 +29,42 @@ SOFTWARE.
 #include <math.h>
 #include <stdio.h>
 
+#include <string.hpp>
+
 #include "utils/logging.hpp"
 
-inline int meminfo_intlog(double base, double x)
+inline size_t meminfo_intlog(double base, double x)
 {
-    return (int)(log10(x) / log10(base));
+    return (size_t)(log10(x) / log10(base));
 }
+
+inline size_t meminfo_ipow(size_t base, size_t exp)
+{
+    size_t result = 1;
+    while (exp)
+    {
+        if (exp & 1)
+            result *= base;
+        exp >>= 1;
+        base *= base;
+    }
+
+    return result;
+}
+
+inline std::string human_readable_size(size_t bytes)
+{
+    const size_t unit = 1024;
+    if (bytes < unit) return std::to_string(bytes) + " B";
+    const size_t exp = meminfo_intlog(unit, bytes);
+    const std::string units = "KMGTPE";
+    const std::string suffix = units[exp-1] + std::string("iB");
+
+    char buf[16];
+    ksnprintf(buf, 16, "%.1f ", (double)bytes / meminfo_ipow(unit, exp));
+
+    return buf + suffix;
+};
 
 inline void dump(const void* address, size_t amnt)
 {
@@ -42,7 +72,7 @@ inline void dump(const void* address, size_t amnt)
     const size_t byte_disp_size = 3; // 2 + 1 space
     const size_t bytes_per_line = line_size/(byte_disp_size) - meminfo_intlog(16, amnt) + 1;
 
-    const size_t cols = amnt/bytes_per_line;
+    const size_t cols = amnt/bytes_per_line; // TODO : fix this
     for (size_t i { 0 }; i < cols; ++i)
     {
         kprintf("%x ", i*bytes_per_line);

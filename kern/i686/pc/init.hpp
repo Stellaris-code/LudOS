@@ -32,17 +32,18 @@ SOFTWARE.
 #include "devices/speaker.hpp"
 #include "devices/ps2keyboard.hpp"
 #include "devices/ps2mouse.hpp"
-#include "devices/rtc.hpp"
 #include "i686/fpu/fpu.hpp"
 #include "i686/interrupts/idt.hpp"
 #include "i686/cpu/cpuinfo.hpp"
+#include "i686/cpu/mtrr.hpp"
 #include "i686/simd/simd.hpp"
 #include "i686/cpu/cpuid.hpp"
 #include "i686/io/termio.hpp"
 #include "i686/gdt/gdt.hpp"
+#include "i686/video/x86emu_modesetting.hpp"
+#include "i686/mem/paging.hpp"
 #include "smbios/smbios.hpp"
 #include "mem/meminfo.hpp"
-#include "mem/paging.hpp"
 #include "bios/bda.hpp"
 #include "serial/serialdebug.hpp"
 #include "pci/pci.hpp"
@@ -76,6 +77,7 @@ inline void init(uint32_t magic, const multiboot_info_t* mbd_info)
     serial::debug::write("Serial COM1 : Booting LudOS v%d...\n", 1);
 
     multiboot::parse_mem(mbd_info);
+    Meminfo::init_paging_bitmap();
     Paging::init();
 
     uint64_t framebuffer_addr = bit_check(mbd_info->flags, 12) ? mbd_info->framebuffer_addr : 0xB8000;
@@ -86,10 +88,10 @@ inline void init(uint32_t magic, const multiboot_info_t* mbd_info)
     term = &hwterminal;
     term->beep_callback = [](size_t ms){Speaker::beep(ms);};
     term->move_cursor_callback = move_cursor;
-    term->putchar_callback = [framebuffer_addr](size_t x, size_t y, uint8_t c, TermEntry color)
+    term->putchar_callback = [framebuffer_addr](size_t x, size_t y, uint8_t c, video::TermEntry color)
     {
         auto fb = reinterpret_cast<uint16_t*>(phys(framebuffer_addr));
-        fb[y*term->width() + x] = vga_entry(c, vga_entry_color(color_to_vga(color.fg), color_to_vga(color.bg)));
+        fb[y*term->width() + x] = video::vga_entry(c, vga_entry_color(color_to_vga(color.fg), color_to_vga(color.bg)));
     };
 
     term->clear();
@@ -114,6 +116,13 @@ inline void init(uint32_t magic, const multiboot_info_t* mbd_info)
         log(Debug, "CPU is SSE capable\n");
         enable_sse();
         memcpy = _memcpy_mmx;
+        aligned_memcpy = _memcpy_mmx;
+        if (simd_features() & SSE2)
+        {
+            aligned_memcpy = _aligned_memcpy_sse2;
+            aligned_memsetl = _aligned_memsetl_sse2;
+            aligned_double_memsetl = _aligned_double_memsetl_sse2;
+        }
     }
     else
     {
@@ -122,27 +131,36 @@ inline void init(uint32_t magic, const multiboot_info_t* mbd_info)
 #endif
     }
 
-    multiboot::parse_info(mbd_info);
-
+    read_from_cmdline(multiboot::parse_cmdline(mbd_info));
     read_logging_config();
 
     SMBIOS::locate();
     SMBIOS::bios_info();
     SMBIOS::cpu_info();
 
+    multiboot::parse_info(mbd_info);
+
     // QEMU in -kernel mode doesn't read the cmdline
-    if (running_qemu)
+    if (running_qemu_kernel)
     {
-        read_from_cmdline("loglevel=debug");
+        log(Info, "Running under QEMU with -kernel option\n");
+        read_from_cmdline("loglevel=info");
         read_logging_config();
     }
 
     log(Info, "CPU clock speed : ~%llu MHz\n", clock_speed());
     detect_cpu();
 
+    if (mtrr::available() && mtrr::available_variable_ranges()>0)
+    {
+        log(Info, "MTRR available\n");
+        mtrr::set_mtrrs_enabled(true);
+        mtrr::set_fixed_mtrrs_enabled(false);
+    }
+
     Speaker::beep(200);
 
-    panic("test\n");
+    init_emu_mem();
 
     auto status = acpi_init();
     if (ACPI_FAILURE(status))
@@ -151,8 +169,6 @@ inline void init(uint32_t magic, const multiboot_info_t* mbd_info)
     }
 
     acpi::power::init();
-
-    rtc::init();
 
     pci::scan();
 

@@ -31,7 +31,7 @@ BootPageDirectory:
 section .text
 
 ; reserve initial kernel stack space
-STACKSIZE equ 0x8000                    ; that's 32k.
+STACKSIZE equ 0x10000                    ; that's 64k.
 
 _start:
 

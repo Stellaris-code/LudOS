@@ -41,6 +41,8 @@ typedef struct multiboot_mmap_entry multiboot_memory_map_t;
 
 class Paging
 {
+    friend class Meminfo;
+
 public:
     static void init();
 
@@ -48,11 +50,13 @@ public:
 
     static bool release_page_frame(uintptr_t p_addr, size_t number = 1);
 
-    void map_page(void* phys, void *&virt, uint32_t flags);
+    static void map_page(void* phys, void *&virt, uint32_t flags);
+
+    static void mark_as_used(uintptr_t addr, size_t size);
 
 public:
-    static constexpr uint32_t ram_maxpage { 0x10000 };
-    static constexpr uint32_t page_size { 0x1000 };
+    static constexpr uint32_t ram_maxpage { ((~0u >> 12u) + 1) };
+    static constexpr uint32_t page_size { 1 << 12 };
 
 private:
     static constexpr uintptr_t page(uintptr_t ptr)
@@ -60,10 +64,8 @@ private:
         return ptr >> 12;
     }
 
-    static void init_mem_bitmap();
-
 private:
-    static inline bitarray<ram_maxpage, uint32_t> mem_bitmap; // 0 = free / 1 = used
+    static bitarray<ram_maxpage, uint32_t> mem_bitmap; // 0 = free / 1 = used
 };
 
 #endif // PAGING_HPP

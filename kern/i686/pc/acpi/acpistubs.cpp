@@ -32,7 +32,7 @@ SOFTWARE.
 #include "utils/addr.hpp"
 
 #include "time/timer.hpp"
-#include "i686/time/timestamp.hpp"
+#include "time/time.hpp"
 #include "i686/pc/pci/pci.hpp"
 #include "i686/interrupts/isr.hpp"
 #include "io.hpp"
@@ -134,7 +134,7 @@ void AcpiOsStall(UINT32 Microseconds)
 
 UINT64 AcpiOsGetTimer()
 {
-    return UINT64(uptime()*1000ULL*1000ULL*10UL);
+    return UINT64(Time::uptime()*1000ULL*1000ULL*10UL);
 }
 
 ACPI_STATUS AcpiOsSignal(UINT32 fun, void* info)

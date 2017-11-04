@@ -23,22 +23,6 @@ SOFTWARE.
 
 */
 
-// TODO : FAT32 write
-// TODO : system calls
-// TODO : user mode
-// TODO : POC calculatrice
-// TODO : windowing system avec alloc d'un canvas etc
-// TODO : Paging
-// TODO : Son
-// TODO : Passer en IDE PCI : IDE UDMA
-// FIXME : revoir l'architecture dégeulasse de l'ownership des nodes de readdir
-// BUG : Terminal scroll loops ?
-// FIXME : revoir les terminal pour permettre de pouvoir écrire dans un rapidement et afficher un autre
-// TODO : x86emu pour le modesetting
-// TODO : TinyGL
-// TODO : print stack on panic
-// BUG : terminal multiline text is buggy
-
 #ifndef __cplusplus
 #error Must be compiled using C++ !
 #endif

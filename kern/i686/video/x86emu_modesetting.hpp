@@ -1,7 +1,7 @@
 /*
-stdio.h
+x86emu_modesetting.hpp
 
-Copyright (c) 23 Yann BOUCHER (yann)
+Copyright (c) 31 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,43 +22,44 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef _STDIO_H
-#define _STDIO_H 1
+#ifndef X86EMU_MODESETTING_HPP
+#define X86EMU_MODESETTING_HPP
 
-#include <sys/cdefs.h>
-#include <stdbool.h>
 #include <stdint.h>
 
-#include "utils/defs.hpp"
+#include <vector.hpp>
 
-#define EOF (-1)
+#include "x86emu.h"
+#include "utils/logging.hpp"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+typedef union {
+    uint32_t    Ptr32;
+    struct {
+        uint16_t    Off;
+        uint16_t    Seg;
+    };
+} rmode_ptr;
 
-extern bool putc_serial;
-
-typedef struct
+struct RealModeState
 {
-    size_t fd;
-} FILE;
+    struct RAII
+    {
+        ~RAII()
+        {
+            x86emu_done(emu);
+        }
+        x86emu_t* emu;
+    } cpu_state;
+};
 
-void putchar(char c);
-void puts(const char*);
+extern std::vector<uint8_t> emu_mem;
+extern bool x86_flag;
 
-int fprintf(FILE * stream, const char * format, ...) PRINTF_FMT(2, 3);
-FILE * fopen(const char * filename, const char * mode);
-int fclose( FILE * stream );
+void init_emu_mem();
 
-extern FILE* stdin;
-extern FILE* stdout;
-extern FILE* stderr;
+uintptr_t translate_address(rmode_ptr ptr);
+uint8_t* read_address(rmode_ptr ptr);
 
-#include "stdio/tinyprintf.h"
+RealModeState emuInt10h(uint16_t ax, uint16_t bx = 0, uint16_t cx = 0, uint16_t dx = 0, uint16_t es = 0);
 
-#ifdef __cplusplus
-}
-#endif
-
-#endif
+#endif // X86EMU_MODESETTING_HPP

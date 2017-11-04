@@ -1,7 +1,7 @@
 /*
-video_info.hpp
+msr.hpp
 
-Copyright (c) 18 Yann BOUCHER (yann)
+Copyright (c) 03 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,22 +22,31 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef VIDEO_INFO_HPP
-#define VIDEO_INFO_HPP
+#ifndef MSR_HPP
+#define MSR_HPP
 
 #include <stdint.h>
 
-struct VideoInfo
-{
-    uint32_t framebuffer_addr { 0 };
-    uint32_t width { 0 };
-    uint32_t height { 0 };
-    uint32_t depth { 0 };
-    enum
-    {
-        Text,
-        Graphics
-    } type;
-};
+#include "cpuid.hpp"
 
-#endif // VIDEO_INFO_HPP
+inline bool has_msrs()
+{
+    uint32_t edx, unused;
+    cpuid(1, unused, unused, unused, edx);
+
+    return edx & (1 << 5);
+}
+
+inline uint64_t read_msr(uint32_t msr_id)
+{
+    uint64_t msr_value;
+    asm volatile ( "rdmsr" : "=A" (msr_value) : "c" (msr_id) );
+    return msr_value;
+}
+
+inline void write_msr(uint32_t msr_id, uint64_t msr_value)
+{
+    asm volatile ( "wrmsr" : : "c" (msr_id), "A" (msr_value) );
+}
+
+#endif // MSR_HPP

@@ -40,18 +40,18 @@ public:
     Terminal(size_t iwidth, size_t iheight, size_t imax_history = 5);
 
 public:
-    void put_entry_at(uint8_t c, TermEntry color, size_t x, size_t y);
+    void put_entry_at(uint8_t c, video::TermEntry color, size_t x, size_t y);
     void put_char(uint8_t c);
     void write(const char* data, size_t size);
     void write_string(const char* data);
     void clear();
     void scroll_up();
-    void push_color(TermEntry color);
+    void push_color(video::TermEntry color);
     void pop_color();
     void show_history(int page);
     uint8_t current_history() const { return current_history_page; }
     void scroll_history(int scroll) { show_history(current_history()+scroll); }
-    TermEntry color() const;
+    video::TermEntry color() const;
 
     size_t width() const { return _width; }
     size_t height() const { return _height-title_height; }
@@ -59,7 +59,7 @@ public:
     void set_title(std::string str);
 
 private:
-    void set_entry_at(uint8_t c, TermEntry color, size_t x, size_t y, bool absolute = false);
+    void set_entry_at(uint8_t c, video::TermEntry color, size_t x, size_t y, bool absolute = false);
     void new_line();
     void add_line_to_history();
     void check_pos();
@@ -68,7 +68,7 @@ private:
 public:
     std::function<void(size_t x, size_t y, size_t width)> move_cursor_callback;
     std::function<void(size_t ms)> beep_callback;
-    std::function<void(size_t x, size_t y, uint8_t c, TermEntry color)> putchar_callback;
+    std::function<void(size_t x, size_t y, uint8_t c, video::TermEntry color)> putchar_callback;
 
 private:
     size_t terminal_row { 0 };
@@ -77,7 +77,7 @@ private:
 
     std::vector<HistoryBuffer::Entry> cur_line;
 
-    std::stack<TermEntry> color_stack;
+    std::stack<video::TermEntry> color_stack;
 
     const size_t _width;
     const size_t _height;

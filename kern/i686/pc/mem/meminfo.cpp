@@ -27,6 +27,9 @@ SOFTWARE.
 
 #include "../multiboot/multiboot.h"
 #include "utils/addr.hpp"
+#include "i686/mem/paging.hpp"
+
+extern "C" int kernel_physical_end;
 
 size_t Meminfo::free_frames()
 {
@@ -92,4 +95,27 @@ multiboot_memory_map_t *Meminfo::frame(size_t idx)
     }
 
     return nullptr;
+}
+
+void Meminfo::init_paging_bitmap()
+{
+    for (size_t i { 0 }; i < Paging::mem_bitmap.array_size; ++i)
+    {
+        Paging::mem_bitmap[i] = true;
+    }
+
+    size_t free_frames = Meminfo::free_frames();
+    for (size_t i { 0 }; i < free_frames; ++i)
+    {
+        multiboot_memory_map_t* mem_zone = Meminfo::frame(i);
+        for (size_t pg = Paging::page(mem_zone->addr); pg < Paging::page(mem_zone->addr)+mem_zone->len && pg < Paging::ram_maxpage; ++pg)
+        {
+            Paging::mem_bitmap[pg] = false;
+        }
+    }
+    // Mark kernel space as unavailable
+    for (size_t i { Paging::page(0) }; i < Paging::page(virt(reinterpret_cast<uintptr_t>(&kernel_physical_end))); ++i)
+    {
+        Paging::mem_bitmap[i] = true;
+    }
 }

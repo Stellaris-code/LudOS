@@ -29,11 +29,12 @@ SOFTWARE.
 
 #ifdef ARCH_i686
 #include "i686/pc/serial/serialdebug.hpp"
-#include "i686/time/timestamp.hpp"
 #endif
 
 #include "utils/env.hpp"
 #include "utils/stlutils.hpp"
+
+#include "time/time.hpp"
 
 LoggingLevel log_level = Debug;
 
@@ -42,7 +43,7 @@ void log(LoggingLevel level, const char * __restrict fmt, ...)
     if (level <= log_level)
     {
         term->push_color({0x00aa00, 0});
-        kprintf("[%f] ", uptime());
+        kprintf("[%f] ", Time::uptime());
         term->pop_color();
 
         va_list va;
@@ -57,7 +58,7 @@ void warn(const char * __restrict fmt, ...)
     term->push_color({0xff5555, 0});
 
     term->push_color({0x00aa00, 0});
-    kprintf("[%f] ", uptime());
+    kprintf("[%f] ", Time::uptime());
     term->pop_color();
 
     va_list va;
@@ -73,7 +74,7 @@ void err(const char * __restrict fmt, ...)
     term->push_color({0xaa0000, 0});
 
     term->push_color({0x00aa00, 0});
-    kprintf("[%f] ", uptime());
+    kprintf("[%f] ", Time::uptime());
     term->pop_color();
 
     va_list va;

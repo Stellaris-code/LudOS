@@ -26,3 +26,4 @@ SOFTWARE.
 #include "virt_machine_detect.hpp"
 
 bool running_qemu = false;
+bool running_qemu_kernel = false;

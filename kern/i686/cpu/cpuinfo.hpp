@@ -25,9 +25,9 @@ SOFTWARE.
 #ifndef CPUINFO_HPP
 #define CPUINFO_HPP
 
-#include "../time/timestamp.hpp"
 #include "utils/nop.hpp"
 #include "time/timer.hpp"
+#include "time/time.hpp"
 
 // in Mhz
 inline uint64_t clock_speed(bool recompute = false)
@@ -41,11 +41,11 @@ inline uint64_t clock_speed(bool recompute = false)
 
     const uint32_t step { 10 };
 
-    uint64_t current = rdtsc();
+    uint64_t current = Time::total_ticks();
     uint32_t ticks = Timer::ticks();
     while (ticks + step > Timer::ticks()) { nop(); } // wait 'til a tick is elapsed
 
-    uint64_t elapsed = rdtsc() - current;
+    uint64_t elapsed = Time::total_ticks() - current;
     speed = elapsed*Timer::freq()/1'000'000/step;
     computed = true;
     return speed; // MHz

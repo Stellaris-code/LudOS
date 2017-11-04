@@ -1,7 +1,7 @@
 /*
-time.cpp
+framebuffer_draw.hpp
 
-Copyright (c) 15 Yann BOUCHER (yann)
+Copyright (c) 02 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,10 +22,22 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
+#ifndef FRAMEBUFFER_DRAW_HPP
+#define FRAMEBUFFER_DRAW_HPP
 
-#include "time.hpp"
+#include "graphics/color.hpp"
 
-namespace Time
+#include <vector.hpp>
+#include <optional.hpp>
+#include "graphics/video.hpp"
+
+namespace video
 {
-std::function<Date()> get_time_of_day_callback;
+
+void set_display_mode(const VideoMode& mode);
+extern void (*draw_to_display)(const Screen& screen);
+void clear_display(Color color = 0);
+
 }
+
+#endif // FRAMEBUFFER_DRAW_HPP

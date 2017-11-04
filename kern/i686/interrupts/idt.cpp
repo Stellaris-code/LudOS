@@ -57,7 +57,7 @@ void set_gate(uint8_t num, uint32_t base, uint16_t sel, uint8_t flags)
 
 void init()
 {
-    puts("Initializing ISRs");
+    log(Info, "Initializing ISRs\n");
 
     idt_ptr.limit = sizeof(entry) * std::extent_v<decltype(idt_entries)> -1;
     idt_ptr.base  = reinterpret_cast<uint32_t>(&idt_entries);
@@ -117,7 +117,7 @@ void init()
 
     sti();
 
-    puts("ISRs and IDT initialized");
+    log(Info, "ISRs and IDT initialized\n");
 }
 
 }

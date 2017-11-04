@@ -33,12 +33,14 @@ file(GLOB_RECURSE KERN_BASE_SOURCES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "kern/*
 file(GLOB_RECURSE ACPICA_SOURCES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "external/acpica/*.c")
 file(GLOB_RECURSE ACPICA_HEADERS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "external/acpica/*.h")
 file(GLOB_RECURSE CPP_SOURCES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "kern/cpp_runtime/*.cpp")
-file(GLOB_RECURSE LIBK_SOURCES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "libk/*.c" "libk/*.cpp")
+file(GLOB_RECURSE LIBK_SOURCES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "libk/*.c" "libk/*.cpp" "libk/*.asm")
 file(GLOB_RECURSE LIBK_HEADERS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "libk/*.h" "libk/*.hpp")
 file(GLOB_RECURSE LIBCPP_SOURCES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "external/libc++/*.cpp" "external/libc++/*.c")
 file(GLOB_RECURSE LIBCPP_HEADERS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "external/libc++/*.hpp" "external/libc++/*.h")
 file(GLOB_RECURSE LIBCXXRT_SOURCES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "external/libcxxrt/src/*.cc" "external/libcxxrt/src/*.c")
 file(GLOB_RECURSE LIBCXXRT_HEADERS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "external/libcxxrt/src/*.hpp" "external/libcxxrt/src/*.h")
+file(GLOB_RECURSE LIBX86EMU_SOURCES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "external/libx86emu/*.c")
+file(GLOB_RECURSE LIBX86EMU_HEADERS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "external/libx86emu/include/*.h")
 file(GLOB_RECURSE HEADERS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "kern/*.hpp" "kern/*.h" "kern/*.tpp")
 file(GLOB_RECURSE LD_SCRIPTS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "*.ld")
 
@@ -48,7 +50,7 @@ include_directories("${CMAKE_CURRENT_SOURCE_DIR}/libk")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/external/libc++")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/external/acpica")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/external/libcxxrt/src")
-#include_directories("${CMAKE_CURRENT_SOURCE_DIR}/external/libunwind/include")
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}/external/libx86emu/include")
 
 set(GENERIC_SRCS ${KERN_TERMINAL_SOURCES} ${CPP_SOURCES} ${KERN_BIOS_SOURCES} ${KERN_MB_SOURCES} ${KERN_BASE_SOURCES})
 
@@ -75,13 +77,18 @@ set_source_files_properties(${LIBUNWIND_ASM_SOURCES}
 add_library(libcpp ${LIBCPP_SOURCES} ${LIBCPP_HEADERS})
 target_link_libraries(libcpp libcxxrt)
 
+add_library(libx86emu ${LIBX86EMU_SOURCES} ${LIBX86EMU_HEADERS})
+set_target_properties(libx86emu PROPERTIES LINKER_LANGUAGE C)
+target_link_libraries(libx86emu libk)
+
 add_library(acpica ${ACPICA_SOURCES} ${ACPICA_HEADERS})
 set_target_properties(acpica PROPERTIES LINKER_LANGUAGE C)
 target_link_libraries(acpica libk)
 
 include(ExternalProject)
 
-target_link_libraries(${PROJECT_NAME} libk libcpp libcxxrt acpica)
+target_link_libraries(${PROJECT_NAME} libk libcpp libcxxrt libx86emu acpica)
+target_link_libraries(libx86emu libk)
 
 set(CMAKE_CXX_LINK_EXECUTABLE "/usr/local/cross/bin/${ARCH}-elf-ld -N --eh-frame-hdr -T ${PLATFORM_LAYOUT} <OBJECTS> -o <TARGET> <LINK_LIBRARIES>-L/usr/tooLargeForHome/cross_src/build-gcc/i686-elf/libgcc/ -lgcc")
 

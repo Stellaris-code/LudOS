@@ -25,7 +25,7 @@ SOFTWARE.
 
 #include "tasking/spinlock.hpp"
 
-#include "i686/pc/mem/paging.hpp"
+#include "i686/mem/paging.hpp"
 
 #include <stdint.h>
 

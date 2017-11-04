@@ -27,6 +27,11 @@ SOFTWARE.
 
 #include <stdint.h>
 
+#include <math.h>
+
+namespace video
+{
+
 struct Color
 {
     union
@@ -49,10 +54,47 @@ struct Color
     {}
 };
 
+inline Color hsvToRgb(double h, double s, double v)
+{
+    Color color;
+
+    if (s == 0)
+    {
+        color.r = v * 255;
+        color.g = v * 255;
+        color.b = v * 255;
+    }
+    else
+    {
+        double var_h = h * 6;
+        int var_i = var_h;     //Or ... var_i = floor( var_h )
+        double var_1 = v * ( 1 - s );
+        double var_2 = v * ( 1 - s * ( var_h - var_i ) );
+        double var_3 = v * ( 1 - s * ( 1 - ( var_h - var_i ) ) );
+
+        double var_r, var_g, var_b;
+
+        if      ( var_i == 0 ) { var_r = v     ; var_g = var_3 ; var_b = var_1; }
+        else if ( var_i == 1 ) { var_r = var_2 ; var_g = v     ; var_b = var_1; }
+        else if ( var_i == 2 ) { var_r = var_1 ; var_g = v     ; var_b = var_3; }
+        else if ( var_i == 3 ) { var_r = var_1 ; var_g = var_2 ; var_b = v;     }
+        else if ( var_i == 4 ) { var_r = var_3 ; var_g = var_1 ; var_b = v;     }
+        else                   { var_r = v     ; var_g = var_1 ; var_b = var_2; }
+
+        color.r = var_r * 255;
+        color.g = var_g * 255;
+        color.b = var_b * 255;
+    }
+
+    return color;
+}
+
 struct TermEntry
 {
     Color fg;
     Color bg;
 };
+
+}
 
 #endif // COLOR_HPP

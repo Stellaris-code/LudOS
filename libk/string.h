@@ -39,12 +39,22 @@ int memcmp(const void*, const void*, size_t);
 
 void* _naive_memcpy(void* __restrict dstptr, const void* __restrict srcptr, size_t size);
 void * _memcpy_mmx (void *v_to, const void *v_from, size_t len);
+void * _memcpy_sse2 (void *v_to, const void *v_from, size_t len);
+void * _aligned_memcpy_sse2 (void * __restrict v_to, const void * __restrict v_from, size_t len);
 
 extern void* (*memcpy)(void* __restrict, const void* __restrict, size_t);
+extern void* (*aligned_memcpy)(void* __restrict, const void* __restrict, size_t);
 
 void* memmove(void*, const void*, size_t);
-void* memset(void*, uint8_t, size_t);
+void* _naive_memset(void*, uint8_t, size_t);
+void _naive_double_memsetl(void* buf1ptr, void* buf2ptr, uint32_t value, size_t size);
+extern void* (*memset)(void*, uint8_t, size_t);
+extern void* (*aligned_memsetl)(void*, uint32_t , size_t );
+extern void (*aligned_double_memsetl)(void*buf1ptr, void*buf2ptr, uint32_t value, size_t size);
+void* _aligned_memsetl_sse2(void * dest, uint32_t val, size_t n);
+void _aligned_double_memsetl_sse2(void*buf1ptr, void*buf2ptr, uint32_t val, size_t n);
 void* memsetw(void*, uint16_t, size_t);
+void* memsetl(void*bufptr, uint32_t value, size_t size);
 void *memchr(const void *s, int c, size_t n);
 size_t strlen(const char*);
 char *strcpy(char * __restrict dest, const char * __restrict src);

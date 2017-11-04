@@ -1,5 +1,5 @@
 /*
-timestamp.hpp
+timestamp.cpp
 
 Copyright (c) 27 Yann BOUCHER (yann)
 
@@ -22,18 +22,37 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef TIMESTAMP_HPP
-#define TIMESTAMP_HPP
 
-#include <stdint.h>
+#include "time/time.hpp"
 
-inline uint64_t rdtsc()
+#include "i686/cpu/cpuinfo.hpp"
+#include "i686/pc/devices/rtc.hpp"
+
+namespace Time
+{
+
+bool timer_ready = false;
+
+uint64_t total_ticks()
 {
     uint64_t ret;
     asm volatile ( "rdtsc" : "=A"(ret) );
     return ret;
 }
 
-double uptime();
+double uptime()
+{
+    if (!timer_ready) return 0;
 
-#endif // TIMESTAMP_HPP
+    static double initial_ticks = total_ticks();
+    double ticks = total_ticks() - initial_ticks;
+
+    return ticks / (double(clock_speed()) * 1'000'000.0); // MHz -> Hz
+}
+
+Date get_time_of_day()
+{
+    return rtc::get_time();
+}
+
+}

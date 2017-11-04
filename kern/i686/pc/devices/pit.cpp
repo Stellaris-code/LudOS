@@ -30,6 +30,7 @@ SOFTWARE.
 #include "io.hpp"
 #include "i686/interrupts/isr.hpp"
 #include "time/timer.hpp"
+#include "time/time.hpp"
 
 void PIT::init(uint32_t freq)
 {
@@ -39,7 +40,9 @@ void PIT::init(uint32_t freq)
 
     Timer::set_frequency(freq);
 
-    kprintf("PIT Timer initialized\n");
+    Time::timer_ready = true;
+
+    log(Info, "PIT Timer initialized\n");
 }
 
 void PIT::set_frequency(uint32_t freq)

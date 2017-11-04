@@ -37,7 +37,7 @@ public:
     struct Entry
     {
         uint8_t c { ' ' };
-        TermEntry color { 0x0, 0x0 };
+        video::TermEntry color { 0x0, 0x0 };
     };
 
 public:

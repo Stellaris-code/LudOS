@@ -22,13 +22,14 @@ check_fpu_presence:
 
 
 setup_fpu:
+    clts
     mov edx, cr0
-    or edx, 0001_0001b
-    and edx, 0xFFFFFFFB
+    or edx, 0010_0010b
+    and edx, 0xFFFFFFF3
     mov cr0, edx
 
     mov edx, cr4
-    ;or edx, 0100_0000_0110_0000_0000b ; Check SSE first ! causes #GPF otherwise
+    or edx, 0000_0000_0110_0000_0000b ; Check SSE first ! causes #GPF otherwise
     mov cr4, edx
 
     fninit

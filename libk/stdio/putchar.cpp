@@ -27,12 +27,16 @@ SOFTWARE.
 
 #ifdef __is_libk
 #include <terminal/terminal.hpp>
+#include <i686/pc/serial/serialdebug.hpp>
 #endif
+
+bool putc_serial = false;
 
 void putchar(char c)
 {
 #ifdef __is_libk
     if (term) term->put_char(c);
+    if (putc_serial) serial::debug::write("%c", c);
 #else
     // TODO : do !
 #error Not implemented yet

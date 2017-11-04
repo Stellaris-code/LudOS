@@ -102,7 +102,7 @@ public:
     }
 
 private:
-    IntType m_vals[numvals] = {0};
+    IntType m_vals[numvals];
 };
 
 #endif // BITARRAY_HPP

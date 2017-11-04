@@ -43,6 +43,9 @@ SOFTWARE.
 
 #include "terminal/terminal.hpp"
 
+#include "graphics/video.hpp"
+#include "graphics/drawing/display_draw.hpp"
+
 #include "utils/logging.hpp"
 #include "utils/messagebus.hpp"
 #include "utils/memutils.hpp"
@@ -50,68 +53,81 @@ SOFTWARE.
 #include "halt.hpp"
 
 #include "time/time.hpp"
+#include "time/timer.hpp"
+
+// TODO : FAT32 write
+// TODO : system calls
+// TODO : user mode
+// TODO : POC calculatrice
+// TODO : windowing system avec alloc d'un canvas etc
+// TODO : Paging
+// TODO : Son
+// TODO : Passer en IDE PCI : IDE UDMA
+// FIXME : revoir l'architecture dégeulasse de l'ownership des nodes de readdir
+// BUG : Terminal scroll loops ?
+// FIXME : revoir les terminal pour permettre de pouvoir écrire dans un rapidement et afficher un autre
+// TODO : TinyGL
+// BUG : terminal multiline text is buggy
+// TODO : port newlib dans le kernelspace
+// TODO : ambilight feature pour le windowing system !
+// TODO : mtrr pour le framebuffer video
 
 inline void global_init()
 {
-    if (running_qemu)
-    {
-        log(Debug, "Running QEMU\n");
-    }
-
     vfs::init();
     vfs::mount_dev();
 
     log(Info, "Available drives : %zd\n", DiskInterface::drive_count());
 
-//    std::vector<uint8_t> data(512);
-//    DiskInterface::read(0, 0, 1, data.data());
+    //    std::vector<uint8_t> data(512);
+    //    DiskInterface::read(0, 0, 1, data.data());
 
-//    dump(data.data(), data.size());
-//    halt();
+    //    dump(data.data(), data.size());
+    //    halt();
 
-    for (size_t disk { 0 }; disk < DiskInterface::drive_count(); ++disk)
-    {
-        log(Info, "Disk : %zd\n", disk);
-        for (auto partition : mbr::read_partitions(disk))
-        {
-            log(Info, "Partition %zd\n", partition.partition_number);
-            auto fs = fat::read_fat_fs(disk, partition.relative_sector);
-            auto wrapper = fat::RAIIWrapper(fs);
-            if (fs.valid)
-            {
-                log(Info, "FAT %zd filesystem found on drive %zd, partition %d\n", fs.type, fs.drive, partition.partition_number);
+    //    for (size_t disk { 0 }; disk < DiskInterface::drive_count(); ++disk)
+    //    {
+    //        log(Info, "Disk : %zd\n", disk);
+    //        for (auto partition : mbr::read_partitions(disk))
+    //        {
+    //            log(Info, "Partition %zd\n", partition.partition_number);
+    //            auto fs = fat::read_fat_fs(disk, partition.relative_sector);
+    //            auto wrapper = fat::RAIIWrapper(fs);
+    //            if (fs.valid)
+    //            {
+    //                log(Info, "FAT %zd filesystem found on drive %zd, partition %d\n", fs.type, fs.drive, partition.partition_number);
 
-                auto root = std::make_shared<fat::fat_file>(fat::root_dir(fs));
+    //                auto root = std::make_shared<fat::fat_file>(fat::root_dir(fs));
 
-                if (vfs::mount(root, "/boot"))
-                {
-                    vfs::traverse("/");
+    //                if (vfs::mount(root, "/boot"))
+    //                {
+    //                    vfs::traverse("/");
 
-                    if (auto file = vfs::find("/boot/test.txt"); file)
-                    {
-                        std::string str = __TIME__ "\n";
+    //                    if (auto file = vfs::find("/boot/test.txt"); file)
+    //                    {
+    //                        std::string str = __TIME__ "\n";
 
-                        file->write(str.data(), str.size());
+    //                        file->write(str.data(), str.size());
 
-                        std::vector<uint8_t> vec;
-                        vec.resize(file->size());
+    //                        std::vector<uint8_t> vec;
+    //                        vec.resize(file->size());
 
-                        file->read(vec.data(), vec.size());
+    //                        file->read(vec.data(), vec.size());
 
-                        for (auto c : vec)
-                        {
-                            putchar(c);
-                        }
-                    }
-                }
-            }
-            else
-            {
-                log(Debug, "No FAT fs found on drive %zd, partition %d\n", fs.drive, partition.partition_number);
-            }
+    //                        for (auto c : vec)
+    //                        {
+    //                            putchar(c);
+    //                        }
+    //                    }
+    //                }
+    //            }
+    //            else
+    //            {
+    //                log(Debug, "No FAT fs found on drive %zd, partition %d\n", fs.drive, partition.partition_number);
+    //            }
 
-        }
-    }
+    //        }
+    //    }
     greet();
 
     kbd::install_mapping(kbd::mappings::azerty());
@@ -156,10 +172,33 @@ inline void global_init()
         }
     });
 
-//    std::vector<uint8_t> data(vfs::find("/boot/boot/initrd.img")->size());
-//    vfs::find("/boot/boot/initrd.img")->read(data.data(), data.size());
+    putc_serial = true;
 
-//    dump(data.data(), 1024);
+    auto mode = video::change_mode(1024, 768, 32);
+    if (mode)
+    {
+        log(Info, "LFB location : 0x%x\n", mode->framebuffer_addr);
+        log(Info, "Bytes per line : %d (padding : %d)\n", mode->bytes_per_line, mode->width*mode->depth/CHAR_BIT - mode->bytes_per_line);
+        log(Info, "Red : mask : %x, pos : %d\n", mode->red_mask_size, mode->red_field_pos);
+        log(Info, "Green : mask : %x, pos : %d\n", mode->green_mask_size, mode->green_field_pos);
+        log(Info, "Blue : mask : %x, pos : %d\n", mode->blue_mask_size, mode->blue_field_pos);
+
+        video::set_display_mode(*mode);
+    }
+
+    video::clear_display(0x0);
+
+    double start = Time::uptime();
+    double now = Time::uptime();
+    size_t counter = 0;
+    while (now - start < 1)
+    {
+        video::clear_display(video::hsvToRgb(now-start, 1, 1));
+        ++counter;
+        now = Time::uptime();
+    }
+
+    log(Info, "Images per second : %d\n", counter);
 }
 
 #endif // ARCH_INDEP_INIT_HPP

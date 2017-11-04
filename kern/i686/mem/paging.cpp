@@ -31,17 +31,13 @@ SOFTWARE.
 #include "halt.hpp"
 #include "panic.hpp"
 #include "utils/logging.hpp"
-#include "../serial/serialdebug.hpp"
-
-#include "meminfo.hpp"
-#include "../multiboot/multiboot.h"
 
 extern "C" int kernel_physical_end;
 
+bitarray<Paging::ram_maxpage, uint32_t> Paging::mem_bitmap;
+
 void Paging::init()
 {
-    Paging::init_mem_bitmap();
-
 //    uint32_t* pt0 = reinterpret_cast<uint32_t*>(alloc_page_frame());
 
 //    uint32_t* pd0 = reinterpret_cast<uint32_t*>(alloc_page_frame());
@@ -103,16 +99,21 @@ uintptr_t Paging::alloc_page_frame(size_t number)
 
 bool Paging::release_page_frame(uintptr_t p_addr, size_t number)
 {
-    size_t base_page = virt(p_addr)/page_size;
+    if (p_addr < reinterpret_cast<uintptr_t>(&kernel_physical_end))
+    {
+        panic("Should not happend ! %p\n", p_addr);
+    }
+
+    size_t base_page = page(virt(p_addr));
     bool released = false;
 
     for (size_t i { 0 }; i < number; ++i)
     {
-        released |= mem_bitmap[base_page+1] == false;
-        mem_bitmap[base_page + 1] = true;
+        released |= mem_bitmap[base_page+i];
+        mem_bitmap[base_page+i] = false;
     }
 
-    return true;
+    return released;
 }
 
 // TODO : implement
@@ -121,24 +122,9 @@ void Paging::map_page(void *phys, void *&virt, uint32_t flags)
     virt = phys;
 }
 
-void Paging::init_mem_bitmap()
+void Paging::mark_as_used(uintptr_t addr, size_t size)
 {
-    for (size_t i { 0 }; i < mem_bitmap.array_size; ++i)
-    {
-        mem_bitmap[i] = true;
-    }
-
-    size_t free_frames = Meminfo::free_frames();
-    for (size_t i { 0 }; i < free_frames; ++i)
-    {
-        multiboot_memory_map_t* mem_zone = Meminfo::frame(i);
-        for (size_t pg = page(mem_zone->addr); pg < page(mem_zone->addr)+mem_zone->len && pg < ram_maxpage; ++pg)
-        {
-            mem_bitmap[pg] = false;
-        }
-    }
-    // Mark kernel space as unavailable
-    for (size_t i { page(0) }; i < page(virt(reinterpret_cast<uintptr_t>(&kernel_physical_end))); ++i)
+    for (size_t i { page(addr) }; i < page(addr + size); ++i)
     {
         mem_bitmap[i] = true;
     }

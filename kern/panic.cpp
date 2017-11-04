@@ -43,6 +43,8 @@ SOFTWARE.
 
 #include "halt.hpp"
 
+const registers* panic_regs = nullptr;
+
 void print_stack_symbols()
 {
     puts("Stack trace :");
@@ -54,7 +56,7 @@ void print_stack_symbols()
         if (auto fun = elf::kernel_symbol_table.get_function(trace[i]); fun)
         {
             auto symbol = *fun;
-            kprintf("#%d   0x%x in %s\n", i+1, symbol.offset, demangle(symbol.name).c_str());
+            kprintf("#%d   0x%x in %s\n", i+1, trace[i], demangle(symbol.name).c_str());
         }
         else
         {
@@ -68,47 +70,32 @@ void print_stack_symbols()
 [[noreturn]]
 void panic(const char *fmt, ...)
 {
-    log_serial("Kernel Panic !\n");
-
     cli();
+
+    if (!panic_regs) panic_regs = get_registers();
+
+    if (term) term->push_color({0xaa0000, 0});
+
+    Speaker::beep(300);
+
+    putc_serial = true;
+
+    puts("\nKERNEL PANIC : ");
 
     {
         va_list va;
         va_start(va, fmt);
-        tfp_format(nullptr, [](void*, char c){log_serial("%c", c);}, fmt, va);
+        tfp_format(nullptr, [](void*, char c){putchar(c);}, fmt, va);
         va_end(va);
     }
 
-    log_serial("\n");
+    kprintf("\n");
 
-    auto regs = get_registers();
+    dump(panic_regs);
 
-    dump_serial(regs);
+    kprintf("\n");
 
-    if (term)
-    {
-
-        term->push_color({0xaa0000, 0});
-
-        Speaker::beep(300);
-
-        puts("\nKERNEL PANIC : ");
-
-        {
-            va_list va;
-            va_start(va, fmt);
-            tfp_format(nullptr, [](void*, char c){putchar(c);}, fmt, va);
-            va_end(va);
-        }
-
-        kprintf("\n");
-
-        dump(regs);
-
-        kprintf("\n");
-
-        print_stack_symbols();
-    }
+    print_stack_symbols();
 
     halt();
 }

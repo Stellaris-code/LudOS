@@ -160,11 +160,11 @@ SMBIOSCPUInfo *SMBIOS::cpu_info()
                 log(Debug, " Processor voltage : ");
                 if (bit_check(info->voltage, 7))
                 {
-                    kprintf("%.1fv\n", (info->voltage & 0b1111111)/10.0);
+                    log(Debug, "%.1fv\n", (info->voltage & 0b1111111)/10.0);
                 }
                 else
                 {
-                    kprintf("%.1fv\n", info->voltage == 0 ? 5 : info->voltage == 1 ? 3.3 : info->voltage == 2 ? 2.9 : -1);
+                    log(Debug, "%.1fv\n", info->voltage == 0 ? 5 : info->voltage == 1 ? 3.3 : info->voltage == 2 ? 2.9 : -1);
                 }
 
                 log(Debug, " Processor speed : %dMHz\n", info->curr_speed);

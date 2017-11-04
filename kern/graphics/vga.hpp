@@ -29,6 +29,9 @@ SOFTWARE.
 
 #include "color.hpp"
 
+namespace video
+{
+
 /* Hardware text mode color constants. */
 enum vga_color : uint8_t
 {
@@ -97,6 +100,8 @@ static inline vga_color color_to_vga(const Color& color)
     case 0xffffff:
         return VGA_COLOR_WHITE;
     }
+}
+
 }
 
 #endif // VGA_HPP

@@ -1,7 +1,7 @@
 /*
-stdio.h
+mtrr.hpp
 
-Copyright (c) 23 Yann BOUCHER (yann)
+Copyright (c) 03 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,43 +22,30 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef _STDIO_H
-#define _STDIO_H 1
+#ifndef MTRR_HPP
+#define MTRR_HPP
 
-#include <sys/cdefs.h>
-#include <stdbool.h>
 #include <stdint.h>
 
-#include "utils/defs.hpp"
-
-#define EOF (-1)
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-extern bool putc_serial;
-
-typedef struct
+namespace mtrr
 {
-    size_t fd;
-} FILE;
+enum Type : uint8_t
+{
+    UC = 0x00,
+    WC = 0x01,
+    WT = 0x04,
+    WP = 0x05,
+    WB = 0x06
+};
 
-void putchar(char c);
-void puts(const char*);
+bool available();
+bool supports_write_combining();
+uint8_t available_variable_ranges();
 
-int fprintf(FILE * stream, const char * format, ...) PRINTF_FMT(2, 3);
-FILE * fopen(const char * filename, const char * mode);
-int fclose( FILE * stream );
+void set_mtrrs_enabled(bool val);
+void set_fixed_mtrrs_enabled(bool val);
 
-extern FILE* stdin;
-extern FILE* stdout;
-extern FILE* stderr;
-
-#include "stdio/tinyprintf.h"
-
-#ifdef __cplusplus
+int set_variable_mtrr(uint64_t base_addr, uint64_t size, Type type);
 }
-#endif
 
-#endif
+#endif // MTRR_HPP

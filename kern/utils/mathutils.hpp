@@ -1,7 +1,7 @@
 /*
-timestamp.cpp
+mathutils.hpp
 
-Copyright (c) 27 Yann BOUCHER (yann)
+Copyright (c) 01 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,15 +22,15 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
+#ifndef MATHUTILS_HPP
+#define MATHUTILS_HPP
 
-#include "timestamp.hpp"
+#include <math.h>
 
-#include "../cpu/cpuinfo.hpp"
-
-double uptime()
+template <typename T>
+T diff(T lhs, T rhs)
 {
-    static double initial_ticks = rdtsc();
-    double ticks = rdtsc() - initial_ticks;
-
-    return ticks / (double(clock_speed()) * 1'000'000.0); // MHz -> Hz
+    return abs((long)lhs - (long)rhs);
 }
+
+#endif // MATHUTILS_HPP

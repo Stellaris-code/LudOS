@@ -47,6 +47,8 @@ public:
     static multiboot_memory_map_t *largest_frame();
     static multiboot_memory_map_t *frame(size_t idx);
 
+    static void init_paging_bitmap();
+
 private:
     static inline multiboot_mmap_entry *mmap_addr;
     static inline const multiboot_info_t* info;

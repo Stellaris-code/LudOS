@@ -1,7 +1,7 @@
 /*
-stdio.h
+video.hpp
 
-Copyright (c) 23 Yann BOUCHER (yann)
+Copyright (c) 02 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,43 +22,46 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef _STDIO_H
-#define _STDIO_H 1
+#ifndef VIDEO_HPP
+#define VIDEO_HPP
 
-#include <sys/cdefs.h>
-#include <stdbool.h>
 #include <stdint.h>
 
-#include "utils/defs.hpp"
+#include <vector.hpp>
+#include <optional.hpp>
 
-#define EOF (-1)
+#include "color.hpp"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-extern bool putc_serial;
-
-typedef struct
+namespace video
 {
-    size_t fd;
-} FILE;
 
-void putchar(char c);
-void puts(const char*);
+using Screen = std::vector<Color>;
 
-int fprintf(FILE * stream, const char * format, ...) PRINTF_FMT(2, 3);
-FILE * fopen(const char * filename, const char * mode);
-int fclose( FILE * stream );
+struct VideoMode
+{
+    uintptr_t framebuffer_addr { 0 };
+    uint32_t width { 0 };
+    uint32_t height { 0 };
+    uint32_t depth { 0 };
+    uint32_t bytes_per_line { 0 };
+    uint8_t  red_mask_size { 0 };
+    uint8_t  red_field_pos { 0 };
+    uint8_t  green_mask_size { 0 };
+    uint8_t  green_field_pos { 0 };
+    uint8_t  blue_mask_size { 0 };
+    uint8_t  blue_field_pos { 0 };
+    enum
+    {
+        Text,
+        Graphics
+    } type;
+};
 
-extern FILE* stdin;
-extern FILE* stdout;
-extern FILE* stderr;
+constexpr size_t max_res_pixels { 1920 * 1080 * 4 };
 
-#include "stdio/tinyprintf.h"
+std::vector<VideoMode> list_video_modes();
+std::optional<VideoMode> change_mode(size_t width, size_t height, size_t depth);
 
-#ifdef __cplusplus
 }
-#endif
 
-#endif
+#endif // VIDEO_HPP

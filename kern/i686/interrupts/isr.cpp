@@ -81,17 +81,19 @@ const registers* isr_handler(const registers* const regs)
         if (regs->int_no == 8) // double fault
         {
             cli();
+
+            putc_serial = true;
             // assume terminal is broken
-            dump_serial(regs);
-            log_serial("Double fault, aborting\n");
+            dump(regs);
+            err("Double fault, aborting\n");
             halt();
             return regs;
         }
 
         log_serial("eip : 0x%lx\n", regs->eip);
 
-        panic("Unhandeld interrupt (type : '%s') 0x%lx with error code 0x%lx at 0x%lx\n"
-              "edx : 0x%lx\ncr2 : 0x%lx", exception_messages[regs->int_no], regs->int_no, regs->err_code, regs->eip, regs->edx, cr2());
+        panic_regs = regs;
+        panic("Unhandeld interrupt (type : '%s') 0x%lx with error code 0x%lx at 0x%lx\n", exception_messages[regs->int_no], regs->int_no, regs->err_code, regs->eip, regs->edx, cr2());
         // handle here
 
     }

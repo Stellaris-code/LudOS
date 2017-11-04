@@ -27,9 +27,8 @@ SOFTWARE.
 
 #include <stdint.h>
 
-#include <functional.hpp>
-
-using time_t = uint64_t;
+namespace Time
+{
 
 struct Date
 {
@@ -41,20 +40,12 @@ struct Date
     uint32_t year;
 };
 
-namespace Time
-{
+extern bool timer_ready;
 
-extern std::function<Date()> get_time_of_day_callback;
+Date get_time_of_day();
 
-inline Date get_time_of_day()
-{
-    if (!get_time_of_day_callback)
-    {
-        abort();
-    }
-
-    return get_time_of_day_callback();
-}
+double uptime();
+uint64_t total_ticks();
 
 }
 

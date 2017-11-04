@@ -34,6 +34,7 @@ SOFTWARE.
 #include "utils/logging.hpp"
 #include "elf/elf.hpp"
 #include "i686/pc/mem/meminfo.hpp"
+#include "utils/virt_machine_detect.hpp"
 #include "halt.hpp"
 
 #define CHECK_FLAG(flags,bit)   ((flags) & (1 << (bit)))
@@ -74,7 +75,6 @@ void parse_info(const multiboot_info_t* info)
     if (CHECK_FLAG(info->flags, 2))
     {
         log(Info, "Command line : '%s'\n", reinterpret_cast<char*>(phys(info->cmdline)));
-        read_from_cmdline(reinterpret_cast<char*>(phys(info->cmdline)));
     }
     if (CHECK_FLAG(info->flags, 1))
     {
@@ -111,6 +111,10 @@ void parse_info(const multiboot_info_t* info)
     if (CHECK_FLAG(info->flags, 9))
     {
         log(Info, "Bootloader name : '%s'\n", reinterpret_cast<char*>(phys(info->boot_loader_name)));
+        if (strncmp(reinterpret_cast<char*>(phys(info->boot_loader_name)), "GRUB", 4) != 0 && running_qemu)
+        {
+            running_qemu_kernel = true;
+        }
     }
 
     if (CHECK_FLAG(info->flags, 12))
@@ -137,6 +141,16 @@ std::pair<const elf::Elf32_Shdr *, size_t> elf_info(const multiboot_info_t *info
     auto shdr = reinterpret_cast<const elf::Elf32_Shdr*>(phys(elf_info.addr));
 
     return {shdr, elf_info.num};
+}
+
+std::string parse_cmdline(const multiboot_info_t *info)
+{
+    if (CHECK_FLAG(info->flags, 2))
+    {
+        return reinterpret_cast<char*>(phys(info->cmdline));
+    }
+
+    return "";
 }
 
 }

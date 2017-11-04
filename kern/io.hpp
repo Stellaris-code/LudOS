@@ -35,9 +35,13 @@ uint8_t inb(uint16_t port);
 uint16_t inw(uint16_t port);
 uint32_t inl(uint16_t port);
 
+#ifdef __cplusplus
 extern "C"
+#endif
 void insw(uint16_t port, uint16_t* address, uint32_t repetitions);
+#ifdef __cplusplus
 extern "C"
+#endif
 void outsw(uint16_t port, const uint16_t* address, uint32_t repetitions);
 
 void io_wait();

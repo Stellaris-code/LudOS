@@ -40,6 +40,7 @@ void check(uint32_t magic, const multiboot_header& mbd, const multiboot_info *mb
 
 void parse_info(const multiboot_info_t *info);
 void parse_mem(const multiboot_info_t *info);
+std::string parse_cmdline(const multiboot_info_t *info);
 
 std::pair<const elf::Elf32_Shdr*, size_t> elf_info(const multiboot_info_t *info);
 

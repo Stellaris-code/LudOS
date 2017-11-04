@@ -39,12 +39,12 @@ Terminal::Terminal(size_t iwidth, size_t iheight, size_t imax_history)
     : _width(iwidth), _height(iheight), max_history(imax_history),
       history(_width, height()*max_history)
 {
-    push_color(TermEntry{0xaaaaaa, 0});
+    push_color(video::TermEntry{0xaaaaaa, 0});
     cur_line.resize(width());
 }
 
 
-void Terminal::put_entry_at(uint8_t c, TermEntry color, size_t x, size_t y)
+void Terminal::put_entry_at(uint8_t c, video::TermEntry color, size_t x, size_t y)
 {
     check_pos();
     set_entry_at(c, color, x, y);
@@ -142,7 +142,7 @@ void Terminal::scroll_up()
 }
 
 
-void Terminal::push_color(TermEntry color)
+void Terminal::push_color(video::TermEntry color)
 {
     color_stack.push(color);
 }
@@ -190,7 +190,7 @@ void Terminal::show_history(int page)
     }
 }
 
-TermEntry Terminal::color() const
+video::TermEntry Terminal::color() const
 {
     return color_stack.top();
 }
@@ -208,17 +208,17 @@ void Terminal::set_title(std::string str)
     {
         for (size_t i { 0 }; i < width(); ++i)
         {
-            set_entry_at(' ', TermEntry{0x000000, 0x00aaaa}, i, j, true);
+            set_entry_at(' ', video::TermEntry{0x000000, 0x00aaaa}, i, j, true);
         }
     }
 
     for (size_t i { 0 }; i < str.size(); ++i)
     {
-        set_entry_at(str[i], TermEntry{0x000000, 0x00aaaa}, offset+i, 0, true);
+        set_entry_at(str[i], video::TermEntry{0x000000, 0x00aaaa}, offset+i, 0, true);
     }
 }
 
-void Terminal::set_entry_at(uint8_t c, TermEntry color, size_t x, size_t y, bool absolute)
+void Terminal::set_entry_at(uint8_t c, video::TermEntry color, size_t x, size_t y, bool absolute)
 {
     if (!absolute)
     {

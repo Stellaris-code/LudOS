@@ -26,5 +26,6 @@ SOFTWARE.
 #define VIRT_MACHINE_DETECT_HPP
 
 extern bool running_qemu;
+extern bool running_qemu_kernel;
 
 #endif // VIRT_MACHINE_DETECT_HPP

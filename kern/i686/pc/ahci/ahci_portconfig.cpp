@@ -86,10 +86,10 @@ void detail::reset_port(size_t port)
     }
 
     mem->ports[port].sctl |= sctl_det; // Issue reset
-    Timer::sleep(1);
+    Timer::sleep(10);
     mem->ports[port].sctl &= ~sctl_det; // Issue reset
 
-    Timer::sleep_until([&]{return (mem->ports[port].ssts & ssts_det) == 1;});
+    //Timer::sleep_until([&]{return (mem->ports[port].ssts & ssts_det) == 1;});
 
     clear_errs(port);
 }
@@ -139,7 +139,11 @@ void detail::init_port_interrupts(size_t port)
 
 int detail::free_slot(size_t port)
 {
-    if (!(mem->pi & (1<<port)) || get_port_type(port) == PortType::Null)
+    if (get_port_type(port) == PortType::Null)
+    {
+        return -1;
+    }
+    if (!(mem->pi & (1<<port)))
     {
         return -1;
     }
@@ -190,6 +194,40 @@ void detail::start_port(size_t port)
 
     mem->ports[port].cmd |= pxcmd_st;
     mem->ports[port].cmd |= pxcmd_fre;
+}
+
+bool detail::check_errors(size_t port)
+{
+    if (mem->ports[port].is & pxis_tfes)
+    {
+        if (mem->ports[port].is & pxis_hbfs)
+        {
+            warn("AHCI software error port %d\n", port);
+        }
+
+        mem->ports[port].cmd &= ~pxcmd_st;
+        mem->ports[port].serr &= 0xFFFF0000;
+
+        if (!Timer::sleep_until([&]{return (mem->ports[port].cmd & pxcmd_cr) == 0;}, 500))
+        {
+            reset_port(port);
+            return true;
+        }
+
+        mem->ports[port].cmd |= pxcmd_st;
+
+        if (!((mem->ports[port].is & pxis_ifns) || (mem->ports[port].is & pxis_ofs)))
+        {
+            // Fatal error, reset the port
+            reset_port(port);
+        }
+
+        return true;
+    }
+    else
+    {
+        return false;
+    }
 }
 
 }

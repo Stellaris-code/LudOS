@@ -27,10 +27,12 @@ SOFTWARE.
 
 #include <math.h>
 
+#include <type_traits.hpp>
+
 template <typename T>
 T diff(T lhs, T rhs)
 {
-    return abs((long)lhs - (long)rhs);
+    return abs(std::make_signed_t<T>(lhs) - std::make_signed_t<T>(rhs));
 }
 
 #endif // MATHUTILS_HPP

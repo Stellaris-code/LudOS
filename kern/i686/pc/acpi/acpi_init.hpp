@@ -30,7 +30,8 @@ SOFTWARE.
 #include "i686/pc/devices/acpitimer.hpp"
 #include "halt.hpp"
 
-ACPI_STATUS acpi_init()
+[[nodiscard]]
+inline ACPI_STATUS acpi_init()
 {
     ACPI_STATUS status;
 

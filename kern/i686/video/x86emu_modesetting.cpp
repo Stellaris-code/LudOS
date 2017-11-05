@@ -160,7 +160,7 @@ RealModeState emuInt10h(uint16_t ax, uint16_t bx, uint16_t cx, uint16_t dx, uint
         err("x86emu : %s\n", str.c_str());
     });
 
-    x86emu_set_memio_handler(emu, (x86emu_memio_handler_t)alternate_vm_memio);
+    x86emu_set_memio_handler(emu, reinterpret_cast<x86emu_memio_handler_t>(alternate_vm_memio));
 
     emu->x86.R_IP = 0x7C00;
 

@@ -9,6 +9,8 @@
 
         /* Functions */
 
+#pragma GCC system_header
+
 #ifdef __cplusplus
 extern "C"
 {

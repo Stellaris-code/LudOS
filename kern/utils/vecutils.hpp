@@ -25,18 +25,5 @@ SOFTWARE.
 #ifndef VECUTILS_HPP
 #define VECUTILS_HPP
 
-#include "vector.hpp"
-
-template <typename T>
-std::vector<T> operator+(const std::vector<T>& lhs, const std::vector<T>& rhs)
-{
-    std::vector<T> result = lhs;
-    for (const auto& el : rhs)
-    {
-        result.push_back(el);
-    }
-
-    return result;
-}
 
 #endif // VECUTILS_HPP

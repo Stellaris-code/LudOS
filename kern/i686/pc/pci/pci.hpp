@@ -75,7 +75,8 @@ enum class BARType
     Mem16,
     Mem32,
     Mem64,
-    IO16
+    IO16,
+    Invalid = 0xFF
 };
 
 inline BARType bar_type(uint32_t bar)
@@ -96,6 +97,8 @@ inline BARType bar_type(uint32_t bar)
     {
         return BARType::Mem64;
     }
+
+    return BARType::Invalid;
 }
 
 uint64_t get_bar_val(const pci::PciDevice& dev, size_t bar_idx);

@@ -1,7 +1,7 @@
 /*
-ide_pio.hpp
+get_initrd.hpp
 
-Copyright (c) 15 Yann BOUCHER (yann)
+Copyright (c) 04 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,47 +22,15 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef IDE_PIO_HPP
-#define IDE_PIO_HPP
+#ifndef GET_INITRD_HPP
+#define GET_INITRD_HPP
 
 #include <stdint.h>
 
-#include <vector.hpp>
-#include <utility.hpp>
 #include <optional.hpp>
 
-#include "ide_common.hpp"
+std::optional<size_t> get_initrd_disk();
 
-namespace ide
-{
+[[nodiscard]] bool install_initrd();
 
-namespace pio
-{
-
-void init();
-
-[[nodiscard]] bool read(BusPort port, DriveType type, uint64_t block, size_t count, uint16_t* buf);
-[[nodiscard]] bool write(BusPort port, DriveType type, uint64_t block, size_t count, const uint16_t* buf);
-
-uint8_t error_register(BusPort port);
-uint8_t status_register(BusPort port);
-
-std::vector<std::pair<BusPort, DriveType>> scan();
-
-std::optional<identify_data> identify(BusPort port, DriveType type);
-
-namespace detail
-{
-void common(BusPort port, uint8_t type, uint64_t block, uint16_t count);
-bool read_one(BusPort port, DriveType type, uint64_t block, uint16_t* buf);
-bool write_one(BusPort port, DriveType type, uint64_t block, const uint16_t* buf);
-void poll(BusPort port);
-void poll_bsy(BusPort port);
-bool flush(BusPort port);
-bool error_set(BusPort port);
-void clear_error(BusPort port);
-}
-}
-}
-
-#endif // IDE_PIO_HPP
+#endif // GET_INITRD_HPP

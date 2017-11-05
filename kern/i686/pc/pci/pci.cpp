@@ -33,8 +33,8 @@ std::vector<pci::PciDevice> pci::devices;
 
 uint16_t pci::read_reg(uint16_t bus, uint16_t slot, uint16_t func, uint16_t offset)
 {
-    uint32_t address = (uint32_t)((bus << 16) | (slot << 11) |
-                                  (func << 8) | (offset & 0xfc) | ((uint32_t)0x80000000));
+    uint32_t address = static_cast<uint32_t>((bus << 16) | (slot << 11) |
+                                  (func << 8) | (offset & 0xfc) | 0x80000000u);
 
     /* write out the address */
     outl(0xCF8, address);
@@ -50,8 +50,8 @@ uint16_t pci::read_reg(uint16_t bus, uint16_t slot, uint16_t func, uint16_t offs
 
 void pci::write_reg(uint16_t bus, uint16_t slot, uint16_t func, uint16_t offset, uint16_t val)
 {
-    uint32_t address = (uint32_t)((bus << 16) | (slot << 11) |
-                                  (func << 8) | (offset & 0xfc) | ((uint32_t)0x80000000));
+    uint32_t address = static_cast<uint32_t>((bus << 16) | (slot << 11) |
+                                  (func << 8) | (offset & 0xfc) | 0x80000000u);
 
     /* write out the address */
     outl(0xCF8, address);

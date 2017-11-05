@@ -1,7 +1,7 @@
 /*
-mbr.cpp
+get_initrd.cpp
 
-Copyright (c) 30 Yann BOUCHER (yann)
+Copyright (c) 04 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -23,37 +23,41 @@ SOFTWARE.
 
 */
 
-#include "mbr.hpp"
+#include "initrd/initrd.hpp"
 
-#include <array.hpp>
-
+#include "utils/virt_machine_detect.hpp"
+#include "i686/pc/multiboot/multiboot_kern.hpp"
 #include "drivers/diskinterface.hpp"
+#include "fs/vfs.hpp"
 
-std::vector<mbr::Partition> mbr::read_partitions(size_t drive)
+std::vector<uint8_t> initrd_buffer;
+
+std::optional<size_t> get_initrd_disk()
 {
-    std::vector<Partition> partitions;
-
-    std::array<uint8_t, 512> buf;
-
-    if (!DiskInterface::read(drive, 0, 1, buf.data()))
+    if (running_qemu_kernel)
     {
-        return {};
-    }
-
-    std::vector<uint16_t> addresses = {static_cast<uint16_t>(0x1BE), static_cast<uint16_t>(0x1CE),
-                                       static_cast<uint16_t>(0x1DE), static_cast<uint16_t>(0x1EE)};
-    for (size_t i { 0 }; i < addresses.size(); ++i)
-    {
-        Partition part;
-        part = *reinterpret_cast<Partition*>(buf.data() + addresses[i]);
-        part.partition_number = i+1;
-        part.drive = drive;
-
-        if (part.system_id != 0)
+        auto file = vfs::find("/boot/boot/initrd.tar");
+        if (file)
         {
-            partitions.emplace_back(part);
+            initrd_buffer.resize(file->size());
+            if (file->read(initrd_buffer.data(), initrd_buffer.size()))
+            {
+                return DiskInterface::add_memory_drive(reinterpret_cast<const void*>(initrd_buffer.data()),
+                                                       initrd_buffer.size());
+            }
+        }
+    }
+    else
+    {
+        for (auto module : multiboot::get_modules())
+        {
+            if (strncmp(reinterpret_cast<const char*>(module.cmdline), "initrd", 6) == 0)
+            {
+                return DiskInterface::add_memory_drive(reinterpret_cast<const void*>(module.mod_start),
+                                                       (module.mod_end - module.mod_start));
+            }
         }
     }
 
-    return partitions;
+    return {};
 }

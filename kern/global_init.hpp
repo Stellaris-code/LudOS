@@ -26,6 +26,7 @@ SOFTWARE.
 #define ARCH_INDEP_INIT_HPP
 
 #include "fs/fat.hpp"
+#include "fs/tar.hpp"
 #include "fs/vfs.hpp"
 #include "fs/mbr.hpp"
 #include "fs/pathutils.hpp"
@@ -43,6 +44,8 @@ SOFTWARE.
 
 #include "terminal/terminal.hpp"
 
+#include "elf/symbol_table.hpp"
+
 #include "graphics/video.hpp"
 #include "graphics/drawing/display_draw.hpp"
 
@@ -54,6 +57,8 @@ SOFTWARE.
 
 #include "time/time.hpp"
 #include "time/timer.hpp"
+
+#include "initrd/initrd.hpp"
 
 // TODO : FAT32 write
 // TODO : system calls
@@ -70,66 +75,10 @@ SOFTWARE.
 // BUG : terminal multiline text is buggy
 // TODO : port newlib dans le kernelspace
 // TODO : ambilight feature pour le windowing system !
-// TODO : mtrr pour le framebuffer video
+// TODO : qemu -kernel : load elf
 
 inline void global_init()
 {
-    vfs::init();
-    vfs::mount_dev();
-
-    log(Info, "Available drives : %zd\n", DiskInterface::drive_count());
-
-    //    std::vector<uint8_t> data(512);
-    //    DiskInterface::read(0, 0, 1, data.data());
-
-    //    dump(data.data(), data.size());
-    //    halt();
-
-    //    for (size_t disk { 0 }; disk < DiskInterface::drive_count(); ++disk)
-    //    {
-    //        log(Info, "Disk : %zd\n", disk);
-    //        for (auto partition : mbr::read_partitions(disk))
-    //        {
-    //            log(Info, "Partition %zd\n", partition.partition_number);
-    //            auto fs = fat::read_fat_fs(disk, partition.relative_sector);
-    //            auto wrapper = fat::RAIIWrapper(fs);
-    //            if (fs.valid)
-    //            {
-    //                log(Info, "FAT %zd filesystem found on drive %zd, partition %d\n", fs.type, fs.drive, partition.partition_number);
-
-    //                auto root = std::make_shared<fat::fat_file>(fat::root_dir(fs));
-
-    //                if (vfs::mount(root, "/boot"))
-    //                {
-    //                    vfs::traverse("/");
-
-    //                    if (auto file = vfs::find("/boot/test.txt"); file)
-    //                    {
-    //                        std::string str = __TIME__ "\n";
-
-    //                        file->write(str.data(), str.size());
-
-    //                        std::vector<uint8_t> vec;
-    //                        vec.resize(file->size());
-
-    //                        file->read(vec.data(), vec.size());
-
-    //                        for (auto c : vec)
-    //                        {
-    //                            putchar(c);
-    //                        }
-    //                    }
-    //                }
-    //            }
-    //            else
-    //            {
-    //                log(Debug, "No FAT fs found on drive %zd, partition %d\n", fs.drive, partition.partition_number);
-    //            }
-
-    //        }
-    //    }
-    greet();
-
     kbd::install_mapping(kbd::mappings::azerty());
     kbd::TextHandler::init();
     kbd::install_led_handler();
@@ -172,6 +121,51 @@ inline void global_init()
         }
     });
 
+    vfs::init();
+    vfs::mount_dev();
+
+    log(Info, "Available drives : %zd\n", DiskInterface::drive_count());
+
+#if 1
+    for (size_t disk { 0 }; disk < DiskInterface::drive_count(); ++disk)
+    {
+        log(Info, "Disk : %zd\n", disk);
+        for (auto partition : mbr::read_partitions(disk))
+        {
+            log(Info, "Partition %zd\n", partition.partition_number);
+            auto fs = fat::read_fat_fs(disk, partition.relative_sector, true);
+            auto wrapper = fat::RAIIWrapper(fs);
+            if (fs.valid)
+            {
+                log(Info, "FAT %zd filesystem found on drive %zd, partition %d\n", fs.type, fs.drive, partition.partition_number);
+
+                auto root = std::make_shared<fat::fat_file>(fat::root_dir(fs));
+
+                vfs::mount(root, "/boot");
+            }
+        }
+    }
+#endif
+
+    if (!install_initrd())
+    {
+        panic("Cannot install initrd!\n");
+    }
+
+    //    putc_serial = true;
+
+    //    if (auto file = vfs::find("/boot/boot/LudOS.bin"); file)
+    //    {
+    //        std::vector<uint8_t> data(file->size());
+    //        if (file->read(data.data(), data.size()))
+    //        {
+    //            elf::kernel_symbol_table = elf::get_symbol_table_file(data);
+    //        }
+    //    }
+
+    //vfs::traverse("/initrd");
+
+#if 0
     putc_serial = true;
 
     auto mode = video::change_mode(1024, 768, 32);
@@ -199,6 +193,9 @@ inline void global_init()
     }
 
     log(Info, "Images per second : %d\n", counter);
+#endif
+
+    greet();
 }
 
 #endif // ARCH_INDEP_INIT_HPP

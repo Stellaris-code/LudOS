@@ -78,10 +78,10 @@ bool init()
             detail::init_port(i);
             auto type = detail::get_port_type(i);
             if (type != detail::PortType::Null) ++port_count;
-            log(Info, "   Port %d, type %s\n", i, type == detail::PortType::SATA ? "SATA" :
-                                                  type == detail::PortType::SATAPI ? "SATAPI" :
-                                                  type == detail::PortType::SEMB ? "SEMB" :
-                                                  type == detail::PortType::PM ? "PM" : "Null");
+            log(Info, "   Port %u, type %s\n", i, type == detail::PortType::SATA ? "SATA" :
+                                                                                   type == detail::PortType::SATAPI ? "SATAPI" :
+                                                                                                                      type == detail::PortType::SEMB ? "SEMB" :
+                                                                                                                                                       type == detail::PortType::PM ? "PM" : "Null");
         }
     }
 
@@ -144,9 +144,22 @@ uint32_t detail::flush_commands(size_t port)
     return c;
 }
 
+void detail::mkprd(PrdtEntry& entry, uint64_t addr, size_t bytes)
+{
+    assert(bytes <= 4*1024*1024);
+
+    entry.dba = addr & 0xFFFFFFFF;
+    if (mem->s64a)
+    {
+        entry.dbau = (addr >> 32) & 0xFFFFFFFF;
+    }
+
+    entry.dbc = bytes - 1; // zero indexed
+    entry.i = 1;
+}
+
 bool detail::issue_read_command(size_t port, uint64_t sector, size_t count, uint16_t* buf)
 {
-
     int slot = free_slot(port);
     if (slot < 0)
     {
@@ -160,26 +173,22 @@ bool detail::issue_read_command(size_t port, uint64_t sector, size_t count, uint
     cmdheader->cfl = sizeof(FisRegH2D)/sizeof(uint32_t);	// Command FIS size
     cmdheader->write = 0;		// Read from device
     cmdheader->prdtl = ((count-1)>>4) + 1;	// PRDT entries count
+//    panic("coutn : %d\n", cmdheader->prdtl);
     cmdheader->atapi = false;
 
     CommandTable *cmdtbl = reinterpret_cast<CommandTable*>(cmdheader->ctba);
     memset(cmdtbl, 0, sizeof(CommandTable) +
            (cmdheader->prdtl-1)*sizeof(PrdtEntry));
     // 8K bytes (16 sectors) per PRDT
-    for (int i=0; i<cmdheader->prdtl-1; i++)
+
+    int i;
+    for (i=0; i<cmdheader->prdtl-1; i++)
     {
-        cmdtbl->entries[i].dba = static_cast<uint32_t>(reinterpret_cast<uintptr_t>(buf));
-        cmdtbl->entries[i].dbau = 0;
-        cmdtbl->entries[i].dbc = 8*1024;	// 8K bytes
-        cmdtbl->entries[i].i = 1;
-        buf += 4*1024;	// 4K words
-        count -= 16;	// 16 sectors
+        mkprd(cmdtbl->entries[i], reinterpret_cast<uintptr_t>(buf), 4*1024*1024);
+        buf += 4*1024*1024;
+        count -= 8;	// 16 sectors
     }
-    // Last entry
-    cmdtbl->entries[cmdheader->prdtl-1].dba = static_cast<uint32_t>(reinterpret_cast<uintptr_t>(buf));
-    cmdtbl->entries[cmdheader->prdtl-1].dbau = 0;
-    cmdtbl->entries[cmdheader->prdtl-1].dbc = count<<9;	// 512 bytes per sector
-    cmdtbl->entries[cmdheader->prdtl-1].i = 1;
+    mkprd(cmdtbl->entries[i], reinterpret_cast<uintptr_t>(buf), count*512);
 
     // Setup command
     FisRegH2D *cmdfis = reinterpret_cast<FisRegH2D*>(&cmdtbl->command_fis);
@@ -215,19 +224,20 @@ bool detail::issue_read_command(size_t port, uint64_t sector, size_t count, uint
     {
         // In some longer duration reads, it may be helpful to spin on the DPS bit
         // in the PxIS port field as well (1 << 5)
-        if (((mem->ports[port].sact | mem->ports[port].ci) & (1<<slot)) == 0)
+        if (((mem->ports[port].sact | mem->ports[port].ci) & (1<<slot)) == 0 &&
+                (mem->ports[port].is & pxis_dps) == 0)
             break;
-        if (mem->ports[port].is & pxis_tfes)	// Task file error
+        if (check_errors(port))	// Task file error
         {
-            warn("Read disk error on AHCI port %d\n", port);
+            err("Read disk error on AHCI port %d\n", port);
             return false;
         }
     }
 
     // Check again
-    if (mem->ports[port].is & pxis_tfes)
+    if (check_errors(port))
     {
-        warn("Read disk error on AHCI port %d\n", port);
+        err("::Read disk error on AHCI port %d\n", port);
         return false;
     }
 
@@ -335,6 +345,10 @@ void detail::init_interface()
             [port](uint32_t sector, uint8_t count, const uint8_t* buf)->bool
             {
                 return detail::issue_write_command(port, sector, count, reinterpret_cast<const uint16_t*>(buf));
+            },
+            []{
+                return DiskInterface::DiskInfo{ .disk_size = 0,
+                                                .sector_size = 512}; // TODO : implement !
             });
         }
     }

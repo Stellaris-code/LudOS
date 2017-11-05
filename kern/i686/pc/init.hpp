@@ -76,7 +76,10 @@ inline void init(uint32_t magic, const multiboot_info_t* mbd_info)
     serial::debug::init(BDA::com1_port());
     serial::debug::write("Serial COM1 : Booting LudOS v%d...\n", 1);
 
-    multiboot::parse_mem(mbd_info);
+    multiboot::check(magic, mbd, mbd_info);
+    multiboot::info = mbd_info;
+
+    multiboot::parse_mem();
     Meminfo::init_paging_bitmap();
     Paging::init();
 
@@ -98,10 +101,8 @@ inline void init(uint32_t magic, const multiboot_info_t* mbd_info)
 
     init_printf(nullptr, [](void*, char c){putchar(c);});
 
-    auto elf_info = multiboot::elf_info(mbd_info);
+    auto elf_info = multiboot::elf_info();
     elf::kernel_symbol_table = elf::get_symbol_table(elf_info.first, elf_info.second);
-
-    multiboot::check(magic, mbd, mbd_info);
 
     gdt::init();
     pic::init();
@@ -131,14 +132,16 @@ inline void init(uint32_t magic, const multiboot_info_t* mbd_info)
 #endif
     }
 
-    read_from_cmdline(multiboot::parse_cmdline(mbd_info));
+    read_from_cmdline(multiboot::parse_cmdline());
     read_logging_config();
+
+    multiboot::print_info();
 
     SMBIOS::locate();
     SMBIOS::bios_info();
     SMBIOS::cpu_info();
 
-    multiboot::parse_info(mbd_info);
+    multiboot::parse_info();
 
     // QEMU in -kernel mode doesn't read the cmdline
     if (running_qemu_kernel)

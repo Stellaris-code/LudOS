@@ -39,7 +39,6 @@ inline ContainerT tokenize(const std::string& str, const std::string& delimiters
     std::string::size_type pos, lastPos = 0, length = str.length();
 
     using value_type = typename ContainerT::value_type;
-    using size_type  = typename ContainerT::size_type;
 
     while(lastPos < length + 1)
     {
@@ -51,7 +50,7 @@ inline ContainerT tokenize(const std::string& str, const std::string& delimiters
 
         if(pos != lastPos || !trimEmpty)
             tokens.push_back(value_type(str.data()+lastPos,
-                                        (size_type)pos-lastPos ));
+                                        pos-lastPos ));
 
         lastPos = pos + 1;
     }

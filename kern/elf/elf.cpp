@@ -30,9 +30,20 @@ SOFTWARE.
 namespace elf
 {
 
+const uint8_t* current_elf_file;
+
 const char *str_table(const Elf32_Shdr *hdr, size_t strtableidx)
 {
-    return reinterpret_cast<const char*>(hdr[strtableidx].sh_addr);
+    const char* str_table;
+    if ((str_table = reinterpret_cast<const char*>(hdr[strtableidx].sh_addr)))
+    {
+
+    }
+    else
+    {
+        str_table = reinterpret_cast<const char*>(hdr[strtableidx].sh_offset + current_elf_file);
+    }
+    return str_table;
 }
 
 const char *lookup_str(const char *strtable, size_t offset)
@@ -49,7 +60,16 @@ const Elf32_Sym *symbol(const Elf32_Shdr *symtab, size_t num)
         return nullptr;
     }
 
-    return &((const Elf32_Sym*)symtab->sh_addr)[num];
+    const Elf32_Sym* sym;
+    if ((sym = &(reinterpret_cast<const Elf32_Sym*>(symtab->sh_addr))[num]))
+    {
+
+    }
+    else
+    {
+        sym = &(reinterpret_cast<const Elf32_Sym*>(symtab->sh_offset + current_elf_file))[num];
+    }
+    return &(reinterpret_cast<const Elf32_Sym*>(symtab->sh_addr))[num];
 }
 
 const Elf32_Shdr *section(const Elf32_Shdr *base, size_t size, size_t type)
@@ -63,6 +83,59 @@ const Elf32_Shdr *section(const Elf32_Shdr *base, size_t size, size_t type)
     }
 
     return nullptr;
+}
+
+bool check_file(const Elf32_Ehdr *hdr)
+{
+    if(!hdr) return false;
+    if(hdr->e_ident[EI_MAG0] != ELFMAG0)
+    {
+        return false;
+    }
+    if(hdr->e_ident[EI_MAG1] != ELFMAG1)
+    {
+        return false;
+    }
+    if(hdr->e_ident[EI_MAG2] != ELFMAG2)
+    {
+        return false;
+    }
+    if(hdr->e_ident[EI_MAG3] != ELFMAG3)
+    {
+        return false;
+    }
+    return true;
+}
+
+bool check_supported(const Elf32_Ehdr *hdr)
+{
+    if(!check_file(hdr))
+    {
+        return false;
+    }
+#ifdef ARCH_i686
+    if(hdr->e_ident[EI_CLASS] != ELFCLASS32)
+    {
+        return false;
+    }
+    if(hdr->e_ident[EI_DATA] != ELFDATA2LSB)
+    {
+        return false;
+    }
+    if(hdr->e_machine != EM_386)
+    {
+        return false;
+    }
+#endif
+    if(hdr->e_ident[EI_VERSION] != EV_CURRENT)
+    {
+        return false;
+    }
+    if(hdr->e_type != ET_REL && hdr->e_type != ET_EXEC)
+    {
+        return false;
+    }
+    return true;
 }
 
 }

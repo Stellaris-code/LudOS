@@ -36,11 +36,20 @@ SOFTWARE.
 #include "string.hpp"
 #include "utils/vecutils.hpp"
 
-fat::FATInfo fat::read_fat_fs(size_t drive, size_t base_sector)
+// TODO : Passer ca en une classe, FATFs
+// TODO : AHCI fait n'importe quoi, vérifier la sortie en IDE et en AHCI comparer
+
+fat::FATInfo fat::read_fat_fs(size_t drive, size_t base_sector, bool read_only)
 {
     std::vector<uint8_t> first_sector(512);
 
-    DiskInterface::read(drive, base_sector, 1, first_sector.data());
+    if (!DiskInterface::read(drive, base_sector, 1, first_sector.data()))
+    {
+        FATInfo info;
+        info.valid = false;
+
+        return info;
+    }
 
     BS bootsector = *reinterpret_cast<BS*>(first_sector.data());
 
@@ -51,11 +60,11 @@ fat::FATInfo fat::read_fat_fs(size_t drive, size_t base_sector)
     info.ext32 = *reinterpret_cast<extBS_32*>(bootsector.extended_section);
 
     info.drive = drive;
+    info.read_only = read_only;
 
     if ((bootsector.bootjmp[0] != 0xEB && bootsector.bootjmp[0] != 0xE9) || bootsector.bytes_per_sector == 0 || bootsector.sectors_per_cluster == 0)
     {
         info.valid = false;
-
         return info;
     }
 
@@ -72,10 +81,8 @@ fat::FATInfo fat::read_fat_fs(size_t drive, size_t base_sector)
     if (info.total_clusters < 4085)
     {
         info.type = FATType::FAT12;
-        info.valid = false;
-        err("FAT12 is not supported !\n");
-
-        return info;
+        info.read_only = true;
+        if (!read_only) warn("FAT12 is only supported in read-only !\n");
     }
     else if (info.total_clusters < 65525)
     {
@@ -94,7 +101,7 @@ fat::FATInfo fat::read_fat_fs(size_t drive, size_t base_sector)
         return info;
     }
 
-    detail::set_dirty_bit(info, true);
+    if (!info.read_only) detail::set_dirty_bit(info, true);
 
     return info;
 }
@@ -111,7 +118,7 @@ size_t fat::detail::sector_to_cluster(size_t first_sector, const fat::FATInfo &i
 
 uint32_t fat::detail::next_cluster(size_t cluster, const fat::FATInfo &info)
 {
-    return FAT_entry(get_FAT(info), info, cluster);
+    return FAT_entry(info, cluster);
 }
 
 fat::fat_file fat::root_dir(const fat::FATInfo &info)
@@ -144,8 +151,11 @@ fat::fat_file fat::root_dir(const fat::FATInfo &info)
 
 std::vector<fat::fat_file> fat::detail::read_cluster_entries(size_t first_sector, const fat::FATInfo &info)
 {
-    std::vector<uint8_t> data(512 * info.bootsector.sectors_per_cluster);
-    DiskInterface::read(info.drive, first_sector + info.base_sector, info.bootsector.sectors_per_cluster, data.data());
+    std::vector<uint8_t> data(info.bootsector.bytes_per_sector * info.bootsector.sectors_per_cluster);
+    if (!DiskInterface::read(info.drive, first_sector + info.base_sector, info.bootsector.sectors_per_cluster, data.data()))
+    {
+        return {};
+    }
 
     std::vector<fat_file> entries;
 
@@ -185,6 +195,7 @@ std::vector<fat::fat_file> fat::detail::read_cluster_entries(size_t first_sector
         }
         else
         {
+            //log_serial("Size : %d '%s'\n", entry->size, longname_buf.c_str());
             entries.push_back(detail::entry_to_vfs_node(*entry, info, longname_buf));
             entries.back().entry_first_sector = first_sector;
             entries.back().entry_idx = entry_idx;
@@ -220,73 +231,40 @@ std::vector<fat::fat_file> fat::detail::read_cluster_entries(size_t first_sector
 std::vector<uint8_t> fat::detail::read_cluster(size_t first_sector, const fat::FATInfo &info)
 {
     std::vector<uint8_t> data(512 * info.bootsector.sectors_per_cluster);
-    DiskInterface::read(info.drive, first_sector + info.base_sector, info.bootsector.sectors_per_cluster, data.data());
+    if (!DiskInterface::read(info.drive, first_sector + info.base_sector, info.bootsector.sectors_per_cluster, data.data()))
+    {
+        return {};
+    }
 
     return data;
 }
 
 std::vector<uint8_t> fat::detail::read_cluster_chain(size_t cluster, const fat::FATInfo& info)
 {
-    uint32_t table_entry = next_cluster(cluster, info);
-    //log("next : at 0x%x : 0x%x\n", cluster, table_entry);
+    std::vector<uint8_t> data;
+    do
+    {
+        data = merge(data, read_cluster(first_sector_of_cluster(cluster, info), info));
 
-    std::vector<uint8_t> next_entries;
-    if (info.type == FATType::FAT12 && table_entry >= 0xFF7)
-    {
-        next_entries = {};
-    }
-    else if (info.type == FATType::FAT16 && table_entry >= 0xFFF7)
-    {
-        next_entries = {};
-    }
-    else if (info.type == FATType::FAT32 && table_entry >= 0x0FFFFFF7)
-    {
-        next_entries = {};
-    }
-    else if (table_entry == 1) // Spec says to consider it as end of chain marker
-    {
-        next_entries = {};
-    }
-    else
-    {
-        next_entries = read_cluster_chain(table_entry, info);
-    }
+        cluster = next_cluster(cluster, info);
+    } while (cluster < end_of_chain(info));
 
-    return read_cluster(first_sector_of_cluster(cluster, info), info) + next_entries;
+
+    return data;
 }
 
-std::vector<size_t> fat::detail::get_cluster_chain(size_t first_cluster, const fat::FATInfo& info)
+std::vector<size_t> fat::detail::get_cluster_chain(size_t cluster, const fat::FATInfo& info)
 {
-    uint32_t table_entry = next_cluster(first_cluster, info);
 
-    std::vector<size_t> next_clusters;
-    if (info.type == FATType::FAT12 && table_entry >= 0xFF7)
+    std::vector<size_t> clusters;
+    do
     {
-        next_clusters = {};
-    }
-    else if (info.type == FATType::FAT16 && table_entry >= 0xFFF7)
-    {
-        next_clusters = {};
-    }
-    else if (info.type == FATType::FAT32 && table_entry >= 0x0FFFFFF7)
-    {
-        next_clusters = {};
-    }
-    else if (table_entry == 1) // Spec says to consider it as end of chain marker
-    {
-        next_clusters = {};
-    }
-    else if (table_entry == 0)
-    {
-        next_clusters = {};
-        warn("FAT fs : Missing end-of-cluster entry at 0x%x !\n", first_cluster);
-    }
-    else
-    {
-        next_clusters = get_cluster_chain(table_entry, info);
-    }
+        cluster = next_cluster(cluster, info);
 
-    return merge({first_cluster}, next_clusters);
+        clusters.emplace_back(cluster);
+    } while (cluster < end_of_chain(info) && cluster != 1);
+
+    return clusters;
 }
 
 std::vector<uint8_t> fat::detail::read(const fat::Entry &entry, const FATInfo &info)
@@ -298,6 +276,8 @@ std::vector<uint8_t> fat::detail::read(const fat::Entry &entry, const FATInfo &i
 {
     if (!(entry.attributes & ATTR_DIRECTORY))
     {
+        auto chain = detail::get_cluster_chain(entry.low_cluster_bits | (entry.high_cluster_bits << 16), info);
+
         std::vector<uint8_t> data;
         data = detail::read_cluster_chain(entry.low_cluster_bits | (entry.high_cluster_bits << 16), info);
 
@@ -344,12 +324,15 @@ std::vector<uint8_t> fat::detail::get_FAT(const FATInfo &info)
 {
     std::vector<uint8_t> FAT(info.fat_size*info.bootsector.bytes_per_sector);
 
-    DiskInterface::read(info.drive, info.first_fat_sector + info.base_sector, info.fat_size, FAT.data());
+    if (!DiskInterface::read(info.drive, info.first_fat_sector + info.base_sector, info.fat_size, FAT.data()))
+    {
+        return {};
+    }
 
     return FAT;
 }
 
-uint32_t fat::detail::FAT_entry(const std::vector<uint8_t>& FAT, const FATInfo &info, size_t cluster)
+uint32_t fat::detail::FAT_entry(const FATInfo &info, size_t cluster)
 {
     uint32_t fat_offset = 0;
     if (info.type == FATType::FAT12)
@@ -365,8 +348,24 @@ uint32_t fat::detail::FAT_entry(const std::vector<uint8_t>& FAT, const FATInfo &
         fat_offset = cluster * 4;
     }
 
+    unsigned int fat_sector = info.first_fat_sector + (fat_offset / 512);
 
-    uint32_t ent_offset = fat_offset % info.bootsector.bytes_per_sector;
+    uint32_t ent_offset = fat_offset%info.bootsector.bytes_per_sector;
+
+    std::vector<uint8_t> FAT(info.bootsector.bytes_per_sector);
+
+    if (!DiskInterface::read(info.drive, info.base_sector+fat_sector, 1, FAT.data()))
+    {
+        err("Cannot read FAT from disk %d sector %d\n", info.drive, info.base_sector+fat_sector);
+        return end_of_chain(info);
+    }
+
+    if (ent_offset > FAT.size())
+    {
+        warn("FAT entry offset too large : 0x%x\n", ent_offset);
+        return end_of_chain(info);
+    }
+
     uint32_t table_value = *reinterpret_cast<const uint16_t*>(&FAT[ent_offset]);
     if (info.type == FATType::FAT32)
     {
@@ -384,7 +383,7 @@ uint32_t fat::detail::FAT_entry(const std::vector<uint8_t>& FAT, const FATInfo &
     return table_value;
 }
 
-void fat::detail::set_FAT_entry(std::vector<uint8_t>& FAT, const FATInfo &info, size_t cluster, size_t value)
+void fat::detail::set_FAT_entry(const FATInfo &info, size_t cluster, size_t value)
 {
     uint32_t fat_offset = 0;
 
@@ -397,7 +396,24 @@ void fat::detail::set_FAT_entry(std::vector<uint8_t>& FAT, const FATInfo &info, 
         fat_offset = cluster * 4;
     }
 
-    uint32_t ent_offset = fat_offset % info.bootsector.bytes_per_sector;
+    unsigned int fat_sector = info.first_fat_sector + (fat_offset / 512);
+
+    uint32_t ent_offset = fat_offset%info.bootsector.bytes_per_sector;
+
+    std::vector<uint8_t> FAT(info.bootsector.bytes_per_sector);
+
+    if (!DiskInterface::read(info.drive, info.base_sector+fat_sector, 1, FAT.data()))
+    {
+        warn("Cannot read FAT from disk\n");
+        return;
+    }
+
+    if (ent_offset > FAT.size())
+    {
+        warn("FAT entry offset too large : 0x%x\n", ent_offset);
+        return;
+    }
+
     if (info.type == FATType::FAT16)
     {
         *reinterpret_cast<uint16_t*>(&FAT[ent_offset]) = value;
@@ -406,9 +422,38 @@ void fat::detail::set_FAT_entry(std::vector<uint8_t>& FAT, const FATInfo &info, 
     {
         *reinterpret_cast<uint32_t*>(&FAT[ent_offset]) = value & 0x0FFFFFFF;
     }
+
+    if (!info.read_only)
+    {
+        if (!DiskInterface::write(info.drive, info.base_sector+fat_sector, 1, FAT.data()))
+        {
+            warn("Cannot write FAT to disk\n");
+            return;
+        }
+    }
 }
 
 void fat::unmount(const FATInfo& fs)
 {
-    detail::set_dirty_bit(fs, false);
+    if (!fs.read_only) detail::set_dirty_bit(fs, false);
+}
+
+size_t fat::detail::end_of_chain(const FATInfo &info)
+{
+    if (info.type == FATType::FAT12)
+    {
+        return 0xFF7;
+    }
+    else if (info.type == FATType::FAT16)
+    {
+        return 0xFFF7;
+    }
+    else if (info.type == FATType::FAT32)
+    {
+        return 0x0FFFFFF7;
+    }
+    else
+    {
+        return 0x0FFFFFF7;
+    }
 }

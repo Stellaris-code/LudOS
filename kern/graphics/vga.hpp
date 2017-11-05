@@ -100,6 +100,8 @@ static inline vga_color color_to_vga(const Color& color)
     case 0xffffff:
         return VGA_COLOR_WHITE;
     }
+
+    return VGA_COLOR_BLACK;
 }
 
 }

@@ -54,11 +54,11 @@ struct node
     virtual uint32_t flags() const { return m_flags; }
     virtual void set_flags(uint32_t flags) { m_flags = flags; }
 
-    virtual size_t read(void* buf, size_t n) const { return 0; }
-    virtual size_t write(const void* buf, size_t n) { return 0; }
+    [[nodiscard]] virtual size_t read(void* buf, size_t n) const { return 0; }
+    [[nodiscard]] virtual size_t write(const void* buf, size_t n) { return 0; }
     virtual std::vector<std::shared_ptr<node>> readdir_impl() { return {}; }
-    virtual node* mkdir(const std::string& str) { return nullptr; };
-    virtual node* touch(const std::string& str) { return nullptr; }
+    [[nodiscard]] virtual node* mkdir(const std::string& str) { return nullptr; };
+    [[nodiscard]] virtual node* touch(const std::string& str) { return nullptr; }
     virtual size_t size() const { return 0; }
     virtual bool is_dir() const { return m_is_dir; }
 

@@ -167,6 +167,7 @@ struct [[gnu::packed]] extBS_16
 struct FATInfo
 {
     bool valid;
+    bool read_only;
     size_t base_sector;
     BS bootsector;
     union
@@ -213,8 +214,8 @@ std::vector<size_t> get_cluster_chain(size_t first_cluster, const fat::FATInfo& 
 fat_file entry_to_vfs_node(const Entry& entry, const FATInfo &info, const std::string &long_name);
 
 std::vector<uint8_t> get_FAT(const FATInfo& info);
-uint32_t FAT_entry(const std::vector<uint8_t>& FAT, const FATInfo &info, size_t cluster);
-void set_FAT_entry(std::vector<uint8_t>& FAT, const FATInfo &info, size_t cluster, size_t value);
+uint32_t FAT_entry(const FATInfo &info, size_t cluster);
+void set_FAT_entry(const FATInfo &info, size_t cluster, size_t value);
 void write_FAT(const std::vector<uint8_t>& FAT, const FATInfo& info);
 
 std::vector<uint32_t> find_free_clusters(const FATInfo& info, size_t clusters);
@@ -226,16 +227,21 @@ size_t clusters(const FATInfo& info, size_t byte_size);
 void write_bs(const FATInfo& info);
 void set_dirty_bit(FATInfo info, bool value);
 
+size_t end_of_chain(const FATInfo& info);
+
 }
 
 struct fat_file : public vfs::node
 {
     virtual void set_flags(uint32_t flags) override
     {
-        m_flags = flags;
-        entry.attributes = flags;
+        if (!info.read_only)
+        {
+            m_flags = flags;
+            entry.attributes = flags;
 
-        write_entry();
+            write_entry();
+        }
     }
 
     virtual size_t read(void* buf, size_t bytes) const override
@@ -246,10 +252,7 @@ struct fat_file : public vfs::node
         }
 
         auto data = fat::detail::read(entry, info, bytes);
-        for (size_t i { 0 }; i < data.size(); ++i)
-        {
-            reinterpret_cast<uint8_t*>(buf)[i] = data[i];
-        }
+        memcpy(buf, data.data(), data.size());
 
         update_access_date();
 
@@ -258,7 +261,7 @@ struct fat_file : public vfs::node
 
     virtual size_t write(const void* buf, size_t n) override
     {
-        if (is_dir())
+        if (is_dir() || info.read_only)
         {
             return 0;
         }
@@ -296,7 +299,7 @@ struct fat_file : public vfs::node
 
     virtual vfs::node* mkdir(const std::string& str) override
     {
-        if (!is_dir())
+        if (!is_dir() || info.read_only)
         {
             return nullptr;
         }
@@ -315,7 +318,7 @@ struct fat_file : public vfs::node
 
     virtual vfs::node* touch(const std::string& str) override
     {
-        if (!is_dir())
+        if (!is_dir() || info.read_only)
         {
             return nullptr;
         }
@@ -349,7 +352,7 @@ private:
     void set_creation_date() const;
 };
 
-FATInfo read_fat_fs(size_t drive, size_t base_sector);
+FATInfo read_fat_fs(size_t drive, size_t base_sector, bool read_only = false);
 
 fat_file root_dir(const FATInfo& info);
 

@@ -155,6 +155,10 @@ const char* str_table(const Elf32_Shdr* hdr, size_t strtableidx);
 const char* lookup_str(const char* strtable, size_t offset);
 const Elf32_Sym* symbol(const Elf32_Shdr* symtab, size_t num);
 const Elf32_Shdr* section(const Elf32_Shdr* base, size_t size, size_t type);
+bool check_file(const Elf32_Ehdr *hdr);
+bool check_supported(const Elf32_Ehdr* hdr);
+
+extern const uint8_t* current_elf_file;
 
 }
 

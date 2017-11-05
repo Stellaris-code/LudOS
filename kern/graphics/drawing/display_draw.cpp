@@ -34,7 +34,7 @@ VideoMode current_video_mode;
 
 inline void set_pixel_field(uint32_t* src, uint32_t dst, int pos, int len)
 {
-    uint32_t mask = ((uint32_t)1 << len) - 1;
+    uint32_t mask = (1u << len) - 1;
     uint32_t shifted_mask = mask << pos;
     *src = ((dst & mask) << pos) | (*src & ~shifted_mask);
 }
@@ -51,7 +51,7 @@ void draw_to_display_naive(const Screen &screen)
         {
             auto color = screen[j * current_video_mode.width + i];
             const size_t offset = i * current_video_mode.depth/CHAR_BIT + j * current_video_mode.bytes_per_line;
-            uint32_t* pixel = (uint32_t*)(current_video_mode.framebuffer_addr + offset);
+            uint32_t* pixel = reinterpret_cast<uint32_t*>(current_video_mode.framebuffer_addr + offset);
             set_pixel_field(pixel, color.r, current_video_mode.red_field_pos, current_video_mode.red_mask_size);
             set_pixel_field(pixel, color.g, current_video_mode.green_field_pos, current_video_mode.green_mask_size);
             set_pixel_field(pixel, color.b, current_video_mode.blue_field_pos, current_video_mode.blue_mask_size);
@@ -66,20 +66,20 @@ void draw_to_display_32rgb_nopad(const Screen &screen)
     while (!(inb(0x3DA) & 0x08));
     __builtin_prefetch(screen.data(), 0, 0);
 
-    aligned_memcpy((void*)current_video_mode.framebuffer_addr, screen.data(),
+    aligned_memcpy(reinterpret_cast<void*>(current_video_mode.framebuffer_addr), screen.data(),
                    current_video_mode.width*current_video_mode.height*current_video_mode.depth/CHAR_BIT);
 }
 
 void clear_display(Color color)
 {
-#if 0
+#if 1
 
     uint32_t value = 0;
     set_pixel_field(&value, color.r, current_video_mode.red_field_pos, current_video_mode.red_mask_size);
     set_pixel_field(&value, color.g, current_video_mode.green_field_pos, current_video_mode.green_mask_size);
     set_pixel_field(&value, color.b, current_video_mode.blue_field_pos, current_video_mode.blue_mask_size);
 
-    aligned_memsetl((void*)current_video_mode.framebuffer_addr, value, current_video_mode.width*current_video_mode.height*current_video_mode.depth/CHAR_BIT);
+    aligned_memsetl(reinterpret_cast<void*>(current_video_mode.framebuffer_addr), value, current_video_mode.width*current_video_mode.height*current_video_mode.depth/CHAR_BIT);
 #else
     Screen screen(current_video_mode.width*current_video_mode.height, color);
     draw_to_display(screen);

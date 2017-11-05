@@ -1,7 +1,7 @@
 /*
-symbol_table.hpp
+initrd.cpp
 
-Copyright (c) 31 Yann BOUCHER (yann)
+Copyright (c) 05 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,54 +22,40 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef SYMBOL_TABLE_HPP
-#define SYMBOL_TABLE_HPP
 
-#include <stdint.h>
+#include "initrd/initrd.hpp"
 
-#include <unordered_map.hpp>
-#include <string.hpp>
-#include <optional.hpp>
-#include <vector.hpp>
+#include "utils/logging.hpp"
+#include "fs/tar.hpp"
+#include "drivers/diskinterface.hpp"
 
-#include "elf.hpp"
-
-namespace elf
+bool install_initrd()
 {
-
-struct SymbolInfo
-{
-    std::string name;
-    std::string file;
-    uintptr_t offset;
-};
-
-struct SymbolTable
-{
-    std::optional<SymbolInfo> get_function(uintptr_t addr)
+    auto initrd_disk = get_initrd_disk();
+    if (initrd_disk)
     {
-        while (addr > 0)
+
+        std::vector<uint8_t> file(DiskInterface::info(*initrd_disk).disk_size);
+        if (DiskInterface::read(*initrd_disk, 0, file.size()/ DiskInterface::info(*initrd_disk).sector_size, file.data()))
         {
-            if (table.find(addr) != table.end())
+            static tar::TarFS fs(file);
+            auto root = fs.root_dir();
+            if (vfs::mount(std::make_shared<tar::tar_node>(root), "/initrd"))
             {
-                return table.at(addr);
+                log(Info, "Mounted initrd\n");
+                auto file = vfs::find("/initrd/test.txt");
+                if (file)
+                {
+                    std::vector<uint8_t> vec(file->size());
+                    file->read(vec.data(), vec.size());
+                    vec.emplace_back('\0');
+
+                    kprintf("%s\n", vec.data());
+                }
+                return true;
             }
-
-            --addr;
         }
-
-        return {};
     }
 
-    std::unordered_map<uintptr_t, SymbolInfo> table;
-};
-
-SymbolTable get_symbol_table(const Elf32_Shdr* base, size_t sh_num);
-
-SymbolTable get_symbol_table_file(const std::vector<uint8_t>& file);
-
-extern SymbolTable kernel_symbol_table;
-
+    return false;
 }
-
-#endif // SYMBOL_TABLE_HPP

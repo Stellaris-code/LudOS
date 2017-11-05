@@ -200,6 +200,19 @@ void ide::pio::init()
                     }
 
                     return status;
+                },
+                [bus, type]{
+                    auto identify_data = identify(bus, type);
+                    if (identify_data)
+                    {
+                        return DiskInterface::DiskInfo{.disk_size = identify_data->sectors_48*512,
+                                                       .sector_size = 512};
+                    }
+                    else
+                    {
+                        return DiskInterface::DiskInfo{.disk_size = 0,
+                                                       .sector_size = 512};
+                    }
                 });
             }
         }
@@ -295,16 +308,18 @@ bool ide::pio::read(BusPort port, DriveType type, uint64_t block, size_t count, 
 {
     for (size_t i { 0 }; i < count; ++i)
     {
-        detail::read_one(port, type, block + i, buf);
+        if (!detail::read_one(port, type, block + i, buf)) return false;
         buf += 256;
     }
+    return true;
 }
 
 bool ide::pio::write(BusPort port, DriveType type, uint64_t block, size_t count, const uint16_t *buf)
 {
     for (size_t i { 0 }; i < count; ++i)
     {
-        detail::write_one(port, type, block + i, buf);
+        if (!detail::write_one(port, type, block + i, buf)) return false;
         buf += 256;
     }
+    return true;
 }

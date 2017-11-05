@@ -32,7 +32,7 @@ uint16_t simd_features()
     uint32_t ecx, edx, unused;
     cpuid(1, unused, unused, ecx, edx);
 
-    uint16_t result;
+    uint16_t result = 0;
 
     if (edx & (1<<25)) result |= SSE;
     if (edx & (1<<26)) result |= SSE2;

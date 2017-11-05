@@ -31,6 +31,8 @@
 #include <sys/cdefs.h>
 #include <stdio.h>
 
+#pragma GCC system_header
+
 #include <stdarg.h>
 #include <stddef.h>
 

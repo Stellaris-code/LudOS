@@ -57,7 +57,7 @@ set(GENERIC_SRCS ${KERN_TERMINAL_SOURCES} ${CPP_SOURCES} ${KERN_BIOS_SOURCES} ${
 add_executable(${PROJECT_NAME} ${PLATFORM_SRCS} ${ISA_SRCS} ${GENERIC_SRCS} ${HEADERS} ${LD_SCRIPTS})
 
 set(CMAKE_C_FLAGS "${ISA_C_FLAGS} ${PLATFORM_C_FLAGS} -O3 -fstack-protector -m32 -mno-sse -mno-mmx -ftree-vectorize -ffast-math -std=c11 -Wall -Wextra -Wcast-qual -Wmisleading-indentation -Wno-unused-parameter -Wno-implicit-int -Wnull-dereference -lgcc -static-libgcc -ffreestanding -fno-builtin -nostdlib -fno-omit-frame-pointer -Werror=implicit-function-declaration -lgcc")
-set(CMAKE_CXX_FLAGS "${ISA_CXX_FLAGS} ${PLATFORM_CXX_FLAGS} -O3 -m32 -fno-exceptions -mno-sse -mno-mmx -ftree-vectorize -ffast-math -fstack-protector -std=c++17 -Wall -Wold-style-cast -Wno-unused-parameter -Wextra -Wold-style-cast -Wcast-qual -Wmisleading-indentation -Wnull-dereference -lgcc -static-libgcc -ffreestanding -fno-builtin -nostdlib -fno-omit-frame-pointer -Werror=implicit-function-declaration -lgcc")
+set(CMAKE_CXX_FLAGS "${ISA_CXX_FLAGS} ${PLATFORM_CXX_FLAGS} -O3 -m32 -fno-exceptions -mno-sse -mno-mmx -ftree-vectorize -ffast-math -fstack-protector -std=c++17 -Wall -Wextra -Wold-style-cast -Wno-unused-parameter -Wno-format -Wno-switch -Wno-packed-bitfield-compat -Wno-reorder -Wno-trigraphs -Wold-style-cast -Wcast-qual -Wmisleading-indentation -Wnull-dereference -lgcc -static-libgcc -ffreestanding -fno-builtin -nostdlib -fno-omit-frame-pointer -Werror=implicit-function-declaration -lgcc")
 set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS
   "-T ${PLATFORM_LAYOUT} -N ${ISA_LINKER_FLAGS} ${PLATFORM_LINKER_FLAGS} -lgcc -fexceptions -Xlinker -Map=ld.map ")
 set_target_properties(${PROJECT_NAME} PROPERTIES SUFFIX ".bin")
@@ -66,23 +66,24 @@ set(CMAKE_ASM_NASM_LINK_EXECUTABLE "${ARCH}-elf-gcc -T ${PLATFORM_LAYOUT} -N ${I
 add_library(libk ${LIBK_SOURCES} ${LIBK_HEADERS})
 target_compile_definitions(libk
     PUBLIC __is_libk)
+set_target_properties(libk PROPERTIES COMPILE_FLAGS "-w")
 
 add_library(libcxxrt ${LIBCXXRT_SOURCES} ${LIBCXXRT_HEADERS})
 set_target_properties(libcxxrt PROPERTIES LINKER_LANGUAGE CXX)
-set_target_properties(libcxxrt PROPERTIES COMPILE_FLAGS "")
-
-set_source_files_properties(${LIBUNWIND_ASM_SOURCES}
-                            PROPERTIES LANGUAGE C)
+set_target_properties(libcxxrt PROPERTIES COMPILE_FLAGS "-w")
 
 add_library(libcpp ${LIBCPP_SOURCES} ${LIBCPP_HEADERS})
+set_target_properties(libcxxrt PROPERTIES COMPILE_FLAGS "-w")
 target_link_libraries(libcpp libcxxrt)
 
 add_library(libx86emu ${LIBX86EMU_SOURCES} ${LIBX86EMU_HEADERS})
 set_target_properties(libx86emu PROPERTIES LINKER_LANGUAGE C)
+set_target_properties(libx86emu PROPERTIES COMPILE_FLAGS "-w")
 target_link_libraries(libx86emu libk)
 
 add_library(acpica ${ACPICA_SOURCES} ${ACPICA_HEADERS})
 set_target_properties(acpica PROPERTIES LINKER_LANGUAGE C)
+set_target_properties(acpica PROPERTIES COMPILE_FLAGS "-w")
 target_link_libraries(acpica libk)
 
 include(ExternalProject)

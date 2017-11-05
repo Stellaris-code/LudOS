@@ -195,6 +195,7 @@ typedef struct acpi_exception_info
 #define EXCEP_TXT(Name,Description)     {Name}
 #endif
 
+#pragma GCC system_header
 
 /*
  * Success is always zero, failure is non-zero

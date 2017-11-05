@@ -36,6 +36,7 @@ SOFTWARE.
 
 // TODO : add possibility to remove disk
 // TODO : add info() call returns structs with size, etc...
+// TODO : ajouter des checks à chaque fois pour la valeur de retour
 
 class DiskInterface
 {
@@ -43,14 +44,24 @@ public:
     enum class Error
     {
         OK,
+        OutOfBounds,
+        ReadOnly,
         Unknown
+    };
+
+    struct DiskInfo
+    {
+        size_t disk_size { 0 };
+        size_t sector_size { 0 };
     };
 
 public:
 
     using ReadFunction  = std::function<bool(size_t sector, size_t count, uint8_t* buf)>;
     using WriteFunction = std::function<bool(size_t sector, size_t count, const uint8_t* buf)>;
+    using InfoFunction  = std::function<DiskInfo()>;
 
+    [[nodiscard]]
     static inline bool read(size_t disk_num, size_t sector, size_t count, uint8_t* buf)
     {
         assert(disk_num < drive_count());
@@ -58,6 +69,7 @@ public:
         return m_read_funs[disk_num](sector, count, buf);
     }
 
+    [[nodiscard]]
     static inline bool write(size_t disk_num, size_t sector, size_t count, const uint8_t* buf)
     {
         assert(disk_num < drive_count());
@@ -81,46 +93,82 @@ public:
         return m_drive_count;
     }
 
-    static inline size_t add_drive(ReadFunction read_fun, WriteFunction write_fun)
+    static inline size_t add_drive(ReadFunction read_fun, WriteFunction write_fun, InfoFunction info_fun)
     {
         m_read_funs.emplace_back(read_fun);
         m_write_funs.emplace_back(write_fun);
+        m_info_funs.emplace_back(info_fun);
 
-        return ++m_drive_count;
+        return m_drive_count++;
     }
 
-    static inline size_t add_memory_drive(void* address)
+    static inline size_t add_memory_drive(void* address, size_t size)
     {
-        return add_drive([address](uint32_t sector, uint8_t count, uint8_t* buf)
+        return add_drive([address, size](uint32_t sector, uint8_t count, uint8_t* buf)
         {
-            memcpy(buf, reinterpret_cast<const uint8_t*>(address) + sector*512, count);
+            if (sector*512 + count > size)
+            {
+                last_error = Error::OutOfBounds;
+                warn("Out of bounds disk access\n");
+                return false;
+            }
+            memcpy(buf, reinterpret_cast<const uint8_t*>(address) + sector*512, count*512);
             return true;
         },
-        [address](uint32_t sector, uint8_t count, const uint8_t* buf)
+        [address, size](uint32_t sector, uint8_t count, const uint8_t* buf)
         {
-            memcpy(reinterpret_cast<uint8_t*>(address) + sector*512, buf, count);
+            if (sector*512 + count > size)
+            {
+                last_error = Error::OutOfBounds;
+                warn("Out of bounds disk access\n");
+                return false;
+            }
+            memcpy(reinterpret_cast<uint8_t*>(address) + sector*512, buf, count*512);
             return true;
+        }, [size]
+        {
+            return DiskInfo{.disk_size = size,
+                            .sector_size = 512};
         });
     }
 
-    static inline size_t add_memory_drive(const void* address)
+    static inline size_t add_memory_drive(const void* address, size_t size)
     {
-        return add_drive([address](uint32_t sector, uint8_t count, uint8_t* buf)
+        return add_drive([address, size](uint32_t sector, uint8_t count, uint8_t* buf)
         {
-            memcpy(buf, reinterpret_cast<const uint8_t*>(address) + sector*512, count);
+            if (sector*512 + count > size)
+            {
+                last_error = Error::OutOfBounds;
+                warn("Out of bounds disk access\n");
+                return false;
+            }
+            memcpy(buf, reinterpret_cast<const uint8_t*>(address) + sector*512, count*512);
             return true;
         },
-        [address](uint32_t sector, uint8_t count, const uint8_t* buf)
+        [](uint32_t, uint8_t, const uint8_t*)
         {
+            last_error = Error::ReadOnly;
             return false;
-        });
+        }, [size]
+        {
+        return DiskInfo{.disk_size = size,
+                        .sector_size = 512};
+});
+}
+
+    static inline DiskInfo info(size_t disk_num)
+    {
+        assert(disk_num < drive_count());
+
+        return m_info_funs[disk_num]();
     }
 
     static inline Error last_error { Error::OK };
 
-private:
+    private:
     static inline std::vector<ReadFunction> m_read_funs;
     static inline std::vector<WriteFunction> m_write_funs;
+    static inline std::vector<InfoFunction> m_info_funs;
 
     static inline size_t m_drive_count { 0 };
 };

@@ -36,7 +36,15 @@ SymbolTable get_symbol_table(const Elf32_Shdr *base, size_t sh_num)
 
     SymbolTable symbol_table;
 
-    auto strtable = reinterpret_cast<const char*>(elf::section(base, sh_num, elf::SHT_STRTAB)->sh_addr);
+    const char* strtable;
+    if ((strtable = reinterpret_cast<const char*>(elf::section(base, sh_num, elf::SHT_STRTAB)->sh_addr)))
+    {
+
+    }
+    else
+    {
+         strtable = reinterpret_cast<const char*>(current_elf_file + elf::section(base, sh_num, elf::SHT_STRTAB)->sh_offset);
+    }
 
     auto symtab = elf::section(base, sh_num, elf::SHT_SYMTAB);
 
@@ -59,6 +67,18 @@ SymbolTable get_symbol_table(const Elf32_Shdr *base, size_t sh_num)
     }
 
     return symbol_table;
+}
+
+SymbolTable get_symbol_table_file(const std::vector<uint8_t> &file)
+{
+    const Elf32_Ehdr* hdr = reinterpret_cast<const Elf32_Ehdr*>(file.data());
+    if (!elf::check_supported(hdr)) return {};
+
+    const Elf32_Shdr* shdr = reinterpret_cast<const Elf32_Shdr*>(file.data() + hdr->e_shoff);
+
+    elf::current_elf_file = file.data();
+
+    return get_symbol_table(shdr, hdr->e_shnum);
 }
 
 

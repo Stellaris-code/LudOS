@@ -140,7 +140,7 @@ std::shared_ptr<vfs::node> find(const std::string& path)
 
     for (size_t i { 0 }; i < dirs.size(); ++i)
     {
-        const auto v = cur_node->readdir();
+        auto v = cur_node->readdir();
         for (const auto& child : v)
         {
             if (child->name() == dirs[i])

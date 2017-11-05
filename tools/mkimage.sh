@@ -6,6 +6,8 @@ DISK=LudOS.img
 SRCDIR=../isodir
 BOOT=../isodir/boot
 
+./mkinitrd.sh
+
 # Create a 1GiB blank disk image.
 dd if=/dev/zero of=$DISK bs=4096 count=10000
 
@@ -42,13 +44,13 @@ insmod fat
 insmod iso9660
 menuentry "LudOS" {
 	multiboot /boot/LudOS.bin loglevel=info
-    module    /boot/initrd.img initrd
+    module    /boot/initrd.tar initrd
 }
 EOF
 
 echo "Installing kernel."
 cp -r ../build/bin/LudOS.bin /mnt/boot/
-cp -r ../isodir/boot/initrd.img /mnt/boot/
+cp -r ../build/bin/initrd.tar /mnt/boot/
 
 echo "Installing grub."
 grub-install --boot-directory=/mnt/boot /dev/loop3

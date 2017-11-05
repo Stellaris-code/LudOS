@@ -267,6 +267,12 @@ static constexpr uint32_t int_dma_setup = 1<<2;
 static constexpr uint32_t int_dhr_setup = 1<<0;
 
 static constexpr uint32_t pxis_tfes = 1<<30;
+static constexpr uint32_t pxis_hbfs = 1<<29;
+static constexpr uint32_t pxis_hbds = 1<<28;
+static constexpr uint32_t pxis_ifs = 1<<27;
+static constexpr uint32_t pxis_ifns = 1<<26;
+static constexpr uint32_t pxis_ofs = 1<<24;
+static constexpr uint32_t pxis_dps = 1<<5;
 
 static constexpr uint32_t ata_read_dma_ex = 0x25;
 static constexpr uint32_t ata_write_dma_ex = 0x35;
@@ -292,8 +298,9 @@ uint8_t get_interrupt_line();
 
 void get_ahci_ownership();
 
-bool issue_read_command(size_t port, uint64_t sector, size_t count, uint16_t* buf);
-bool issue_write_command(size_t port, uint64_t sector, size_t count, const uint16_t* buf);
+void mkprd(PrdtEntry& entry, uint64_t addr, size_t bytes);
+[[nodiscard]] bool issue_read_command(size_t port, uint64_t sector, size_t count, uint16_t* buf);
+[[nodiscard]] bool issue_write_command(size_t port, uint64_t sector, size_t count, const uint16_t* buf);
 
 uint32_t flush_commands(size_t port);
 
@@ -308,6 +315,7 @@ void init_port_interrupts(size_t port);
 void stop_port(size_t port);
 void start_port(size_t port);
 int free_slot(size_t port);
+bool check_errors(size_t port);
 
 }
 

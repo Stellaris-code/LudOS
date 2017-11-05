@@ -35,7 +35,7 @@ SOFTWARE.
 
 inline size_t meminfo_intlog(double base, double x)
 {
-    return (size_t)(log10(x) / log10(base));
+    return static_cast<size_t>(log10(x) / log10(base));
 }
 
 inline size_t meminfo_ipow(size_t base, size_t exp)
@@ -61,7 +61,7 @@ inline std::string human_readable_size(size_t bytes)
     const std::string suffix = units[exp-1] + std::string("iB");
 
     char buf[16];
-    ksnprintf(buf, 16, "%.1f ", (double)bytes / meminfo_ipow(unit, exp));
+    ksnprintf(buf, 16, "%.1f ", static_cast<double>(bytes) / meminfo_ipow(unit, exp));
 
     return buf + suffix;
 };
@@ -72,7 +72,7 @@ inline void dump(const void* address, size_t amnt)
     const size_t byte_disp_size = 3; // 2 + 1 space
     const size_t bytes_per_line = line_size/(byte_disp_size) - meminfo_intlog(16, amnt) + 1;
 
-    const size_t cols = amnt/bytes_per_line; // TODO : fix this
+    const size_t cols = amnt/bytes_per_line + (amnt%bytes_per_line ? 1 : 0);
     for (size_t i { 0 }; i < cols; ++i)
     {
         kprintf("%x ", i*bytes_per_line);

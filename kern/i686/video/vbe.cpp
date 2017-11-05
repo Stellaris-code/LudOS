@@ -42,7 +42,7 @@ std::optional<VbeInfoBlock> detail_get_info(bool vbe2)
     VbeInfoBlock* block = reinterpret_cast<VbeInfoBlock*>(emu_mem.data() + 0x20000);
     if (vbe2)
     {
-        strncpy((char*)block->VbeSignature, "VBE2", 4);
+        strncpy(reinterpret_cast<char*>(block->VbeSignature), "VBE2", 4);
     }
 
     auto state = emuInt10h(0x4F00, 0, 0, 0, 0x2000);

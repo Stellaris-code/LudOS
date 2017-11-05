@@ -268,7 +268,7 @@ ACPI_STATUS AcpiOsCreateLock(ACPI_SPINLOCK *lock)
 
 void AcpiOsDeleteLock(ACPI_SPINLOCK lock)
 {
-    kfree((void*)lock);
+    kfree(reinterpret_cast<void*>(const_cast<int*>(lock)));
 }
 
 ACPI_STATUS AcpiOsReadMemory(ACPI_PHYSICAL_ADDRESS addr, UINT64* value, UINT32 width)

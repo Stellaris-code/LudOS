@@ -35,11 +35,9 @@ std::vector<uint32_t> find_free_clusters(const FATInfo &info, size_t clusters)
 {
     std::vector<uint32_t> clusters_vec;
 
-    auto FAT = get_FAT(info);
-
     for (size_t cluster { 0 }; cluster < info.total_clusters; ++cluster)
     {
-        uint32_t table_value = FAT_entry(FAT, info, cluster);
+        uint32_t table_value = FAT_entry(info, cluster);
 
         if (table_value == 0)
         {
@@ -60,14 +58,11 @@ void add_clusters(const FATInfo& info, const Entry& entry, const std::vector<uin
 {
     auto entry_clusters = get_cluster_chain(entry.low_cluster_bits | (entry.high_cluster_bits << 16), info);
 
-    auto FAT = get_FAT(info);
-
     size_t prev_cluster = entry_clusters.back();
 
     for (auto cluster : clusters)
     {
-        set_FAT_entry(FAT, info, prev_cluster, cluster);
-        //log("FAT at 0x%x is 0x%x/0x%x\n", prev_cluster, FAT_entry(FAT, info, prev_cluster), cluster);
+        set_FAT_entry(info, prev_cluster, cluster);
         prev_cluster = cluster;
     }
 
@@ -86,10 +81,7 @@ void add_clusters(const FATInfo& info, const Entry& entry, const std::vector<uin
             break;
     }
 
-    set_FAT_entry(FAT, info, prev_cluster, end_of_chain);
-    //log("FAT at 0x%x is 0x%x/0x%x\n", prev_cluster, FAT_entry(FAT, info, prev_cluster), end_of_chain);
-
-    write_FAT(FAT, info);
+    set_FAT_entry(info, prev_cluster, end_of_chain);
 }
 
 size_t clusters(const FATInfo& info, size_t byte_size)
@@ -101,7 +93,6 @@ size_t clusters(const FATInfo& info, size_t byte_size)
 void free_cluster_chain(const FATInfo& info, size_t first_cluster)
 {
     auto cluster_chain = get_cluster_chain(first_cluster, info);
-    auto FAT = get_FAT(info);
 
     size_t end_of_chain;
     switch (info.type)
@@ -122,15 +113,13 @@ void free_cluster_chain(const FATInfo& info, size_t first_cluster)
     {
         if (clu == cluster_chain.front())
         {
-            set_FAT_entry(FAT, info, clu, end_of_chain);
+            set_FAT_entry(info, clu, end_of_chain);
         }
         else
         {
-            set_FAT_entry(FAT, info, clu, 0); // mark as free
+            set_FAT_entry(info, clu, 0); // mark as free
         }
     }
-
-    write_FAT(FAT, info);
 }
 
 void set_dirty_bit(FATInfo info, bool value)
@@ -144,8 +133,7 @@ void set_dirty_bit(FATInfo info, bool value)
         info.ext32.dirty_flag = value;
     }
 
-    auto FAT = get_FAT(info);
-    auto second_entry = FAT_entry(FAT, info, 1);
+    auto second_entry = FAT_entry(info, 1);
 
     if (info.type == FATType::FAT16)
     {
@@ -155,9 +143,7 @@ void set_dirty_bit(FATInfo info, bool value)
     {
         bit_change(second_entry, 27, value);
     }
-    set_FAT_entry(FAT, info, 1, second_entry);
-
-    write_FAT(FAT, info);
+    set_FAT_entry(info, 1, second_entry);
 
     write_bs(info);
 }

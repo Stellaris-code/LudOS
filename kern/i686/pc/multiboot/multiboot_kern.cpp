@@ -42,6 +42,8 @@ SOFTWARE.
 namespace multiboot
 {
 
+const multiboot_info_t* info { nullptr };
+
 void check(uint32_t magic, const multiboot_header &mbd, const multiboot_info* mbd_info)
 {
     if (mbd.magic != MULTIBOOT_HEADER_MAGIC || magic != MULTIBOOT_BOOTLOADER_MAGIC)
@@ -57,7 +59,7 @@ void check(uint32_t magic, const multiboot_header &mbd, const multiboot_info* mb
     }
 }
 
-void parse_mem(const multiboot_info_t* info)
+void parse_mem()
 {
     Meminfo::info = info;
 
@@ -67,7 +69,18 @@ void parse_mem(const multiboot_info_t* info)
     }
 }
 
-void parse_info(const multiboot_info_t* info)
+void parse_info()
+{
+    if (CHECK_FLAG(info->flags, 9))
+    {
+        if (strncmp(reinterpret_cast<char*>(phys(info->boot_loader_name)), "GRUB", 4) != 0 && running_qemu)
+        {
+            running_qemu_kernel = true;
+        }
+    }
+}
+
+void print_info()
 {
     //puts("Multiboot Info :");
 
@@ -93,28 +106,9 @@ void parse_info(const multiboot_info_t* info)
             log(Debug, " Module cmdline : '%s'\n", reinterpret_cast<char*>(phys(mod->cmdline)));
         }
     }
-    if (CHECK_FLAG (info->flags, 6))
-    {
-        for (multiboot_memory_map_t *mmap = reinterpret_cast<multiboot_memory_map_t *>(phys(info->mmap_addr));
-             reinterpret_cast<uintptr_t>(mmap) < phys(info->mmap_addr) + info->mmap_length;
-             mmap = reinterpret_cast<multiboot_memory_map_t*>(
-                 reinterpret_cast<uintptr_t>(mmap)
-                 + mmap->size + sizeof(mmap->size))
-             )
-        {
-            log(Debug, " Base address : 0x%llx, ", mmap->addr);
-            log(Debug, "size : 0x%llx, ", mmap->len);
-            log(Debug, "type : %d\n", mmap->type);
-
-        }
-    }
     if (CHECK_FLAG(info->flags, 9))
     {
         log(Info, "Bootloader name : '%s'\n", reinterpret_cast<char*>(phys(info->boot_loader_name)));
-        if (strncmp(reinterpret_cast<char*>(phys(info->boot_loader_name)), "GRUB", 4) != 0 && running_qemu)
-        {
-            running_qemu_kernel = true;
-        }
     }
 
     if (CHECK_FLAG(info->flags, 12))
@@ -130,7 +124,7 @@ void parse_info(const multiboot_info_t* info)
     }
 }
 
-std::pair<const elf::Elf32_Shdr *, size_t> elf_info(const multiboot_info_t *info)
+std::pair<const elf::Elf32_Shdr *, size_t> elf_info()
 {
     if (!CHECK_FLAG (info->flags, 5))
     {
@@ -143,7 +137,7 @@ std::pair<const elf::Elf32_Shdr *, size_t> elf_info(const multiboot_info_t *info
     return {shdr, elf_info.num};
 }
 
-std::string parse_cmdline(const multiboot_info_t *info)
+std::string parse_cmdline()
 {
     if (CHECK_FLAG(info->flags, 2))
     {
@@ -151,6 +145,27 @@ std::string parse_cmdline(const multiboot_info_t *info)
     }
 
     return "";
+}
+
+std::vector<multiboot_module_t> get_modules()
+{
+    if (CHECK_FLAG (info->flags, 6))
+    {
+        std::vector<multiboot_module_t> modules;
+
+        multiboot_module_t * mod { reinterpret_cast<multiboot_module_t *>(phys(info->mods_addr)) };
+
+        for (size_t i = 0; i < info->mods_count; i++, mod++)
+        {
+            modules.emplace_back(*mod);
+        }
+
+        return modules;
+    }
+    else
+    {
+        return {};
+    }
 }
 
 }

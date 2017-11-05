@@ -55,7 +55,7 @@ void log(LoggingLevel level, const char * __restrict fmt, ...)
 
 void warn(const char * __restrict fmt, ...)
 {
-    term->push_color({0xff5555, 0});
+    term->push_color({0xffff55, 0});
 
     term->push_color({0x00aa00, 0});
     kprintf("[%f] ", Time::uptime());

@@ -5,9 +5,15 @@
 build/
 isodir/
 
+<<<<<<< HEAD
 !build/bin/LudOS.bin 
 !build/bin/LudOS.img
 !build/bin/initrd.tar
+=======
+!build/bin/LudOS.bin
+!build/bin/LudOS.img
+!build/bin/initrd.img
+>>>>>>> b9b7ef355f304a27062c1864d1d417bc397d3c18
 
 CMakeCache.txt
 CMakeLists.txt.user

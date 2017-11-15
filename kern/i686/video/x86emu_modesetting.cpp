@@ -35,13 +35,13 @@ SOFTWARE.
 #include <array.hpp>
 #include <string.hpp>
 
-std::vector<uint8_t> emu_mem;
+uint8_t* emu_mem;
 bool x86_flag = false;
 
 void init_emu_mem()
 {
-    emu_mem.resize(0x100000);
-    for (size_t i { 0 }; i < emu_mem.size(); ++i)
+    emu_mem = reinterpret_cast<uint8_t*>(kmalloc(0x100000));
+    for (size_t i { 0 }; i < 0x100000; ++i)
     {
         emu_mem[i] = *reinterpret_cast<uint8_t*>(phys(i));
     }
@@ -55,7 +55,7 @@ unsigned alternate_vm_memio(x86emu_t *emu, uint32_t addr, uint32_t *val, uint32_
     type &= ~0xFF;
 
     mem->invalid = 0;
-    if (addr >= emu_mem.size())
+    if (addr >= 0x100000)
     {
         panic("Out of bounds ! \n");
     }
@@ -66,16 +66,16 @@ unsigned alternate_vm_memio(x86emu_t *emu, uint32_t addr, uint32_t *val, uint32_
             switch(bits)
             {
                 case X86EMU_MEMIO_8:
-                    *val = *reinterpret_cast<uint8_t*>(emu_mem.data() + addr);
+                    *val = *reinterpret_cast<uint8_t*>(emu_mem + addr);
                     break;
                 case X86EMU_MEMIO_16:
-                    *val = *reinterpret_cast<uint16_t*>(emu_mem.data() + addr);
+                    *val = *reinterpret_cast<uint16_t*>(emu_mem + addr);
                     break;
                 case X86EMU_MEMIO_32:
-                    *val = *reinterpret_cast<uint32_t*>(emu_mem.data() + addr);
+                    *val = *reinterpret_cast<uint32_t*>(emu_mem + addr);
                     break;
                 case X86EMU_MEMIO_8_NOPERM:
-                    *val = *reinterpret_cast<uint8_t*>(emu_mem.data() + addr);
+                    *val = *reinterpret_cast<uint8_t*>(emu_mem + addr);
                     break;
             }
             break;
@@ -84,16 +84,16 @@ unsigned alternate_vm_memio(x86emu_t *emu, uint32_t addr, uint32_t *val, uint32_
             switch(bits)
             {
                 case X86EMU_MEMIO_8:
-                    *reinterpret_cast<uint8_t*>(emu_mem.data() + addr) = *val;
+                    *reinterpret_cast<uint8_t*>(emu_mem + addr) = *val;
                     break;
                 case X86EMU_MEMIO_16:
-                    *reinterpret_cast<uint16_t*>(emu_mem.data() + addr) = *val;
+                    *reinterpret_cast<uint16_t*>(emu_mem + addr) = *val;
                     break;
                 case X86EMU_MEMIO_32:
-                    *reinterpret_cast<uint32_t*>(emu_mem.data() + addr) = *val;
+                    *reinterpret_cast<uint32_t*>(emu_mem + addr) = *val;
                     break;
                 case X86EMU_MEMIO_8_NOPERM:
-                    *reinterpret_cast<uint8_t*>(emu_mem.data() + addr) = *val;
+                    *reinterpret_cast<uint8_t*>(emu_mem + addr) = *val;
                     break;
             }
             break;
@@ -102,13 +102,13 @@ unsigned alternate_vm_memio(x86emu_t *emu, uint32_t addr, uint32_t *val, uint32_
             switch(bits)
             {
                 case X86EMU_MEMIO_8:
-                    *val = *reinterpret_cast<uint8_t*>(emu_mem.data() + addr);
+                    *val = *reinterpret_cast<uint8_t*>(emu_mem + addr);
                     break;
                 case X86EMU_MEMIO_16:
-                    *val = *reinterpret_cast<uint16_t*>(emu_mem.data() + addr);
+                    *val = *reinterpret_cast<uint16_t*>(emu_mem + addr);
                     break;
                 case X86EMU_MEMIO_32:
-                    *val = *reinterpret_cast<uint32_t*>(emu_mem.data() + addr);
+                    *val = *reinterpret_cast<uint32_t*>(emu_mem + addr);
                     break;
             }
             break;
@@ -164,8 +164,8 @@ RealModeState emuInt10h(uint16_t ax, uint16_t bx, uint16_t cx, uint16_t dx, uint
 
     emu->x86.R_IP = 0x7C00;
 
-    *reinterpret_cast<uint8_t*>(emu_mem.data() + 0x7C00) = 0x90;    // nop
-    *reinterpret_cast<uint8_t*>(emu_mem.data() + 0x7C01) =  0xF4;   // hlt
+    *reinterpret_cast<uint8_t*>(emu_mem + 0x7C00) = 0x90;    // nop
+    *reinterpret_cast<uint8_t*>(emu_mem + 0x7C01) =  0xF4;   // hlt
 
     emu->x86.R_AX = ax;
     emu->x86.R_BX = bx;
@@ -191,5 +191,5 @@ uintptr_t translate_address(rmode_ptr ptr)
 
 uint8_t *read_address(rmode_ptr ptr)
 {
-    return emu_mem.data() + translate_address(ptr);
+    return emu_mem + translate_address(ptr);
 }

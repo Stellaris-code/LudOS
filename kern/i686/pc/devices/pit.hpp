@@ -33,7 +33,7 @@ class PIT
 {
 public:
 
-    static void irq_callback(const registers* const);
+    static bool irq_callback(const registers* const);
 
     static void init(uint32_t freq);
 

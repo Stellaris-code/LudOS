@@ -30,6 +30,8 @@ SOFTWARE.
 
 #include "utils/logging.hpp"
 
+#include "terminal.hpp"
+
 HistoryBuffer::HistoryBuffer(size_t line_width, size_t height)
     : m_line_width(line_width), m_data(height)
 {

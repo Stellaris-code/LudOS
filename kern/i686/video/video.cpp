@@ -32,8 +32,11 @@ SOFTWARE.
 #include "i686/cpu/mtrr.hpp"
 #include "i686/mem/paging.hpp"
 
-namespace video
+// TODO : init correctement le current_mode
+
+namespace graphics
 {
+
 VideoMode vbe_to_video_mode(const vbe::ModeInfoBlock& info)
 {
 #define VIDEO_VBE3_GET(name, mode_name) \
@@ -56,6 +59,8 @@ VideoMode vbe_to_video_mode(const vbe::ModeInfoBlock& info)
 
     return mode;
 }
+
+VideoMode current_mode;
 
 std::vector<VideoMode> list_video_modes()
 {
@@ -97,8 +102,7 @@ std::optional<VideoMode> change_mode(size_t width, size_t height, size_t depth)
 
     if (vbe::set_mode(mode.mode))
     {
-        putc_serial = true;
-        term = nullptr;
+        term().disable();
         log(Notice, "Mode 0x%x, Resolution %dx%dx%d set\n", mode.mode,
             mode.info.XResolution, mode.info.YResolution, mode.info.BitsPerPixel);
 
@@ -112,11 +116,18 @@ std::optional<VideoMode> change_mode(size_t width, size_t height, size_t depth)
         Paging::mark_as_used(mode.info.PhysBasePtr,
                              mode.info.BytesPerScanLine*mode.info.YResolution);
 
-        return vbe_to_video_mode(mode.info);
+        current_mode = vbe_to_video_mode(mode.info);
+        return current_mode;
     }
     else
     {
         return {};
     }
 }
+
+VideoMode current_video_mode()
+{
+    return current_mode;
+}
+
 }

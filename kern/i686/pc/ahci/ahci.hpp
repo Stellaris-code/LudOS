@@ -290,7 +290,7 @@ enum class PortType
     Null
 };
 
-void ahci_isr(const registers* reg);
+bool ahci_isr(const registers* reg);
 
 HBAMem* get_hbamem_ptr();
 

@@ -147,7 +147,12 @@ std::vector<tar_node> TarFS::read_dir(const uint8_t *addr, size_t size) const
             return nodes;
         }
 
-        ptr += sizeof(Header) + nodes.back().size();
+        size_t jump = read_number(hdr->size);
+        if (jump % sizeof(Header))
+        {
+            jump += sizeof(Header) - (jump % sizeof(Header));
+        }
+        ptr += sizeof(Header) + jump;
     }
 
     return nodes;

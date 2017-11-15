@@ -29,7 +29,7 @@ SOFTWARE.
 
 #include <functional.hpp>
 
-std::function<void()> reset = []{panic("No reset callback defined!");};
-std::function<void()> shutdown = []{panic("No shutdown callback defined!");};
+extern std::function<void()> reset;
+extern std::function<void()> shutdown;
 
 #endif // POWERMANAGEMENT_HPP

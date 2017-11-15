@@ -28,9 +28,8 @@ SOFTWARE.
 #include "utils/logging.hpp"
 #include "io.hpp"
 
-namespace video
+namespace graphics
 {
-VideoMode current_video_mode;
 
 inline void set_pixel_field(uint32_t* src, uint32_t dst, int pos, int len)
 {
@@ -41,54 +40,54 @@ inline void set_pixel_field(uint32_t* src, uint32_t dst, int pos, int len)
 
 void draw_to_display_naive(const Screen &screen)
 {
-    assert(screen.size() >= current_video_mode.height*current_video_mode.width);
+    assert(screen.width()*screen.height() >= current_video_mode().height*current_video_mode().width);
 
     __builtin_prefetch(screen.data(), 0, 0);
 
-    for (size_t j { 0 }; j < current_video_mode.height; ++j)
+    for (size_t j { 0 }; j < current_video_mode().height; ++j)
     {
-        for (size_t i { 0 }; i < current_video_mode.width; ++i)
+        for (size_t i { 0 }; i < current_video_mode().width; ++i)
         {
-            auto color = screen[j * current_video_mode.width + i];
-            const size_t offset = i * current_video_mode.depth/CHAR_BIT + j * current_video_mode.bytes_per_line;
-            uint32_t* pixel = reinterpret_cast<uint32_t*>(current_video_mode.framebuffer_addr + offset);
-            set_pixel_field(pixel, color.r, current_video_mode.red_field_pos, current_video_mode.red_mask_size);
-            set_pixel_field(pixel, color.g, current_video_mode.green_field_pos, current_video_mode.green_mask_size);
-            set_pixel_field(pixel, color.b, current_video_mode.blue_field_pos, current_video_mode.blue_mask_size);
+            auto color = screen[{i, j}];
+            const size_t offset = i * current_video_mode().depth/CHAR_BIT + j * current_video_mode().bytes_per_line;
+            uint32_t* pixel = reinterpret_cast<uint32_t*>(current_video_mode().framebuffer_addr + offset);
+            set_pixel_field(pixel, color.r, current_video_mode().red_field_pos, current_video_mode().red_mask_size);
+            set_pixel_field(pixel, color.g, current_video_mode().green_field_pos, current_video_mode().green_mask_size);
+            set_pixel_field(pixel, color.b, current_video_mode().blue_field_pos, current_video_mode().blue_mask_size);
         }
     }
 }
 
 void draw_to_display_32rgb_nopad(const Screen &screen)
 {
-    assert(screen.size() >= current_video_mode.height*current_video_mode.width);
+    assert(screen.width()*screen.height() >= current_video_mode().height*current_video_mode().width);
     while ((inb(0x3DA) & 0x08));
     while (!(inb(0x3DA) & 0x08));
     __builtin_prefetch(screen.data(), 0, 0);
 
-    aligned_memcpy(reinterpret_cast<void*>(current_video_mode.framebuffer_addr), screen.data(),
-                   current_video_mode.width*current_video_mode.height*current_video_mode.depth/CHAR_BIT);
+    aligned_memcpy(reinterpret_cast<void*>(current_video_mode().framebuffer_addr), screen.data(),
+                   current_video_mode().width*current_video_mode().height*current_video_mode().depth/CHAR_BIT);
 }
 
 void clear_display(Color color)
 {
-#if 1
+#if 0
 
     uint32_t value = 0;
-    set_pixel_field(&value, color.r, current_video_mode.red_field_pos, current_video_mode.red_mask_size);
-    set_pixel_field(&value, color.g, current_video_mode.green_field_pos, current_video_mode.green_mask_size);
-    set_pixel_field(&value, color.b, current_video_mode.blue_field_pos, current_video_mode.blue_mask_size);
+    set_pixel_field(&value, color.r, current_video_mode().red_field_pos, current_video_mode().red_mask_size);
+    set_pixel_field(&value, color.g, current_video_mode().green_field_pos, current_video_mode().green_mask_size);
+    set_pixel_field(&value, color.b, current_video_mode().blue_field_pos, current_video_mode().blue_mask_size);
 
-    aligned_memsetl(reinterpret_cast<void*>(current_video_mode.framebuffer_addr), value, current_video_mode.width*current_video_mode.height*current_video_mode.depth/CHAR_BIT);
+    aligned_memsetl(reinterpret_cast<void*>(current_video_mode().framebuffer_addr), value, current_video_mode().width*current_video_mode().height*current_video_mode().depth/CHAR_BIT);
 #else
-    Screen screen(current_video_mode.width*current_video_mode.height, color);
+    Screen screen(current_video_mode().width, current_video_mode().height);
+    memsetl(screen.data(), color.rgb(), screen.width()*screen.height()*4);
     draw_to_display(screen);
 #endif
 }
 
 void set_display_mode(const VideoMode &mode)
 {
-    current_video_mode = mode;
     if (mode.depth == 32
             && mode.red_mask_size == 8 && mode.green_mask_size == 8 && mode.blue_mask_size == 8
             && mode.red_field_pos == 16 && mode.green_field_pos == 8 && mode.blue_field_pos == 0)

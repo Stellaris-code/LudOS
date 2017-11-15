@@ -195,7 +195,6 @@ std::vector<fat::fat_file> fat::detail::read_cluster_entries(size_t first_sector
         }
         else
         {
-            //log_serial("Size : %d '%s'\n", entry->size, longname_buf.c_str());
             entries.push_back(detail::entry_to_vfs_node(*entry, info, longname_buf));
             entries.back().entry_first_sector = first_sector;
             entries.back().entry_idx = entry_idx;

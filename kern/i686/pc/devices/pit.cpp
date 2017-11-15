@@ -72,7 +72,8 @@ void PIT::set_pcspeaker_frequency(uint16_t freq)
     outb(0x42, static_cast<uint8_t>(div >> 8));
 }
 
-void PIT::irq_callback(const registers * const)
+bool PIT::irq_callback(const registers * const)
 {
     Timer::irq_callback();
+    return true;
 }

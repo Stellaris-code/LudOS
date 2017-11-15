@@ -37,7 +37,7 @@ namespace kbd
 
 struct TextEnteredEvent
 {
-    uint8_t c;
+    char32_t c;
 };
 
 class TextHandler

@@ -34,6 +34,7 @@ SOFTWARE.
 #include "devices/ps2mouse.hpp"
 #include "i686/fpu/fpu.hpp"
 #include "i686/interrupts/idt.hpp"
+#include "i686/interrupts/isr.hpp"
 #include "i686/cpu/cpuinfo.hpp"
 #include "i686/cpu/mtrr.hpp"
 #include "i686/simd/simd.hpp"
@@ -66,6 +67,7 @@ SOFTWARE.
 #include "utils/memutils.hpp"
 
 extern "C" multiboot_header mbd;
+extern "C" int kernel_physical_end;
 
 namespace i686
 {
@@ -87,17 +89,18 @@ inline void init(uint32_t magic, const multiboot_info_t* mbd_info)
 
     serial::debug::write("Framebuffer address : 0x%lx\n", phys(framebuffer_addr));
 
-    static Terminal hwterminal(80, 25, 15);
-    term = &hwterminal;
-    term->beep_callback = [](size_t ms){Speaker::beep(ms);};
-    term->move_cursor_callback = move_cursor;
-    term->putchar_callback = [framebuffer_addr](size_t x, size_t y, uint8_t c, video::TermEntry color)
+    setup_term(80, 25, 15);
+
+    term().beep_callback = [](size_t ms){Speaker::beep(ms);};
+    term().move_cursor_callback = move_cursor;
+    term().putchar_callback = [framebuffer_addr](size_t x, size_t y, uint8_t c, TermEntry color)
     {
         auto fb = reinterpret_cast<uint16_t*>(phys(framebuffer_addr));
-        fb[y*term->width() + x] = video::vga_entry(c, vga_entry_color(color_to_vga(color.fg), color_to_vga(color.bg)));
+        fb[y*term().width() + x] = graphics::vga::entry(c, graphics::vga::entry_color(graphics::vga::color_to_vga(color.fg),
+                                                                                      graphics::vga::color_to_vga(color.bg)));
     };
 
-    term->clear();
+    term().clear();
 
     init_printf(nullptr, [](void*, char c){putchar(c);});
 
@@ -107,9 +110,17 @@ inline void init(uint32_t magic, const multiboot_info_t* mbd_info)
     gdt::init();
     pic::init();
 
-    term->set_title("LudOS " LUDOS_VERSION_STRING " - build date " __DATE__);
+    term().set_title("LudOS " LUDOS_VERSION_STRING " - build date " __DATE__,
+                     TermEntry{0x000000, 0x00aaaa});
 
     idt::init();
+
+    isr::register_handler(isr::Breakpoint, [](const registers* const regs)
+    {
+        asm volatile("xchg %bx, %bx");
+        return true;
+    });
+
     PIT::init(100);
     FPU::init();
     if (simd_features() & SSE)
@@ -132,6 +143,8 @@ inline void init(uint32_t magic, const multiboot_info_t* mbd_info)
 #endif
     }
 
+    log(Info, "End : %p\n", &kernel_physical_end);
+
     read_from_cmdline(multiboot::parse_cmdline());
     read_logging_config();
 
@@ -142,14 +155,6 @@ inline void init(uint32_t magic, const multiboot_info_t* mbd_info)
     SMBIOS::cpu_info();
 
     multiboot::parse_info();
-
-    // QEMU in -kernel mode doesn't read the cmdline
-    if (running_qemu_kernel)
-    {
-        log(Info, "Running under QEMU with -kernel option\n");
-        read_from_cmdline("loglevel=info");
-        read_logging_config();
-    }
 
     log(Info, "CPU clock speed : ~%llu MHz\n", clock_speed());
     detect_cpu();

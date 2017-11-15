@@ -33,18 +33,20 @@ SOFTWARE.
 #include "io.hpp"
 #include "halt.hpp"
 
-Terminal* term;
+std::unique_ptr<Terminal> current_term { nullptr };
 
 Terminal::Terminal(size_t iwidth, size_t iheight, size_t imax_history)
     : _width(iwidth), _height(iheight), max_history(imax_history),
       history(_width, height()*max_history)
 {
-    push_color(video::TermEntry{0xaaaaaa, 0});
+    putchar_callback = [](size_t, size_t, char32_t, TermEntry){};
+    redraw_callback = []{};
+    push_color(TermEntry{0xaaaaaa, 0});
     cur_line.resize(width());
 }
 
 
-void Terminal::put_entry_at(uint8_t c, video::TermEntry color, size_t x, size_t y)
+void Terminal::put_entry_at(char32_t c, TermEntry color, size_t x, size_t y)
 {
     check_pos();
     set_entry_at(c, color, x, y);
@@ -55,7 +57,7 @@ void Terminal::put_entry_at(uint8_t c, video::TermEntry color, size_t x, size_t 
 }
 
 
-void Terminal::put_char(uint8_t c)
+void Terminal::put_char(char32_t c)
 {
     if (c == '\n')
     {
@@ -108,7 +110,11 @@ void Terminal::write(const char *data, size_t size)
 {
     for (size_t i = 0; i < size; i++)
     {
-        put_char(data[i]);
+        decoder.feed(data[i]);
+        if (decoder.ready())
+        {
+            put_char(decoder.spit());
+        }
     }
 }
 
@@ -121,18 +127,27 @@ void Terminal::write_string(const char *data)
 
 void Terminal::clear()
 {
+    clear(color());
+}
+
+void Terminal::clear(TermEntry color)
+{
+    history.clear();
+
     for (size_t i { 0 }; i < width(); ++i)
     {
         for (size_t j { 0 }; j < height()+title_height; ++j)
         {
-            set_entry_at(' ', color(), i, j, true);
+            set_entry_at(' ', color, i, j, true);
         }
     }
 
     for (auto& el : cur_line)
     {
-        el = {' ', {0xffffff, 0}};
+        el = {' ', color};
     }
+
+    redraw();
 }
 
 
@@ -142,7 +157,7 @@ void Terminal::scroll_up()
 }
 
 
-void Terminal::push_color(video::TermEntry color)
+void Terminal::push_color(TermEntry color)
 {
     color_stack.push(color);
 }
@@ -158,7 +173,7 @@ void Terminal::show_history(int page)
 {
     if (page < 0)
     {
-        if (beep_callback)
+        if (beep_callback && enabled)
         {
             //beep_callback(200);
         }
@@ -167,7 +182,7 @@ void Terminal::show_history(int page)
 
     if (static_cast<size_t>(page) > history.size() - height())
     {
-        if (beep_callback)
+        if (beep_callback && enabled)
         {
             //            beep_callback(200);
         }
@@ -188,19 +203,25 @@ void Terminal::show_history(int page)
             }
         }
     }
+
+    redraw();
 }
 
-video::TermEntry Terminal::color() const
+TermEntry Terminal::color() const
 {
     return color_stack.top();
 }
 
-void Terminal::set_title(std::string str)
+void Terminal::set_title(std::string str, TermEntry color)
 {
     if (str.size() >= width())
     {
         str.resize(width());
     }
+
+    text_color = color;
+
+    title_text = str;
 
     size_t offset = width()/2 - str.size()/2;
 
@@ -208,25 +229,40 @@ void Terminal::set_title(std::string str)
     {
         for (size_t i { 0 }; i < width(); ++i)
         {
-            set_entry_at(' ', video::TermEntry{0x000000, 0x00aaaa}, i, j, true);
+            set_entry_at(' ', color, i, j, true);
         }
     }
 
     for (size_t i { 0 }; i < str.size(); ++i)
     {
-        set_entry_at(str[i], video::TermEntry{0x000000, 0x00aaaa}, offset+i, 0, true);
+        set_entry_at(str[i], color, offset+i, 0, true);
     }
+
+    redraw();
 }
 
-void Terminal::set_entry_at(uint8_t c, video::TermEntry color, size_t x, size_t y, bool absolute)
+void Terminal::set_title(std::string str)
 {
-    if (!absolute)
+    set_title(str, color());
+}
+
+void Terminal::redraw()
+{
+    redraw_callback();
+}
+
+void Terminal::set_entry_at(char32_t c, TermEntry color, size_t x, size_t y, bool absolute)
+{
+    if (enabled)
     {
-        putchar_callback(x, y + title_height, c, color);
-    }
-    else
-    {
-        putchar_callback(x, y, c, color);
+        if (!absolute)
+        {
+            putchar_callback(x, y + title_height, c, color);
+        }
+        else
+        {
+            putchar_callback(x, y, c, color);
+        }
     }
 }
 
@@ -242,6 +278,8 @@ void Terminal::new_line()
 
     terminal_column = 0;
     ++terminal_row;
+
+    redraw();
 }
 
 
@@ -270,9 +308,20 @@ void Terminal::check_pos()
 
 void Terminal::update_cursor()
 {
-    if (move_cursor_callback)
+    if (move_cursor_callback && enabled)
     {
         move_cursor_callback(terminal_column, terminal_row+title_height, width());
     }
 }
 
+void setup_term(size_t width, size_t height, size_t history)
+{
+    current_term = std::make_unique<Terminal>(width, height, history);
+}
+
+Terminal &term()
+{
+    assert(current_term != nullptr);
+
+    return *current_term;
+}

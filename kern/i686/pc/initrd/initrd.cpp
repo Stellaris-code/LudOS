@@ -30,32 +30,20 @@ SOFTWARE.
 #include "drivers/diskinterface.hpp"
 #include "fs/vfs.hpp"
 
+#include <string.hpp>
+
 std::vector<uint8_t> initrd_buffer;
 
 std::optional<size_t> get_initrd_disk()
 {
-    if (running_qemu_kernel)
+    for (auto module : multiboot::get_modules())
     {
-        auto file = vfs::find("/boot/boot/initrd.tar");
-        if (file)
+        auto str = std::string(reinterpret_cast<const char*>(module.cmdline));
+        auto tokens = tokenize(str, " ", true);
+        if (tokens.back() == "initrd")
         {
-            initrd_buffer.resize(file->size());
-            if (file->read(initrd_buffer.data(), initrd_buffer.size()))
-            {
-                return DiskInterface::add_memory_drive(reinterpret_cast<const void*>(initrd_buffer.data()),
-                                                       initrd_buffer.size());
-            }
-        }
-    }
-    else
-    {
-        for (auto module : multiboot::get_modules())
-        {
-            if (strncmp(reinterpret_cast<const char*>(module.cmdline), "initrd", 6) == 0)
-            {
-                return DiskInterface::add_memory_drive(reinterpret_cast<const void*>(module.mod_start),
-                                                       (module.mod_end - module.mod_start));
-            }
+            return DiskInterface::add_memory_drive(reinterpret_cast<const void*>(module.mod_start),
+                                                   (module.mod_end - module.mod_start));
         }
     }
 

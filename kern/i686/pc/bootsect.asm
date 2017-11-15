@@ -9,38 +9,19 @@ extern end_dtors                        ; declared by the linker script
 
 extern __cxa_finalize
 
-KERNEL_VIRTUAL_BASE equ 0xE0000000                  ; 3.5GB
-KERNEL_PAGE_NUMBER equ (KERNEL_VIRTUAL_BASE >> 22)
-
-section .data
-align 0x1000
-BootPageDirectory:
-    ; This page directory entry identity-maps the first 4MB of the 32-bit physical address space.
-    ; All bits are clear except the following:
-    ; bit 7: PS The kernel page is 4MB.
-    ; bit 1: RW The kernel page is read/write.
-    ; bit 0: P  The kernel page is present.
-    ; This entry must be here -- otherwise the kernel will crash immediately after paging is
-    ; enabled because it can't fetch the next instruction! It's ok to unmap this page later.
-    dd 0x00000083
-    times (KERNEL_PAGE_NUMBER - 1) dd 0                 ; Pages before kernel space.
-    ; This page directory entry defines a 4MB page containing the kernel.
-    dd 0x00000083
-    times (1024 - KERNEL_PAGE_NUMBER - 1) dd 0  ; Pages after the kernel image.
-
 section .text
 
 ; reserve initial kernel stack space
 STACKSIZE equ 0x10000                    ; that's 64k.
 
 _start:
-
     mov  esp, stack + STACKSIZE         ; set up the stack
 
     mov [magic], eax
     ;add ebx, KERNEL_VIRTUAL_BASE ; make the address virtual
     mov [mbd_info], ebx
 
+; 0x0024a04e
     mov  ebx, start_ctors               ; call the constructors
     jmp  .ctors_until_end
 .call_constructor:
@@ -81,4 +62,5 @@ section .bss
 align 4
 magic:      resd 1
 mbd_info:   resd 1
+align 4
 stack:      resb STACKSIZE                   ; reserve 16k stack on a doubleword boundary

@@ -30,13 +30,31 @@ SOFTWARE.
 #include <i686/pc/serial/serialdebug.hpp>
 #endif
 
+#include "unicode/utf8decoder.hpp"
+
 bool putc_serial = false;
+
+UTF8Decoder decoder;
 
 void putchar(char c)
 {
 #ifdef __is_libk
-    if (term) term->put_char(c);
-    if (putc_serial) serial::debug::write("%c", c);
+    decoder.feed(c);
+    if (decoder.ready())
+    {
+        putcharw(decoder.spit());
+    }
+#else
+    // TODO : do !
+#error Not implemented yet
+#endif
+}
+
+void putcharw(char32_t c)
+{
+#ifdef __is_libk
+        term().put_char(c);
+        if (putc_serial) serial::debug::write("%c", c);
 #else
     // TODO : do !
 #error Not implemented yet

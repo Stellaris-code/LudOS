@@ -29,30 +29,52 @@ SOFTWARE.
 
 #include <math.h>
 
-namespace video
+namespace graphics
 {
 
 struct Color
 {
-    union
-    {
-        struct
-        {
-            uint8_t b;
-            uint8_t g;
-            uint8_t r;
-        };
-        uint32_t rgb;
-    };
+    uint8_t b;
+    uint8_t g;
+    uint8_t r;
+    uint8_t a;
 
     Color() = default;
-    Color(uint8_t ir, uint8_t ig, uint8_t ib)
-        : r(ir), g(ig), b(ib)
+    constexpr Color(uint8_t ir, uint8_t ig, uint8_t ib, uint8_t ia = 255)
+        : r(ir), g(ig), b(ib), a(ia)
     {}
-    Color(uint32_t irgb)
-        : rgb(irgb)
-    {}
+    constexpr Color(uint32_t irgb, uint8_t ia = 255)
+        : r(irgb >> 16), g(irgb >> 8), b(irgb), a(ia)
+    {
+    }
+
+    uint32_t rgb() const
+    {
+        return (r << 16) | (g << 8) | b;
+    }
+
+    uint32_t rgba() const
+    {
+        return (a << 24) | (r << 16) | (g << 8) | b;
+    }
 };
+
+inline bool operator== (const Color& rhs, const Color& lhs)
+{
+    return rhs.r == lhs.r && rhs.g == lhs.g && rhs.b == lhs.b && rhs.a == lhs.a;
+}
+
+inline bool operator!= (const Color& rhs, const Color& lhs)
+{
+    return !(rhs == lhs);
+}
+
+inline constexpr Color color_black = {0x000000};
+inline constexpr Color color_white = {0xffffff};
+inline constexpr Color color_red   = {0xff0000};
+inline constexpr Color color_green = {0x00ff000};
+inline constexpr Color color_blue  = {0x00000ff};
+inline constexpr Color color_transparent  = {0x000000, 0};
 
 inline Color hsvToRgb(double h, double s, double v)
 {
@@ -88,12 +110,6 @@ inline Color hsvToRgb(double h, double s, double v)
 
     return color;
 }
-
-struct TermEntry
-{
-    Color fg;
-    Color bg;
-};
 
 }
 

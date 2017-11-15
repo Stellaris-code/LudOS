@@ -32,10 +32,8 @@ SOFTWARE.
 
 #include "color.hpp"
 
-namespace video
+namespace graphics
 {
-
-using Screen = std::vector<Color>;
 
 struct VideoMode
 {
@@ -61,6 +59,8 @@ constexpr size_t max_res_pixels { 1920 * 1080 * 4 };
 
 std::vector<VideoMode> list_video_modes();
 [[nodiscard]] std::optional<VideoMode> change_mode(size_t width, size_t height, size_t depth);
+
+VideoMode current_video_mode();
 
 }
 

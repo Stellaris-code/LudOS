@@ -29,6 +29,8 @@ SOFTWARE.
 
 #include <cxxabi.h>
 
+#include "utils/logging.hpp"
+
 inline std::string demangle(const std::string& symbol)
 {
     int status = -1;

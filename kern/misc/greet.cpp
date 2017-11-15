@@ -32,11 +32,11 @@ SOFTWARE.
 void greet()
 {
     puts("Welcome to : \n");
-    term->push_color({0x55ffff, 0x000000});
+    term().push_color({0x55ffff, 0x000000});
 
     puts(
             #include "ludos_art.txt"
         );
 
-    term->pop_color();
+    term().pop_color();
 }

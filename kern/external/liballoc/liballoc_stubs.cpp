@@ -29,19 +29,20 @@ SOFTWARE.
 
 #include <stdint.h>
 
+// TODO : implement
 DECLARE_LOCK(liballoc_lock);
 
 extern "C"
 {
 int liballoc_lock()
 {
-    LOCK(liballoc_lock);
+    //LOCK(liballoc_lock);
     return 0;
 }
 
 int liballoc_unlock()
 {
-    UNLOCK(liballoc_lock);
+    //UNLOCK(liballoc_lock);
     return 0;
 }
 

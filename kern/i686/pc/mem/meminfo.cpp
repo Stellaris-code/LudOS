@@ -110,14 +110,14 @@ void Meminfo::init_paging_bitmap()
         multiboot_memory_map_t* mem_zone = Meminfo::frame(i);
         if (mem_zone)
         {
-            for (size_t pg = Paging::page(mem_zone->addr); pg < Paging::page(mem_zone->addr)+mem_zone->len && pg < Paging::ram_maxpage; ++pg)
+            for (size_t pg = Paging::page(mem_zone->addr); pg < Paging::page(mem_zone->addr+mem_zone->len) && pg < Paging::ram_maxpage; ++pg)
             {
                 Paging::mem_bitmap[pg] = false;
             }
         }
     }
-    // Mark kernel space as unavailable
-    for (size_t i { Paging::page(0) }; i < Paging::page(virt(reinterpret_cast<uintptr_t>(&kernel_physical_end))); ++i)
+    // Mark kernel space as unavailable, protect multiboot info data
+    for (size_t i { Paging::page(0) }; i < Paging::page(virt(reinterpret_cast<uintptr_t>(&kernel_physical_end + 0x30000))); ++i)
     {
         Paging::mem_bitmap[i] = true;
     }

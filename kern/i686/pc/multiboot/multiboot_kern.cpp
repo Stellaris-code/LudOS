@@ -32,6 +32,7 @@ SOFTWARE.
 #include "utils/memutils.hpp"
 #include "utils/env.hpp"
 #include "utils/logging.hpp"
+#include "utils/stlutils.hpp"
 #include "elf/elf.hpp"
 #include "i686/pc/mem/meminfo.hpp"
 #include "utils/virt_machine_detect.hpp"
@@ -105,6 +106,11 @@ void print_info()
             log(Debug, " Module end : 0x%x\n", mod->mod_end);
             log(Debug, " Module cmdline : '%s'\n", reinterpret_cast<char*>(phys(mod->cmdline)));
         }
+    }
+    if (CHECK_FLAG(info->flags, 5))
+    {
+        multiboot_elf_section_header_table_t elf_info = info->u.elf_sec;
+        log(Debug, "Elf section addr : 0x%x\n", elf_info.addr);
     }
     if (CHECK_FLAG(info->flags, 9))
     {

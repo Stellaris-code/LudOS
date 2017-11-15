@@ -18,7 +18,7 @@
 //   William H. Avery III at Altitech
 //   Sergei Shtylyov of Brain-dead Software in Russia
 
-//  NOTE that the 0xFFFF of 0xFF entries at the end of some tables below are
+//   that the 0xFFFF of 0xFF entries at the end of some tables below are
 //  not properly list terminators, but are actually the printable definitions
 //  of values that are legitimately found on the PCI bus.  The size
 //  definitions should be used for loop control when the table is searched.

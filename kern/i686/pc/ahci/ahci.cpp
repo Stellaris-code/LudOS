@@ -129,9 +129,10 @@ void detail::get_ahci_ownership()
     Timer::sleep_until([&]{return !(mem->bohc & bohc_bios_busy);}, 2000); // allow the BIOS to end any operation; the spec allows for 2sec
 }
 
-void detail::ahci_isr(const registers *reg)
+bool detail::ahci_isr(const registers *reg)
 {
     log(Debug, "Interrupt !!\n");
+    return true;
 }
 
 uint32_t detail::flush_commands(size_t port)

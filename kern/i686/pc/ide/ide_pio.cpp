@@ -205,7 +205,7 @@ void ide::pio::init()
                     auto identify_data = identify(bus, type);
                     if (identify_data)
                     {
-                        return DiskInterface::DiskInfo{.disk_size = identify_data->sectors_48*512,
+                        return DiskInterface::DiskInfo{.disk_size = size_t(identify_data->sectors_48*512),
                                                        .sector_size = 512};
                     }
                     else

@@ -4,7 +4,7 @@ registers.hpp
 Copyright (c) 26 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
+of this software and associated documentation files (the "Software", to deal
 in the Software without restriction, including without limitation the rights
 to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 copies of the Software, and to permit persons to whom the Software is
@@ -90,21 +90,16 @@ inline void dump(const registers* regs)
 {
     if (regs)
     {
-        kprintf("eip : 0x%x\n", static_cast<unsigned int>(regs->eip));
-
-        kprintf("int : 0x%x  err code : 0x%x\n", static_cast<unsigned int>(regs->int_no), static_cast<unsigned int>(regs->err_code));
-        kprintf("eax : 0x%x  ebx : 0x%x  ", static_cast<unsigned int>(regs->eax), static_cast<unsigned int>(regs->ebx));
-        kprintf("ecx : 0x%x  edx : 0x%x  ", static_cast<unsigned int>(regs->ecx), static_cast<unsigned int>(regs->edx));
-        kprintf("ebx : 0x%x  esi : 0x%x  ", static_cast<unsigned int>(regs->ebp), static_cast<unsigned int>(regs->esi));
-        kprintf("edi : 0x%x\n\n", static_cast<unsigned int>(regs->edi));
-
-        kprintf("cr0 : 0x%x  cr2 : 0x%x  ", static_cast<unsigned int>(cr0()), static_cast<unsigned int>(cr2()));
-        kprintf("cr3 : 0x%x  cr4 : 0x%x\n\n", static_cast<unsigned int>(cr3()), static_cast<unsigned int>(cr4()));
-
-        kprintf("gs : 0x%x  fs : 0x%x  ", static_cast<unsigned int>(regs->gs), static_cast<unsigned int>(regs->fs));
-        kprintf("es : 0x%x  ds : 0x%x\n", static_cast<unsigned int>(regs->es), static_cast<unsigned int>(regs->ds));
-        kprintf("cs : 0x%x  eflags : 0x%x  ", static_cast<unsigned int>(regs->cs), static_cast<unsigned int>(regs->eflags));
-        kprintf("ss : 0x%x  esp : 0x%x\n", static_cast<unsigned int>(regs->ss), static_cast<unsigned int>(regs->esp));
+        kprintf("eip : 0x%x int : 0x%x  err code : 0x%x\n", regs->eip, regs->int_no, regs->err_code);
+        kprintf("eax : 0x%x  ebx : 0x%x  ", regs->eax, regs->ebx);
+        kprintf("ecx : 0x%x  edx : 0x%x  \n", regs->ecx, regs->edx);
+        kprintf("ebx : 0x%x  esi : 0x%x  ", regs->ebp, regs->esi);
+        kprintf("edi : 0x%x\n", regs->edi);
+        kprintf("cr0 : 0x%x  cr2 : 0x%x cr3 : 0x%x  cr4 : 0x%x\n", cr0(), cr2(), cr3(), cr4());
+        kprintf("gs : 0x%x  fs : 0x%x  ", regs->gs, regs->fs);
+        kprintf("es : 0x%x  ds : 0x%x\n", regs->es, regs->ds);
+        kprintf("cs : 0x%x  eflags : 0x%x  ", regs->cs, regs->eflags);
+        kprintf("ss : 0x%x  esp : 0x%x\n", regs->ss, regs->esp);
     }
 }
 

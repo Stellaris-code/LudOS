@@ -29,8 +29,11 @@ SOFTWARE.
 #include "utils/addr.hpp"
 #include "stack.hpp"
 #include "graphics/color.hpp"
+#include "unicode/utf8decoder.hpp"
 
 #include <functional.hpp>
+#include <memory.hpp>
+#include <string.hpp>
 
 #include "historybuffer.hpp"
 
@@ -40,26 +43,39 @@ public:
     Terminal(size_t iwidth, size_t iheight, size_t imax_history = 5);
 
 public:
-    void put_entry_at(uint8_t c, video::TermEntry color, size_t x, size_t y);
-    void put_char(uint8_t c);
+    void put_entry_at(char32_t c, TermEntry color, size_t x, size_t y);
+    void put_char(char32_t c);
     void write(const char* data, size_t size);
     void write_string(const char* data);
     void clear();
+    void clear(TermEntry color);
     void scroll_up();
-    void push_color(video::TermEntry color);
+    void push_color(TermEntry color);
     void pop_color();
     void show_history(int page);
-    uint8_t current_history() const { return current_history_page; }
+    size_t current_history() const { return current_history_page; }
     void scroll_history(int scroll) { show_history(current_history()+scroll); }
-    video::TermEntry color() const;
+    TermEntry color() const;
 
     size_t width() const { return _width; }
     size_t height() const { return _height-title_height; }
+    size_t history_lines() const { return max_history; }
 
+    void set_title(std::string str, TermEntry color);
     void set_title(std::string str);
 
+    void enable()
+    {
+        enabled = true;
+        set_title(title_text, text_color);
+        redraw();
+    }
+    void disable() { enabled = false; }
+
+    void redraw();
+
 private:
-    void set_entry_at(uint8_t c, video::TermEntry color, size_t x, size_t y, bool absolute = false);
+    void set_entry_at(char32_t c, TermEntry color, size_t x, size_t y, bool absolute = false);
     void new_line();
     void add_line_to_history();
     void check_pos();
@@ -68,25 +84,35 @@ private:
 public:
     std::function<void(size_t x, size_t y, size_t width)> move_cursor_callback;
     std::function<void(size_t ms)> beep_callback;
-    std::function<void(size_t x, size_t y, uint8_t c, video::TermEntry color)> putchar_callback;
+    std::function<void(size_t x, size_t y, char32_t c, TermEntry color)> putchar_callback;
+    std::function<void()> redraw_callback;
 
 private:
     size_t terminal_row { 0 };
     size_t terminal_column { 0 };
     size_t title_height { 1 };
 
+    bool enabled { true };
+
     std::vector<HistoryBuffer::Entry> cur_line;
 
-    std::stack<video::TermEntry> color_stack;
+    std::stack<TermEntry> color_stack;
 
     const size_t _width;
     const size_t _height;
     const size_t max_history;
 
+    std::string title_text;
+    TermEntry text_color;
+
+    UTF8Decoder decoder;
+
     HistoryBuffer history;
     uint8_t current_history_page { 0 };
 };
 
-extern Terminal* term;
+void setup_term(size_t width, size_t height, size_t history);
+
+Terminal &term();
 
 #endif // TERMINAL_HPP

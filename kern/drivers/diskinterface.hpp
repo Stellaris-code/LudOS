@@ -35,8 +35,6 @@ SOFTWARE.
 #include "panic.hpp"
 
 // TODO : add possibility to remove disk
-// TODO : add info() call returns structs with size, etc...
-// TODO : ajouter des checks à chaque fois pour la valeur de retour
 
 class DiskInterface
 {

@@ -43,7 +43,7 @@ public:
     static void toggle_led(uint8_t led, bool value);
 
 private:
-    static void isr(const registers*);
+    static bool isr(const registers*);
 
     static void init_assocs();
 

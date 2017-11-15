@@ -31,13 +31,15 @@ SOFTWARE.
 
 #include "graphics/color.hpp"
 
+#include "termentry.hpp"
+
 class HistoryBuffer
 {
 public:
     struct Entry
     {
-        uint8_t c { ' ' };
-        video::TermEntry color { 0x0, 0x0 };
+        char32_t c { ' ' };
+        TermEntry color { 0x0, 0x0 };
     };
 
 public:
@@ -61,6 +63,12 @@ public:
     bool full() const
     {
         return m_full;
+    }
+
+    void clear()
+    {
+        m_full = false;
+        m_front = 0;
     }
 
 private:

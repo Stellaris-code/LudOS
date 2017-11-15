@@ -34,6 +34,7 @@ SOFTWARE.
 #include "elf/symbol_table.hpp"
 
 #include "terminal/terminal.hpp"
+#include "dissasembly.hpp"
 
 #ifdef ARCH_i686
 #include "i686/pc/devices/speaker.hpp"
@@ -67,6 +68,35 @@ void print_stack_symbols()
     kprintf("\n");
 }
 
+void print_disassembly()
+{
+    kprintf("Disassembly : \n");
+    uint8_t* ip = reinterpret_cast<uint8_t*>(panic_regs->eip);
+
+    const size_t dump_len = 6;
+
+    // Move back
+    for (size_t i { 0 }; i < dump_len/2; ++i)
+    {
+        ip -= get_disasm(ip).len;
+    }
+
+    for (size_t i { 0 }; i < dump_len; ++i)
+    {
+        DisasmInfo info = get_disasm(ip);
+        if (ip == reinterpret_cast<uint8_t*>(panic_regs->eip))
+        {
+            kprintf("->  ");
+        }
+        else
+        {
+            kprintf("    ");
+        }
+        kprintf("%s\n", info.str.c_str());
+        ip += info.len;
+    }
+}
+
 [[noreturn]]
 void panic(const char *fmt, ...)
 {
@@ -74,12 +104,14 @@ void panic(const char *fmt, ...)
 
     if (!panic_regs) panic_regs = get_registers();
 
-    if (term) term->push_color({0xaa0000, 0});
+    term().push_color({0xffffff, 0xaa0000});
+    term().clear();
 
     Speaker::beep(300);
 
     putc_serial = true;
 
+    term().set_title("KERNEL PANIC", {0xaa0000, 0xffffff});
     puts("\nKERNEL PANIC : ");
 
     {
@@ -92,6 +124,10 @@ void panic(const char *fmt, ...)
     kprintf("\n");
 
     dump(panic_regs);
+
+    kprintf("\n");
+
+    print_disassembly();
 
     kprintf("\n");
 

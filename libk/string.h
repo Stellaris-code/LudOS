@@ -37,13 +37,9 @@ extern "C" {
 
 int memcmp(const void*, const void*, size_t);
 
-void* _naive_memcpy(void* __restrict dstptr, const void* __restrict srcptr, size_t size);
-void * _memcpy_mmx (void *v_to, const void *v_from, size_t len);
-void * _memcpy_sse2 (void *v_to, const void *v_from, size_t len);
-void * _aligned_memcpy_sse2 (void * __restrict v_to, const void * __restrict v_from, size_t len);
-
-extern void* (*memcpy)(void* __restrict, const void* __restrict, size_t);
-extern void* (*aligned_memcpy)(void* __restrict, const void* __restrict, size_t);
+#ifdef ARCH_i686
+#include "arch/i686/memcpy.h"
+#endif
 
 void* memmove(void*, const void*, size_t);
 void* _naive_memset(void*, uint8_t, size_t);
@@ -60,6 +56,7 @@ size_t strlen(const char*);
 char *strcpy(char * __restrict dest, const char * __restrict src);
 char *strncpy(char * __restrict dest, const char * __restrict src, size_t n);
 char *strcat ( char * destination, const char * source );
+char *strncat ( char * destination, const char * source, size_t n);
 int strcmp(const char* str1, const char* str2);
 int strncmp(const char* str1, const char* str2, size_t n);
 char * strdup(const char *str1);

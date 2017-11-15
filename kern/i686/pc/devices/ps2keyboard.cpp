@@ -109,7 +109,7 @@ void PS2Keyboard::toggle_led(uint8_t led, bool value)
     set_leds(leds);
 }
 
-void PS2Keyboard::isr(const registers *)
+bool PS2Keyboard::isr(const registers *)
 {
     uint8_t code = inb(0x60);
 
@@ -140,6 +140,8 @@ void PS2Keyboard::isr(const registers *)
 
         last_is_e0 = false;
     }
+
+    return true;
 }
 
 void PS2Keyboard::init_assocs()

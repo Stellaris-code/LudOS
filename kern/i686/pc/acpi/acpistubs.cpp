@@ -354,6 +354,7 @@ ACPI_STATUS AcpiOsInstallInterruptHandler(UINT32 intLevel, ACPI_OSD_HANDLER hand
     auto lambd = [](const registers* const regs)
     {
         acpi_handlers[regs->int_no].hand(acpi_handlers[regs->int_no].context);
+        return true;
     };
 
     isr::register_handler(intLevel, lambd);

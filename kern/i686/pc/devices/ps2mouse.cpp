@@ -60,7 +60,7 @@ void PS2Mouse::init()
     log(Info, "Mouse driver initialized\n");
 }
 
-void PS2Mouse::isr(const registers *regs)
+bool PS2Mouse::isr(const registers *regs)
 {
     uint8_t status = inb(CommandPort);
     size_t packet_counter { 0 };
@@ -120,6 +120,8 @@ void PS2Mouse::isr(const registers *regs)
                                        static_cast<int16_t>(packet.z), static_cast<bool>(packet.left_but), static_cast<bool>(packet.mid_but), static_cast<bool>(packet.right_but),
                                        static_cast<bool>(packet.but_4), static_cast<bool>(packet.but_5)});
     }
+
+    return true;
 }
 
 void PS2Mouse::send_write(uint8_t val)

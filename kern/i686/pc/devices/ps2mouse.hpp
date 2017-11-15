@@ -38,7 +38,7 @@ public:
     static void set_sample_rate(uint8_t rate);
 
 private:
-    static void isr(const registers* regs);
+    static bool isr(const registers* regs);
 
     static void send_write(uint8_t val);
     static uint8_t read();

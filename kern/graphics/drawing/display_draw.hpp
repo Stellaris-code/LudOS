@@ -30,8 +30,9 @@ SOFTWARE.
 #include <vector.hpp>
 #include <optional.hpp>
 #include "graphics/video.hpp"
+#include "screen.hpp"
 
-namespace video
+namespace graphics
 {
 
 void set_display_mode(const VideoMode& mode);

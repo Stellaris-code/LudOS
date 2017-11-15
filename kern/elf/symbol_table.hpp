@@ -50,9 +50,9 @@ struct SymbolTable
     {
         while (addr > 0)
         {
-            if (table.find(addr) != table.end())
+            if (auto it = table.find(addr); it != table.end())
             {
-                return table.at(addr);
+                return it->second;
             }
 
             --addr;

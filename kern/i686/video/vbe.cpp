@@ -38,8 +38,8 @@ namespace vbe
 
 std::optional<VbeInfoBlock> detail_get_info(bool vbe2)
 {
-    memset(emu_mem.data() + 0x20000, 0, sizeof(VbeInfoBlock));
-    VbeInfoBlock* block = reinterpret_cast<VbeInfoBlock*>(emu_mem.data() + 0x20000);
+    memset(emu_mem + 0x20000, 0, sizeof(VbeInfoBlock));
+    VbeInfoBlock* block = reinterpret_cast<VbeInfoBlock*>(emu_mem + 0x20000);
     if (vbe2)
     {
         strncpy(reinterpret_cast<char*>(block->VbeSignature), "VBE2", 4);
@@ -125,8 +125,8 @@ std::vector<VideoMode> get_vbe_modes(rmode_ptr mode_list_ptr)
     x86_flag = true;
     for (auto mode : mode_list)
     {
-        memset(emu_mem.data() + 0x20000, 0, sizeof(ModeInfoBlock));
-        ModeInfoBlock* block = reinterpret_cast<ModeInfoBlock*>(emu_mem.data() + 0x20000);
+        memset(emu_mem + 0x20000, 0, sizeof(ModeInfoBlock));
+        ModeInfoBlock* block = reinterpret_cast<ModeInfoBlock*>(emu_mem + 0x20000);
         auto state = emuInt10h(0x4F01, 0, mode, 0, 0x2000);
         const auto& emu = state.cpu_state.emu;
 
@@ -171,7 +171,7 @@ bool is_mode_supported(const ModeInfoBlock &mode)
         return false;
     }
 
-    if (mode.BytesPerScanLine*mode.YResolution > video::max_res_pixels)
+    if (mode.BytesPerScanLine*mode.YResolution > graphics::max_res_pixels)
     {
         return false;
     }

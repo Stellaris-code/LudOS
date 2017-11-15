@@ -31,8 +31,6 @@ SOFTWARE.
 
 extern const registers* panic_regs;
 
-// TODO : add eip disassembly support
-
 [[noreturn]]
 PRINTF_FMT(1, 2)
 void panic(const char* __restrict fmt, ...);

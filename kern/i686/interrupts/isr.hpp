@@ -47,7 +47,13 @@ SOFTWARE.
 namespace isr
 {
 
-typedef void(*isr_t)(const registers* const);
+enum Exception : uint32_t
+{
+    Breakpoint = 3,
+    DoubleFault = 8
+};
+
+typedef bool(*isr_t)(const registers* const);
 
 void register_handler(uint8_t num, isr_t handler);
 

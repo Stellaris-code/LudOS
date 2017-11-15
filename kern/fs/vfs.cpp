@@ -184,13 +184,13 @@ void traverse(const vfs::node &node, size_t indent)
 
     if (indent > 0)
     {
-        kprintf("\xc0\xc4");
+        kprintf("└─");
     }
     kprintf("%s", node.name().c_str());
     if (node.is_dir())
     {
         kprintf("/");
-    }
+    };
     kprintf("\n");
     if (node.is_dir())
     {

@@ -34,6 +34,10 @@ SOFTWARE.
 #define EOF (-1)
 
 #ifdef __cplusplus
+void putcharw(char32_t c);
+#endif
+
+#ifdef __cplusplus
 extern "C" {
 #endif
 
@@ -45,6 +49,7 @@ typedef struct
 } FILE;
 
 void putchar(char c);
+
 void puts(const char*);
 
 int fprintf(FILE * stream, const char * format, ...) PRINTF_FMT(2, 3);

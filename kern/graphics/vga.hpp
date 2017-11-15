@@ -29,11 +29,16 @@ SOFTWARE.
 
 #include "color.hpp"
 
-namespace video
+#include "utils/logging.hpp"
+
+namespace graphics
+{
+
+namespace vga
 {
 
 /* Hardware text mode color constants. */
-enum vga_color : uint8_t
+enum color : uint8_t
 {
     VGA_COLOR_BLACK = 0,
     VGA_COLOR_BLUE = 1,
@@ -53,21 +58,19 @@ enum vga_color : uint8_t
     VGA_COLOR_WHITE = 15,
 };
 
-static inline uint8_t vga_entry_color(vga_color fg,  vga_color bg)
+static inline uint8_t entry_color(color fg,  color bg)
 {
     return fg | bg << 4;
 }
 
-static inline uint16_t vga_entry(uint8_t uc, uint8_t color)
+static inline uint16_t entry(uint8_t uc, uint8_t color)
 {
     return static_cast<uint16_t>(uc) | static_cast<uint16_t>(color) << 8;
 }
 
-static inline vga_color color_to_vga(const Color& color)
+static inline color color_to_vga(const Color& color)
 {
-    uint32_t rgb = color.r << 16 | color.g << 8 | color.b;
-
-    switch (rgb)
+    switch (color.rgb())
     {
     case 0x0000AA:
         return VGA_COLOR_BLUE;
@@ -102,6 +105,8 @@ static inline vga_color color_to_vga(const Color& color)
     }
 
     return VGA_COLOR_BLACK;
+}
+
 }
 
 }

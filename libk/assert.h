@@ -28,11 +28,19 @@ SOFTWARE.
 #include "utils/defs.hpp"
 
 #ifndef assert
+#if  defined(NDEBUG) || true
 #define assert(cond) impl_assert(cond, #cond, __FILE__, __LINE__, __FUNCTION__)
+#else
+#define assert(cond)
+#endif
 #endif
 
 #ifndef assert_mesg
+#if defined(NDEBUG) || true
 #define assert_msg(cond, fmt, ...) impl_assert_msg(cond, #cond, __FILE__, __LINE__, __FUNCTION__, fmt, ##__VA_ARGS__);
+#else
+#define assert_msg(cond, fmt, ...)
+#endif
 #endif
 
 #ifndef __ASSERT_H
@@ -41,9 +49,9 @@ SOFTWARE.
 #include <stdint.h>
 #include <stdbool.h>
 
-#ifndef NDEBUG
+#if !defined(NDEBUG) || true
 #define error_impl panic
-#elif
+#else
 #define error_impl err
 #endif
 //"Reason : '" msg "'\n"

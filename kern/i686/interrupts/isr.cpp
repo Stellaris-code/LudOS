@@ -37,6 +37,8 @@ SOFTWARE.
 
 isr::isr_t handlers[256] { nullptr };
 
+// TODO : pouvoir enregistrer des handlers d'isr qui retournent des bool
+// TODO : brkpoint handler avec support bochs
 
 constexpr const char *exception_messages[] = {
     "Division by zero",				/* 0 */
@@ -76,13 +78,20 @@ constexpr const char *exception_messages[] = {
 extern "C"
 const registers* isr_handler(const registers* const regs)
 {
+    // handling
+    if (auto handl = handlers[regs->int_no]; handl)
+    {
+        if (handl(regs)) return regs;
+    }
+
     if (regs->int_no < std::extent_v<decltype(exception_messages)>)
     {
-        if (regs->int_no == 8) // double fault
+        if (regs->int_no == isr::DoubleFault)
         {
             cli();
 
             putc_serial = true;
+            term().disable();
             // assume terminal is broken
             dump(regs);
             err("Double fault, aborting\n");
@@ -90,10 +99,10 @@ const registers* isr_handler(const registers* const regs)
             return regs;
         }
 
-        log_serial("eip : 0x%lx\n", regs->eip);
+        log_serial("Unhandeld interrupt 0x%x (type : '%s') with error code 0x%lx at 0x%lx\n", regs->int_no, exception_messages[regs->int_no], regs->err_code, regs->eip);
 
         panic_regs = regs;
-        panic("Unhandeld interrupt (type : '%s') 0x%lx with error code 0x%lx at 0x%lx\n", exception_messages[regs->int_no], regs->int_no, regs->err_code, regs->eip, regs->edx, cr2());
+        panic("Unhandeld interrupt 0x%x (type : '%s') 0x%lx\n", regs->int_no, exception_messages[regs->int_no]);
         // handle here
 
     }

@@ -28,7 +28,8 @@ SOFTWARE.
 #include "graphics/drawing/bitmap.hpp"
 
 #include <string.hpp>
-#include <unordered_map.hpp>
+#include <vector.hpp>
+#include <memory.hpp>
 
 #include "utils/logging.hpp"
 
@@ -37,27 +38,28 @@ namespace graphics
 
 struct Glyph
 {
+    Glyph(Bitmap&& bmp)
+        : bitmap(std::move(bmp))
+    {
+    }
+
+    Glyph(const Glyph& g) = delete;
+    Glyph(Glyph&& g) = default;
+
     Bitmap bitmap;
 };
 
 class Font
 {
 public:
+    Font()
+    {
+        m_font_cache.resize(0x10000);
+    }
+
     [[nodiscard]] virtual bool load(const std::string& path) = 0;
 
-    Glyph get(char32_t c) const
-    {
-        if (auto it = m_font_cache.find(c); it != m_font_cache.end())
-        {
-            return it->second;
-        }
-        else
-        {
-            auto glyph = read_glyph(c);
-            m_font_cache[c] = glyph;
-            return glyph;
-        }
-    }
+    const Glyph& get(char32_t c) const;
 
     virtual size_t glyph_width() const = 0;
     virtual size_t glyph_height() const = 0;
@@ -66,7 +68,7 @@ private:
     virtual Glyph read_glyph(char32_t c) const = 0;
 
 private:
-    mutable std::unordered_map<char32_t, Glyph> m_font_cache;
+    mutable std::vector<std::unique_ptr<Glyph>> m_font_cache;
 };
 
 }

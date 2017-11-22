@@ -1,7 +1,7 @@
 /*
-speaker.hpp
+font.cpp
 
-Copyright (c) 27 Yann BOUCHER (yann)
+Copyright (c) 19 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,19 +22,35 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef SPEAKER_HPP
-#define SPEAKER_HPP
 
-#include <stdint.h>
+#include "font.hpp"
 
-class Speaker
+namespace graphics
 {
-public:
-    static void beep(uint32_t time, uint16_t freq = 1000);
-    static void stop();
 
-private:
-    static void play_sound(uint16_t freq);
-};
+const Glyph &Font::get(char32_t c) const
+{
+#if 1
+    if (c < m_font_cache.size() && m_font_cache[c])
+    {
+        return *m_font_cache[c];
+    }
+    else
+    {
+        if (c < m_font_cache.size())
+        {
+            m_font_cache[c] = std::make_unique<Glyph>(read_glyph(c));
+            return *m_font_cache[c];
+        }
+        else
+        {
+            static Glyph g = read_glyph(c);
+            return g;
+        }
+    }
+#else
+    return read_glyph(c);
+#endif
+}
 
-#endif // SPEAKER_HPP
+}

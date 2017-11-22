@@ -27,9 +27,10 @@ SOFTWARE.
 
 #include <stdint.h>
 
+#include <vector.hpp>
+
 #include "graphics/color.hpp"
 #include "graphics/point.hpp"
-#include "utils/aligned_vector.hpp"
 
 namespace graphics
 {
@@ -39,29 +40,23 @@ class Bitmap
 public:
     Bitmap() = default;
 
-    Bitmap(size_t width, size_t height, Color color = color_black)
-    {
-        resize(width, height, color);
-    }
+    Bitmap(size_t width, size_t height, Color color = color_black);
+
+    ~Bitmap();
 
 public:
-    void resize(size_t width, size_t height, Color color = color_black)
-    {
-        m_width = width;
-        m_height = height;
-        m_data.resize(m_width * m_height, color);
-    }
+    void resize(size_t width, size_t height, Color color = color_black);
 
-    const Color& operator[](const PointU& point) const
+    const Color &operator[](const PointU& point) const
     {
-        assert(point.x < m_width && point.y < m_height);
+        //assert(point.x < m_width && point.y < m_height);
 
         return m_data[point.y * width() + point.x];
     }
 
     Color& operator[](const PointU& point)
     {
-        assert(point.x < m_width && point.y < m_height);
+        //assert(point.x < m_width && point.y < m_height);
 
         return m_data[point.y * width() + point.x];
     }
@@ -69,37 +64,9 @@ public:
     Color* data() { return m_data.data(); }
     const Color* data() const { return m_data.data(); }
 
-    void color_multiply(const Color& color)
-    {
-        for (auto& pix : m_data)
-        {
-            pix.r = pix.r * color.r / 255;
-            pix.g = pix.g * color.g / 255;
-            pix.b = pix.b * color.b / 255;
-        }
-    }
+    void color_multiply(const Color& color);
 
-    void color_set_white(const Color& color)
-    {
-        for (auto& pix : m_data)
-        {
-            if (pix == color_white)
-            {
-                pix = color;
-            }
-        }
-    }
-
-    void color_set_transparent(const Color& color)
-    {
-        for (auto& pix : m_data)
-        {
-            if (pix.a == 0) // transparent
-            {
-                pix = color;
-            }
-        }
-    }
+    void color_blend(const Color& white, const Color& transparent);
 
     size_t width() const { return m_width; }
     size_t height() const { return m_height; }

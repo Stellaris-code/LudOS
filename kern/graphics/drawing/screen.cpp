@@ -33,10 +33,33 @@ namespace graphics
 {
 
 // TODO : alpha support
-void Screen::blit(const Bitmap &bitmap, const PointU &pos, bool redraw)
+void Screen::resize(size_t width, size_t height, Color *buffer, Color color)
 {
-    assert(bitmap.width() + pos.x < width());
-    assert(bitmap.height() + pos.y < height());
+    m_width = width;
+    m_height = height;
+
+    if (m_allocated)
+    {
+        kfree(m_data);
+    }
+
+    if (buffer == nullptr)
+    {
+        posix_memalign(reinterpret_cast<void**>(&m_data), 32, width*height*sizeof(Color));
+        m_allocated = true;
+    }
+    else
+    {
+        m_data = buffer;
+    }
+
+    memset(data(), color.rgb(), width*height*4);
+}
+
+void Screen::blit(const Bitmap &bitmap, const PointU &pos)
+{
+    assert(bitmap.width() + pos.x <= width());
+    assert(bitmap.height()+ pos.y <= height());
 
 #if 0
     for (size_t i { 0 }; i < bitmap.width(); ++i)
@@ -44,21 +67,35 @@ void Screen::blit(const Bitmap &bitmap, const PointU &pos, bool redraw)
         for (size_t j { 0 }; j < bitmap.height(); ++j)
         {
             (*this)[{i + pos.x, j + pos.y}] = bitmap[{i, j}];
-            (*this)[{i + pos.x, j + pos.y}].a = 0;
         }
     }
 #else
     for (size_t j { 0 }; j < bitmap.height(); ++j)
     {
-        memcpy(data() + (j+pos.y) * width() + (pos.x), bitmap.data() + (j*bitmap.width()),
-               bitmap.width()*sizeof(Color));
+        memcpyl(data() + (j+pos.y) * width() + (pos.x), bitmap.data() + (j*bitmap.width()),
+                bitmap.width()*sizeof(Color));
     }
 #endif
+}
 
-    if (redraw)
+#pragma GCC push_options
+#pragma GCC optimize ("O3,tree-vectorize,omit-frame-pointer")
+#pragma GCC target ("sse2")
+void Screen::blit(const Bitmap &bitmap, const PointU &pos, const Color &white, const Color &transparent)
+{
+    for (size_t j { 0 }; j < bitmap.height(); ++j)
     {
-        graphics::draw_to_display(*this);
+        const size_t y_off = (j + pos.y)*width();
+
+        for (size_t i { 0 }; i < bitmap.width(); ++i)
+        {
+            const auto& bmp = bitmap[{i, j}];
+            m_data[y_off + i+pos.x] = (bmp.a == 0 ? transparent   :
+                                       bmp == color_white ? white :
+                                       bmp);
+        }
     }
 }
+#pragma GCC pop_options
 
 }

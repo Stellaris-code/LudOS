@@ -33,6 +33,7 @@ void * _memcpy_sse2 (void *v_to, const void *v_from, size_t len);
 void * _aligned_memcpy_sse2 (void * __restrict v_to, const void * __restrict v_from, size_t len);
 
 extern void* (*memcpy)(void* __restrict, const void* __restrict, size_t);
+extern void* (*memcpyl)(void* __restrict, const void* __restrict, size_t);
 extern void* (*aligned_memcpy)(void* __restrict, const void* __restrict, size_t);
 
 inline void *constant_memcpy(void *to, const void *from, size_t n)

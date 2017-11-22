@@ -1,7 +1,7 @@
 /*
-historybuffer.hpp
+circularbuffer.hpp
 
-Copyright (c) 11 Yann BOUCHER (yann)
+Copyright (c) 15 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,31 +22,60 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef HISTORYBUFFER_HPP
-#define HISTORYBUFFER_HPP
+#ifndef CIRCULARBUFFER_HPP
+#define CIRCULARBUFFER_HPP
 
 #include <stdint.h>
-
 #include <vector.hpp>
+#include <assert.h>
 
-#include "graphics/color.hpp"
-
-#include "termentry.hpp"
-
-class HistoryBuffer
+template <typename T>
+class CircularBuffer
 {
 public:
-    struct Entry
+    CircularBuffer(size_t height)
+        : m_data(height)
+    {}
+
+    const T& get_entry(size_t idx) const
     {
-        char32_t c { ' ' };
-        TermEntry color { 0x0, 0x0 };
-    };
+        if (full())
+        {
+            assert(idx < m_data.size());
 
-public:
-    HistoryBuffer(size_t line_width, size_t height);
+            return m_data[(m_front + idx) % m_data.size()];
+        }
+        else
+        {
+            assert(idx < m_data.size());
+            return m_data[idx];
+        }
+    }
+    T& get_entry(size_t idx)
+    {
+        if (full())
+        {
+            assert(idx < m_data.size());
 
-    Entry get_char(size_t x, size_t y) const;
-    void add(const std::vector<Entry> &line);
+            return m_data[(m_front + idx) % m_data.size()];
+        }
+        else
+        {
+            assert(idx < m_data.size());
+            return m_data[idx];
+        }
+    }
+
+    void add(T entry)
+    {
+        m_data[m_front++] = entry;
+
+        if (m_front == m_data.size())
+        {
+            m_front = 0;
+            m_full = true;
+        }
+    }
 
     size_t size() const
     {
@@ -72,12 +101,10 @@ public:
     }
 
 private:
-    const size_t m_line_width;
-
     size_t m_front { 0 };
     bool m_full { false };
 
-    std::vector<std::vector<Entry>> m_data;
+    std::vector<T> m_data;
 };
 
-#endif // HISTORYBUFFER_HPP
+#endif // CIRCULARBUFFER_HPP

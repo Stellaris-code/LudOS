@@ -102,7 +102,7 @@ public:
 
     static inline size_t add_memory_drive(void* address, size_t size)
     {
-        return add_drive([address, size](uint32_t sector, uint8_t count, uint8_t* buf)
+        return add_drive([address, size](uint32_t sector, size_t count, uint8_t* buf)
         {
             if (sector*512 + count > size)
             {
@@ -113,7 +113,7 @@ public:
             memcpy(buf, reinterpret_cast<const uint8_t*>(address) + sector*512, count*512);
             return true;
         },
-        [address, size](uint32_t sector, uint8_t count, const uint8_t* buf)
+        [address, size](uint32_t sector, size_t count, const uint8_t* buf)
         {
             if (sector*512 + count > size)
             {
@@ -132,7 +132,7 @@ public:
 
     static inline size_t add_memory_drive(const void* address, size_t size)
     {
-        return add_drive([address, size](uint32_t sector, uint8_t count, uint8_t* buf)
+        return add_drive([address, size](uint32_t sector, size_t count, uint8_t* buf)
         {
             if (sector*512 + count > size)
             {
@@ -143,7 +143,7 @@ public:
             memcpy(buf, reinterpret_cast<const uint8_t*>(address) + sector*512, count*512);
             return true;
         },
-        [](uint32_t, uint8_t, const uint8_t*)
+        [](uint32_t, size_t, const uint8_t*)
         {
             last_error = Error::ReadOnly;
             return false;

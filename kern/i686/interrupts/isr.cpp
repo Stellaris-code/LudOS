@@ -37,9 +37,6 @@ SOFTWARE.
 
 isr::isr_t handlers[256] { nullptr };
 
-// TODO : pouvoir enregistrer des handlers d'isr qui retournent des bool
-// TODO : brkpoint handler avec support bochs
-
 constexpr const char *exception_messages[] = {
     "Division by zero",				/* 0 */
     "Debug",

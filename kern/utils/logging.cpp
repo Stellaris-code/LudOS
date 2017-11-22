@@ -42,9 +42,9 @@ void log(LoggingLevel level, const char * __restrict fmt, ...)
 {
     if (level <= log_level)
     {
-        term().push_color({0x00aa00, 0});
+        term_data().push_color({0x00aa00, 0});
         kprintf("[%f] ", Time::uptime());
-        term().pop_color();
+        term_data().pop_color();
 
         va_list va;
         va_start(va, fmt);
@@ -55,34 +55,34 @@ void log(LoggingLevel level, const char * __restrict fmt, ...)
 
 void warn(const char * __restrict fmt, ...)
 {
-    term().push_color({0xffff55, 0});
+    term_data().push_color({0xffff55, 0});
 
-    term().push_color({0x00aa00, 0});
+    term_data().push_color({0x00aa00, 0});
     kprintf("[%f] ", Time::uptime());
-    term().pop_color();
+    term_data().pop_color();
 
     va_list va;
     va_start(va, fmt);
     tfp_format(nullptr, [](void*, char c){putchar(c); log_serial("%c", c);}, fmt, va);
     va_end(va);
 
-    term().pop_color();
+    term_data().pop_color();
 }
 
 void err(const char * __restrict fmt, ...)
 {
-    term().push_color({0xaa0000, 0});
+    term_data().push_color({0xaa0000, 0});
 
-    term().push_color({0x00aa00, 0});
+    term_data().push_color({0x00aa00, 0});
     kprintf("[%f] ", Time::uptime());
-    term().pop_color();
+    term_data().pop_color();
 
     va_list va;
     va_start(va, fmt);
     tfp_format(nullptr, [](void*, char c){putchar(c); log_serial("%c", c);}, fmt, va);
     va_end(va);
 
-    term().pop_color();
+    term_data().pop_color();
 }
 
 void log_serial(const char * __restrict fmt, ...)

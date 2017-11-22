@@ -1,7 +1,7 @@
 /*
 terminal.hpp
 
-Copyright (c) 23 Yann BOUCHER (yann)
+Copyright (c) 16 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -26,93 +26,115 @@ SOFTWARE.
 #define TERMINAL_HPP
 
 #include <stdint.h>
-#include "utils/addr.hpp"
-#include "stack.hpp"
+
 #include "graphics/color.hpp"
 #include "unicode/utf8decoder.hpp"
 
-#include <functional.hpp>
-#include <memory.hpp>
 #include <string.hpp>
+#include <stack.hpp>
+#include <type_traits.hpp>
+#include <memory.hpp>
 
-#include "historybuffer.hpp"
+#include "utils/circularbuffer.hpp"
+
+#include "terminaldata.hpp"
+#include "termentry.hpp"
 
 class Terminal
 {
 public:
-    Terminal(size_t iwidth, size_t iheight, size_t imax_history = 5);
+    Terminal(size_t iwidth, size_t iheight, TerminalData& data);
 
 public:
-    void put_entry_at(char32_t c, TermEntry color, size_t x, size_t y);
     void put_char(char32_t c);
+
     void write(const char* data, size_t size);
     void write_string(const char* data);
+
     void clear();
-    void clear(TermEntry color);
-    void scroll_up();
-    void push_color(TermEntry color);
-    void pop_color();
+    void clear(ColorPair color);
+
     void show_history(int page);
-    size_t current_history() const { return current_history_page; }
-    void scroll_history(int scroll) { show_history(current_history()+scroll); }
-    TermEntry color() const;
+    size_t current_history() const;
+    void scroll_history(int scroll);
+    void scroll_up();
+    void scroll_bottom();
 
-    size_t width() const { return _width; }
-    size_t height() const { return _height-title_height; }
-    size_t history_lines() const { return max_history; }
+    void resize(size_t iwidth, size_t iheight);
 
-    void set_title(std::string str, TermEntry color);
-    void set_title(std::string str);
+    size_t width() const;
+    size_t height() const;
+    size_t true_height() const;
 
-    void enable()
+    void set_title(std::u32string str, ColorPair color);
+    void set_title(std::u32string str);
+
+    void enable() { m_enabled = true; };
+    void disable()
     {
-        enabled = true;
-        set_title(title_text, text_color);
-        redraw();
-    }
-    void disable() { enabled = false; }
+        m_enabled = false;
+        force_redraw();
+    };
 
-    void redraw();
+    void set_scrolling(bool enabled)
+    {
+        m_scrolling = enabled;
+    }
+
+    void force_redraw();
+    void force_redraw_input();
+    void draw();
 
 private:
-    void set_entry_at(char32_t c, TermEntry color, size_t x, size_t y, bool absolute = false);
+    void set_entry_at(TermEntry entry, size_t x, size_t y, bool absolute = false);
     void new_line();
     void add_line_to_history();
     void check_pos();
     void update_cursor();
-
-public:
-    std::function<void(size_t x, size_t y, size_t width)> move_cursor_callback;
-    std::function<void(size_t ms)> beep_callback;
-    std::function<void(size_t x, size_t y, char32_t c, TermEntry color)> putchar_callback;
-    std::function<void()> redraw_callback;
+    void reset();
 
 private:
-    size_t terminal_row { 0 };
-    size_t terminal_column { 0 };
-    size_t title_height { 1 };
+    virtual void move_cursor(size_t x, size_t y) = 0;
+    virtual void beep(size_t ms) = 0;
+    virtual void clear_line(size_t y, graphics::Color color) = 0;
+    virtual void putchar(size_t x, size_t y, TermEntry entry) = 0;
+    virtual void draw_impl() = 0;
 
-    bool enabled { true };
+private:
+    size_t m_cursor_x { 0 };
+    size_t m_cursor_y { 0 };
 
-    std::vector<HistoryBuffer::Entry> cur_line;
+    size_t m_width { 0 };
+    size_t m_height { 0 };
+    size_t m_current_history_page { 0 };
 
-    std::stack<TermEntry> color_stack;
+    bool m_enabled { true };
+    mutable bool m_dirty { true };
+    bool m_scrolling { true };
 
-    const size_t _width;
-    const size_t _height;
-    const size_t max_history;
+    std::vector<TermEntry> m_cur_line;
 
-    std::string title_text;
-    TermEntry text_color;
+    UTF8Decoder m_decoder;
 
-    UTF8Decoder decoder;
-
-    HistoryBuffer history;
-    uint8_t current_history_page { 0 };
+    TerminalData& m_data;
 };
 
-void setup_term(size_t width, size_t height, size_t history);
+Terminal& term();
 
-Terminal &term();
+TerminalData& term_data();
+
+template <typename T, typename... Args>
+void create_term(Args&&... args)
+{
+    static_assert(std::is_base_of_v<Terminal, T>);
+
+    extern std::unique_ptr<Terminal> current_term;
+
+    current_term = std::make_unique<T>(std::forward<Args>(args)...);
+    current_term->set_title(term_data().title_str, term_data().title_color);
+    current_term->scroll_bottom();
+}
+
+void reset_term();
 
 #endif // TERMINAL_HPP

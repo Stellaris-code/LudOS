@@ -39,7 +39,7 @@ SOFTWARE.
 #include "i686/cpu/mtrr.hpp"
 #include "i686/simd/simd.hpp"
 #include "i686/cpu/cpuid.hpp"
-#include "i686/io/termio.hpp"
+#include "i686/pc/terminal/textterminal.hpp"
 #include "i686/gdt/gdt.hpp"
 #include "i686/video/x86emu_modesetting.hpp"
 #include "i686/mem/paging.hpp"
@@ -61,6 +61,7 @@ SOFTWARE.
 
 #include "utils/bitops.hpp"
 #include "utils/env.hpp"
+#include "utils/addr.hpp"
 #include "utils/virt_machine_detect.hpp"
 #include "utils/logging.hpp"
 #include "utils/defs.hpp"
@@ -89,20 +90,11 @@ inline void init(uint32_t magic, const multiboot_info_t* mbd_info)
 
     serial::debug::write("Framebuffer address : 0x%lx\n", phys(framebuffer_addr));
 
-    setup_term(80, 25, 15);
+    init_printf(nullptr, [](void*, char c){putchar(c);});
 
-    term().beep_callback = [](size_t ms){Speaker::beep(ms);};
-    term().move_cursor_callback = move_cursor;
-    term().putchar_callback = [framebuffer_addr](size_t x, size_t y, uint8_t c, TermEntry color)
-    {
-        auto fb = reinterpret_cast<uint16_t*>(phys(framebuffer_addr));
-        fb[y*term().width() + x] = graphics::vga::entry(c, graphics::vga::entry_color(graphics::vga::color_to_vga(color.fg),
-                                                                                      graphics::vga::color_to_vga(color.bg)));
-    };
+    create_term<TextTerminal>(phys(framebuffer_addr), 80, 25, term_data());
 
     term().clear();
-
-    init_printf(nullptr, [](void*, char c){putchar(c);});
 
     auto elf_info = multiboot::elf_info();
     elf::kernel_symbol_table = elf::get_symbol_table(elf_info.first, elf_info.second);
@@ -110,12 +102,12 @@ inline void init(uint32_t magic, const multiboot_info_t* mbd_info)
     gdt::init();
     pic::init();
 
-    term().set_title("LudOS " LUDOS_VERSION_STRING " - build date " __DATE__,
-                     TermEntry{0x000000, 0x00aaaa});
+    term().set_title(U"LudOS " LUDOS_VERSION_STRING " - build date " __DATE__,
+    {0x000000, 0x00aaaa});
 
     idt::init();
 
-    isr::register_handler(isr::Breakpoint, [](const registers* const regs)
+    isr::register_handler(isr::Breakpoint, [](const registers* const)
     {
         asm volatile("xchg %bx, %bx");
         return true;
@@ -127,7 +119,6 @@ inline void init(uint32_t magic, const multiboot_info_t* mbd_info)
     {
         log(Debug, "CPU is SSE capable\n");
         enable_sse();
-        memcpy = _memcpy_mmx;
         aligned_memcpy = _memcpy_mmx;
         if (simd_features() & SSE2)
         {

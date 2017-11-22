@@ -37,7 +37,7 @@ std::vector<uintptr_t> trace_stack(size_t frames)
 
     stack_frame *fp;
 
-    asm("movl %%ebp, %[fp]" : [fp] "=r" (fp));
+    asm volatile("movl %%ebp, %[fp]" : [fp] "=r" (fp));
 
     for(size_t i = 0; (frames != 0 ? i < frames : true) && fp;
         fp = fp->previous, i++)

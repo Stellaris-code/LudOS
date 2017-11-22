@@ -1,7 +1,7 @@
 /*
 termentry.hpp
 
-Copyright (c) 08 Yann BOUCHER (yann)
+Copyright (c) 17 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -25,10 +25,18 @@ SOFTWARE.
 #ifndef TERMENTRY_HPP
 #define TERMENTRY_HPP
 
-struct TermEntry
+#include "graphics/color.hpp"
+
+struct ColorPair
 {
     graphics::Color fg;
     graphics::Color bg;
+};
+
+struct TermEntry
+{
+    char32_t c;
+    ColorPair pair;
 };
 
 #endif // TERMENTRY_HPP

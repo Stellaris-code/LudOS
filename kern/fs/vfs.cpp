@@ -177,26 +177,29 @@ bool mount(std::shared_ptr<vfs::node> node, const std::string &mountpoint)
 
 void traverse(const vfs::node &node, size_t indent)
 {
-    for (size_t i { 0 }; i < indent; ++i)
+    if (node.name() != "." && node.name() != "..")
     {
-        kprintf("\t");
-    }
-
-    if (indent > 0)
-    {
-        kprintf("└─");
-    }
-    kprintf("%s", node.name().c_str());
-    if (node.is_dir())
-    {
-        kprintf("/");
-    };
-    kprintf("\n");
-    if (node.is_dir())
-    {
-        for (const auto& entry : node.readdir())
+        for (size_t i { 0 }; i < indent; ++i)
         {
-            vfs::traverse(*entry, indent+1);
+            kprintf("\t");
+        }
+
+        if (indent > 0)
+        {
+            kprintf("└─");
+        }
+        kprintf("%s", node.name().c_str());
+        if (node.is_dir())
+        {
+            kprintf("/");
+        };
+        kprintf("\n");
+        if (node.is_dir())
+        {
+            for (const auto& entry : node.readdir())
+            {
+                vfs::traverse(*entry, indent+1);
+            }
         }
     }
 }

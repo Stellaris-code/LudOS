@@ -2,6 +2,8 @@
 
 #include "utils/logging.hpp"
 
+#include "panic.hpp"
+
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wformat"
 

@@ -28,6 +28,7 @@ SOFTWARE.
 #include <stdlib.h>
 
 #include "pathutils.hpp"
+#include "utils/memutils.hpp"
 
 #define TMAGIC   "ustar"        /* ustar and a null */
 #define TMAGLEN  6
@@ -67,10 +68,9 @@ SOFTWARE.
 namespace tar
 {
 
-TarFS::TarFS(const std::vector<uint8_t> &file)
+TarFS::TarFS(std::vector<uint8_t> file)
     : m_file(file)
 {
-
 }
 
 tar_node TarFS::root_dir() const
@@ -86,12 +86,13 @@ tar_node TarFS::root_dir() const
 
 std::optional<tar_node> TarFS::read_header(const Header *hdr) const
 {
-    if (!check_sum(hdr))
+    if (hdr->name[0] == '\0')
     {
         return {};
     }
-    if (hdr->name[0] == '\0')
+    if (!check_sum(hdr))
     {
+        warn("Bad TAR chksum\n");
         return {};
     }
 
@@ -138,6 +139,7 @@ std::vector<tar_node> TarFS::read_dir(const uint8_t *addr, size_t size) const
     {
         const Header* hdr = reinterpret_cast<const Header*>(ptr);
         auto node = read_header(hdr);
+
         if (node)
         {
             nodes.emplace_back(*node);
@@ -153,6 +155,12 @@ std::vector<tar_node> TarFS::read_dir(const uint8_t *addr, size_t size) const
             jump += sizeof(Header) - (jump % sizeof(Header));
         }
         ptr += sizeof(Header) + jump;
+
+        // Handle end-of-file 512 bytes blocks
+        if (!read_header(reinterpret_cast<const Header*>(ptr)))
+        {
+            ptr += sizeof(Header);
+        }
     }
 
     return nodes;

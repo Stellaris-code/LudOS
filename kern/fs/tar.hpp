@@ -42,7 +42,7 @@ class TarFS
 {
     friend struct tar_node;
 public:
-    TarFS(const std::vector<uint8_t>& file);
+    TarFS(std::vector<uint8_t> file);
 
     tar_node root_dir() const;
 

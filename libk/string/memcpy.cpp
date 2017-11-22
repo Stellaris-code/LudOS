@@ -40,10 +40,18 @@ void* _naive_memcpy(void* __restrict dstptr, const void* __restrict srcptr, size
 }
 
 void * _repmovsb_memcpy(void * __restrict dest, const void * __restrict src, size_t n) {
-    asm volatile("cld; rep movsb"
-                 :
-                 : "D"(dest), "S"(src), "c"(n)
+    asm volatile("rep movsb"
+                 : "+S"(src), "+D"(dest)
+                 : "c"(n)
                  : "flags", "memory");
+    return dest;
+}
+
+void * _repmovsl_memcpy(void * __restrict dest, const void * __restrict src, size_t n) {
+    asm volatile("rep movsl"
+                 : "+S"(src), "+D"(dest)
+                 : "c"(n/4)
+                 : "cc", "memory");
     return dest;
 }
 
@@ -123,5 +131,6 @@ _aligned_memcpy_sse2 (void * __restrict v_to, const void * __restrict v_from, si
 }
 
 // We don't have SSE at the very beggining, use rep movsb version
-void* (*memcpy)(void* __restrict, const void* __restrict, size_t) = _naive_memcpy;
+void* (*memcpy)(void* __restrict, const void* __restrict, size_t) = _repmovsb_memcpy;
+void* (*memcpyl)(void* __restrict, const void* __restrict, size_t) = _repmovsl_memcpy;
 void* (*aligned_memcpy)(void* __restrict, const void* __restrict, size_t) = _naive_memcpy;

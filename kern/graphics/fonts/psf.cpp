@@ -52,6 +52,11 @@ SOFTWARE.
 namespace graphics::psf
 {
 
+PSFFont::PSFFont()
+    : Font()
+{
+}
+
 bool PSFFont::load(const std::string &path)
 {
     auto file = vfs::find(path);
@@ -130,7 +135,6 @@ void PSFFont::build_unicode_table()
 
 Glyph PSFFont::read_glyph(char32_t c) const
 {
-
     size_t glyph = c;
     if (m_hdr->flags & PSF2_HAS_UNICODE_TABLE)
     {
@@ -172,6 +176,6 @@ Glyph PSFFont::read_glyph_data(const uint8_t *ptr) const
         }
     }
 
-    return Glyph{bitmap};
+    return Glyph{std::move(bitmap)};
 }
 }

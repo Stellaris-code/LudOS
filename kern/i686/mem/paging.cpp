@@ -32,9 +32,9 @@ SOFTWARE.
 #include "panic.hpp"
 #include "utils/logging.hpp"
 
-extern "C" int kernel_physical_end;
+#define LASTPOS_OPTIMIZATION 1
 
-bitarray<Paging::ram_maxpage, uint32_t> Paging::mem_bitmap;
+extern "C" int kernel_physical_end;
 
 void Paging::init()
 {
@@ -72,11 +72,25 @@ void Paging::init()
 #endif
 }
 
+#if LASTPOS_OPTIMIZATION
+static size_t last_pos { 0 };
+#endif
+
 uintptr_t Paging::alloc_page_frame(size_t number)
 {
+#if LASTPOS_OPTIMIZATION
+loop:
+#endif
+
     size_t counter { 0 };
     size_t page_addr { 0 };
-    for (size_t i { 0 }; i < mem_bitmap.array_size; ++i)
+
+#if LASTPOS_OPTIMIZATION
+    size_t i { last_pos };
+#else
+    size_t i { 0 };
+#endif
+    for (; i < mem_bitmap.array_size; ++i)
     {
         if (!mem_bitmap[i])
         {
@@ -86,25 +100,45 @@ uintptr_t Paging::alloc_page_frame(size_t number)
                 page_addr = i;
             }
         }
+        else
+        {
+            counter = 0;
+        }
 
         if (counter >= number)
         {
-            for (size_t i { page_addr }; i < page_addr+counter; ++i)
+            for (size_t j { page_addr }; j < page_addr+counter; ++j)
             {
-                mem_bitmap[i] = true;
+                assert(!mem_bitmap[j]);
+                mem_bitmap[j] = true;
             }
+#if LASTPOS_OPTIMIZATION
+            last_pos = page_addr+counter;
+#endif
             return phys(page_addr*page_size);
         }
     }
+
+#if LASTPOS_OPTIMIZATION
+    if (last_pos != 0)
+    {
+        last_pos = 0;
+        goto loop;
+    }
+#endif
+
+    log_serial("OUT OF MEMORY !!!\n");
+    halt();
+
     return 0;
 }
 
 bool Paging::release_page_frame(uintptr_t p_addr, size_t number)
 {
-    if (p_addr < reinterpret_cast<uintptr_t>(&kernel_physical_end))
-    {
-        panic("Should not happend ! %p\n", p_addr);
-    }
+//    if (p_addr < reinterpret_cast<uintptr_t>(&kernel_physical_end))
+//    {
+//        panic("Should not happend ! %p\n", p_addr);
+//    }
 
     size_t base_page = page(virt(p_addr));
     bool released = false;
@@ -114,6 +148,10 @@ bool Paging::release_page_frame(uintptr_t p_addr, size_t number)
         released |= mem_bitmap[base_page+i];
         mem_bitmap[base_page+i] = false;
     }
+
+#if LASTPOS_OPTIMIZATION
+    if (number > 2) last_pos = base_page;
+#endif
 
     return released;
 }

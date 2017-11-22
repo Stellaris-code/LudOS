@@ -49,7 +49,8 @@ SOFTWARE.
 #include "graphics/video.hpp"
 #include "graphics/drawing/display_draw.hpp"
 #include "graphics/fonts/psf.hpp"
-#include "graphics/text/text.hpp"
+#include "graphics/text/graphicterm.hpp"
+#include "graphics/drawing/image_loader.hpp"
 
 #include "utils/logging.hpp"
 #include "utils/messagebus.hpp"
@@ -72,13 +73,9 @@ SOFTWARE.
 // TODO : Son
 // TODO : Passer en IDE PCI : IDE UDMA
 // FIXME : revoir l'architecture dégeulasse de l'ownership des nodes de readdir
-// BUG : Terminal scroll loops ?
-// FIXME : revoir les terminal pour permettre de pouvoir écrire dans un rapidement et afficher un autre
 // TODO : TinyGL
-// BUG : terminal multiline text is buggy
-// TODO : port newlib dans le kernelspace
 // TODO : ambilight feature pour le windowing system !
-// TODO : séparation terminal affichage/backlog
+// TODO : refaire une VRAIE classe Terminal... c'est atroce l'implémentation actuelle, une horreur lovecraftienne
 
 void global_init()
 {
@@ -89,7 +86,7 @@ void global_init()
     MessageBus::register_handler<kbd::TextEnteredEvent>([](const kbd::TextEnteredEvent& e)
     {
         putcharw(e.c);
-        term().redraw();
+        term().force_redraw_input();
     });
 
     MessageBus::register_handler<kbd::KeyEvent>([](const kbd::KeyEvent& e)
@@ -98,11 +95,11 @@ void global_init()
         {
             if (e.key == kbd::PageUp)
             {
-                term().scroll_history(+10);
+                term().scroll_history(-10);
             }
             else if (e.key == kbd::PageDown)
             {
-                term().scroll_history(-10);
+                term().scroll_history(+10);
             }
             else if (e.key == kbd::Delete && Keyboard::ctrl() && Keyboard::alt())
             {
@@ -121,11 +118,11 @@ void global_init()
     {
         if (e.wheel>0)
         {
-            term().scroll_history(-3);
+            term().scroll_history(+3);
         }
         else if (e.wheel<0)
         {
-            term().scroll_history(6);
+            term().scroll_history(-6);
         }
     });
 
@@ -160,54 +157,62 @@ void global_init()
         panic("Cannot install initrd!\n");
     }
 
-    //    putc_serial = true;
-
-    //    if (auto file = vfs::find("/boot/boot/LudOS.bin"); file)
-    //    {
-    //        std::vector<uint8_t> data(file->size());
-    //        if (file->read(data.data(), data.size()))
-    //        {
-    //            elf::kernel_symbol_table = elf::get_symbol_table_file(data);
-    //        }
-    //    }
-
-    asm volatile ("int3");
-
     static graphics::psf::PSFFont font;
     if (font.load("/initrd/system.8x16.psf"))
     {
         log(Info, "Font loaded\n");
 #if 1
 
+#if 1
         auto mode = graphics::change_mode(1024, 768, 32);
-        graphics::set_display_mode(*mode);
-
-        graphics::clear_display(graphics::color_black);
-
-        static graphics::Screen scr(1024, 768);
-
-        graphics::setup_terminal(font, scr);
-        term().enable();
+#else
+        auto mode = graphics::change_mode(1680, 1050, 32);
+#endif
 
         if (mode)
         {
+            graphics::set_display_mode(*mode);
+
+            graphics::clear_display(graphics::color_black);
+
+#if 0
+            static graphics::Screen scr(mode->width, mode->height,
+                                        reinterpret_cast<graphics::Color*>(mode->framebuffer_addr));
+#else
+            static graphics::Screen scr(mode->width, mode->height);
+#endif
+
+            create_term<graphics::GraphicTerm>(scr, font, term_data());
+            term().force_redraw();
+
+            log(Notice, "Resolution %dx%dx%d set\n", mode->width,
+                mode->height, mode->depth);
             log(Info, "LFB location : 0x%x\n", mode->framebuffer_addr);
             log(Info, "Bytes per line : %d (padding : %d)\n", mode->bytes_per_line, mode->width*mode->depth/CHAR_BIT - mode->bytes_per_line);
             log(Info, "Red : mask : %x, pos : %d\n", mode->red_mask_size, mode->red_field_pos);
             log(Info, "Green : mask : %x, pos : %d\n", mode->green_mask_size, mode->green_field_pos);
             log(Info, "Blue : mask : %x, pos : %d\n", mode->blue_mask_size, mode->blue_field_pos);
+
+            auto img = graphics::load_image("/initrd/example.png");
+            if (!img)
+            {
+                log(Info, "Error\n");
+            }
+            else
+            {
+                term().clear();
+                term().disable();
+                scr.blit(*img, {0, 0});
+                graphics::draw_to_display(scr);
+            }
         }
-
-        kprintf("OMG ! un ─ éléphant ─ sauvage Ӻ─\n");
-
-        graphics::draw_to_display(scr);
-
-        benchmark([&]{graphics::draw_to_display(scr);}, "Screen memcpy performance");
 #endif
 
     }
 
     greet();
 
-    //vfs::traverse("/");
+    kprintf("Моя Страна\n");
+
+    vfs::traverse("/");
 }

@@ -43,12 +43,14 @@ file(GLOB_RECURSE LIBX86EMU_SOURCES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "extern
 file(GLOB_RECURSE LIBX86EMU_HEADERS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "external/libx86emu/include/*.h")
 file(GLOB_RECURSE LIBDISASM_SOURCES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "external/libdisasm/*.c")
 file(GLOB_RECURSE LIBDISASM_HEADERS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "external/libdisasm/*.h")
+file(GLOB_RECURSE STB_HEADERS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "external/stb/*.h")
 file(GLOB_RECURSE HEADERS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "kern/*.hpp" "kern/*.h" "kern/*.tpp")
 file(GLOB_RECURSE LD_SCRIPTS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "*.ld")
 
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/kern")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/kern/external")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/libk")
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}/external")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/external/libc++")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/external/acpica")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/external/libcxxabi")
@@ -57,10 +59,10 @@ include_directories("${CMAKE_CURRENT_SOURCE_DIR}/external/libdisasm")
 
 set(GENERIC_SRCS ${KERN_TERMINAL_SOURCES} ${CPP_SOURCES} ${KERN_BIOS_SOURCES} ${KERN_MB_SOURCES} ${KERN_BASE_SOURCES})
 
-add_executable(${PROJECT_NAME} ${PLATFORM_SRCS} ${ISA_SRCS} ${GENERIC_SRCS} ${HEADERS} ${LD_SCRIPTS})
+add_executable(${PROJECT_NAME} ${PLATFORM_SRCS} ${ISA_SRCS} ${GENERIC_SRCS} ${HEADERS} ${STB_HEADERS} ${LD_SCRIPTS})
 
-set(CMAKE_C_FLAGS "${ISA_C_FLAGS} ${PLATFORM_C_FLAGS} -O3 -fstack-protector -m32 -mno-sse -mno-mmx -ftree-vectorize -ffast-math -std=c11 -Wall -Wextra -Wcast-qual -Wmisleading-indentation -Wno-unused-parameter -Wno-implicit-int -Wnull-dereference -lgcc -static-libgcc -ffreestanding -fno-builtin -nostdlib -fno-omit-frame-pointer -Werror=implicit-function-declaration -lgcc")
-set(CMAKE_CXX_FLAGS "${ISA_CXX_FLAGS} ${PLATFORM_CXX_FLAGS} -O3 -m32 -fno-exceptions -mno-sse -mno-mmx -ftree-vectorize -ffast-math -fstack-protector -std=c++17 -Wall -Wextra -Wold-style-cast -Wno-unused-parameter -Wno-format -Wno-switch -Wno-packed-bitfield-compat -Wno-reorder -Wno-trigraphs -Wold-style-cast -Wcast-qual -Wmisleading-indentation -Wnull-dereference -lgcc -static-libgcc -ffreestanding -fno-builtin -nostdlib -fno-omit-frame-pointer -Werror=implicit-function-declaration -lgcc")
+set(CMAKE_C_FLAGS "${ISA_C_FLAGS} ${PLATFORM_C_FLAGS} -g -fstack-protector -m32 -mno-sse -mno-mmx -ftree-vectorize -ffast-math -std=c11 -Wall -Wextra -Wcast-qual -Wmisleading-indentation -Wno-unused-parameter -Wno-implicit-int -Wnull-dereference -lgcc -static-libgcc -ffreestanding -fno-builtin -nostdlib -fno-omit-frame-pointer -Werror=implicit-function-declaration -lgcc")
+set(CMAKE_CXX_FLAGS "${ISA_CXX_FLAGS} ${PLATFORM_CXX_FLAGS} -g -m32 -fno-exceptions -mno-sse -mno-mmx -ftree-vectorize -ffast-math -fstack-protector -std=c++17 -Wall -Wextra -Wold-style-cast -Wno-unused-parameter -Wno-format -Wno-switch -Wno-packed-bitfield-compat -Wno-reorder -Wno-trigraphs -Wold-style-cast -Wcast-qual -Wmisleading-indentation -Wnull-dereference -lgcc -static-libgcc -ffreestanding -fno-builtin -nostdlib -fno-omit-frame-pointer -Werror=implicit-function-declaration -lgcc")
 set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS
   "-T ${PLATFORM_LAYOUT} -N ${ISA_LINKER_FLAGS} ${PLATFORM_LINKER_FLAGS} -lgcc -fexceptions -Xlinker -Map=ld.map ")
 set_target_properties(${PROJECT_NAME} PROPERTIES SUFFIX ".bin")

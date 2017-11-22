@@ -31,8 +31,17 @@ SOFTWARE.
 
 extern const registers* panic_regs;
 
-[[noreturn]]
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+__attribute__((noreturn))
 PRINTF_FMT(1, 2)
 void panic(const char* __restrict fmt, ...);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // PANIC_HPP

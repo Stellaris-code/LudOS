@@ -224,13 +224,13 @@ bool set_mode(uint16_t mode)
         }
         else
         {
-            log(Debug, "VBE Mode 0x%x set call failed, code 0x%x\n", mode, emu->x86.R_AH);
+            warn("VBE Mode 0x%x set call failed, code 0x%x\n", mode, emu->x86.R_AH);
             return false;
         }
     }
     else
     {
-        log(Debug, "VBE Modesetting interrupt not supported\n");
+        warn("VBE Modesetting interrupt not supported\n");
         return false;
     }
 }

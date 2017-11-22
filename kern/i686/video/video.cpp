@@ -96,15 +96,13 @@ std::optional<VideoMode> change_mode(size_t width, size_t height, size_t depth)
     if (mode.info.XResolution != width || mode.info.YResolution != height ||
             mode.info.BitsPerPixel != depth)
     {
-        log(Notice, "Target resolution %dx%dx%d not found, switching to %dx%dx%dx\n",
+        log(Notice, "Target resolution %dx%dx%d not found, switching to %dx%dx%d\n",
             width, height, depth, mode.info.XResolution, mode.info.YResolution, mode.info.BitsPerPixel);
     }
 
     if (vbe::set_mode(mode.mode))
     {
-        term().disable();
-        log(Notice, "Mode 0x%x, Resolution %dx%dx%d set\n", mode.mode,
-            mode.info.XResolution, mode.info.YResolution, mode.info.BitsPerPixel);
+        reset_term();
 
         if (mtrr::available() && mtrr::available_variable_ranges()>0 && mtrr::supports_write_combining())
         {

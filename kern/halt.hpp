@@ -29,7 +29,7 @@ SOFTWARE.
 
 #include "utils/builtins.hpp"
 
-[[noreturn]]
+__attribute__((noreturn))
 inline void halt()
 {
     cli();

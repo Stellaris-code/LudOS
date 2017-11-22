@@ -1,7 +1,7 @@
 /*
-speaker.hpp
+image_loader.cpp
 
-Copyright (c) 27 Yann BOUCHER (yann)
+Copyright (c) 21 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,19 +22,51 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef SPEAKER_HPP
-#define SPEAKER_HPP
 
-#include <stdint.h>
+#include "image_loader.hpp"
 
-class Speaker
+#define STB_IMAGE_IMPLEMENTATION
+#define STBI_MALLOC kmalloc
+#define STBI_FREE kfree
+#define STBI_REALLOC krealloc
+#define STBI_NO_STDIO
+#include "stb/stb_image.h"
+
+#include "fs/vfs.hpp"
+
+namespace graphics
 {
-public:
-    static void beep(uint32_t time, uint16_t freq = 1000);
-    static void stop();
 
-private:
-    static void play_sound(uint16_t freq);
-};
+std::optional<Bitmap> load_image(const std::string &path)
+{
+    auto node = vfs::find(path);
 
-#endif // SPEAKER_HPP
+    if (!node)
+    {
+        err("No found\n");
+        return {};
+    }
+
+    std::vector<uint8_t> data(node->size());
+    if (!node->read(data.data(), data.size()))
+    {
+        err("Here\n");
+        return {};
+    }
+
+    int x, y, depth;
+    uint8_t* img = stbi_load_from_memory(data.data(), data.size(), &x, &y, &depth, 4);
+
+    if (!img)
+    {
+        warn("Failed loading '%s' : %s\n", path.c_str(), stbi_failure_reason());
+        return {};
+    }
+
+    Bitmap bmp(x, y);
+    memcpyl(bmp.data(), img, x*y*depth);
+
+    return bmp;
+}
+
+}

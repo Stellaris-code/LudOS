@@ -29,18 +29,18 @@ SOFTWARE.
 
 inline void cli()
 {
-    asm volatile ("cli");
+    __asm__ __volatile__ ("cli");
 }
 
 inline void sti()
 {
-    asm volatile ("sti");
+    __asm__ __volatile__ ("sti");
 }
 
 inline bool interrupts_enabled()
 {
     uint32_t flags;
-    asm volatile ( "pushf\n\t"
+    __asm__ __volatile__ ( "pushf\n\t"
                    "pop %0"
                    : "=g"(flags) );
     return flags & (1 << 9);
@@ -48,7 +48,7 @@ inline bool interrupts_enabled()
 
 inline void interrupt(uint8_t code)
 {
-    asm volatile ("int %0" : :"i"(code));
+    __asm__ __volatile__ ("int %0" : :"i"(code));
 }
 
 #endif // INTERRUPTS_HPP

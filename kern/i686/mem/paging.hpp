@@ -65,7 +65,7 @@ private:
     }
 
 private:
-    static bitarray<ram_maxpage, uint32_t> mem_bitmap; // 0 = free / 1 = used
+    static inline bitarray<ram_maxpage, uint32_t> mem_bitmap; // 0 = free / 1 = used
 };
 
 #endif // PAGING_HPP

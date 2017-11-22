@@ -1,7 +1,7 @@
 /*
-historybuffer.cpp
+nullterm.hpp
 
-Copyright (c) 11 Yann BOUCHER (yann)
+Copyright (c) 17 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,43 +22,24 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-
-#include "historybuffer.hpp"
-
-#include <assert.h>
-#include <string.h>
-
-#include "utils/logging.hpp"
+#ifndef NULLTERM_HPP
+#define NULLTERM_HPP
 
 #include "terminal.hpp"
 
-HistoryBuffer::HistoryBuffer(size_t line_width, size_t height)
-    : m_line_width(line_width), m_data(height)
+class NullTerminal : public Terminal
 {
-}
+public:
+    NullTerminal(TerminalData& data) :
+        Terminal(1, 1, data)
+    {}
 
-HistoryBuffer::Entry HistoryBuffer::get_char(size_t x, size_t y) const
-{
-    if (full())
-    {
-        assert_msg(y < m_data.size() && x < m_data[0].size(), "Invalid access of history buffer %p at (%zd, %zd) !", this, x, y);
+private:
+    virtual void move_cursor(size_t, size_t) override {}
+    virtual void beep(size_t) override {}
+    virtual void putchar(size_t, size_t, TermEntry) override {}
+    virtual void clear_line(size_t, graphics::Color) override {}
+    virtual void draw_impl() override {};
+};
 
-        return m_data[(m_front + y) % m_data.size()][x];
-    }
-    else
-    {
-        assert_msg(y < m_data.size() && x < m_data[0].size(), "Invalid access of history buffer %p at (%zd, %zd) with m_front %zd !", this, x, y, m_front);
-        return m_data[y][x];
-    }
-}
-
-void HistoryBuffer::add(const std::vector<Entry>& line)
-{
-    m_data[m_front++] = line;
-
-    if (m_front == m_data.size())
-    {
-        m_front = 0;
-        m_full = true;
-    }
-}
+#endif // NULLTERM_HPP

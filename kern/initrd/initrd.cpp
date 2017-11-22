@@ -26,6 +26,7 @@ SOFTWARE.
 #include "initrd/initrd.hpp"
 
 #include "utils/logging.hpp"
+#include "utils/memutils.hpp"
 #include "fs/tar.hpp"
 #include "drivers/diskinterface.hpp"
 
@@ -35,7 +36,7 @@ bool install_initrd()
     if (initrd_disk)
     {
 
-        std::vector<uint8_t> file(DiskInterface::info(*initrd_disk).disk_size);
+        static std::vector<uint8_t> file(DiskInterface::info(*initrd_disk).disk_size);
         if (DiskInterface::read(*initrd_disk, 0, file.size()/ DiskInterface::info(*initrd_disk).sector_size, file.data()))
         {
             static tar::TarFS fs(file);
@@ -43,15 +44,6 @@ bool install_initrd()
             if (vfs::mount(std::make_shared<tar::tar_node>(root), "/initrd"))
             {
                 log(Info, "Mounted initrd\n");
-                auto file = vfs::find("/initrd/test.txt");
-                if (file)
-                {
-                    std::vector<uint8_t> vec(file->size());
-                    file->read(vec.data(), vec.size());
-                    vec.emplace_back('\0');
-
-                    kprintf("%s\n", vec.data());
-                }
                 return true;
             }
         }

@@ -61,7 +61,7 @@ struct Color
 
 inline bool operator== (const Color& rhs, const Color& lhs)
 {
-    return rhs.r == lhs.r && rhs.g == lhs.g && rhs.b == lhs.b && rhs.a == lhs.a;
+    return rhs.rgba() == lhs.rgba();
 }
 
 inline bool operator!= (const Color& rhs, const Color& lhs)

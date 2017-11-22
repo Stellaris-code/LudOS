@@ -29,7 +29,7 @@ SOFTWARE.
 
 #ifndef assert
 #if  defined(NDEBUG) || true
-#define assert(cond) impl_assert(cond, #cond, __FILE__, __LINE__, __FUNCTION__)
+#define assert(cond) impl_assert(!!(cond), #cond, __FILE__, __LINE__, __FUNCTION__)
 #else
 #define assert(cond)
 #endif
@@ -37,7 +37,7 @@ SOFTWARE.
 
 #ifndef assert_mesg
 #if defined(NDEBUG) || true
-#define assert_msg(cond, fmt, ...) impl_assert_msg(cond, #cond, __FILE__, __LINE__, __FUNCTION__, fmt, ##__VA_ARGS__);
+#define assert_msg(cond, fmt, ...) impl_assert_msg(!!(cond), #cond, __FILE__, __LINE__, __FUNCTION__, fmt, ##__VA_ARGS__);
 #else
 #define assert_msg(cond, fmt, ...)
 #endif

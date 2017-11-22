@@ -61,8 +61,7 @@ void draw_to_display_naive(const Screen &screen)
 void draw_to_display_32rgb_nopad(const Screen &screen)
 {
     assert(screen.width()*screen.height() >= current_video_mode().height*current_video_mode().width);
-    while ((inb(0x3DA) & 0x08));
-    while (!(inb(0x3DA) & 0x08));
+
     __builtin_prefetch(screen.data(), 0, 0);
 
     aligned_memcpy(reinterpret_cast<void*>(current_video_mode().framebuffer_addr), screen.data(),

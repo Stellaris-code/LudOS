@@ -1,7 +1,7 @@
 /*
-Terminal.cpp
+terminal.cpp
 
-Copyright (c) 23 Yann BOUCHER (yann)
+Copyright (c) 16 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,40 +22,24 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
+
 #include "terminal.hpp"
 
-#include <string.h>
 #include <ctype.h>
-#include <string.hpp>
+
+#include "nullterm.hpp"
 
 #include "utils/logging.hpp"
 
-#include "io.hpp"
-#include "halt.hpp"
+std::unique_ptr<Terminal> current_term;
+std::unique_ptr<TerminalData> current_termdata;
 
-std::unique_ptr<Terminal> current_term { nullptr };
+// TODO : editing line wrapping
 
-Terminal::Terminal(size_t iwidth, size_t iheight, size_t imax_history)
-    : _width(iwidth), _height(iheight), max_history(imax_history),
-      history(_width, height()*max_history)
+Terminal::Terminal(size_t iwidth, size_t iheight, TerminalData &data)
+    : m_width(iwidth), m_height(iheight), m_data(data)
 {
-    putchar_callback = [](size_t, size_t, char32_t, TermEntry){};
-    redraw_callback = []{};
-    push_color(TermEntry{0xaaaaaa, 0});
-    cur_line.resize(width());
 }
-
-
-void Terminal::put_entry_at(char32_t c, TermEntry color, size_t x, size_t y)
-{
-    check_pos();
-    set_entry_at(c, color, x, y);
-    if (y == terminal_row)
-    {
-        cur_line[x] = {c, color};
-    }
-}
-
 
 void Terminal::put_char(char32_t c)
 {
@@ -65,55 +49,50 @@ void Terminal::put_char(char32_t c)
     }
     else if (c == '\r')
     {
-        terminal_column = 0;
+        m_cursor_x = 0;
     }
     else if (c == '\b')
     {
-        if (terminal_column == 0)
+        if (m_cursor_x > 0)
         {
-            if (terminal_row > 0)
-            {
-                //--terminal_row;
-            }
-        }
-        else
-        {
-            --terminal_column;
-        }
+            --m_cursor_x;
 
-        put_entry_at(' ', color(), terminal_column, terminal_row);
-
-        check_pos();
+            check_pos();
+            set_entry_at({' ', m_data.color()}, m_cursor_x, m_cursor_y);
+            m_cur_line.pop_back();
+        }
     }
     else if (c == '\t')
     {
-        terminal_column += 4;
+        for (size_t i { 0 }; i < 4; ++i)
+        {
+            put_char(' ');
+        }
     }
     else if (c == '\a')
     {
-        if (beep_callback)
-        {
-            beep_callback(200);
-        }
+        beep(200);
     }
-    else if (isprint(c))
+    else
     {
-        put_entry_at(c, color(), terminal_column, terminal_row);
-        ++terminal_column;
+        check_pos();
+        set_entry_at({c, m_data.color()}, m_cursor_x, m_cursor_y);
+        m_cur_line.push_back({c, m_data.color()});
+        ++m_cursor_x;
     }
 
     check_pos();
 }
 
-
 void Terminal::write(const char *data, size_t size)
 {
     for (size_t i = 0; i < size; i++)
     {
-        decoder.feed(data[i]);
-        if (decoder.ready())
+        m_decoder.feed(data[i]);
+        if (m_decoder.ready())
         {
-            put_char(decoder.spit());
+            char32_t c = m_decoder.spit();
+            put_char(c);
         }
     }
 }
@@ -124,183 +103,150 @@ void Terminal::write_string(const char *data)
     write(data, strlen(data));
 }
 
-
 void Terminal::clear()
 {
-    clear(color());
+    clear(m_data.color());
 }
 
-void Terminal::clear(TermEntry color)
+void Terminal::clear(ColorPair color)
 {
-    history.clear();
+    m_cursor_x = m_cursor_y = 0;
+    m_current_history_page = 0;
+    m_cur_line.clear();
+    m_decoder.reset();
 
-    for (size_t i { 0 }; i < width(); ++i)
+    for (size_t i { 0 }; i < true_height(); ++i)
     {
-        for (size_t j { 0 }; j < height()+title_height; ++j)
-        {
-            set_entry_at(' ', color, i, j, true);
-        }
+        clear_line(i, color.bg);
     }
 
-    for (auto& el : cur_line)
-    {
-        el = {' ', color};
-    }
-
-    redraw();
+    draw();
 }
-
 
 void Terminal::scroll_up()
 {
-    scroll_history(-1);
+    scroll_history(+1);
 }
 
-
-void Terminal::push_color(TermEntry color)
+void Terminal::scroll_bottom()
 {
-    color_stack.push(color);
-}
-
-
-void Terminal::pop_color()
-{
-    color_stack.pop();
+    show_history(m_data.lines() - height()+1);
+    m_cursor_y = m_data.lines() - height()+1;
+    check_pos();
 }
 
 
 void Terminal::show_history(int page)
 {
-    if (page < 0)
+    if (m_scrolling)
     {
-        if (beep_callback && enabled)
+        if (page < 0) page = 0;
+
+        if (static_cast<size_t>(page) > m_data.lines() - height()+1)
         {
-            //beep_callback(200);
+            page = m_data.lines() - height()+1; // avoir un plafond, une limite
         }
-        page = 0;
-    }
 
-    if (static_cast<size_t>(page) > history.size() - height())
-    {
-        if (beep_callback && enabled)
+        m_current_history_page = page;
+
+        auto screen = m_data.get_screen(width(), height(), page);
+
+        for (size_t i { 0 }; i < screen.size(); ++i)
         {
-            //            beep_callback(200);
-        }
-        page = history.size() - height(); // avoir un plafond, une limite
-
-    }
-
-    current_history_page = page;
-
-    for (size_t i { 0 }; i < height()-1; ++i)
-    {
-        int index = history.size() - (height()-i) - page;
-        if (index >= 0)
-        {
-            for (size_t j { 0 }; j < width(); ++j)
+            clear_line(i + m_data.title_height, m_data.color().bg);
+            for (size_t j { 0 }; j < screen[i].size(); ++j)
             {
-                set_entry_at(history.get_char(j, index).c, history.get_char(j, index).color, j, i);
+                set_entry_at(screen[i][j], j, i);
             }
         }
+
+        clear_line(true_height()-1, m_data.color().bg);
     }
-
-    redraw();
 }
 
-TermEntry Terminal::color() const
+size_t Terminal::current_history() const
 {
-    return color_stack.top();
+    return m_current_history_page;
 }
 
-void Terminal::set_title(std::string str, TermEntry color)
+void Terminal::scroll_history(int scroll)
 {
+    show_history(current_history()+scroll);
+    draw();
+}
+
+void Terminal::set_title(std::u32string str, ColorPair color)
+{
+    m_data.title_str = str;
+
     if (str.size() >= width())
     {
         str.resize(width());
     }
 
-    text_color = color;
-
-    title_text = str;
+    m_data.title_color = color;
 
     size_t offset = width()/2 - str.size()/2;
 
-    for (size_t j { 0 }; j < title_height; ++j)
+    for (size_t j { 0 }; j < m_data.title_height; ++j)
     {
-        for (size_t i { 0 }; i < width(); ++i)
-        {
-            set_entry_at(' ', color, i, j, true);
-        }
+        clear_line(j, color.bg);
     }
 
     for (size_t i { 0 }; i < str.size(); ++i)
     {
-        set_entry_at(str[i], color, offset+i, 0, true);
+        set_entry_at({str[i], color}, offset+i, 0, true);
     }
 
-    redraw();
+    draw();
 }
 
-void Terminal::set_title(std::string str)
+void Terminal::set_title(std::u32string str)
 {
-    set_title(str, color());
+    set_title(str, m_data.color());
 }
 
-void Terminal::redraw()
+void Terminal::set_entry_at(TermEntry entry, size_t x, size_t y, bool absolute)
 {
-    redraw_callback();
-}
-
-void Terminal::set_entry_at(char32_t c, TermEntry color, size_t x, size_t y, bool absolute)
-{
-    if (enabled)
+    if (m_enabled)
     {
-        if (!absolute)
-        {
-            putchar_callback(x, y + title_height, c, color);
-        }
-        else
-        {
-            putchar_callback(x, y, c, color);
-        }
+        putchar(x, y + (absolute ? 0 : m_data.title_height), entry);
+        m_dirty = true;
     }
 }
-
 
 void Terminal::new_line()
 {
     add_line_to_history();
-    for (size_t i { 0 }; i < width(); ++i)
+
+    check_pos();
+
+    for (size_t i { 0 }; m_cursor_x + i < width(); ++i)
     {
-        set_entry_at(' ', color(), i, terminal_row);
-        cur_line[i] = {' ', color()};
+        set_entry_at({' ', m_data.color()}, m_cursor_x + i, m_cursor_y);
     }
+    m_cur_line.clear();
 
-    terminal_column = 0;
-    ++terminal_row;
+    m_cursor_x = 0;
+    ++m_cursor_y;
 
-    redraw();
+    check_pos();
+
+    scroll_up();
+
+    force_redraw();
 }
-
 
 void Terminal::add_line_to_history()
 {
-    history.add(cur_line);
+    m_data.add_line(m_cur_line);
 }
-
 
 void Terminal::check_pos()
 {
-    if (terminal_column >= width())
+    if (m_cursor_y >= height())
     {
-        terminal_column = terminal_column%width();
-        add_line_to_history();
-        ++terminal_row;
-    }
-    if (terminal_row >= height())
-    {
-        scroll_up();
-        terminal_row = height()-1;
+        m_cursor_y = height()-1;
     }
 
     update_cursor();
@@ -308,20 +254,102 @@ void Terminal::check_pos()
 
 void Terminal::update_cursor()
 {
-    if (move_cursor_callback && enabled)
+    move_cursor(m_cursor_x, m_cursor_y + m_data.title_height);
+}
+
+void Terminal::reset()
+{
+    clear({0xaaaaaa, 0xaaaaaa});
+
+    m_cur_line.clear();
+}
+
+void Terminal::resize(size_t iwidth, size_t iheight)
+{
+    assert(iwidth && iheight);
+
+    reset();
+
+    m_width = iwidth;
+    m_height = iheight;
+
+    set_title(m_data.title_str, m_data.title_color);
+
+    if (m_cursor_x >= width())
     {
-        move_cursor_callback(terminal_column, terminal_row+title_height, width());
+        m_cursor_x = width()-1;
+    }
+    check_pos();
+
+    force_redraw();
+}
+
+size_t Terminal::width() const
+{
+    return m_width;
+}
+
+size_t Terminal::height() const
+{
+    return m_height - m_data.title_height;
+}
+
+size_t Terminal::true_height() const
+{
+    return m_height;
+}
+
+void Terminal::force_redraw()
+{
+    show_history(m_current_history_page);
+
+    force_redraw_input();
+}
+
+void Terminal::force_redraw_input()
+{
+    clear_line(m_cursor_y + m_data.title_height, m_data.color().bg);
+
+    for (size_t i { 0 }; i < m_cur_line.size(); ++i)
+    {
+        set_entry_at(m_cur_line[i], i, m_cursor_y);
+    }
+
+    draw();
+}
+
+void Terminal::draw()
+{
+    if (m_enabled && m_dirty)
+    {
+        m_dirty = false;
+        draw_impl();
     }
 }
 
-void setup_term(size_t width, size_t height, size_t history)
+Terminal& term()
 {
-    current_term = std::make_unique<Terminal>(width, height, history);
+    if (current_term == nullptr)
+    {
+        static TerminalData dummy(1);
+        create_term<NullTerminal>(dummy);
+    }
+
+    assert(current_term);
+    return *current_term;
 }
 
-Terminal &term()
+TerminalData &term_data()
 {
-    assert(current_term != nullptr);
+    if (!current_termdata)
+    {
+        current_termdata = std::make_unique<TerminalData>(1000);
+    }
 
-    return *current_term;
+    return *current_termdata;
+}
+
+void reset_term()
+{
+    create_term<NullTerminal>(term_data());
 }

@@ -548,3 +548,9 @@ double pw10(int x)
         y *= y;
         return(y*ex);
 }
+
+double
+ldexp(const double x, const long y)
+{
+  return x * pow(2, y);
+}

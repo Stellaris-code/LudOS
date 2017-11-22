@@ -35,6 +35,7 @@ SOFTWARE.
 #include "utils/stlutils.hpp"
 #include "elf/elf.hpp"
 #include "i686/pc/mem/meminfo.hpp"
+#include "i686/mem/paging.hpp"
 #include "utils/virt_machine_detect.hpp"
 #include "halt.hpp"
 
@@ -77,6 +78,16 @@ void parse_info()
         if (strncmp(reinterpret_cast<char*>(phys(info->boot_loader_name)), "GRUB", 4) != 0 && running_qemu)
         {
             running_qemu_kernel = true;
+        }
+    }
+
+    if (CHECK_FLAG (info->flags, 3))
+    {
+        multiboot_module_t * mod { reinterpret_cast<multiboot_module_t *>(phys(info->mods_addr)) };
+
+        for (size_t i = 0; i < info->mods_count; i++, mod++)
+        {
+            Paging::mark_as_used(mod->mod_start, mod->mod_end-mod->mod_start);
         }
     }
 }

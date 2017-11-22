@@ -41,10 +41,8 @@ bool x86_flag = false;
 void init_emu_mem()
 {
     emu_mem = reinterpret_cast<uint8_t*>(kmalloc(0x100000));
-    for (size_t i { 0 }; i < 0x100000; ++i)
-    {
-        emu_mem[i] = *reinterpret_cast<uint8_t*>(phys(i));
-    }
+
+    memcpy(emu_mem, reinterpret_cast<uint8_t*>(0), 0x100000);
 }
 
 unsigned alternate_vm_memio(x86emu_t *emu, uint32_t addr, uint32_t *val, uint32_t type)

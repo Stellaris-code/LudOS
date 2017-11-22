@@ -27,6 +27,8 @@ SOFTWARE.
 
 #include <array.hpp>
 
+#include "utils/logging.hpp"
+
 const std::array<uint8_t, 256> UTF8TailLengths =
 {
     {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,

@@ -1,7 +1,7 @@
 /*
-termio.hpp
+image_loader.hpp
 
-Copyright (c) 13 Yann BOUCHER (yann)
+Copyright (c) 21 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,30 +22,19 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef TERMIO_HPP
-#define TERMIO_HPP
+#ifndef IMAGE_LOADER_HPP
+#define IMAGE_LOADER_HPP
 
-#include <stdint.h>
+#include "bitmap.hpp"
 
-#include "io.hpp"
-#include "i686/pc/bios/bda.hpp"
+#include <optional.hpp>
 
-inline void move_cursor(size_t x, size_t y, size_t width)
+namespace graphics
 {
 
-    const size_t index = y * width + x;
-
-    const uint16_t port_low = BDA::video_io_port();
-    const uint16_t port_high = port_low + 1;
-
-    // cursor LOW port to vga INDEX register
-    outb(port_low, 0x0F);
-    outb(port_high, static_cast<uint8_t>(index&0xFF));
-
-    // cursor HIGH port to vga INDEX register
-    outb(port_low, 0x0E);
-    outb(port_high, static_cast<uint8_t>((index>>8)&0xFF));
+[[nodiscard]]
+std::optional<Bitmap> load_image(const std::string& path);
 
 }
 
-#endif // TERMIO_HPP
+#endif // IMAGE_LOADER_HPP

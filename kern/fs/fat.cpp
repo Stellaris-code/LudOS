@@ -211,15 +211,14 @@ std::vector<fat::fat_file> fat::detail::read_cluster_entries(size_t first_sector
                 if (std::string(filename, 8) == ".       ")
                 {
                     // Current dir
+                    entries.back().m_name = ".";
                 }
                 else if (std::string(filename, 8) == "..      ")
                 {
                     // Parent dir
+                    entries.back().m_name = "..";
                 }
-                else
-                {
-                    entries.back().m_is_dir = true;
-                }
+                entries.back().m_is_dir = true;
             }
         }
     } while ((++entry_idx) * sizeof(Entry) < data.size() && cluster_entries[entry_idx].filename[0] != '\0');

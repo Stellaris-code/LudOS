@@ -1,7 +1,7 @@
 /*
-text.hpp
+termio.hpp
 
-Copyright (c) 11 Yann BOUCHER (yann)
+Copyright (c) 13 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,18 +22,30 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef TEXT_HPP
-#define TEXT_HPP
+#ifndef TERMIO_HPP
+#define TERMIO_HPP
 
-#include "graphics/fonts/font.hpp"
+#include <stdint.h>
 
-class Terminal;
+#include "io.hpp"
+#include "i686/pc/bios/bda.hpp"
 
-namespace graphics
+inline void termio_move_cursor(size_t x, size_t y, size_t width)
 {
-class Screen;
 
-void setup_terminal(const Font& font, Screen& scr);
+    const size_t index = y * width + x;
+
+    const uint16_t port_low = BDA::video_io_port();
+    const uint16_t port_high = port_low + 1;
+
+    // cursor LOW port to vga INDEX register
+    outb(port_low, 0x0F);
+    outb(port_high, static_cast<uint8_t>(index&0xFF));
+
+    // cursor HIGH port to vga INDEX register
+    outb(port_low, 0x0E);
+    outb(port_high, static_cast<uint8_t>((index>>8)&0xFF));
+
 }
 
-#endif // TEXT_HPP
+#endif // TERMIO_HPP

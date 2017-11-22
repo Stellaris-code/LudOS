@@ -53,8 +53,8 @@ void putchar(char c)
 void putcharw(char32_t c)
 {
 #ifdef __is_libk
-        term().put_char(c);
-        if (putc_serial) serial::debug::write("%c", c);
+    term().put_char(c);
+    if (putc_serial) serial::debug::write("%c", c);
 #else
     // TODO : do !
 #error Not implemented yet

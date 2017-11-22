@@ -32,7 +32,7 @@ SOFTWARE.
 
 #include "utils/logging.hpp"
 
-struct [[gnu::packed]] registers
+typedef struct __attribute__((packed))
 {
     // Pushed by the interrupt request/routine handler
     uint32_t gs;
@@ -58,30 +58,30 @@ struct [[gnu::packed]] registers
     uint32_t eflags;
     uint32_t esp;
     uint32_t ss;
-};
+} registers;
 
 inline uint32_t cr0()
 {
     uint32_t out;
-    asm volatile("mov %%cr0, %[var]" : [var] "=r" (out));
+    __asm__ __volatile__("mov %%cr0, %[var]" : [var] "=r" (out));
     return out;
 }
 inline uint32_t cr2()
 {
     uint32_t out;
-    asm volatile("mov %%cr2, %[var]" : [var] "=r" (out));
+    __asm__ __volatile__("mov %%cr2, %[var]" : [var] "=r" (out));
     return out;
 }
 inline uint32_t cr3()
 {
     uint32_t out;
-    asm volatile("mov %%cr3, %[var]" : [var] "=r" (out));
+    __asm__ __volatile__("mov %%cr3, %[var]" : [var] "=r" (out));
     return out;
 }
 inline uint32_t cr4()
 {
     uint32_t out;
-    asm volatile("mov %%cr4, %[var]" : [var] "=r" (out));
+    __asm__ __volatile__("mov %%cr4, %[var]" : [var] "=r" (out));
     return out;
 }
 

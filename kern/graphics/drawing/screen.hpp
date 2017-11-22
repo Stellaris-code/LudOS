@@ -38,46 +38,56 @@ namespace graphics
 class Screen
 {
 public:
-    Screen(size_t width, size_t height, Color color = color_black)
+    Screen(size_t width, size_t height, Color* buffer = nullptr, Color color = color_black)
     {
-        resize(width, height, color);
+        resize(width, height, buffer, color);
+    }
+
+    ~Screen()
+    {
+        if (m_allocated)
+        {
+            kfree(m_data);
+        }
     }
 
 public:
-    void resize(size_t width, size_t height, Color color = color_black)
-    {
-        m_width = width;
-        m_height = height;
-        m_data.resize(m_width * m_height);
-        memsetl(data(), color.rgb(), width*height*4);
-    }
+    void resize(size_t width, size_t height, Color* buffer = nullptr, Color color = color_black);
 
     const Color& operator[](const PointU& point) const
     {
-        assert(point.x < m_width && point.y < m_height);
+        //assert(point.x < m_width && point.y < m_height);
 
         return m_data[point.y * width() + point.x];
     }
 
     Color& operator[](const PointU& point)
     {
-        assert(point.x < m_width && point.y < m_height);
+        //assert(point.x < m_width && point.y < m_height);
 
         return m_data[point.y * width() + point.x];
+    }
+
+    bool allocated() const
+    {
+        return m_allocated;
     }
 
     size_t width() const { return m_width; }
     size_t height() const { return m_height; }
 
-    Color* data() { return m_data.data(); }
-    const Color* data() const { return m_data.data(); }
+    Color* data() { return m_data; }
+    const Color* data() const { return m_data; }
 
-    void blit(const Bitmap& bitmap, const PointU& pos, bool redraw = false);
+    void blit(const Bitmap& bitmap, const PointU& pos);
+    void blit(const Bitmap &bitmap, const PointU &pos, const Color& white, const Color& transparent);
 
 private:
     size_t m_width;
     size_t m_height;
-    std::vector<Color> m_data;
+
+    Color* m_data;
+    bool m_allocated { false };
 };
 
 }

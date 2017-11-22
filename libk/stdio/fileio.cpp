@@ -53,9 +53,16 @@ int fprintf(FILE * stream, const char * format, ...)
     tfp_format(nullptr, [](void*, char c){ fprintf_data.emplace_back(c); }, format, va);
     va_end(va);
 
-    node.get().write(fprintf_data.data(), fprintf_data.size());
+    size_t size = node.get().write(fprintf_data.data(), fprintf_data.size());
+    if (!size)
+    {
+        errno = EIO;
+        return -1;
+    }
 
     fprintf_data.clear();
+
+    return size;
 }
 
 FILE * fopen(const char * filename, const char * mode)

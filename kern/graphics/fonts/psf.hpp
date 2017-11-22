@@ -35,6 +35,8 @@ namespace graphics::psf
 class PSFFont : public Font
 {
 public:
+    PSFFont();
+
     [[nodiscard]] virtual bool load(const std::string& path) override;
 
     virtual size_t glyph_width() const override { return m_hdr->width; }

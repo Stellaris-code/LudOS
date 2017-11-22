@@ -30,6 +30,7 @@ SOFTWARE.
 
 #include "utils/defs.hpp"
 #include "utils/demangle.hpp"
+#include "utils/nop.hpp"
 #include "stack-trace.hpp"
 #include "elf/symbol_table.hpp"
 
@@ -48,24 +49,25 @@ const registers* panic_regs = nullptr;
 
 void print_stack_symbols()
 {
-    puts("Stack trace :");
-
     auto trace = trace_stack(0);
 
-    for (size_t i { 0 }; i < trace.size(); ++i)
+    // Discard the first function call to kmain, saves space
+    for (size_t i { 0 }; i < trace.size()-1; ++i)
     {
         if (auto fun = elf::kernel_symbol_table.get_function(trace[i]); fun)
         {
             auto symbol = *fun;
-            kprintf("#%d   0x%x in %s\n", i+1, trace[i], demangle(symbol.name).c_str());
+            kprintf("#%d   0x%x in %s", i+1, trace[i], demangle(symbol.name).c_str());
         }
         else
         {
-            kprintf("#%d    0x%x in ????\n", i+1, trace[i]);
+            kprintf("#%d    0x%x in ????", i+1, trace[i]);
+        }
+        if (i < trace.size()-2)
+        {
+            kprintf("\n");
         }
     }
-
-    kprintf("\n");
 }
 
 void print_disassembly()
@@ -104,14 +106,17 @@ void panic(const char *fmt, ...)
 
     if (!panic_regs) panic_regs = get_registers();
 
-    term().push_color({0xffffff, 0xaa0000});
+    term_data().clear();
+    term_data().push_color({0xffffff, 0xaa0000});
+
     term().clear();
+    term().set_title(U"KERNEL PANIC...", {0xaa0000, 0xffffff});
+    term().disable();
 
     Speaker::beep(300);
 
     putc_serial = true;
 
-    term().set_title("KERNEL PANIC", {0xaa0000, 0xffffff});
     puts("\nKERNEL PANIC : ");
 
     {
@@ -132,6 +137,15 @@ void panic(const char *fmt, ...)
     kprintf("\n");
 
     print_stack_symbols();
+
+    term().enable();
+    term().scroll_bottom();
+    term().draw();
+
+    int i = 10000;
+    while (--i) nop();
+
+    Speaker::stop();
 
     halt();
 }

@@ -85,16 +85,12 @@ public:
 
     bool operator [](size_t bitnum) const
     {
-        assert(bitnum < Size);
-
         const size_t bytenum = bitnum / (sizeof(IntType)*CHAR_BIT);
         bitnum = bitnum % (sizeof(IntType)*CHAR_BIT);
         return (m_vals[bytenum] & (IntType(1) << bitnum)) != 0;
     }
     bitref<IntType> operator[](size_t bitnum)
     {
-        assert(bitnum < Size);
-
         const size_t bytenum = bitnum / (sizeof(IntType)*CHAR_BIT);
         bitnum = bitnum % (sizeof(IntType)*CHAR_BIT);
         IntType mask = IntType(1) << bitnum;

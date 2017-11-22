@@ -25,7 +25,6 @@ SOFTWARE.
 
 #include "initrd/initrd.hpp"
 
-#include "utils/virt_machine_detect.hpp"
 #include "i686/pc/multiboot/multiboot_kern.hpp"
 #include "drivers/diskinterface.hpp"
 #include "fs/vfs.hpp"

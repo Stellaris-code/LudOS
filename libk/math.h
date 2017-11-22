@@ -19,7 +19,7 @@ extern "C"
 extern double fabs(), floor(double), ceil(double), fmod(double);
 extern double sqrt(double), exp(double), exp2(double), math_log(double), log10(double ), pow(double, double), pw10(double);
 
-extern double sin(double), cos(), tan(), asin(double), acos(), atan(double);
+extern double sin(double), cos(), tan(), asin(double), acos(), atan(double), ldexp(const double, const long);
 
 struct complex {     /* structure for complex numbers */
         double rl;

@@ -1,7 +1,7 @@
 /*
-text.cpp
+textterminal.hpp
 
-Copyright (c) 11 Yann BOUCHER (yann)
+Copyright (c) 17 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,43 +22,25 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-
-#include "text.hpp"
+#ifndef TEXTTERMINAL_HPP
+#define TEXTTERMINAL_HPP
 
 #include "terminal/terminal.hpp"
-#include "graphics/drawing/screen.hpp"
-#include "graphics/drawing/bitmap.hpp"
-#include "graphics/drawing/display_draw.hpp"
-#include "graphics/video.hpp"
 
-namespace graphics
+class TextTerminal : public Terminal
 {
+public:
+    TextTerminal(uintptr_t fb, size_t iwidth, size_t iheight, TerminalData &data);
 
-void setup_terminal(const Font &font, Screen& scr)
-{
-    assert(font.glyph_height() && font.glyph_width());
+private:
+    virtual void move_cursor(size_t x, size_t y) override;
+    virtual void beep(size_t ms) override;
+    virtual void putchar(size_t x, size_t y, TermEntry entry) override;
+    virtual void clear_line(size_t y, graphics::Color color) override;
+    virtual void draw_impl() override;
 
-    size_t text_cols  = current_video_mode().width / font.glyph_width();
-    size_t text_lines = current_video_mode().height / font.glyph_height();
+private:
+    uintptr_t m_fb;
+};
 
-    // TODO : do
-    //setup_term(text_cols, text_lines, term().history_lines());
-
-    term().putchar_callback = [text_cols, text_lines, &font, &scr](size_t x, size_t y, char32_t c, TermEntry color)
-    {
-        if (x >= text_cols || y >= text_lines) return;
-
-        auto bitmap = font.get(c).bitmap;
-        bitmap.color_set_white(color.fg);
-        bitmap.color_set_transparent(color.bg);
-
-        scr.blit(bitmap, {x*font.glyph_width(), y*font.glyph_height()});
-    };
-
-    term().redraw_callback = [&scr]
-    {
-        graphics::draw_to_display(scr);
-    };
-}
-
-}
+#endif // TEXTTERMINAL_HPP

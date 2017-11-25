@@ -123,8 +123,6 @@ uint32_t fat::detail::next_cluster(size_t cluster, const fat::FATInfo &info)
 
 fat::fat_file fat::root_dir(const fat::FATInfo &info)
 {
-    std::vector<fat_file> entries;
-
     size_t first_sector;
 
     if (info.type == FATType::FAT32)
@@ -136,20 +134,18 @@ fat::fat_file fat::root_dir(const fat::FATInfo &info)
         first_sector = info.first_data_sector - info.root_dir_sectors;
     }
 
-    entries = detail::read_cluster_entries(first_sector, info);
-
-    fat_file root_dir;
+    fat_file root_dir { nullptr };
     root_dir.info = info;
     root_dir.is_root = true;
-    root_dir.fat_children = entries;
     root_dir.entry_first_sector = first_sector;
     root_dir.m_name = "";
     root_dir.m_is_dir = true;
+    root_dir.fat_children = detail::read_cluster_entries(first_sector, &root_dir, info);
 
     return root_dir;
 }
 
-std::vector<fat::fat_file> fat::detail::read_cluster_entries(size_t first_sector, const fat::FATInfo &info)
+std::vector<fat::fat_file> fat::detail::read_cluster_entries(size_t first_sector, fat_file* parent, const fat::FATInfo &info)
 {
     std::vector<uint8_t> data(info.bootsector.bytes_per_sector * info.bootsector.sectors_per_cluster);
     if (!DiskInterface::read(info.drive, first_sector + info.base_sector, info.bootsector.sectors_per_cluster, data.data()))
@@ -195,7 +191,17 @@ std::vector<fat::fat_file> fat::detail::read_cluster_entries(size_t first_sector
         }
         else
         {
-            entries.push_back(detail::entry_to_vfs_node(*entry, info, longname_buf));
+            const char* filename = reinterpret_cast<const char*>(entry->filename);
+            if (entry->attributes & ATTR_DIRECTORY)
+            {
+                if (std::string(filename, 8) == ".       " ||
+                        std::string(filename, 8) == "..      ")
+                {
+                    continue;
+                }
+            }
+
+            entries.push_back(detail::entry_to_vfs_node(*entry, parent, info, longname_buf));
             entries.back().entry_first_sector = first_sector;
             entries.back().entry_idx = entry_idx;
 
@@ -206,18 +212,6 @@ std::vector<fat::fat_file> fat::detail::read_cluster_entries(size_t first_sector
                 size_t cluster = entry->low_cluster_bits | (entry->high_cluster_bits << 16);
                 entries.back().dir_cluster = cluster;
 
-                const char* filename = reinterpret_cast<const char*>(entry->filename);
-
-                if (std::string(filename, 8) == ".       ")
-                {
-                    // Current dir
-                    entries.back().m_name = ".";
-                }
-                else if (std::string(filename, 8) == "..      ")
-                {
-                    // Parent dir
-                    entries.back().m_name = "..";
-                }
                 entries.back().m_is_dir = true;
             }
         }
@@ -288,9 +282,9 @@ std::vector<uint8_t> fat::detail::read(const fat::Entry &entry, const FATInfo &i
     }
 }
 
-fat::fat_file fat::detail::entry_to_vfs_node(const fat::Entry &entry, const FATInfo& info, const std::string& long_name)
+fat::fat_file fat::detail::entry_to_vfs_node(const fat::Entry &entry, fat_file* parent, const FATInfo& info, const std::string& long_name)
 {
-    fat_file node;
+    fat_file node { parent };
     if (!long_name.empty())
     {
         node.m_name = trim(long_name);

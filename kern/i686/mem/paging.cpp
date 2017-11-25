@@ -127,8 +127,12 @@ loop:
     }
 #endif
 
-    log_serial("OUT OF MEMORY !!!\n");
-    halt();
+    log_serial("Out of memory\n");
+//    for (size_t i { 0 }; i < mem_bitmap.array_size; ++i)
+//    {
+//        mem_bitmap[i] = false;
+//    }
+    panic("Out of memory !\n");
 
     return 0;
 }

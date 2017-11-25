@@ -31,34 +31,34 @@ SOFTWARE.
 
 #include "utils/logging.hpp"
 
+#define STBIR_MALLOC(size, context) kmalloc(size)
+#define STBIR_FREE(ptr, context) kfree(ptr)
+#define STB_IMAGE_RESIZE_IMPLEMENTATION
+#include "stb/stb_image_resize.h"
+
 namespace graphics
 {
 Bitmap::Bitmap(size_t width, size_t height, Color color)
 {
-    resize(width, height, color);
+    resize(width, height, false, color);
 }
 
-//Bitmap::Bitmap(const Bitmap &other)
-//{
-//    m_width = other.width();
-//    m_height = other.height();
-
-//    if (m_data) kfree(m_data);
-//    m_data = reinterpret_cast<Color*>(kmalloc(m_width * m_height * sizeof(Color)));
-//    memcpyl(m_data, other.data(), m_width*m_height*sizeof(Color));
-//}
-
-Bitmap::~Bitmap()
+void Bitmap::resize(size_t width, size_t height, bool keep_ratio, Color color)
 {
-    //kfree(m_data);
-}
+    if (!keep_ratio)
+    {
+        m_data.resize(width*height, color);
+    }
+    else
+    {
+        m_data.resize(width*height);
 
-void Bitmap::resize(size_t width, size_t height, Color color)
-{
+        stbir_resize_uint8(reinterpret_cast<uint8_t*>(m_data.data()), m_width, m_height, 0,
+                           reinterpret_cast<uint8_t*>(m_data.data()), width, height, 0, 4);
+    }
+
     m_width = width;
     m_height = height;
-
-    m_data.resize(width*height, color);
 }
 
 

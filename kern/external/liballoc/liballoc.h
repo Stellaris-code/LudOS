@@ -63,7 +63,7 @@ extern void* liballoc_alloc(size_t);
  */
 extern int liballoc_free(void*,size_t);
 
-#if defined DEBUG || defined INFO
+#if defined DEBUG || defined INFO || true
 void liballoc_dump();
 #endif
        

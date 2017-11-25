@@ -42,10 +42,8 @@ public:
 
     Bitmap(size_t width, size_t height, Color color = color_black);
 
-    ~Bitmap();
-
 public:
-    void resize(size_t width, size_t height, Color color = color_black);
+    void resize(size_t width, size_t height, bool keep_ratio = true, Color color = color_black);
 
     const Color &operator[](const PointU& point) const
     {

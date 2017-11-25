@@ -30,6 +30,8 @@ SOFTWARE.
 #include "nullterm.hpp"
 
 #include "utils/logging.hpp"
+#include "utils/messagebus.hpp"
+#include "unicode/utf32decoder.hpp"
 
 std::unique_ptr<Terminal> current_term;
 std::unique_ptr<TerminalData> current_termdata;
@@ -53,7 +55,7 @@ void Terminal::put_char(char32_t c)
     }
     else if (c == '\b')
     {
-        if (m_cursor_x > 0)
+        if (m_cursor_x > m_input_off)
         {
             --m_cursor_x;
 
@@ -82,6 +84,17 @@ void Terminal::put_char(char32_t c)
     }
 
     check_pos();
+}
+
+void Terminal::add_input(char32_t c)
+{
+    if (!m_line_is_input)
+    {
+        m_line_is_input = true;
+        m_input_off = m_cursor_x;
+    }
+    put_char(c);
+    force_redraw();
 }
 
 void Terminal::write(const char *data, size_t size)
@@ -217,15 +230,12 @@ void Terminal::set_entry_at(TermEntry entry, size_t x, size_t y, bool absolute)
 
 void Terminal::new_line()
 {
-    add_line_to_history();
+    if (!m_line_is_input)
+    {
+        add_line_to_history();
+    }
 
     check_pos();
-
-    for (size_t i { 0 }; m_cursor_x + i < width(); ++i)
-    {
-        set_entry_at({' ', m_data.color()}, m_cursor_x + i, m_cursor_y);
-    }
-    m_cur_line.clear();
 
     m_cursor_x = 0;
     ++m_cursor_y;
@@ -233,6 +243,25 @@ void Terminal::new_line()
     check_pos();
 
     scroll_up();
+
+    if (m_line_is_input)
+    {
+        m_line_is_input = false;
+        //put_char('\n');
+        TermInputEvent ev;
+        for (size_t i { m_input_off }; i < m_cur_line.size(); ++i)
+        {
+            ev.line += decode_utf32(m_cur_line[i].c);
+        }
+
+        MessageBus::send(ev);
+    }
+
+    for (size_t i { 0 }; m_cursor_x + i < width(); ++i)
+    {
+        set_entry_at({' ', m_data.color()}, m_cursor_x + i, m_cursor_y);
+    }
+    m_cur_line.clear();
 
     force_redraw();
 }

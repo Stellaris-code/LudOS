@@ -1,7 +1,7 @@
 /*
-meminfo.hpp
+shell.hpp
 
-Copyright (c) 31 Yann BOUCHER (yann)
+Copyright (c) 22 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,37 +22,60 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef PC_MEMINFO_HPP
-#define PC_MEMINFO_HPP
+#ifndef SHELL_HPP
+#define SHELL_HPP
 
-#include <stdint.h>
+#include <vector.hpp>
+#include <unordered_map.hpp>
+#include <string.hpp>
+#include <functional.hpp>
 
-struct multiboot_mmap_entry;
-typedef struct multiboot_mmap_entry multiboot_memory_map_t;
-struct multiboot_info;
-typedef struct multiboot_info multiboot_info_t;
-
-namespace multiboot
+class Shell
 {
-void parse_mem();
-}
-
-class Meminfo
-{
-    friend void multiboot::parse_mem();
+public:
+    using CommandCallback = std::function<int(const std::vector<std::string>)>;
+    struct Command
+    {
+        std::string cmd;
+        std::string description;
+        std::string help;
+        CommandCallback callback;
+    };
 
 public:
-    static size_t free_frames();
-    static multiboot_memory_map_t *largest_frame();
-    static multiboot_memory_map_t *frame(size_t idx);
+    struct
+    {
+        std::string prompt;
+    } params;
 
-    static size_t total_memory();
+public:
+    Shell();
 
-    static void init_paging_bitmap();
+    void register_command(const Command& command);
+
+    void run();
+
+    int command(const std::string& command);
+
+    PRINTF_FMT(2, 3)
+    void error(const char* fmt, ...);
+
+    std::vector<Command> commands();
+
+public:
+    std::string pwd { "/" };
 
 private:
-    static inline multiboot_mmap_entry *mmap_addr;
-    static inline const multiboot_info_t* info;
+    void show_prompt();
+    std::string read_input();
+    int process(const std::string& in);
+
+    std::string prompt() const;
+
+private:
+    std::unordered_map<std::string, Command> m_commands;
+    volatile bool m_waiting_input { true };
+    std::string m_input;
 };
 
-#endif // PC_MEMINFO_HPP
+#endif // SHELL_HPP

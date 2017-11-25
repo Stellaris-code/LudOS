@@ -36,7 +36,25 @@ SOFTWARE.
 namespace tar
 {
 
-struct tar_node;
+class TarFS;
+
+struct tar_node : public vfs::node
+{
+    tar_node(const TarFS& fs, vfs::node* parent)
+        : vfs::node(parent), m_fs(fs)
+    {}
+
+    virtual size_t read(void* buf, size_t bytes) const override;
+
+    virtual std::vector<std::shared_ptr<vfs::node>> readdir_impl() override;
+
+    virtual size_t size() const override { return m_size; }
+
+    const TarFS& m_fs;
+    const uint8_t* m_data_addr { nullptr };
+    size_t m_size { 0 };
+private:
+};
 
 class TarFS
 {
@@ -44,7 +62,7 @@ class TarFS
 public:
     TarFS(std::vector<uint8_t> file);
 
-    tar_node root_dir() const;
+    const tar_node& root_dir() const { return m_root_dir; }
 
 private:
     struct Header
@@ -89,47 +107,7 @@ private:
 
 private:
    std::vector<uint8_t> m_file;
-};
-
-struct tar_node : public vfs::node
-{
-    tar_node(const TarFS& fs)
-        : m_fs(fs)
-    {}
-
-    virtual size_t read(void* buf, size_t bytes) const override
-    {
-        if (is_dir())
-        {
-            return 0;
-        }
-
-        size_t amnt = std::min(bytes, size());
-        memcpy(buf, m_data_addr, amnt);
-
-        return amnt;
-    }
-
-    virtual std::vector<std::shared_ptr<vfs::node>> readdir_impl() override
-    {
-        if (!is_dir())
-        {
-            return {};
-        }
-
-        auto nodes = m_fs.read_dir(m_data_addr, size());
-        return map<tar_node, std::shared_ptr<node>>(nodes, [](const tar_node& file)->std::shared_ptr<node>
-        {
-            return std::make_shared<tar_node>(file);
-        });
-    }
-
-    virtual size_t size() const override { return m_size; }
-
-    const TarFS& m_fs;
-    const uint8_t* m_data_addr { nullptr };
-    size_t m_size { 0 };
-private:
+   mutable tar_node m_root_dir;
 };
 
 }

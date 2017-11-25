@@ -69,19 +69,12 @@ namespace tar
 {
 
 TarFS::TarFS(std::vector<uint8_t> file)
-    : m_file(file)
+    : m_file(file), m_root_dir(*this, nullptr)
 {
-}
-
-tar_node TarFS::root_dir() const
-{
-    tar_node root(*this);
-    root.m_is_dir = true;
-    root.m_name = "";
-    root.m_data_addr = m_file.data() + sizeof(Header);
-    root.m_size = m_file.size();
-
-    return root;
+    m_root_dir.m_is_dir = true;
+    m_root_dir.m_name = "";
+    m_root_dir.m_data_addr = m_file.data() + sizeof(Header);
+    m_root_dir.m_size = m_file.size();
 }
 
 std::optional<tar_node> TarFS::read_header(const Header *hdr) const
@@ -96,7 +89,7 @@ std::optional<tar_node> TarFS::read_header(const Header *hdr) const
         return {};
     }
 
-    tar_node node(*this);
+    tar_node node(*this, &m_root_dir);
 
     switch (hdr->typeflag)
     {
@@ -177,6 +170,33 @@ bool TarFS::check_sum(const TarFS::Header *hdr) const
         sum += reinterpret_cast<const uint8_t*>(&hdr_copy)[i];
     }
     return read_number(hdr->chksum) == sum;
+}
+
+size_t tar_node::read(void *buf, size_t bytes) const
+{
+    if (is_dir())
+    {
+        return 0;
+    }
+
+    size_t amnt = std::min(bytes, size());
+    memcpy(buf, m_data_addr, amnt);
+
+    return amnt;
+}
+
+std::vector<std::shared_ptr<vfs::node> > tar_node::readdir_impl()
+{
+    if (!is_dir())
+    {
+        return {};
+    }
+
+    auto nodes = m_fs.read_dir(m_data_addr, size());
+    return map<tar_node, std::shared_ptr<node>>(nodes, [](const tar_node& file)->std::shared_ptr<node>
+    {
+        return std::make_shared<tar_node>(file);
+    });
 }
 
 }

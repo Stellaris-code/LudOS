@@ -40,6 +40,11 @@ SOFTWARE.
 #include "terminaldata.hpp"
 #include "termentry.hpp"
 
+struct TermInputEvent
+{
+    std::string line;
+};
+
 class Terminal
 {
 public:
@@ -47,6 +52,8 @@ public:
 
 public:
     void put_char(char32_t c);
+
+    void add_input(char32_t c);
 
     void write(const char* data, size_t size);
     void write_string(const char* data);
@@ -111,6 +118,8 @@ private:
     bool m_enabled { true };
     mutable bool m_dirty { true };
     bool m_scrolling { true };
+    bool m_line_is_input { false };
+    size_t m_input_off { 0 };
 
     std::vector<TermEntry> m_cur_line;
 

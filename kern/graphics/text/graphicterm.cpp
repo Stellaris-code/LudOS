@@ -28,6 +28,8 @@ SOFTWARE.
 #include "graphics/drawing/display_draw.hpp"
 #include "graphics/drawing/bitmap.hpp"
 
+#include "time/timer.hpp"
+
 #ifdef ARCH_i686
 #include "i686/pc/devices/speaker.hpp"
 #endif
@@ -38,11 +40,19 @@ namespace graphics
 GraphicTerm::GraphicTerm(Screen &scr, const Font &font, TerminalData &data)
     : Terminal(scr.width() / font.glyph_width(), scr.height() / font.glyph_height(), data), m_scr(scr), m_font(font)
 {
+    m_cursor_bitmap.resize(2, font.glyph_height(), false, graphics::color_white);
+
+    Timer::register_callback(600, [this]
+    {
+        m_show_cursor = !m_show_cursor;
+        redraw_cursor();
+        draw_impl();
+    }, false);
 }
 
 void GraphicTerm::move_cursor(size_t x, size_t y)
 {
-    // TODO : do !
+    m_cursor_pos = {x*m_font.glyph_width(), y*m_font.glyph_height()};
 }
 
 void GraphicTerm::beep(size_t ms)
@@ -69,10 +79,18 @@ void GraphicTerm::clear_line(size_t y, Color color)
 
 void GraphicTerm::draw_impl()
 {
+    redraw_cursor();
+
     if (m_scr.allocated())
     {
         graphics::draw_to_display(m_scr);
     }
+}
+
+void GraphicTerm::redraw_cursor()
+{
+    m_scr.blit(m_cursor_bitmap, m_cursor_pos, (m_show_cursor ? term_data().color().fg : color_black),
+               term_data().color().bg);
 }
 
 }

@@ -34,6 +34,7 @@ SOFTWARE.
 #include "utils/logging.hpp"
 #include "utils/stlutils.hpp"
 #include "elf/elf.hpp"
+#include "mem/meminfo.hpp"
 #include "i686/pc/mem/meminfo.hpp"
 #include "i686/mem/paging.hpp"
 #include "utils/virt_machine_detect.hpp"
@@ -69,6 +70,8 @@ void parse_mem()
     {
         Meminfo::mmap_addr = reinterpret_cast<multiboot_memory_map_t *>(phys(info->mmap_addr));
     }
+
+    MemoryInfo::available_bytes = Meminfo::total_memory();
 }
 
 void parse_info()

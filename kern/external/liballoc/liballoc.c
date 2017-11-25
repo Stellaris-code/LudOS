@@ -13,6 +13,8 @@
 //#define DEBUG
 #endif
 
+#define INFO
+
 #define VERSION 	"1.1"
 #define ALIGNMENT	16ul//4ul				///< This is the byte alignment that memory must be allocated on. IMPORTANT for GTK and other stuff.
 
@@ -101,8 +103,8 @@ static struct liballoc_major *l_bestBet = NULL; ///< The major with the most fre
 
 static unsigned int l_pageSize  = 4096;			///< The size of an individual page. Set up in liballoc_init.
 static unsigned int l_pageCount = 16;			///< The number of pages to request per chunk. Set up in liballoc_init.
-static unsigned long long l_allocated = 0;		///< Running total of allocated memory.
-static unsigned long long l_inuse	 = 0;		///< Running total of used memory.
+unsigned long long l_allocated = 0;		///< Running total of allocated memory.
+unsigned long long l_inuse	 = 0;		///< Running total of used memory.
 
 
 static long long l_warningCount = 0;		///< Number of warnings encountered

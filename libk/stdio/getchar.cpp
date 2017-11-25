@@ -1,7 +1,7 @@
 /*
-graphicterm.hpp
+getchar.cpp
 
-Copyright (c) 18 Yann BOUCHER (yann)
+Copyright (c) 23 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,49 +22,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef GRAPHICTERM_HPP
-#define GRAPHICTERM_HPP
 
-#include "terminal/terminal.hpp"
+#include "stdio.h"
 
-#include "graphics/fonts/font.hpp"
-#include "graphics/drawing/screen.hpp"
+#include "panic.hpp"
 
-namespace graphics
+int getchar()
 {
-
-class GraphicTerm : public Terminal
-{
-public:
-    GraphicTerm(Screen& scr, const Font& font, TerminalData &data);
-
-private:
-    virtual void move_cursor(size_t x, size_t y) override;
-    virtual void beep(size_t ms) override;
-    virtual void putchar(size_t x, size_t y, TermEntry entry) override;
-    virtual void clear_line(size_t y, Color color) override;
-    virtual void draw_impl() override;
-
-private:
-    void redraw_cursor();
-
-private:
-    Screen& m_scr;
-    const Font& m_font;
-
-    struct Entry
-    {
-        Point<uint16_t> pos;
-        TermEntry entry;
-    };
-
-    std::vector<Entry> m_entries;
-
-    volatile bool m_show_cursor { false };
-    PointU m_cursor_pos { 0, 0 };
-    Bitmap m_cursor_bitmap;
-};
-
+    panic("getchar() unimplemented\n");
 }
-
-#endif // GRAPHICTERM_HPP

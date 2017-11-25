@@ -1,7 +1,7 @@
 /*
-graphicterm.hpp
+utf32decoder.cpp
 
-Copyright (c) 18 Yann BOUCHER (yann)
+Copyright (c) 23 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,49 +22,43 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef GRAPHICTERM_HPP
-#define GRAPHICTERM_HPP
 
-#include "terminal/terminal.hpp"
+#include "utf32decoder.hpp"
 
-#include "graphics/fonts/font.hpp"
-#include "graphics/drawing/screen.hpp"
-
-namespace graphics
+std::string decode_utf32(char32_t ch)
 {
+    std::string utf8;
 
-class GraphicTerm : public Terminal
-{
-public:
-    GraphicTerm(Screen& scr, const Font& font, TerminalData &data);
+    size_t len { 0 };
 
-private:
-    virtual void move_cursor(size_t x, size_t y) override;
-    virtual void beep(size_t ms) override;
-    virtual void putchar(size_t x, size_t y, TermEntry entry) override;
-    virtual void clear_line(size_t y, Color color) override;
-    virtual void draw_impl() override;
-
-private:
-    void redraw_cursor();
-
-private:
-    Screen& m_scr;
-    const Font& m_font;
-
-    struct Entry
+    if (ch < 0x80)
     {
-        Point<uint16_t> pos;
-        TermEntry entry;
-    };
+        len = 1;
+        utf8 += ch;
+    }
+    else if (ch < 0x800)
+    {
+        len = 2;
+        utf8 += 0xc0 | (ch >> 6);
+    }
+    else if (ch < 0x10000)
+    {
+        len = 3;
+        utf8 += 0xe0 | (ch >> 12);
+    }
+    else if (ch < 0x200000)
+    {
+        len = 4;
+        utf8 += 0xf0 | (ch >> 18);
+    }
 
-    std::vector<Entry> m_entries;
+    if (len > 1)
+    {
+        for (size_t i = len; i > 1; i--)
+        {
+            utf8 += 0x80 | (ch & (0x3f << ((i-2)*6)));
+        }
+    }
 
-    volatile bool m_show_cursor { false };
-    PointU m_cursor_pos { 0, 0 };
-    Bitmap m_cursor_bitmap;
-};
-
+    return utf8;
 }
-
-#endif // GRAPHICTERM_HPP

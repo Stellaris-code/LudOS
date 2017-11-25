@@ -95,7 +95,7 @@ void init()
 
 void mount_dev()
 {
-    root->vfs_children.emplace_back(std::make_shared<node>());
+    root->vfs_children.emplace_back(std::make_shared<node>(root.get()));
     root->vfs_children.back()->rename("dev");
     root->vfs_children.back()->m_is_dir = true;
 
@@ -172,6 +172,7 @@ bool mount(std::shared_ptr<vfs::node> node, const std::string &mountpoint)
     }
     point->vfs_children.emplace_back(node);
     point->vfs_children.back()->rename(filename(mountpoint));
+    node->set_parent(point.get());
     return true;
 }
 
@@ -221,6 +222,11 @@ size_t new_descriptor(vfs::node &node)
 {
     descriptors.emplace_back(node);
     return descriptors.size()-1;
+}
+
+node::~node()
+{
+    //panic("Destroyed\n");
 }
 
 }

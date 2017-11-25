@@ -203,7 +203,7 @@ size_t sector_to_cluster(size_t first_sector, const fat::FATInfo &info);
 
 uint32_t next_cluster(size_t cluster, const FATInfo& info);
 
-std::vector<fat_file> read_cluster_entries(size_t first_sector, const FATInfo& info);
+std::vector<fat_file> read_cluster_entries(size_t first_sector, fat_file* parent, const FATInfo& info);
 
 std::vector<uint8_t> read_cluster_chain(size_t cluster, const FATInfo& info);
 
@@ -211,7 +211,7 @@ std::vector<uint8_t> read_cluster(size_t first_sector, const fat::FATInfo &info)
 
 std::vector<size_t> get_cluster_chain(size_t first_cluster, const fat::FATInfo& info);
 
-fat_file entry_to_vfs_node(const Entry& entry, const FATInfo &info, const std::string &long_name);
+fat_file entry_to_vfs_node(const Entry& entry, fat_file* parent, const FATInfo &info, const std::string &long_name);
 
 std::vector<uint8_t> get_FAT(const FATInfo& info);
 uint32_t FAT_entry(const FATInfo &info, size_t cluster);
@@ -233,6 +233,8 @@ size_t end_of_chain(const FATInfo& info);
 
 struct fat_file : public vfs::node
 {
+    fat_file(vfs::node* parent) : vfs::node(parent) {}
+
     virtual void set_flags(uint32_t flags) override
     {
         if (!info.read_only)
@@ -288,7 +290,7 @@ struct fat_file : public vfs::node
         }
         else
         {
-            entries = merge(detail::read_cluster_entries(detail::first_sector_of_cluster(dir_cluster, info), info), fat_children);
+            entries = detail::read_cluster_entries(detail::first_sector_of_cluster(dir_cluster, info), this, info);
         }
 
         return map<fat_file, std::shared_ptr<node>>(entries, [](const fat_file& file)->std::shared_ptr<node>
@@ -304,7 +306,7 @@ struct fat_file : public vfs::node
             return nullptr;
         }
 
-        fat_children.emplace_back();
+        fat_children.emplace_back(this);
         auto& back = fat_children.back();
         // TODO : allocate
         back.m_name = str;
@@ -323,7 +325,7 @@ struct fat_file : public vfs::node
             return nullptr;
         }
 
-        fat_children.emplace_back();
+        fat_children.emplace_back(this);
         auto& back = fat_children.back();
         // TODO : allocate
         back.m_name = str;

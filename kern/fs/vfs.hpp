@@ -43,6 +43,10 @@ namespace vfs
 {
 struct node
 {
+    node(std::optional<node> parent = {}) { set_parent(parent); }
+
+    ~node();
+
     virtual std::string name() const { return m_name; }
     virtual void rename(const std::string& name) { m_name = name; }
     virtual uint32_t permissions() const { return m_perms; }
@@ -54,13 +58,28 @@ struct node
     virtual uint32_t flags() const { return m_flags; }
     virtual void set_flags(uint32_t flags) { m_flags = flags; }
 
-    [[nodiscard]] virtual size_t read(void* buf, size_t n) const { return 0; }
-    [[nodiscard]] virtual size_t write(const void* buf, size_t n) { return 0; }
+    [[nodiscard]] virtual size_t read(void*, size_t) const { return 0; }
+    [[nodiscard]] virtual size_t write(const void*, size_t) { return 0; }
     virtual std::vector<std::shared_ptr<node>> readdir_impl() { return {}; }
-    [[nodiscard]] virtual node* mkdir(const std::string& str) { return nullptr; };
-    [[nodiscard]] virtual node* touch(const std::string& str) { return nullptr; }
+    [[nodiscard]] virtual node* mkdir(const std::string&) { return nullptr; };
+    [[nodiscard]] virtual node* touch(const std::string&) { return nullptr; }
     virtual size_t size() const { return 0; }
     virtual bool is_dir() const { return m_is_dir; }
+
+    std::optional<node> parent() const { return m_parent; }
+    void set_parent(std::optional<node> parent) { m_parent = parent; }
+
+    std::string path() const
+    {
+        if (!m_parent)
+        {
+            return "";
+        }
+        else
+        {
+            return m_parent->path() + "/" + name();
+        }
+    }
 
     std::vector<std::shared_ptr<node>> readdir()
     {
@@ -86,15 +105,19 @@ struct node
 
     std::string m_name {};
     bool m_is_dir { false };
+
+    std::optional<node> m_parent;
 };
 
 size_t new_descriptor(node &node);
 
 struct vfs_root : public node
 {
+    vfs_root() : node(nullptr) {}
+
     virtual std::string name() const override { return ""; }
-    virtual node* mkdir(const std::string& str) override { panic("not implemented"); }
-    virtual node* touch(const std::string& str) override { panic("not implemented"); }
+    virtual node* mkdir(const std::string&) override { panic("not implemented"); }
+    virtual node* touch(const std::string&) override { panic("not implemented"); }
     virtual bool is_dir() const override { return true; }
 };
 

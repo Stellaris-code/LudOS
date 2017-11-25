@@ -61,6 +61,11 @@ inline ContainerT tokenize(const std::string& str, const std::string& delimiters
 template <typename Container = std::vector<std::string>>
 inline std::string join(const Container& cont, const std::string& join_str)
 {
+    if (cont.empty())
+    {
+        return "";
+    }
+
     std::string result;
     for (int i { 0 }; i < int(cont.size())-1; ++i)
     {
@@ -133,6 +138,40 @@ inline std::string strtoupper(std::string str)
 {
     std::transform(str.begin(), str.end(),str.begin(), ::toupper);
     return str;
+}
+
+inline std::string format(const std::string& format, const std::vector<std::pair<std::string, std::string>>& values)
+{
+    auto tokens = tokenize(format, "{}");
+    bool in_param = false;
+
+    std::string result;
+
+    for (auto tok : tokens)
+    {
+        if (in_param)
+        {
+            in_param = false;
+
+            auto it = std::find_if(values.begin(), values.end(),
+                                   [tok](const std::pair<std::string, std::string>& p)
+                    {return tok == p.first;});
+            if (it != values.end())
+            {
+                result += it->second;
+
+                continue;
+            }
+        }
+        else
+        {
+            in_param = true;
+        }
+
+        result += tok;
+    }
+
+    return result;
 }
 
 #endif // STLUTILS_HPP

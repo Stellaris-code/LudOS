@@ -97,6 +97,19 @@ multiboot_memory_map_t *Meminfo::frame(size_t idx)
     return nullptr;
 }
 
+size_t Meminfo::total_memory()
+{
+    size_t total = 0;
+
+    for (size_t i { 0 }; i < free_frames(); ++i)
+    {
+        auto free_frame = frame(i);
+        total += free_frame->len;
+    }
+
+    return total;
+}
+
 void Meminfo::init_paging_bitmap()
 {
     for (size_t i { 0 }; i < Paging::mem_bitmap.array_size; ++i)

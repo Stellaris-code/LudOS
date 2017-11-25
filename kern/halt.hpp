@@ -25,7 +25,9 @@ SOFTWARE.
 #ifndef HALT_HPP
 #define HALT_HPP
 
+#ifdef ARCH_i686
 #include "i686/interrupts/interrupts.hpp"
+#endif
 
 #include "utils/builtins.hpp"
 
@@ -35,6 +37,13 @@ inline void halt()
     cli();
     while (true) {}
     unreachable();
+}
+
+inline void wait_for_interrupts()
+{
+#ifdef ARCH_i686
+    __asm__ __volatile__ ("hlt");
+#endif
 }
 
 #endif // HALT_HPP

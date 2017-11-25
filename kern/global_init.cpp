@@ -59,6 +59,11 @@ SOFTWARE.
 #include "utils/debug.hpp"
 #include "halt.hpp"
 
+#include "shell/shell.hpp"
+#include "shell/commands/basecommands.hpp"
+#include "shell/commands/syscommands.hpp"
+#include "shell/commands/fscommands.hpp"
+
 #include "time/time.hpp"
 #include "time/timer.hpp"
 
@@ -85,8 +90,7 @@ void global_init()
 
     MessageBus::register_handler<kbd::TextEnteredEvent>([](const kbd::TextEnteredEvent& e)
     {
-        putcharw(e.c);
-        term().force_redraw_input();
+        term().add_input(e.c);
     });
 
     MessageBus::register_handler<kbd::KeyEvent>([](const kbd::KeyEvent& e)
@@ -175,12 +179,7 @@ void global_init()
 
             graphics::clear_display(graphics::color_black);
 
-#if 0
-            static graphics::Screen scr(mode->width, mode->height,
-                                        reinterpret_cast<graphics::Color*>(mode->framebuffer_addr));
-#else
             static graphics::Screen scr(mode->width, mode->height);
-#endif
 
             create_term<graphics::GraphicTerm>(scr, font, term_data());
             term().force_redraw();
@@ -193,7 +192,8 @@ void global_init()
             log(Info, "Green : mask : %x, pos : %d\n", mode->green_mask_size, mode->green_field_pos);
             log(Info, "Blue : mask : %x, pos : %d\n", mode->blue_mask_size, mode->blue_field_pos);
 
-            auto img = graphics::load_image("/initrd/example.png");
+#if 0
+            auto img = graphics::load_image("/initrd/LudOS.png");
             if (!img)
             {
                 log(Info, "Error\n");
@@ -202,9 +202,11 @@ void global_init()
             {
                 term().clear();
                 term().disable();
+                img->resize(scr.width(), scr.height());
                 scr.blit(*img, {0, 0});
                 graphics::draw_to_display(scr);
             }
+#endif
         }
 #endif
 
@@ -212,7 +214,10 @@ void global_init()
 
     greet();
 
-    kprintf("Моя Страна\n");
-
-    vfs::traverse("/");
+    Shell sh;
+    sh.params.prompt = "LudOS:{path}>";
+    install_base_commands(sh);
+    install_sys_commands(sh);
+    install_fs_commands(sh);
+    sh.run();
 }

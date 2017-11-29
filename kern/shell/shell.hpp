@@ -25,10 +25,17 @@ SOFTWARE.
 #ifndef SHELL_HPP
 #define SHELL_HPP
 
-#include <vector.hpp>
+#include <deque.hpp>
 #include <unordered_map.hpp>
 #include <string.hpp>
 #include <functional.hpp>
+
+#include "utils/circularbuffer.hpp"
+
+namespace vfs
+{
+class node;
+}
 
 class Shell
 {
@@ -63,7 +70,7 @@ public:
     std::vector<Command> commands();
 
 public:
-    std::string pwd { "/" };
+    std::shared_ptr<vfs::node> pwd { nullptr };
 
 private:
     void show_prompt();
@@ -76,6 +83,9 @@ private:
     std::unordered_map<std::string, Command> m_commands;
     volatile bool m_waiting_input { true };
     std::string m_input;
+
+    std::deque<std::string> m_command_history;
+    size_t m_current_hist_idx { 0 };
 };
 
 #endif // SHELL_HPP

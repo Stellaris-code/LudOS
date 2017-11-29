@@ -28,6 +28,8 @@ SOFTWARE.
 #include "graphics/drawing/display_draw.hpp"
 #include "graphics/drawing/bitmap.hpp"
 
+#include "utils/mathutils.hpp"
+
 #include "time/timer.hpp"
 
 #ifdef ARCH_i686

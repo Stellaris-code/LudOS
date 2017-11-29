@@ -36,7 +36,7 @@ void install_fs_commands(Shell &sh)
      "Usage : pwd",
      [&sh](const std::vector<std::string>&)
      {
-         puts(sh.pwd.c_str());
+         puts(sh.pwd->path().c_str());
          return 0;
      }});
 
@@ -45,7 +45,7 @@ void install_fs_commands(Shell &sh)
      "Usage : ls",
      [&sh](const std::vector<std::string>&)
      {
-         for (const auto& entry : vfs::find(sh.pwd)->readdir())
+         for (const auto& entry : sh.pwd->readdir())
          {
              kprintf("\t%s", entry->name().c_str());
              if (entry->is_dir())
@@ -54,9 +54,6 @@ void install_fs_commands(Shell &sh)
              }
              kprintf("\n");
          }
-
-         assert(vfs::find(sh.pwd));
-         puts(vfs::find(sh.pwd)->path().c_str());
          return 0;
      }});
 
@@ -80,7 +77,7 @@ void install_fs_commands(Shell &sh)
          }
          else
          {
-             target = sh.pwd + args[0];
+             target = sh.pwd->path() + "/" + args[0];
          }
 
          if (target != "/") target += "/";
@@ -98,7 +95,70 @@ void install_fs_commands(Shell &sh)
              return -3;
          }
 
-         sh.pwd = target;
+         if (vfs::is_symlink(*node))
+         {
+             vfs::node* current = node.get();
+             while (vfs::is_symlink(*current))
+             {
+                 current = &vfs::link_target(*current);
+             }
+
+             sh.pwd = std::shared_ptr<vfs::node>(current, [](vfs::node*){});
+         }
+         else
+         {
+             sh.pwd = node;
+         }
+         return 0;
+     }});
+
+    sh.register_command(
+    {"cat", "print file contents",
+     "Usage : cat <file>",
+     [&sh](const std::vector<std::string>& args)
+     {
+         if (args.size() != 1)
+         {
+             sh.error("cat must be called with one arg!\n");
+             return -1;
+         }
+
+         std::string path;
+         if (args[0][0] == '/')
+         {
+             path = args[0];
+         }
+         else
+         {
+             path = sh.pwd->path() + "/" + args[0];
+         }
+
+         auto node = vfs::find(path);
+         if (!node)
+         {
+             sh.error("file not found : '%s'\n", path.c_str());
+             return -2;
+         }
+
+         std::vector<uint8_t> data(node->size());
+         if (!node->read(data.data(), data.size()))
+         {
+             sh.error("cannot read file : '%s'\n", path.c_str());
+             return -3;
+         }
+         data.emplace_back('\0');
+
+         puts(reinterpret_cast<const char*>(data.data()));
+
+         return 0;
+     }});
+
+    sh.register_command(
+    {"tree", "print current fs tree",
+     "Usage : tree",
+     [&sh](const std::vector<std::string>&)
+     {
+         vfs::traverse(*sh.pwd);
          return 0;
      }});
 }

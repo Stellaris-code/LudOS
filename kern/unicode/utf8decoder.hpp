@@ -28,6 +28,7 @@ SOFTWARE.
 #include <stdint.h>
 
 #include <vector.hpp>
+#include <string.hpp>
 
 class UTF8Decoder
 {
@@ -52,5 +53,7 @@ private:
     size_t m_length { 0 };
     char32_t m_current { 0 };
 };
+
+std::u32string u8_decode(const std::string& str);
 
 #endif // UTF8DECODER_HPP

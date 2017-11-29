@@ -203,7 +203,7 @@ size_t sector_to_cluster(size_t first_sector, const fat::FATInfo &info);
 
 uint32_t next_cluster(size_t cluster, const FATInfo& info);
 
-std::vector<fat_file> read_cluster_entries(size_t first_sector, fat_file* parent, const FATInfo& info);
+std::vector<std::shared_ptr<fat_file>> read_cluster_entries(size_t first_sector, fat_file* parent, const FATInfo& info);
 
 std::vector<uint8_t> read_cluster_chain(size_t cluster, const FATInfo& info);
 
@@ -211,7 +211,7 @@ std::vector<uint8_t> read_cluster(size_t first_sector, const fat::FATInfo &info)
 
 std::vector<size_t> get_cluster_chain(size_t first_cluster, const fat::FATInfo& info);
 
-fat_file entry_to_vfs_node(const Entry& entry, fat_file* parent, const FATInfo &info, const std::string &long_name);
+std::shared_ptr<fat_file> entry_to_vfs_node(const Entry& entry, fat_file* parent, const FATInfo &info, const std::string &long_name);
 
 std::vector<uint8_t> get_FAT(const FATInfo& info);
 uint32_t FAT_entry(const FATInfo &info, size_t cluster);
@@ -282,7 +282,7 @@ struct fat_file : public vfs::node
         {
             return {};
         }
-        std::vector<fat_file> entries;
+        std::vector<std::shared_ptr<fat_file>> entries;
 
         if (is_root)
         {
@@ -293,9 +293,9 @@ struct fat_file : public vfs::node
             entries = detail::read_cluster_entries(detail::first_sector_of_cluster(dir_cluster, info), this, info);
         }
 
-        return map<fat_file, std::shared_ptr<node>>(entries, [](const fat_file& file)->std::shared_ptr<node>
+        return map<std::shared_ptr<fat_file>, std::shared_ptr<node>>(entries, [](const std::shared_ptr<fat_file>& file)->std::shared_ptr<node>
         {
-            return std::make_shared<fat_file>(file);
+            return std::static_pointer_cast<node>(file);
         });
     }
 
@@ -309,13 +309,13 @@ struct fat_file : public vfs::node
         fat_children.emplace_back(this);
         auto& back = fat_children.back();
         // TODO : allocate
-        back.m_name = str;
-        back.m_is_dir = true;
-        back.set_creation_date();
+        back->m_name = str;
+        back->m_is_dir = true;
+        back->set_creation_date();
 
         update_access_date();
 
-        return &back;
+        return back.get();
     }
 
     virtual vfs::node* touch(const std::string& str) override
@@ -328,13 +328,13 @@ struct fat_file : public vfs::node
         fat_children.emplace_back(this);
         auto& back = fat_children.back();
         // TODO : allocate
-        back.m_name = str;
-        back.m_is_dir = false;
-        back.set_creation_date();
+        back->m_name = str;
+        back->m_is_dir = false;
+        back->set_creation_date();
 
         update_access_date();
 
-        return &back;
+        return back.get();
     }
 
     virtual size_t size() const override { return entry.size; }
@@ -343,7 +343,7 @@ struct fat_file : public vfs::node
     size_t entry_first_sector { 0 };
     size_t entry_idx { 0 };
     bool is_root { false };
-    std::vector<fat_file> fat_children {};
+    std::vector<std::shared_ptr<fat_file>> fat_children {};
     mutable fat::Entry entry {};
     FATInfo info {};
 
@@ -356,7 +356,7 @@ private:
 
 FATInfo read_fat_fs(size_t drive, size_t base_sector, bool read_only = false);
 
-fat_file root_dir(const FATInfo& info);
+std::shared_ptr<fat::fat_file> root_dir(const FATInfo& info);
 
 void unmount(const FATInfo& fs);
 

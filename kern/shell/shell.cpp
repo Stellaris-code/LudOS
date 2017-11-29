@@ -32,16 +32,67 @@ SOFTWARE.
 #include "utils/messagebus.hpp"
 #include "utils/stlutils.hpp"
 
+#include "unicode/utf8decoder.hpp"
+
 #include "fs/vfs.hpp"
+#include "drivers/kbd/kbd_mappings.hpp"
 
 #include "halt.hpp"
 
 Shell::Shell()
 {
+    m_command_history.emplace_back("");
+    m_current_hist_idx = 0;
+
+    pwd = vfs::root;
+
     MessageBus::register_handler<TermInputEvent>([this](const TermInputEvent& e)
     {
         m_input = e.line;
         m_waiting_input = false;
+    });
+
+    MessageBus::register_handler<kbd::KeyEvent>([this](const kbd::KeyEvent& e)
+    {
+        if (e.state == kbd::KeyEvent::Pressed)
+        {
+            if (e.key == kbd::Up && m_waiting_input)
+            {
+                term().clear_input();
+
+                ++m_current_hist_idx;
+
+                if (m_current_hist_idx >= m_command_history.size())
+                {
+                    m_current_hist_idx = 0;
+                }
+
+                for (auto c : u8_decode(m_command_history[m_current_hist_idx]))
+                {
+                    term().add_input(c);
+                }
+                term().force_redraw_input();
+            }
+            if (e.key == kbd::Down && m_waiting_input)
+            {
+                term().clear_input();
+
+                if (m_current_hist_idx == 0)
+                {
+                    m_current_hist_idx = m_command_history.size()-1;
+                }
+                else
+                {
+                    --m_current_hist_idx;
+                }
+
+                for (auto c : u8_decode(m_command_history[m_current_hist_idx]))
+                {
+                    term().add_input(c);
+                }
+                term().force_redraw_input();
+            }
+        }
     });
 }
 
@@ -85,6 +136,7 @@ int Shell::command(const std::string &command)
 void Shell::show_prompt()
 {
     kprintf("%s", prompt().c_str());
+    term().set_input();
     term().force_redraw();
 }
 
@@ -104,12 +156,18 @@ int Shell::process(const std::string &in)
 {
     kprintf("%s\n", (prompt() + in).c_str());
 
+    if (!in.empty())
+    {
+        m_command_history.emplace_front(in);
+        m_current_hist_idx = m_command_history.size()-1;
+    }
+
     return command(in);
 }
 
 std::string Shell::prompt() const
 {
-    return format(params.prompt, {{"path", pwd}});
+    return format(params.prompt, {{"path", pwd->path() + "/"}});
 }
 
 void Shell::error(const char *fmt, ...)

@@ -121,7 +121,7 @@ uint32_t fat::detail::next_cluster(size_t cluster, const fat::FATInfo &info)
     return FAT_entry(info, cluster);
 }
 
-fat::fat_file fat::root_dir(const fat::FATInfo &info)
+std::shared_ptr<fat::fat_file> fat::root_dir(const fat::FATInfo &info)
 {
     size_t first_sector;
 
@@ -134,18 +134,18 @@ fat::fat_file fat::root_dir(const fat::FATInfo &info)
         first_sector = info.first_data_sector - info.root_dir_sectors;
     }
 
-    fat_file root_dir { nullptr };
-    root_dir.info = info;
-    root_dir.is_root = true;
-    root_dir.entry_first_sector = first_sector;
-    root_dir.m_name = "";
-    root_dir.m_is_dir = true;
-    root_dir.fat_children = detail::read_cluster_entries(first_sector, &root_dir, info);
+    auto root_dir = std::make_shared<fat_file>(nullptr);
+    root_dir->info = info;
+    root_dir->is_root = true;
+    root_dir->entry_first_sector = first_sector;
+    root_dir->m_name = "";
+    root_dir->m_is_dir = true;
+    root_dir->fat_children = detail::read_cluster_entries(first_sector, root_dir.get(), info);
 
     return root_dir;
 }
 
-std::vector<fat::fat_file> fat::detail::read_cluster_entries(size_t first_sector, fat_file* parent, const fat::FATInfo &info)
+std::vector<std::shared_ptr<fat::fat_file>> fat::detail::read_cluster_entries(size_t first_sector, fat_file* parent, const fat::FATInfo &info)
 {
     std::vector<uint8_t> data(info.bootsector.bytes_per_sector * info.bootsector.sectors_per_cluster);
     if (!DiskInterface::read(info.drive, first_sector + info.base_sector, info.bootsector.sectors_per_cluster, data.data()))
@@ -153,7 +153,7 @@ std::vector<fat::fat_file> fat::detail::read_cluster_entries(size_t first_sector
         return {};
     }
 
-    std::vector<fat_file> entries;
+    std::vector<std::shared_ptr<fat_file>> entries;
 
     size_t entry_idx = 0;
     Entry* cluster_entries = reinterpret_cast<Entry*>(data.data());
@@ -202,17 +202,17 @@ std::vector<fat::fat_file> fat::detail::read_cluster_entries(size_t first_sector
             }
 
             entries.push_back(detail::entry_to_vfs_node(*entry, parent, info, longname_buf));
-            entries.back().entry_first_sector = first_sector;
-            entries.back().entry_idx = entry_idx;
+            entries.back()->entry_first_sector = first_sector;
+            entries.back()->entry_idx = entry_idx;
 
             longname_buf.clear();
 
             if (entry->attributes & ATTR_DIRECTORY)
             {
                 size_t cluster = entry->low_cluster_bits | (entry->high_cluster_bits << 16);
-                entries.back().dir_cluster = cluster;
+                entries.back()->dir_cluster = cluster;
 
-                entries.back().m_is_dir = true;
+                entries.back()->m_is_dir = true;
             }
         }
     } while ((++entry_idx) * sizeof(Entry) < data.size() && cluster_entries[entry_idx].filename[0] != '\0');
@@ -282,32 +282,32 @@ std::vector<uint8_t> fat::detail::read(const fat::Entry &entry, const FATInfo &i
     }
 }
 
-fat::fat_file fat::detail::entry_to_vfs_node(const fat::Entry &entry, fat_file* parent, const FATInfo& info, const std::string& long_name)
+std::shared_ptr<fat::fat_file> fat::detail::entry_to_vfs_node(const fat::Entry &entry, fat_file* parent, const FATInfo& info, const std::string& long_name)
 {
-    fat_file node { parent };
+    auto node = std::make_shared<fat_file>(parent);
     if (!long_name.empty())
     {
-        node.m_name = trim(long_name);
+        node->m_name = trim(long_name);
     }
     else
     {
         for (size_t i { 0 }; i < strlen(reinterpret_cast<const char*>(entry.filename)); ++i)
         {
-            node.m_name.push_back(entry.filename[i]);
+            node->m_name.push_back(entry.filename[i]);
         }
-        node.m_name = trim(node.m_name);
+        node->m_name = trim(node->m_name);
         for (size_t i { 0 }; i < strlen(reinterpret_cast<const char*>(entry.extension)); ++i)
         {
-            node.m_name.push_back(entry.extension[i]);
+            node->m_name.push_back(entry.extension[i]);
         }
-        node.m_name = trim(node.m_name);
-        std::reverse(node.m_name.begin(), node.m_name.end());
+        node->m_name = trim(node->m_name);
+        std::reverse(node->m_name.begin(), node->m_name.end());
     }
 
-    node.set_flags(entry.attributes);
-    node.info = info;
-    node.entry = entry;
-    node.m_is_dir = false;
+    node->set_flags(entry.attributes);
+    node->info = info;
+    node->entry = entry;
+    node->m_is_dir = false;
 
     return node;
 }

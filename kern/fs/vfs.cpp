@@ -36,6 +36,8 @@ SOFTWARE.
 
 #include <typeinfo.hpp>
 
+std::unordered_set<void*> created_node_list;
+
 struct stdout_file : public vfs::node
 {
     virtual size_t write(const void* buf, size_t n) override
@@ -172,7 +174,7 @@ bool mount(std::shared_ptr<vfs::node> node, const std::string &mountpoint)
     }
     point->vfs_children.emplace_back(node);
     point->vfs_children.back()->rename(filename(mountpoint));
-    node->set_parent(point.get());
+    point->vfs_children.back()->set_parent(point.get());
     return true;
 }
 
@@ -226,7 +228,73 @@ size_t new_descriptor(vfs::node &node)
 
 node::~node()
 {
-    //panic("Destroyed\n");
+    //    //panic("Destroyed\n");
+    //    if (this == (void*)0x5f72ec) panic("no reason stfu");
+
+    //    log_serial("Destroyed : %p\n", this);
+    //    created_node_list.erase(this);
+}
+
+std::string node::path() const
+{
+    if (!m_parent)
+    {
+        return "";
+    }
+    else
+    {
+        return m_parent->path() + "/" + name();
+    }
+}
+
+std::vector<std::shared_ptr<node> > node::readdir()
+{
+    static std::vector<std::shared_ptr<const node>> fkcghugelist;
+
+    auto list = merge(vfs_children, readdir_impl());
+
+    auto cur_dir = std::make_shared<symlink>(*this);
+    cur_dir->rename(".");
+
+    list.emplace_back(cur_dir);
+
+    if (m_parent)
+    {
+        auto parent_dir = std::make_shared<symlink>(*m_parent);
+        parent_dir->rename("..");
+
+        list.emplace_back(parent_dir);
+    }
+
+    for (auto el : list)
+    {
+        fkcghugelist.emplace_back(el);
+    }
+
+    return list;
+}
+
+std::vector<std::shared_ptr<const node> > node::readdir() const
+{
+    static std::vector<std::shared_ptr<const node>> fkcghugelist;
+
+    std::vector<std::shared_ptr<const node>> vec;
+    for (auto el : const_cast<node*>(this)->readdir())
+    {
+        vec.emplace_back(el);
+        fkcghugelist.emplace_back(el);
+    }
+    return vec;
+}
+
+bool is_symlink(const node &node)
+{
+    return dynamic_cast<const symlink*>(&node);
+}
+
+node &link_target(const node &link)
+{
+    return static_cast<const symlink&>(link).target();
 }
 
 }

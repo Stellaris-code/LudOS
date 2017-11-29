@@ -41,7 +41,7 @@ bool install_initrd()
         {
             static tar::TarFS fs(file);
             auto root = fs.root_dir();
-            if (vfs::mount(std::make_shared<tar::tar_node>(root), "/initrd"))
+            if (vfs::mount(root, "/initrd"))
             {
                 log(Info, "Mounted initrd\n");
                 return true;

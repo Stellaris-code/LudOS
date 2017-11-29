@@ -35,4 +35,10 @@ T diff(T lhs, T rhs)
     return abs(std::make_signed_t<T>(lhs) - std::make_signed_t<T>(rhs));
 }
 
+template <typename T>
+T round_to(T value, T roundTo)
+{
+    return (value + (roundTo - 1)) & ~(roundTo - 1);
+}
+
 #endif // MATHUTILS_HPP

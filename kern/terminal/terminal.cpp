@@ -88,13 +88,28 @@ void Terminal::put_char(char32_t c)
 
 void Terminal::add_input(char32_t c)
 {
+    set_input();
+    put_char(c);
+}
+
+void Terminal::clear_input()
+{
+    while (m_cur_line.size() > m_input_off)
+    {
+        m_cur_line.pop_back();
+        --m_cursor_x;
+    }
+
+    force_redraw();
+}
+
+void Terminal::set_input()
+{
     if (!m_line_is_input)
     {
         m_line_is_input = true;
         m_input_off = m_cursor_x;
     }
-    put_char(c);
-    force_redraw();
 }
 
 void Terminal::write(const char *data, size_t size)
@@ -153,7 +168,10 @@ void Terminal::show_history(int page)
 {
     if (m_scrolling)
     {
-        if (page < 0) page = 0;
+        if (page < 0)
+        {
+            page = 0;
+        }
 
         if (static_cast<size_t>(page) > m_data.lines() - height()+1)
         {
@@ -174,6 +192,8 @@ void Terminal::show_history(int page)
         }
 
         clear_line(true_height()-1, m_data.color().bg);
+
+        force_redraw_input();
     }
 }
 
@@ -330,6 +350,8 @@ size_t Terminal::true_height() const
 
 void Terminal::force_redraw()
 {
+    update_cursor();
+
     show_history(m_current_history_page);
 
     force_redraw_input();

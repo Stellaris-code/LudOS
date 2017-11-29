@@ -78,20 +78,20 @@ bool PSFFont::load_psf()
         build_unicode_table();
     }
 
+    log_serial("Size : %d\n", m_hdr->charsize);
+
     return true;
 }
 
 void PSFFont::build_unicode_table()
 {
-    const uint8_t* ptr = reinterpret_cast<const uint8_t*>(
-                m_hdr + m_hdr->headersize + m_hdr->length * m_hdr->charsize);
+    const uint8_t* ptr = reinterpret_cast<const uint8_t*>(m_hdr)
+            + m_hdr->headersize + m_hdr->length * m_hdr->charsize;
 
     char32_t glyph = 0;
-
-    /* allocate memory for translation table */
-    while(ptr < m_data.cend().base())
+    while(ptr < m_data.data() + m_data.size())
     {
-        char32_t ch = ptr[0];
+        char32_t ch = ptr[0]&0xFF;
         if(ch == 0xFF)
         {
             glyph++;
@@ -162,16 +162,16 @@ Glyph PSFFont::read_glyph_data(const uint8_t *ptr) const
 
     size_t bytes_per_line = m_hdr->charsize/m_hdr->height;
 
-    for (size_t i { 0 }; i < glyph_width(); ++i)
+    for (size_t j { 0 }; j < glyph_height(); ++j)
     {
-        for (size_t j { 0 }; j < glyph_height(); ++j)
+        for (size_t i = 0; i < glyph_width(); ++i)
         {
             size_t byte_index = i / CHAR_BIT;
             size_t bit_offset = i % CHAR_BIT;
 
-            if (bit_check(ptr[j*bytes_per_line + byte_index], bit_offset))
+            if (bit_check(ptr[j*bytes_per_line + byte_index], CHAR_BIT-1-bit_offset))
             {
-                bitmap[{bytes_per_line*CHAR_BIT - i - 1, j}] = color_white;
+                bitmap[{i, j}] = color_white;
             }
         }
     }

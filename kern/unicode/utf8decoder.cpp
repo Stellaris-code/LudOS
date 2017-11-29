@@ -151,3 +151,20 @@ size_t UTF8Decoder::get_length(uint8_t first_byte)
     }
     return l;
 }
+
+std::u32string u8_decode(const std::string &str)
+{
+    std::u32string result;
+    UTF8Decoder decoder;
+
+    for (auto c : str)
+    {
+        decoder.feed(c);
+        if (decoder.ready())
+        {
+            result += decoder.spit();
+        }
+    }
+
+    return result;
+}

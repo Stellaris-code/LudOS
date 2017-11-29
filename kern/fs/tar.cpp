@@ -69,62 +69,64 @@ namespace tar
 {
 
 TarFS::TarFS(std::vector<uint8_t> file)
-    : m_file(file), m_root_dir(*this, nullptr)
+    : m_file(file)
 {
-    m_root_dir.m_is_dir = true;
-    m_root_dir.m_name = "";
-    m_root_dir.m_data_addr = m_file.data() + sizeof(Header);
-    m_root_dir.m_size = m_file.size();
+    m_root_dir = std::make_shared<tar_node>(*this, nullptr);
+
+    m_root_dir->m_is_dir = true;
+    m_root_dir->m_name = "";
+    m_root_dir->m_data_addr = m_file.data() + sizeof(Header);
+    m_root_dir->m_size = m_file.size();
 }
 
-std::optional<tar_node> TarFS::read_header(const Header *hdr) const
+std::shared_ptr<tar_node> TarFS::read_header(const Header *hdr) const
 {
     if (hdr->name[0] == '\0')
     {
-        return {};
+        return nullptr;
     }
     if (!check_sum(hdr))
     {
         warn("Bad TAR chksum\n");
-        return {};
+        return nullptr;
     }
 
-    tar_node node(*this, &m_root_dir);
+    auto node = std::make_shared<tar_node>(*this, m_root_dir.get());
 
     switch (hdr->typeflag)
     {
         case REGTYPE:
         case AREGTYPE :
-            node.m_is_dir = false;
+            node->m_is_dir = false;
             break;
         case DIRTYPE:
-            node.m_is_dir = true;
+            node->m_is_dir = true;
             break;
         case LNKTYPE:
         case SYMTYPE:
             // TODO : Do these
-            return {};
+            return nullptr;
         case CHRTYPE:
         case BLKTYPE:
         case FIFOTYPE:
         case CONTTYPE:
-            return {};
+            return nullptr;
     }
 
-    node.m_data_addr = reinterpret_cast<const uint8_t*>(hdr) + sizeof(Header);
-    node.m_size = read_number(hdr->size);
-    node.m_perms = read_number(hdr->mode);
-    node.m_uid = read_number(hdr->uid);
-    node.m_gid = read_number(hdr->gid);
-    node.m_name = std::string(hdr->name, 101); node.m_name.back() = '\0';
-    node.m_name = filename(trim(node.m_name));
+    node->m_data_addr = reinterpret_cast<const uint8_t*>(hdr) + sizeof(Header);
+    node->m_size = read_number(hdr->size);
+    node->m_perms = read_number(hdr->mode);
+    node->m_uid = read_number(hdr->uid);
+    node->m_gid = read_number(hdr->gid);
+    node->m_name = std::string(hdr->name, 101); node->m_name.back() = '\0';
+    node->m_name = filename(trim(node->m_name));
 
     return node;
 }
 
-std::vector<tar_node> TarFS::read_dir(const uint8_t *addr, size_t size) const
+std::vector<std::shared_ptr<tar_node> > TarFS::read_dir(const uint8_t *addr, size_t size) const
 {
-    std::vector<tar_node> nodes;
+    std::vector<std::shared_ptr<tar_node>> nodes;
 
     const uint8_t* ptr = addr;
 
@@ -135,7 +137,7 @@ std::vector<tar_node> TarFS::read_dir(const uint8_t *addr, size_t size) const
 
         if (node)
         {
-            nodes.emplace_back(*node);
+            nodes.emplace_back(node);
         }
         else
         {
@@ -193,9 +195,9 @@ std::vector<std::shared_ptr<vfs::node> > tar_node::readdir_impl()
     }
 
     auto nodes = m_fs.read_dir(m_data_addr, size());
-    return map<tar_node, std::shared_ptr<node>>(nodes, [](const tar_node& file)->std::shared_ptr<node>
+    return map<std::shared_ptr<tar_node>, std::shared_ptr<node>>(nodes, [](const std::shared_ptr<tar_node>& file)->std::shared_ptr<node>
     {
-        return std::make_shared<tar_node>(file);
+        return std::static_pointer_cast<node>(file);
     });
 }
 

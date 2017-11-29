@@ -62,7 +62,7 @@ class TarFS
 public:
     TarFS(std::vector<uint8_t> file);
 
-    const tar_node& root_dir() const { return m_root_dir; }
+    std::shared_ptr<tar_node> root_dir() const { return m_root_dir; }
 
 private:
     struct Header
@@ -87,9 +87,9 @@ private:
     };
     static_assert(sizeof(Header) == 512);
 
-    std::optional<tar_node> read_header(const Header* hdr) const;
+    std::shared_ptr<tar_node> read_header(const Header* hdr) const;
 
-    std::vector<tar_node> read_dir(const uint8_t* addr, size_t size) const;
+    std::vector<std::shared_ptr<tar_node>> read_dir(const uint8_t* addr, size_t size) const;
 private:
 
     bool check_sum(const Header* hdr) const;
@@ -107,7 +107,7 @@ private:
 
 private:
    std::vector<uint8_t> m_file;
-   mutable tar_node m_root_dir;
+   mutable std::shared_ptr<tar_node> m_root_dir;
 };
 
 }

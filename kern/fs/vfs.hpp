@@ -34,16 +34,26 @@ SOFTWARE.
 #include <optional.hpp>
 #include <type_traits.hpp>
 #include <unordered_map.hpp>
+#include <unordered_set.hpp>
 
 #include "utils/stlutils.hpp"
 #include "utils/logging.hpp"
 #include "panic.hpp"
 
+extern std::unordered_set<void*> created_node_list;
+
 namespace vfs
 {
 struct node
 {
-    node(std::optional<node> parent = {}) { set_parent(parent); }
+    node(node* parent = nullptr)
+    {
+        set_parent(parent);
+        //created_node_list.emplace(this);
+    }
+
+    node(const node&) = delete;
+    node(node&&) = default;
 
     ~node();
 
@@ -66,35 +76,13 @@ struct node
     virtual size_t size() const { return 0; }
     virtual bool is_dir() const { return m_is_dir; }
 
-    std::optional<node> parent() const { return m_parent; }
-    void set_parent(std::optional<node> parent) { m_parent = parent; }
+    node* parent() const { return m_parent; }
+    void set_parent(node* parent) { m_parent = parent; }
 
-    std::string path() const
-    {
-        if (!m_parent)
-        {
-            return "";
-        }
-        else
-        {
-            return m_parent->path() + "/" + name();
-        }
-    }
+    std::string path() const;
 
-    std::vector<std::shared_ptr<node>> readdir()
-    {
-        return merge(vfs_children, readdir_impl());
-    }
-    std::vector<std::shared_ptr<const node>> readdir() const
-    {
-        std::vector<std::shared_ptr<const node>> vec;
-        for (const auto& el : const_cast<node*>(this)->readdir())
-        {
-            vec.emplace_back(el);
-        }
-
-        return vec;
-    }
+    std::vector<std::shared_ptr<node>> readdir();
+    std::vector<std::shared_ptr<const node>> readdir() const;
 
     std::vector<std::shared_ptr<node>> vfs_children {};
 
@@ -106,7 +94,7 @@ struct node
     std::string m_name {};
     bool m_is_dir { false };
 
-    std::optional<node> m_parent;
+    node* m_parent { nullptr };
 };
 
 size_t new_descriptor(node &node);
@@ -121,6 +109,28 @@ struct vfs_root : public node
     virtual bool is_dir() const override { return true; }
 };
 
+struct symlink : public node
+{
+    symlink(node& target)
+        : m_target(target)
+    {
+
+    }
+
+    [[nodiscard]] virtual size_t read(void* b, size_t n) const { return m_target.read(b, n); }
+    [[nodiscard]] virtual size_t write(const void* b, size_t n) { return m_target.write(b, n); }
+    virtual std::vector<std::shared_ptr<node>> readdir_impl() { return m_target.readdir_impl(); }
+    [[nodiscard]] virtual node* mkdir(const std::string& s) { return m_target.mkdir(s); };
+    [[nodiscard]] virtual node* touch(const std::string& s) { return m_target.touch(s); }
+    virtual size_t size() const { return m_target.size(); }
+    virtual bool is_dir() const { return m_target.is_dir(); }
+
+    node& target() const { return m_target; }
+
+private:
+    node& m_target;
+};
+
 void init();
 
 void mount_dev();
@@ -131,6 +141,9 @@ bool mount(std::shared_ptr<node> node, const std::string& mountpoint);
 
 void traverse(const vfs::node& node, size_t indent = 0);
 void traverse(const std::string& path);
+
+bool is_symlink(const vfs::node& node);
+node& link_target(const vfs::node& link);
 
 extern std::vector<std::reference_wrapper<node>> descriptors;
 extern std::shared_ptr<vfs_root> root;

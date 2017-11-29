@@ -81,6 +81,7 @@ SOFTWARE.
 // TODO : TinyGL
 // TODO : ambilight feature pour le windowing system !
 // TODO : refaire une VRAIE classe Terminal... c'est atroce l'implémentation actuelle, une horreur lovecraftienne
+// TODO : faire des terminal escape codes pour les couleurs
 
 void global_init()
 {
@@ -91,6 +92,7 @@ void global_init()
     MessageBus::register_handler<kbd::TextEnteredEvent>([](const kbd::TextEnteredEvent& e)
     {
         term().add_input(e.c);
+        term().force_redraw();
     });
 
     MessageBus::register_handler<kbd::KeyEvent>([](const kbd::KeyEvent& e)
@@ -148,7 +150,7 @@ void global_init()
             {
                 log(Info, "FAT %zd filesystem found on drive %zd, partition %d\n", fs.type, fs.drive, partition.partition_number);
 
-                auto root = std::make_shared<fat::fat_file>(fat::root_dir(fs));
+                static auto root = fat::root_dir(fs);
 
                 vfs::mount(root, "/boot");
             }

@@ -54,6 +54,8 @@ public:
     void put_char(char32_t c);
 
     void add_input(char32_t c);
+    void clear_input();
+    void set_input();
 
     void write(const char* data, size_t size);
     void write_string(const char* data);

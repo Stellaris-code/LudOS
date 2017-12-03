@@ -32,6 +32,8 @@ SOFTWARE.
 
 #include "time/timer.hpp"
 
+#include "graphics/fonts/psf.hpp"
+
 #ifdef ARCH_i686
 #include "i686/pc/devices/speaker.hpp"
 #endif
@@ -39,17 +41,38 @@ SOFTWARE.
 namespace graphics
 {
 
-GraphicTerm::GraphicTerm(Screen &scr, const Font &font, TerminalData &data)
+GraphicTerm::GraphicTerm(Screen &scr, TerminalData &data, const Font &font)
     : Terminal(scr.width() / font.glyph_width(), scr.height() / font.glyph_height(), data), m_scr(scr), m_font(font)
 {
     m_cursor_bitmap.resize(2, font.glyph_height(), false, graphics::color_white);
 
-    Timer::register_callback(600, [this]
+    m_callback = Timer::register_callback(600, [this]
     {
-        m_show_cursor = !m_show_cursor;
-        redraw_cursor();
-        draw_impl();
+        if (enabled())
+        {
+            m_show_cursor = !m_show_cursor;
+            redraw_cursor();
+            draw_impl();
+        }
     }, false);
+}
+
+GraphicTerm::~GraphicTerm()
+{
+    Timer::remove_callback(m_callback);
+}
+
+Font &GraphicTerm::default_font()
+{
+    static psf::PSFFont font;
+    static bool initialized = false;
+    if (!initialized)
+    {
+        assert(font.load("/initrd/system.8x16.psf"));
+        initialized = true;
+    }
+
+    return font;
 }
 
 void GraphicTerm::move_cursor(size_t x, size_t y)
@@ -75,23 +98,25 @@ void GraphicTerm::putchar(size_t x, size_t y, TermEntry entry)
 void GraphicTerm::clear_line(size_t y, Color color)
 {
     aligned_memsetl(m_scr.data() + y*m_scr.width()*m_font.glyph_height(),
-            color.rgba(), m_scr.width()*m_font.glyph_height()*
-            sizeof(Color));
+                    color.rgba(), m_scr.width()*m_font.glyph_height()*
+                    sizeof(Color));
 }
 
 void GraphicTerm::draw_impl()
 {
     redraw_cursor();
 
-    if (m_scr.allocated())
-    {
-        graphics::draw_to_display(m_scr);
-    }
+    graphics::draw_to_display(m_scr);
+}
+
+void GraphicTerm::disable_impl()
+{
+
 }
 
 void GraphicTerm::redraw_cursor()
 {
-    m_scr.blit(m_cursor_bitmap, m_cursor_pos, (m_show_cursor ? term_data().color().fg : color_black),
+    m_scr.blit(m_cursor_bitmap, m_cursor_pos, (m_show_cursor ? term_data().color().fg : term_data().color().bg),
                term_data().color().bg);
 }
 

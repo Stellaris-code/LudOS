@@ -46,13 +46,13 @@ Shell::Shell()
 
     pwd = vfs::root;
 
-    MessageBus::register_handler<TermInputEvent>([this](const TermInputEvent& e)
+    m_input_handle = MessageBus::register_handler<TermInputEvent>([this](const TermInputEvent& e)
     {
         m_input = e.line;
         m_waiting_input = false;
     });
 
-    MessageBus::register_handler<kbd::KeyEvent>([this](const kbd::KeyEvent& e)
+    m_key_handle   = MessageBus::register_handler<kbd::KeyEvent>([this](const kbd::KeyEvent& e)
     {
         if (e.state == kbd::KeyEvent::Pressed)
         {
@@ -91,6 +91,34 @@ Shell::Shell()
                     term().add_input(c);
                 }
                 term().force_redraw_input();
+            }
+            if (e.key == kbd::Tab && m_waiting_input)
+            {
+                if (m_matches.empty())
+                {
+                    autocomplete();
+                }
+                else
+                {
+                    std::string input = term().input();
+                    if (input.back() == '\t') input.pop_back();
+                    auto toks = tokenize(input, " ", true);
+                    auto actual_size = tokenize(input, " ").size();
+                    if (!(toks.size() == 1 && actual_size != 1)) toks.pop_back();
+
+                    ++m_current_match;
+                    m_current_match %= m_matches.size();
+
+                    std::string prefix = join(toks, " ");
+                    if (toks.size() >= 1) prefix += " ";
+
+                    term().set_input(prefix + m_matches[m_current_match]);
+                }
+            }
+            else
+            {
+                m_matches.clear();
+                m_current_match = 0;
             }
         }
     });
@@ -136,7 +164,7 @@ int Shell::command(const std::string &command)
 void Shell::show_prompt()
 {
     kprintf("%s", prompt().c_str());
-    term().set_input();
+    term().switch_to_input();
     term().force_redraw();
 }
 
@@ -152,7 +180,7 @@ std::string Shell::read_input()
     return m_input;
 }
 
-int Shell::process(const std::string &in)
+void Shell::process(const std::string &in)
 {
     kprintf("%s\n", (prompt() + in).c_str());
 
@@ -162,12 +190,62 @@ int Shell::process(const std::string &in)
         m_current_hist_idx = m_command_history.size()-1;
     }
 
-    return command(in);
+    int rc = command(in);
+    if (rc != 0)
+    {
+        error("Command '%s' returned with exit code %d\n", in.c_str(), rc);
+    }
+}
+
+void Shell::autocomplete()
+{
+    std::string input = term().input();
+
+    if (input.substr(input.size()-term().tab_size, term().tab_size) == "    ")
+    {
+        input.erase(input.size()-term().tab_size, term().tab_size);
+    }
+
+    auto toks = tokenize(input, " ", true);
+    auto actual_size = tokenize(input, " ").size();
+
+    m_matches.clear();
+
+    if (toks.size() == 1 && actual_size == 1)
+    {
+        for (const auto& pair : m_commands)
+        {
+            if (pair.first.substr(0, toks.back().size()) == toks.back() && pair.first != toks.back())
+            {
+                m_matches.emplace_back(pair.first);
+            }
+        };
+    }
+    else
+    {
+        for (const auto& node : pwd->readdir())
+        {
+            if (toks.size() == 1 || node->name().substr(0, toks.back().size()) == toks.back())
+            {
+                m_matches.emplace_back(node->name());
+            }
+        }
+    }
+
+    if (!m_matches.empty())
+    {
+        if (!(toks.size() == 1 && actual_size != 1)) toks.pop_back();
+
+        std::string prefix = join(toks, " ");
+        if (toks.size() >= 1) prefix += " ";
+
+        term().set_input(prefix + m_matches[m_current_match]);
+    }
 }
 
 std::string Shell::prompt() const
 {
-    return format(params.prompt, {{"path", pwd->path() + "/"}});
+    return format(params.prompt, {{"path", pwd->path()}});
 }
 
 void Shell::error(const char *fmt, ...)
@@ -192,3 +270,4 @@ std::vector<Shell::Command> Shell::commands()
 
     return vec;
 }
+

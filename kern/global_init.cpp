@@ -31,8 +31,6 @@ SOFTWARE.
 #include "fs/mbr.hpp"
 #include "fs/pathutils.hpp"
 
-#include "misc/greet.hpp"
-
 #include "drivers/kbd/kbd_mappings.hpp"
 #include "drivers/kbd/text_handler.hpp"
 #include "drivers/kbd/keyboard.hpp"
@@ -63,6 +61,7 @@ SOFTWARE.
 #include "shell/commands/basecommands.hpp"
 #include "shell/commands/syscommands.hpp"
 #include "shell/commands/fscommands.hpp"
+#include "shell/commands/gfxcommands.hpp"
 
 #include "time/time.hpp"
 #include "time/timer.hpp"
@@ -82,6 +81,8 @@ SOFTWARE.
 // TODO : ambilight feature pour le windowing system !
 // TODO : refaire une VRAIE classe Terminal... c'est atroce l'implémentation actuelle, une horreur lovecraftienne
 // TODO : faire des terminal escape codes pour les couleurs
+// TODO : classe virtuelle FS ave constructor/destructor pour notifier de la création/desctruction d'une partition
+// TODO : cowsay
 
 void global_init()
 {
@@ -163,63 +164,14 @@ void global_init()
         panic("Cannot install initrd!\n");
     }
 
-    static graphics::psf::PSFFont font;
-    if (font.load("/initrd/system.8x16.psf"))
-    {
-        log(Info, "Font loaded\n");
-#if 1
-
-#if 1
-        auto mode = graphics::change_mode(1024, 768, 32);
-#else
-        auto mode = graphics::change_mode(1680, 1050, 32);
-#endif
-
-        if (mode)
-        {
-            graphics::set_display_mode(*mode);
-
-            graphics::clear_display(graphics::color_black);
-
-            static graphics::Screen scr(mode->width, mode->height);
-
-            create_term<graphics::GraphicTerm>(scr, font, term_data());
-            term().force_redraw();
-
-            log(Notice, "Resolution %dx%dx%d set\n", mode->width,
-                mode->height, mode->depth);
-            log(Info, "LFB location : 0x%x\n", mode->framebuffer_addr);
-            log(Info, "Bytes per line : %d (padding : %d)\n", mode->bytes_per_line, mode->width*mode->depth/CHAR_BIT - mode->bytes_per_line);
-            log(Info, "Red : mask : %x, pos : %d\n", mode->red_mask_size, mode->red_field_pos);
-            log(Info, "Green : mask : %x, pos : %d\n", mode->green_mask_size, mode->green_field_pos);
-            log(Info, "Blue : mask : %x, pos : %d\n", mode->blue_mask_size, mode->blue_field_pos);
-
-#if 0
-            auto img = graphics::load_image("/initrd/LudOS.png");
-            if (!img)
-            {
-                log(Info, "Error\n");
-            }
-            else
-            {
-                term().clear();
-                term().disable();
-                img->resize(scr.width(), scr.height());
-                scr.blit(*img, {0, 0});
-                graphics::draw_to_display(scr);
-            }
-#endif
-        }
-#endif
-
-    }
-
-    greet();
-
     Shell sh;
     sh.params.prompt = "LudOS:{path}>";
     install_base_commands(sh);
     install_sys_commands(sh);
     install_fs_commands(sh);
+    install_gfx_commands(sh);
+
+    sh.command("run /initrd/init.sh");
+
     sh.run();
 }

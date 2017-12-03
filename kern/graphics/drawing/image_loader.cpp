@@ -27,7 +27,7 @@ SOFTWARE.
 
 #define STB_IMAGE_IMPLEMENTATION
 #define STBI_MALLOC kmalloc
-#define STBI_FREE kfree
+#define STBI_FREE(x) if (x) kfree(x)
 #define STBI_REALLOC krealloc
 #define STBI_NO_STDIO
 #include "stb/stb_image.h"
@@ -43,14 +43,12 @@ std::optional<Bitmap> load_image(const std::string &path)
 
     if (!node)
     {
-        err("No found\n");
         return {};
     }
 
     std::vector<uint8_t> data(node->size());
     if (!node->read(data.data(), data.size()))
     {
-        err("Here\n");
         return {};
     }
 
@@ -62,9 +60,24 @@ std::optional<Bitmap> load_image(const std::string &path)
         warn("Failed loading '%s' : %s\n", path.c_str(), stbi_failure_reason());
         return {};
     }
+    if (depth != 4)
+    {
+        warn("Image has %d channels instead of 4\n", depth);
+        return {};
+    }
 
     Bitmap bmp(x, y);
     memcpyl(bmp.data(), img, x*y*depth);
+
+    for (size_t i { 0 }; i < x; ++i)
+    {
+        for (size_t j { 0 }; j < y; ++j)
+        {
+            bmp[{i, j}] = {bmp[{i, j}].b, bmp[{i, j}].g, bmp[{i, j}].r, bmp[{i, j}].a};
+        }
+    }
+
+    stbi_image_free(img);
 
     return bmp;
 }

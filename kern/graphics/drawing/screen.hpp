@@ -38,21 +38,18 @@ namespace graphics
 class Screen
 {
 public:
-    Screen(size_t width, size_t height, Color* buffer = nullptr, Color color = color_black)
+    Screen(size_t width, size_t height, Color color = color_black)
     {
-        resize(width, height, buffer, color);
+        resize(width, height, color);
     }
 
     ~Screen()
     {
-        if (m_allocated)
-        {
-            kfree(m_data);
-        }
+        kfree(m_data);
     }
 
 public:
-    void resize(size_t width, size_t height, Color* buffer = nullptr, Color color = color_black);
+    void resize(size_t width, size_t height, Color color = color_black);
 
     const Color& operator[](const PointU& point) const
     {
@@ -66,11 +63,6 @@ public:
         //assert(point.x < m_width && point.y < m_height);
 
         return m_data[point.y * width() + point.x];
-    }
-
-    bool allocated() const
-    {
-        return m_allocated;
     }
 
     size_t width() const { return m_width; }
@@ -87,7 +79,6 @@ private:
     size_t m_height;
 
     Color* m_data;
-    bool m_allocated { false };
 };
 
 }

@@ -33,33 +33,23 @@ namespace graphics
 {
 
 // TODO : alpha support
-void Screen::resize(size_t width, size_t height, Color *buffer, Color color)
+void Screen::resize(size_t width, size_t height, Color color)
 {
     m_width = width;
     m_height = height;
 
-    if (m_allocated)
-    {
-        kfree(m_data);
-    }
-
-    if (buffer == nullptr)
-    {
-        posix_memalign(reinterpret_cast<void**>(&m_data), 32, width*height*sizeof(Color));
-        m_allocated = true;
-    }
-    else
-    {
-        m_data = buffer;
-    }
+    //posix_memalign(reinterpret_cast<void**>(&m_data), 32, width*height*sizeof(Color));
+    m_data = (graphics::Color*)kmalloc(width*height*sizeof(Color));
 
     memset(data(), color.rgb(), width*height*4);
 }
 
 void Screen::blit(const Bitmap &bitmap, const PointU &pos)
 {
-    assert(bitmap.width() + pos.x <= width());
-    assert(bitmap.height()+ pos.y <= height());
+    //    assert(bitmap.width() + pos.x <= width());
+    //    assert(bitmap.height()+ pos.y <= height());
+
+    size_t blit_width = std::min(width(), bitmap.width());
 
 #if 0
     for (size_t i { 0 }; i < bitmap.width(); ++i)
@@ -73,7 +63,7 @@ void Screen::blit(const Bitmap &bitmap, const PointU &pos)
     for (size_t j { 0 }; j < bitmap.height(); ++j)
     {
         memcpyl(data() + (j+pos.y) * width() + (pos.x), bitmap.data() + (j*bitmap.width()),
-                bitmap.width()*sizeof(Color));
+                blit_width*sizeof(Color));
     }
 #endif
 }
@@ -91,8 +81,8 @@ void Screen::blit(const Bitmap &bitmap, const PointU &pos, const Color &white, c
         {
             const auto& bmp = bitmap[{i, j}];
             m_data[y_off + i+pos.x] = (bmp.a == 0 ? transparent   :
-                                       bmp == color_white ? white :
-                                       bmp);
+                                                    bmp == color_white ? white :
+                                                                         bmp);
         }
     }
 }

@@ -32,6 +32,8 @@ SOFTWARE.
 #include "i686/cpu/mtrr.hpp"
 #include "i686/mem/paging.hpp"
 
+#include "graphics/drawing/display_draw.hpp"
+
 // TODO : init correctement le current_mode
 
 namespace graphics
@@ -61,6 +63,7 @@ VideoMode vbe_to_video_mode(const vbe::ModeInfoBlock& info)
 }
 
 VideoMode current_mode;
+std::unique_ptr<Screen> scr { nullptr };
 
 std::vector<VideoMode> list_video_modes()
 {
@@ -115,6 +118,9 @@ std::optional<VideoMode> change_mode(size_t width, size_t height, size_t depth)
                              mode.info.BytesPerScanLine*mode.info.YResolution);
 
         current_mode = vbe_to_video_mode(mode.info);
+
+        scr = std::make_unique<Screen>(current_mode.width, current_mode.height);
+        set_display_mode(current_mode);
         return current_mode;
     }
     else
@@ -126,6 +132,11 @@ std::optional<VideoMode> change_mode(size_t width, size_t height, size_t depth)
 VideoMode current_video_mode()
 {
     return current_mode;
+}
+
+Screen *screen()
+{
+    return scr.get();
 }
 
 }

@@ -27,28 +27,36 @@ SOFTWARE.
 
 #include <stdint.h>
 
+#include <string.hpp>
+
+#include "utils/stlutils.hpp"
+
 namespace ide
 {
 
 struct [[gnu::packed]] identify_data
 {
-    uint16_t flags;
-    uint16_t unused1[9];
-    char     serial[20];
-    uint16_t unused2[3];
-    char     firmware[8];
-    char    model[40];
-    uint16_t sectors_per_int;
-    uint16_t unused3;
-    uint16_t capabilities[2];
-    uint16_t unused4[2];
-    uint16_t valid_ext_data;
-    uint16_t unused5[5];
-    uint16_t size_of_rw_mult;
-    uint32_t sectors_28;
-    uint16_t unused6[38];
-    uint64_t sectors_48;
-    uint16_t unused7[152];
+    uint16_t flags; // 0
+    uint16_t unused1[9]; // 9
+    char     serial[20]; // 19
+    uint16_t unused2[3]; // 22
+    char     firmware[8]; // 26
+    char    model[40]; // 46
+    uint16_t sectors_per_int; // 47
+    uint16_t unused3; // 48
+    uint16_t capabilities[2]; // 50
+    uint16_t unused4[2]; // 52
+    uint16_t valid_ext_data; // 53
+    uint16_t unused5[5]; // 58
+    uint16_t size_of_rw_mult; // 59
+    uint32_t sectors_28; // 61
+    uint16_t unused6[38]; // 99
+    uint64_t sectors_48; // 103
+    uint16_t unused7[2]; // 105
+    uint16_t phys_log_size; // 106
+    uint16_t unused8[10]; // 116
+    uint32_t sector_size; // 118
+    uint16_t unused9[137];
 };
 
 static_assert(sizeof(identify_data) == 512);
@@ -66,6 +74,22 @@ enum BusPort : uint16_t
     Third = 0x1E8,
     Fourth = 0x168
 };
+
+template <typename T>
+std::string ata_string(T&& arr)
+{
+    using type = std::remove_reference_t<T>;
+    static_assert(std::is_array_v<type>, "Must use const char[] !");
+
+    std::string str;
+    for (size_t i { 0 }; i < std::extent_v<type>; i+=2)
+    {
+        str += arr[i + 1];
+        str += arr[i];
+    }
+
+    return trim_right(str);
+}
 
 }
 

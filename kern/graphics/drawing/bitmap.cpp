@@ -51,9 +51,11 @@ void Bitmap::resize(size_t width, size_t height, bool keep_ratio, Color color)
     }
     else
     {
+        std::vector<graphics::Color> copy = m_data;
+
         m_data.resize(width*height);
 
-        stbir_resize_uint8(reinterpret_cast<uint8_t*>(m_data.data()), m_width, m_height, 0,
+        stbir_resize_uint8(reinterpret_cast<const uint8_t*>(copy.data()), m_width, m_height, 0,
                            reinterpret_cast<uint8_t*>(m_data.data()), width, height, 0, 4);
     }
 

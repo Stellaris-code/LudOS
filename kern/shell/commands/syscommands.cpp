@@ -29,6 +29,8 @@ SOFTWARE.
 
 #include "shell/shell.hpp"
 #include "mem/meminfo.hpp"
+#include "power/powermanagement.hpp"
+#include "time/time.hpp"
 
 #include "external/liballoc/liballoc.h"
 
@@ -55,6 +57,61 @@ void install_sys_commands(Shell &sh)
      [](const std::vector<std::string>&)
      {
          liballoc_dump();
+         return 0;
+     }});
+
+    sh.register_command(
+    {"dump", "dump memory area",
+     "Usage : 'dump <addr> <size>'",
+     [&sh](const std::vector<std::string>& args)
+     {
+         if (args.size() != 2)
+         {
+             sh.error("'dump' needs two arguments !\n");
+             return -1;
+         }
+
+         const void* addr = reinterpret_cast<const void*>(std::stoul(args[0]));
+         size_t size = std::stoul(args[1]);
+         dump(addr, size);
+         return 0;
+     }});
+
+    sh.register_command(
+    {"halt", "stops computer",
+     "Usage : 'halt'",
+     [](const std::vector<std::string>&)
+     {
+         shutdown();
+         return 0;
+     }});
+
+    sh.register_command(
+    {"reboot", "reboots computer",
+     "Usage : 'reboot'",
+     [](const std::vector<std::string>&)
+     {
+         reset();
+         return 0;
+     }});
+
+    sh.register_command(
+    {"time", "prints current date",
+     "Usage : 'time'",
+     [](const std::vector<std::string>&)
+     {
+         auto date = Time::get_time_of_day();
+         kprintf("%d/%d/%d %d:%d:%d\n", date.day, date.month, date.year,
+                                        date.hour, date.min, date.sec);
+         return 0;
+     }});
+
+    sh.register_command(
+    {"uptime", "prints uptime",
+     "Usage : 'uptime'",
+     [](const std::vector<std::string>&)
+     {
+         kprintf("Uptime : %f sec\n", Time::uptime());
          return 0;
      }});
 }

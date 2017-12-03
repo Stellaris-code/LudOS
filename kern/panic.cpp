@@ -110,7 +110,7 @@ void panic(const char *fmt, ...)
     term_data().push_color({0xffffff, 0xaa0000});
 
     term().clear();
-    term().set_title(U"KERNEL PANIC...", {0xaa0000, 0xffffff});
+    term().set_title(U"KERNEL PANIC", {0xaa0000, 0xffffff});
     term().disable();
 
     Speaker::beep(300);

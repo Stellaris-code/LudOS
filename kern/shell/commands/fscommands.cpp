@@ -26,7 +26,8 @@ SOFTWARE.
 #include "fscommands.hpp"
 
 #include "shell/shell.hpp"
-
+#include "drivers/diskinterface.hpp"
+#include "utils/memutils.hpp"
 #include "fs/vfs.hpp"
 
 void install_fs_commands(Shell &sh)
@@ -77,7 +78,7 @@ void install_fs_commands(Shell &sh)
          }
          else
          {
-             target = sh.pwd->path() + "/" + args[0];
+             target = sh.pwd->path() + args[0];
          }
 
          if (target != "/") target += "/";
@@ -130,7 +131,7 @@ void install_fs_commands(Shell &sh)
          }
          else
          {
-             path = sh.pwd->path() + "/" + args[0];
+             path = sh.pwd->path() + args[0];
          }
 
          auto node = vfs::find(path);
@@ -159,6 +160,19 @@ void install_fs_commands(Shell &sh)
      [&sh](const std::vector<std::string>&)
      {
          vfs::traverse(*sh.pwd);
+         return 0;
+     }});
+
+    sh.register_command(
+    {"lsblk", "list current drives",
+     "Usage : lsblk",
+     [](const std::vector<std::string>&)
+     {
+         for (size_t i { 0 }; i < DiskInterface::drive_count(); ++i)
+         {
+             auto info = DiskInterface::info(i);
+             kprintf("%s : %s\n", info.drive_name.c_str(), human_readable_size(info.disk_size).c_str());
+         }
          return 0;
      }});
 }

@@ -31,6 +31,7 @@ SOFTWARE.
 #include <functional.hpp>
 
 #include "utils/circularbuffer.hpp"
+#include "utils/messagebus.hpp"
 
 namespace vfs
 {
@@ -75,8 +76,8 @@ public:
 private:
     void show_prompt();
     std::string read_input();
-    int process(const std::string& in);
-
+    void process(const std::string& in);
+    void autocomplete();
     std::string prompt() const;
 
 private:
@@ -86,6 +87,12 @@ private:
 
     std::deque<std::string> m_command_history;
     size_t m_current_hist_idx { 0 };
+
+    std::vector<std::string> m_matches;
+    size_t m_current_match { 0 };
+
+    MessageBus::RAIIHandle m_input_handle;
+    MessageBus::RAIIHandle m_key_handle;
 };
 
 #endif // SHELL_HPP

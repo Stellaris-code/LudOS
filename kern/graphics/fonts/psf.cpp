@@ -78,8 +78,6 @@ bool PSFFont::load_psf()
         build_unicode_table();
     }
 
-    log_serial("Size : %d\n", m_hdr->charsize);
-
     return true;
 }
 

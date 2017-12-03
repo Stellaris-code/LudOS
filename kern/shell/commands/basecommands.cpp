@@ -30,6 +30,10 @@ SOFTWARE.
 #include "utils/env.hpp"
 #include "utils/stlutils.hpp"
 
+#include "misc/greet.hpp"
+
+#include "fs/vfs.hpp"
+
 void install_base_commands(Shell &sh)
 {
     sh.register_command(
@@ -97,7 +101,7 @@ void install_base_commands(Shell &sh)
          {
              for (const auto& pair : kenv)
              {
-                kprintf("%s : '%s'\n", pair.first.c_str(), pair.second.c_str());
+                 kprintf("%s : '%s'\n", pair.first.c_str(), pair.second.c_str());
              }
          }
          else
@@ -127,12 +131,97 @@ void install_base_commands(Shell &sh)
      }});
 
     sh.register_command(
-    {"echo", "echoes input",
+    {"echo", "echoes string",
      "Usage : echo <args>",
      [](const std::vector<std::string>& args)
      {
          std::string str = join(args, " ");
          kprintf("%s\n", str.c_str());
+         return 0;
+     }});
+
+    sh.register_command(
+    {"run", "run shell script",
+     "Usage : run <file>",
+     [&sh](const std::vector<std::string>& args)
+     {
+         if (args.size() != 1)
+         {
+             sh.error("'run' needs one argument !\n");
+             return -1;
+         }
+
+         auto file = vfs::find(sh.pwd->path() + args[0]);
+         if (!file)
+         {
+             sh.error("Can't open file %s !\n", args[0].c_str());
+             return -2;
+         }
+
+         std::vector<uint8_t> vec(file->size());
+         if (!file->read(vec.data(), vec.size()))
+         {
+             sh.error("Can't read file %s !\n", args[0].c_str());
+             return -3;
+         }
+         vec.emplace_back('\0');
+
+         auto old_pwd = sh.pwd;
+         sh.pwd = std::shared_ptr<vfs::node>(file->parent(), [](vfs::node*){});
+
+         const char* c_str = reinterpret_cast<const char*>(vec.data());
+         auto commands = tokenize(c_str, "\n");
+         for (const auto& cmd : commands)
+         {
+             if (int rc = sh.command(cmd); rc != 0)
+             {
+                 return rc;
+             }
+         }
+
+         sh.pwd = old_pwd;
+
+         return 0;
+     }});
+
+    sh.register_command(
+    {"alias", "creates an alias",
+     "Usage : alias <name> <command>",
+     [&sh](const std::vector<std::string>& args)
+     {
+         if (args.size() < 2)
+         {
+             sh.error("alias needs two arguments\n");
+         }
+
+         std::string alias = args[0];
+         std::string cmd = join({args.begin() + 1, args.end()}, " ");
+
+         sh.register_command({alias, "<alias>", "<alias>", [&sh, cmd](const std::vector<std::string>&)
+                              {sh.command(cmd);return 0;}});
+
+         return 0;
+     }});
+
+    sh.register_command(
+    {"panic", "forces a kernel panic",
+     "Usage : panic (<reason>)",
+     [](const std::vector<std::string>& args)
+     {
+         std::string reason = "Panic requested";
+         if (!args.empty()) reason = join(args, " ");
+
+         panic("%s\n", reason.c_str());
+
+         return 0;
+     }});
+
+    sh.register_command(
+    {"greet", "Greets the user",
+     "Usage : greet",
+     [](const std::vector<std::string>&)
+     {
+         greet();
          return 0;
      }});
 }

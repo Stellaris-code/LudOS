@@ -43,6 +43,8 @@ void init_emu_mem()
     emu_mem = reinterpret_cast<uint8_t*>(kmalloc(0x100000));
 
     memcpy(emu_mem, reinterpret_cast<uint8_t*>(0), 0x100000);
+
+    log(Info, "Initialized x86 emulator memory\n");
 }
 
 unsigned alternate_vm_memio(x86emu_t *emu, uint32_t addr, uint32_t *val, uint32_t type)

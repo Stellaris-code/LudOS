@@ -49,13 +49,15 @@ class Terminal
 {
 public:
     Terminal(size_t iwidth, size_t iheight, TerminalData& data);
+    virtual ~Terminal() = default;
 
 public:
     void put_char(char32_t c);
 
     void add_input(char32_t c);
     void clear_input();
-    void set_input();
+    void set_input(const std::string &str);
+    void switch_to_input();
 
     void write(const char* data, size_t size);
     void write_string(const char* data);
@@ -78,12 +80,16 @@ public:
     void set_title(std::u32string str, ColorPair color);
     void set_title(std::u32string str);
 
+    std::string input() const;
+
     void enable() { m_enabled = true; };
     void disable()
     {
         m_enabled = false;
+        disable_impl();
         force_redraw();
     };
+    bool enabled() const { return m_enabled; }
 
     void set_scrolling(bool enabled)
     {
@@ -94,6 +100,9 @@ public:
     void force_redraw_input();
     void draw();
 
+public:
+    size_t tab_size { 4 };
+
 private:
     void set_entry_at(TermEntry entry, size_t x, size_t y, bool absolute = false);
     void new_line();
@@ -101,6 +110,7 @@ private:
     void check_pos();
     void update_cursor();
     void reset();
+    void process_escape_code();
 
 private:
     virtual void move_cursor(size_t x, size_t y) = 0;
@@ -108,6 +118,7 @@ private:
     virtual void clear_line(size_t y, graphics::Color color) = 0;
     virtual void putchar(size_t x, size_t y, TermEntry entry) = 0;
     virtual void draw_impl() = 0;
+    virtual void disable_impl() = 0;
 
 private:
     size_t m_cursor_x { 0 };
@@ -122,6 +133,9 @@ private:
     bool m_scrolling { true };
     bool m_line_is_input { false };
     size_t m_input_off { 0 };
+
+    bool m_escape_code { false };
+    std::string m_escape_sequence;
 
     std::vector<TermEntry> m_cur_line;
 
@@ -140,7 +154,7 @@ void create_term(Args&&... args)
     static_assert(std::is_base_of_v<Terminal, T>);
 
     extern std::unique_ptr<Terminal> current_term;
-
+    if (current_term) current_term->disable();
     current_term = std::make_unique<T>(std::forward<Args>(args)...);
     current_term->set_title(term_data().title_str, term_data().title_color);
     current_term->scroll_bottom();

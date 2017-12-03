@@ -51,6 +51,7 @@ public:
     {
         size_t disk_size { 0 };
         size_t sector_size { 0 };
+        std::string drive_name;
     };
 
 public:
@@ -64,14 +65,14 @@ public:
     {
         assert(disk_num < drive_count());
 
-        return m_read_funs[disk_num](sector, count, buf);
+        return m_entries[disk_num].read(sector, count, buf);
     }
 
     [[nodiscard]]
     static inline bool write(size_t disk_num, size_t sector, size_t count, const uint8_t* buf)
     {
         assert(disk_num < drive_count());
-        auto result = m_write_funs[disk_num](sector, count, buf);
+        auto result = m_entries[disk_num].write(sector, count, buf);
 
 #if  defined(LUDOS_TESTING)
         // check if write succeeded
@@ -93,9 +94,7 @@ public:
 
     static inline size_t add_drive(ReadFunction read_fun, WriteFunction write_fun, InfoFunction info_fun)
     {
-        m_read_funs.emplace_back(read_fun);
-        m_write_funs.emplace_back(write_fun);
-        m_info_funs.emplace_back(info_fun);
+        m_entries.push_back({read_fun, write_fun, info_fun});
 
         return m_drive_count++;
     }
@@ -123,10 +122,13 @@ public:
             }
             memcpy(reinterpret_cast<uint8_t*>(address) + sector*512, buf, count*512);
             return true;
-        }, [size]
+        }, [address, size]
         {
+            char buf[64];
+            ksnprintf(buf, 64, "<memory %p:%p>", address, reinterpret_cast<uint8_t*>(address) + size);
             return DiskInfo{.disk_size = size,
-                            .sector_size = 512};
+                        .sector_size = 512,
+                        buf};
         });
     }
 
@@ -147,28 +149,37 @@ public:
         {
             last_error = Error::ReadOnly;
             return false;
-        }, [size]
+        }, [address, size]
         {
+        char buf[64];
+        ksnprintf(buf, 64, "<memory %p:%p>", address, reinterpret_cast<const uint8_t*>(address) + size);
         return DiskInfo{.disk_size = size,
-                        .sector_size = 512};
-});
+                    .sector_size = 512,
+                    buf};
+    });
 }
 
-    static inline DiskInfo info(size_t disk_num)
-    {
-        assert(disk_num < drive_count());
+static inline DiskInfo info(size_t disk_num)
+{
+    assert(disk_num < drive_count());
 
-        return m_info_funs[disk_num]();
-    }
+    return m_entries[disk_num].info();
+}
 
-    static inline Error last_error { Error::OK };
+static inline Error last_error { Error::OK };
 
-    private:
-    static inline std::vector<ReadFunction> m_read_funs;
-    static inline std::vector<WriteFunction> m_write_funs;
-    static inline std::vector<InfoFunction> m_info_funs;
+private:
+struct Entry
+{
+    ReadFunction read;
+    WriteFunction write;
+    InfoFunction info;
+};
 
-    static inline size_t m_drive_count { 0 };
+private:
+static inline std::vector<Entry> m_entries;
+
+static inline size_t m_drive_count { 0 };
 };
 
 #endif // DISKINTERFACE_HPP

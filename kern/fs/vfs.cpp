@@ -237,13 +237,16 @@ node::~node()
 
 std::string node::path() const
 {
+    std::string suffix;
+    if (is_dir()) suffix = "/";
+
     if (!m_parent)
     {
-        return "";
+        return "" + suffix;
     }
     else
     {
-        return m_parent->path() + "/" + name();
+        return m_parent->path() + name() + suffix;
     }
 }
 

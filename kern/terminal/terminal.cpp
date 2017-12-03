@@ -31,12 +31,14 @@ SOFTWARE.
 
 #include "utils/logging.hpp"
 #include "utils/messagebus.hpp"
+#include "utils/stlutils.hpp"
 #include "unicode/utf32decoder.hpp"
 
 std::unique_ptr<Terminal> current_term;
 std::unique_ptr<TerminalData> current_termdata;
 
 // TODO : editing line wrapping
+// TODO : bouger le curseur
 
 Terminal::Terminal(size_t iwidth, size_t iheight, TerminalData &data)
     : m_width(iwidth), m_height(iheight), m_data(data)
@@ -45,7 +47,25 @@ Terminal::Terminal(size_t iwidth, size_t iheight, TerminalData &data)
 
 void Terminal::put_char(char32_t c)
 {
-    if (c == '\n')
+    if (m_escape_code)
+    {
+        if (c >= 0x40 && c <= 0x7E)
+        {
+            m_escape_code = false;
+            process_escape_code();
+            m_escape_sequence.clear();
+        }
+        else
+        {
+            m_escape_sequence.push_back(c);
+        }
+    }
+
+    if (c == '\e')
+    {
+        m_escape_code = true;
+    }
+    else if (c == '\n')
     {
         new_line();
     }
@@ -66,7 +86,7 @@ void Terminal::put_char(char32_t c)
     }
     else if (c == '\t')
     {
-        for (size_t i { 0 }; i < 4; ++i)
+        for (size_t i { 0 }; i < tab_size; ++i)
         {
             put_char(' ');
         }
@@ -88,7 +108,7 @@ void Terminal::put_char(char32_t c)
 
 void Terminal::add_input(char32_t c)
 {
-    set_input();
+    switch_to_input();
     put_char(c);
 }
 
@@ -103,7 +123,22 @@ void Terminal::clear_input()
     force_redraw();
 }
 
-void Terminal::set_input()
+void Terminal::set_input(const std::string &str)
+{
+    while (m_cur_line.size() > m_input_off)
+    {
+        m_cur_line.pop_back();
+        --m_cursor_x;
+    }
+
+    switch_to_input();
+
+    write_string(str.c_str());
+
+    force_redraw();
+}
+
+void Terminal::switch_to_input()
 {
     if (!m_line_is_input)
     {
@@ -239,6 +274,16 @@ void Terminal::set_title(std::u32string str)
     set_title(str, m_data.color());
 }
 
+std::string Terminal::input() const
+{
+    std::string str;
+    for (size_t i { m_input_off }; i < m_cur_line.size(); ++i)
+    {
+        str += decode_utf32(m_cur_line[i].c);
+    }
+    return str;
+}
+
 void Terminal::set_entry_at(TermEntry entry, size_t x, size_t y, bool absolute)
 {
     if (m_enabled)
@@ -269,10 +314,7 @@ void Terminal::new_line()
         m_line_is_input = false;
         //put_char('\n');
         TermInputEvent ev;
-        for (size_t i { m_input_off }; i < m_cur_line.size(); ++i)
-        {
-            ev.line += decode_utf32(m_cur_line[i].c);
-        }
+        ev.line = input();
 
         MessageBus::send(ev);
     }
@@ -311,6 +353,11 @@ void Terminal::reset()
     clear({0xaaaaaa, 0xaaaaaa});
 
     m_cur_line.clear();
+}
+
+void Terminal::process_escape_code()
+{
+    auto param_list = tokenize(m_escape_sequence, ";");
 }
 
 void Terminal::resize(size_t iwidth, size_t iheight)

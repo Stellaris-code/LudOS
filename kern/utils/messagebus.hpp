@@ -30,6 +30,7 @@ SOFTWARE.
 #include <list.hpp>
 #include <typeindex.hpp>
 #include <any.hpp>
+#include <optional.hpp>
 
 class MessageBus
 {
@@ -44,6 +45,27 @@ public:
 
     template <typename T>
     static void send(const T& event);
+
+public:
+    struct RAIIHandle
+    {
+        RAIIHandle() = default;
+        ~RAIIHandle()
+        {
+            if (handle) remove_handler(*handle);
+        }
+        RAIIHandle(const Handle& ihandle)
+        {
+            handle = ihandle;
+        }
+        RAIIHandle& operator=(const Handle& other)
+        {
+            handle = other;
+            return *this;
+        }
+
+        std::optional<Handle> handle {};
+    };
 
 private:
     static inline std::unordered_map<std::type_index, std::list<std::any>> handlers;

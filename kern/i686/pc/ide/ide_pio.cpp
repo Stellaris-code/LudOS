@@ -206,12 +206,12 @@ void ide::pio::init()
                     if (identify_data)
                     {
                         return DiskInterface::DiskInfo{.disk_size = size_t(identify_data->sectors_48*512),
-                                                       .sector_size = 512};
+                                                       .sector_size = (identify_data->sector_size*2?:512), ata_string(identify_data->model)};
                     }
                     else
                     {
                         return DiskInterface::DiskInfo{.disk_size = 0,
-                                                       .sector_size = 512};
+                                                       .sector_size = 512, "<invalid>"};
                     }
                 });
             }
@@ -274,7 +274,7 @@ std::optional<ide::identify_data> ide::pio::identify(BusPort port, DriveType typ
         identify_data* id_data;
         id_data = reinterpret_cast<identify_data*>(buffer.data());
 
-        log(Debug, "Firmware : %s, model : %s\n", std::string(id_data->firmware,8).c_str(), std::string(id_data->model, 40).c_str());
+        log(Debug, "Firmware : %s, model : %s\n", ata_string(id_data->firmware).c_str(), ata_string(id_data->model).c_str());
 
         return *id_data;
     }

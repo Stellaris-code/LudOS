@@ -333,6 +333,73 @@ bool detail::issue_write_command(size_t port, uint64_t sector, size_t count, con
     return true;
 }
 
+bool detail::issue_identify_command(size_t port, ide::identify_data* buf)
+{
+    int slot = free_slot(port);
+    if (slot < 0)
+    {
+        warn("No more AHCI slots available\n");
+        return false;
+    }
+
+    CommandHeader *cmdheader = reinterpret_cast<CommandHeader*>(mem->ports[port].clb);
+    cmdheader += slot;
+
+    cmdheader->cfl = sizeof(FisRegH2D)/sizeof(uint32_t);	// Command FIS size
+    cmdheader->write = 0;		// Read from device
+    cmdheader->prdtl = 1;	// PRDT entries count
+
+    cmdheader->atapi = false;
+
+    CommandTable *cmdtbl = reinterpret_cast<CommandTable*>(cmdheader->ctba);
+    memset(cmdtbl, 0, sizeof(CommandTable) +
+           (cmdheader->prdtl-1)*sizeof(PrdtEntry));
+    // 8K bytes (16 sectors) per PRDT
+
+    mkprd(cmdtbl->entries[0], reinterpret_cast<uintptr_t>(buf), 512);
+
+    // Setup command
+    FisRegH2D *cmdfis = reinterpret_cast<FisRegH2D*>(&cmdtbl->command_fis);
+
+    cmdfis->fis_type = FISType::RegH2D;
+    cmdfis->c = 1;	// Command
+    cmdfis->command = ata_identify;
+
+    if (!Timer::sleep_until([&]{return !(mem->ports[port].tfd & (ata_busy | ata_drq));}, 500))
+    {
+        warn("AHCI port %d is hung\n", port);
+        return false;
+    }
+
+    mem->ports[port].is = ~0; // clear interrupt flags
+    mem->ports[port].ci = 1<<slot;	// Issue command
+    flush_commands(port);
+
+    // Wait for completion
+    while (1)
+    {
+        // In some longer duration reads, it may be helpful to spin on the DPS bit
+        // in the PxIS port field as well (1 << 5)
+        if (((mem->ports[port].sact | mem->ports[port].ci) & (1<<slot)) == 0 &&
+                (mem->ports[port].is & pxis_dps) == 0)
+            break;
+        if (check_errors(port))	// Task file error
+        {
+            err("Read disk error on AHCI port %d\n", port);
+            return false;
+        }
+    }
+
+    // Check again
+    if (check_errors(port))
+    {
+        err("::Read disk error on AHCI port %d\n", port);
+        return false;
+    }
+
+    return true;
+}
+
 void detail::init_interface()
 {
     for (size_t port { 0 }; port < sizeof(mem->pi)*CHAR_BIT; ++port)
@@ -347,9 +414,19 @@ void detail::init_interface()
             {
                 return detail::issue_write_command(port, sector, count, reinterpret_cast<const uint16_t*>(buf));
             },
-            []{
-                return DiskInterface::DiskInfo{ .disk_size = 0,
-                                                .sector_size = 512}; // TODO : implement !
+            [port]{
+                ide::identify_data data;
+                std::string model;
+                if (detail::issue_identify_command(port, &data))
+                {
+                    return DiskInterface::DiskInfo{.disk_size = size_t(data.sectors_48*512),
+                                                   .sector_size = (data.sector_size*2?:512), ide::ata_string(data.model)};
+                }
+                else
+                {
+                    return DiskInterface::DiskInfo{.disk_size = 0,
+                                                   .sector_size = 512, "<invalid>"};
+                }
             });
         }
     }

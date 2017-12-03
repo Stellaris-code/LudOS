@@ -1,7 +1,7 @@
 /*
-textterminal.hpp
+gfxcommands.hpp
 
-Copyright (c) 17 Yann BOUCHER (yann)
+Copyright (c) 30 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,26 +22,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef TEXTTERMINAL_HPP
-#define TEXTTERMINAL_HPP
+#ifndef GFXCOMMANDS_HPP
+#define GFXCOMMANDS_HPP
 
-#include "terminal/terminal.hpp"
+class Shell;
 
-class TextTerminal : public Terminal
-{
-public:
-    TextTerminal(uintptr_t fb, size_t iwidth, size_t iheight, TerminalData &data);
+void install_gfx_commands(Shell& sh);
 
-private:
-    virtual void move_cursor(size_t x, size_t y) override;
-    virtual void beep(size_t ms) override;
-    virtual void putchar(size_t x, size_t y, TermEntry entry) override;
-    virtual void clear_line(size_t y, graphics::Color color) override;
-    virtual void draw_impl() override;
-    virtual void disable_impl() override {}
-
-private:
-    uintptr_t m_fb;
-};
-
-#endif // TEXTTERMINAL_HPP
+#endif // GFXCOMMANDS_HPP

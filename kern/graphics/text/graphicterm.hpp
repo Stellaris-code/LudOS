@@ -30,13 +30,19 @@ SOFTWARE.
 #include "graphics/fonts/font.hpp"
 #include "graphics/drawing/screen.hpp"
 
+#include "time/timer.hpp"
+
 namespace graphics
 {
 
 class GraphicTerm : public Terminal
 {
 public:
-    GraphicTerm(Screen& scr, const Font& font, TerminalData &data);
+    GraphicTerm(Screen& scr, TerminalData &data, const Font& font = default_font());
+    ~GraphicTerm();
+
+public:
+    static Font& default_font();
 
 private:
     virtual void move_cursor(size_t x, size_t y) override;
@@ -44,6 +50,7 @@ private:
     virtual void putchar(size_t x, size_t y, TermEntry entry) override;
     virtual void clear_line(size_t y, Color color) override;
     virtual void draw_impl() override;
+    virtual void disable_impl() override;
 
 private:
     void redraw_cursor();
@@ -63,6 +70,7 @@ private:
     volatile bool m_show_cursor { false };
     PointU m_cursor_pos { 0, 0 };
     Bitmap m_cursor_bitmap;
+    Timer::CallbackHandle m_callback;
 };
 
 }

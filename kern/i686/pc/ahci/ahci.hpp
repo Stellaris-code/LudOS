@@ -28,6 +28,7 @@ SOFTWARE.
 #include <stdint.h>
 
 #include "i686/cpu/registers.hpp"
+#include "i686/pc/ide/ide_common.hpp"
 
 namespace ahci
 {
@@ -301,6 +302,7 @@ void get_ahci_ownership();
 void mkprd(PrdtEntry& entry, uint64_t addr, size_t bytes);
 [[nodiscard]] bool issue_read_command(size_t port, uint64_t sector, size_t count, uint16_t* buf);
 [[nodiscard]] bool issue_write_command(size_t port, uint64_t sector, size_t count, const uint16_t* buf);
+[[nodiscard]] bool issue_identify_command(size_t port, ide::identify_data* buf);
 
 uint32_t flush_commands(size_t port);
 

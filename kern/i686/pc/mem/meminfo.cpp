@@ -130,7 +130,7 @@ void Meminfo::init_paging_bitmap()
         }
     }
     // Mark kernel space as unavailable, protect multiboot info data
-    for (size_t i { Paging::page(0) }; i < Paging::page(virt(reinterpret_cast<uintptr_t>(&kernel_physical_end + 0x30000))); ++i)
+    for (size_t i { Paging::page(0) }; i < Paging::page(virt(reinterpret_cast<uintptr_t>(&kernel_physical_end + 0x80000))); ++i)
     {
         Paging::mem_bitmap[i] = true;
     }

@@ -93,6 +93,15 @@ std::string inline trim(const std::string& str)
     return std::string(str.c_str(), strlen(str.c_str()));
 }
 
+std::string inline trim_right(std::string str)
+{
+    while (isspace(str.back()))
+    {
+        str.pop_back();
+    }
+    return str;
+}
+
 template <typename Cont>
 inline std::vector<Cont> split(const Cont& cont, size_t chunk_size, bool fill = false)
 {

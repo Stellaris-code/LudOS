@@ -30,7 +30,7 @@ SOFTWARE.
 #include "utils/nop.hpp"
 
 #include <functional.hpp>
-#include <vector.hpp>
+#include <list.hpp>
 #include <algorithm.hpp>
 
 #include "panic.hpp"
@@ -41,7 +41,27 @@ class Timer
 
     friend class PIT;
 
+private:
+    struct Callback
+    {
+        Callback() = default;
+
+        Callback(uint32_t istart, uint32_t iduration, std::function<void()> icallback, bool ioneshot)
+            : start(istart), duration(iduration), callback(icallback), oneshot(ioneshot), to_be_deleted(false)
+        {
+
+        }
+
+        uint32_t start;
+        uint32_t duration;
+        std::function<void()> callback;
+        bool oneshot;
+        bool to_be_deleted { false };
+    };
+
 public:
+    using CallbackHandle = std::list<Callback>::iterator;
+
     static inline void set_frequency(uint32_t freq)
     {
         Timer::m_freq = freq;
@@ -70,9 +90,15 @@ public:
     }
 
     // time in ms
-    static inline void register_callback(uint32_t duration, std::function<void()> callback, bool oneshot = true)
+    static inline CallbackHandle register_callback(uint32_t duration, std::function<void()> callback, bool oneshot = true)
     {
         m_callbacks.emplace_back(m_ticks, duration/(1000/freq()), callback, oneshot);
+        return std::prev(m_callbacks.end());
+    }
+
+    static inline void remove_callback(const CallbackHandle& it)
+    {
+        m_callbacks.erase(it);
     }
 
     static inline uint32_t ticks()
@@ -91,7 +117,8 @@ private:
     static inline void irq_callback()
     {
         ++m_ticks;
-        handle_callbacks();
+        // do not always check, it is costly
+        if ((m_ticks % 8) == 0) handle_callbacks();
     }
 
     static inline void handle_callbacks()
@@ -110,28 +137,12 @@ private:
         }
 
         // remove used callbacks
-        m_callbacks.erase(std::remove_if(m_callbacks.begin(), m_callbacks.end(), [](const Callback& c) { return c.to_be_deleted;}), m_callbacks.end());
+        m_callbacks.remove_if([](const Callback& c) { return c.to_be_deleted;});
     }
 private:
 
-    struct Callback
-    {
-        Callback() = default;
 
-        Callback(uint32_t istart, uint32_t iduration, std::function<void()> icallback, bool ioneshot)
-            : start(istart), duration(iduration), callback(icallback), oneshot(ioneshot), to_be_deleted(false)
-        {
-
-        }
-
-        uint32_t start;
-        uint32_t duration;
-        std::function<void()> callback;
-        bool oneshot;
-        bool to_be_deleted { false };
-    };
-
-    static inline std::vector<Callback> m_callbacks;
+    static inline std::list<Callback> m_callbacks;
     static inline uint32_t m_ticks { 0 };
     static inline uint32_t m_freq { 0 };
 };

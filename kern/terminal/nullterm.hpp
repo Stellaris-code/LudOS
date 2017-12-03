@@ -40,6 +40,7 @@ private:
     virtual void putchar(size_t, size_t, TermEntry) override {}
     virtual void clear_line(size_t, graphics::Color) override {}
     virtual void draw_impl() override {};
+    virtual void disable_impl() override {};
 };
 
 #endif // NULLTERM_HPP

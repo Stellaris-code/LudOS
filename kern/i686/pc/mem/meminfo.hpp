@@ -48,7 +48,7 @@ public:
 
     static size_t total_memory();
 
-    static void init_paging_bitmap();
+    static void init_alloc_bitmap();
 
 private:
     static inline multiboot_mmap_entry *mmap_addr;

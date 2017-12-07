@@ -32,44 +32,28 @@ SOFTWARE.
 #include "panic.hpp"
 #include "utils/logging.hpp"
 
+#include "i686/cpu/registers.hpp"
+
 #define LASTPOS_OPTIMIZATION 1
 
 extern "C" int kernel_physical_end;
 
+alignas(4096) static PageDirectory                 page_directory;
+alignas(4096) static std::array<PageTable, 1024>   page_tables;
+
 void Paging::init()
 {
-#if 0
-    uint32_t* pt0 = reinterpret_cast<uint32_t*>(alloc_page_frame());
+    cli();
+    init_page_directory();
 
-    uint32_t* pd0 = reinterpret_cast<uint32_t*>(alloc_page_frame());
+    uint32_t pd_addr { reinterpret_cast<uint32_t>(page_directory.data()) };
+    uint32_t cr = cr0() | 0x80010000;
 
-    pd0[0] = reinterpret_cast<uintptr_t>(pt0);
-    pd0[0] |= 3;
-    for (size_t i = 1; i < 1024; i++)
-    {
-        pd0[i] = 0;
-    }
+    uint32_t var = *((uint32_t*)page_directory.data());
 
-
-    log("%p\n", pt0);
-
-    /* Création de la Page Table[0] */
-    uint32_t page_addr = 0;
-    for (size_t i = 0; i < 1024; i++)
-    {
-        pt0[i] = page_addr;
-        pt0[i] |= 3;
-        page_addr += 0x1000;
-    }
-    // must use inline assembly, cannot call external function as that would mess up the stack
-    asm("   mov %0, %%eax    \n \
-    mov %%eax, %%cr3 \n \
-            mov %%cr0, %%eax \n \
-            or $0x80000001, %%eax     \n \
-            mov %%eax, %%cr0" :: "m"(pd0));
-
-            log("Paging initialized\n");
-#endif
+    asm volatile ("mov %0, %%cr3\n"
+                  "mov %1, %%cr0\n"::"r"(pd_addr), "r"(cr));
+    sti();
 }
 
 #if LASTPOS_OPTIMIZATION
@@ -128,10 +112,6 @@ loop:
 #endif
 
     log_serial("Out of memory\n");
-//    for (size_t i { 0 }; i < mem_bitmap.array_size; ++i)
-//    {
-//        mem_bitmap[i] = false;
-//    }
     panic("Out of memory !\n");
 
     return 0;
@@ -139,11 +119,6 @@ loop:
 
 bool Paging::release_page_frame(uintptr_t p_addr, size_t number)
 {
-//    if (p_addr < reinterpret_cast<uintptr_t>(&kernel_physical_end))
-//    {
-//        panic("Should not happend ! %p\n", p_addr);
-//    }
-
     size_t base_page = page(virt(p_addr));
     bool released = false;
 
@@ -160,16 +135,57 @@ bool Paging::release_page_frame(uintptr_t p_addr, size_t number)
     return released;
 }
 
-// TODO : implement
-void Paging::map_page(void *phys, void *&virt, uint32_t flags)
-{
-    virt = phys;
-}
-
 void Paging::mark_as_used(uintptr_t addr, size_t size)
 {
     for (size_t i { page(addr) }; i < page(addr + size); ++i)
     {
         mem_bitmap[i] = true;
     }
+}
+
+void Paging::init_page_directory()
+{
+    memset(page_directory.data(), 0, sizeof(page_directory));
+    for (size_t i { 0 }; i < page_tables.size(); ++i)
+    {
+        memset(&page_tables[i], 0, sizeof(page_tables[i]));
+        page_directory[i].pt_addr = reinterpret_cast<uint32_t>(&page_tables[i]) >> 12;
+        page_directory[i].present = true;
+        page_directory[i].write = true;
+    }
+
+    identity_map();
+
+    // map last table to itself
+    page_tables[1023][1023].phys_addr = reinterpret_cast<uint32_t>(page_directory.data()) >> 12;
+    page_tables[1023][1023].write = true;
+    page_tables[1023][1023].present = true;
+}
+
+void Paging::identity_map()
+{
+    PTEntry* entry = &page_tables[0][0];
+
+    for (uint32_t addr { 0 }; addr <= reinterpret_cast<uint32_t>(&kernel_physical_end) + 0x1000; addr+=0x1000, ++entry)
+    {
+        entry->phys_addr = addr >> 12;
+        entry->present = true;
+        entry->write = true;
+        entry->user = false;
+    }
+}
+
+void Paging::map_page(void *phys, void *virt, uint32_t flags)
+{
+    // Make sure that both addresses are page-aligned.
+
+    uint32_t pdindex = reinterpret_cast<uint32_t>(virt) >> 22;
+    uint32_t ptindex = reinterpret_cast<uint32_t>(virt) >> 12 & 0x03FF;
+
+    PageDirectory   * pd = reinterpret_cast<PageDirectory*>(0xFFFFF000);
+
+    PageTable       * pt = reinterpret_cast<PageTable*>((*pd)[pdindex].pt_addr << 12);
+
+    (*pt)[ptindex].phys_addr = reinterpret_cast<uint32_t>(phys) >> 12;
+    (*pt)[ptindex].present = true;
 }

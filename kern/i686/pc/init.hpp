@@ -70,42 +70,81 @@ SOFTWARE.
 extern "C" multiboot_header mbd;
 extern "C" int kernel_physical_end;
 
+#pragma GCC push_options
+#pragma GCC target ("no-sse")
+void early_abort(const char* str)
+{
+    uint16_t* addr = reinterpret_cast<uint16_t*>(0xB8000);
+
+    // Clear
+    for (size_t i { 0 }; i < 25*80; ++i)
+    {
+        addr[i] = 0;
+    }
+
+    while (*str)
+    {
+        *addr++ = *str++ | (15 << 8);
+    }
+
+    halt();
+}
+
+void early_init()
+{
+    if (simd_features() & SSE)
+    {
+        enable_sse();
+    }
+    else
+    {
+#ifdef __SSE__
+        early_abort("LudOS was compiled with SSE support but CPU doesn't support it, aborting");
+#endif
+    }
+}
+#pragma GCC pop_options
+
 namespace i686
 {
 namespace pc
 {
 inline void init(uint32_t magic, const multiboot_info_t* mbd_info)
 {
+    early_init();
+
     serial::debug::init(BDA::com1_port());
     serial::debug::write("Serial COM1 : Booting LudOS v%d...\n", 1);
 
     multiboot::check(magic, mbd, mbd_info);
     multiboot::info = mbd_info;
 
-    multiboot::parse_mem();
-    Meminfo::init_paging_bitmap();
+    gdt::init();
+
+    pic::init();
+
+    idt::init();
+
     Paging::init();
+
+    multiboot::parse_mem();
+    Meminfo::init_alloc_bitmap();
 
     uint64_t framebuffer_addr = bit_check(mbd_info->flags, 12) ? mbd_info->framebuffer_addr : 0xB8000;
 
-    serial::debug::write("Framebuffer address : 0x%lx\n", phys(framebuffer_addr));
+    serial::debug::write("Framebuffer address : %d\n", phys(framebuffer_addr));
 
     init_printf(nullptr, [](void*, char c){putchar(c);});
 
     create_term<TextTerminal>(phys(framebuffer_addr), 80, 25, term_data());
-
+    serial::debug::write("ee\n");
     term().clear();
 
     auto elf_info = multiboot::elf_info();
     elf::kernel_symbol_table = elf::get_symbol_table(elf_info.first, elf_info.second);
 
-    gdt::init();
-    pic::init();
-
     term().set_title(U"LudOS " LUDOS_VERSION_STRING " - build date " __DATE__,
     {0x000000, 0x00aaaa});
-
-    idt::init();
 
     isr::register_handler(isr::Breakpoint, [](const registers* const)
     {

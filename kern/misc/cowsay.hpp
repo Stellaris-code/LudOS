@@ -1,7 +1,7 @@
 /*
-timestamp.cpp
+cowsay.hpp
 
-Copyright (c) 27 Yann BOUCHER (yann)
+Copyright (c) 03 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,51 +22,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
+#ifndef COWSAY_HPP
+#define COWSAY_HPP
 
-#include "time/time.hpp"
+#include <string.hpp>
 
-#include "i686/cpu/cpuinfo.hpp"
-#include "i686/pc/devices/rtc.hpp"
+void cowsay(std::string str, size_t cowsay_width = 40);
 
-namespace Time
-{
-
-bool timer_ready = false;
-
-uint64_t total_ticks()
-{
-    uint64_t ret;
-    asm volatile ( "rdtsc" : "=A"(ret) );
-    return ret;
-}
-
-double uptime()
-{
-    if (!timer_ready) return 0;
-
-    static double initial_ticks = total_ticks();
-    double ticks = total_ticks() - initial_ticks;
-
-    return ticks / (double(clock_speed()) * 1'000'000.0); // MHz -> Hz
-}
-
-Date to_local_time(Date utc_date)
-{
-    // heure d'été
-    if (utc_date.month >= 4 && utc_date.month <= 7)
-    {
-        ++utc_date.hour;
-    }
-
-    // UTC+1
-    ++utc_date.hour;
-
-    return utc_date;
-}
-
-Date get_time_of_day()
-{
-    return to_local_time(rtc::get_time());
-}
-
-}
+#endif // COWSAY_HPP

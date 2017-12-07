@@ -53,6 +53,10 @@ void install_fs_commands(Shell &sh)
              {
                  kprintf("/");
              }
+             else
+             {
+                 kprintf("\t: %s", human_readable_size(entry->size()).c_str());
+             }
              kprintf("\n");
          }
          return 0;
@@ -63,27 +67,10 @@ void install_fs_commands(Shell &sh)
      "Usage : cd <dir>",
      [&sh](const std::vector<std::string>& args)
      {
-         if (args.size() != 1)
-         {
-             sh.error("cd must be called with one arg!\n");
-             return -1;
-         }
+         std::string target = "/";
+         if (!args.empty()) target = args[0];
 
-         std::string target;
-
-         // Absolute path
-         if (args[0][0] == '/')
-         {
-             target = args[0];
-         }
-         else
-         {
-             target = sh.pwd->path() + args[0];
-         }
-
-         if (target != "/") target += "/";
-
-         auto node = vfs::find(target);
+         auto node = vfs::find(sh.get_path(target));
 
          if (!node)
          {
@@ -118,23 +105,14 @@ void install_fs_commands(Shell &sh)
      "Usage : cat <file>",
      [&sh](const std::vector<std::string>& args)
      {
-         if (args.size() != 1)
-         {
-             sh.error("cat must be called with one arg!\n");
-             return -1;
-         }
+         std::string path = "/";
 
-         std::string path;
-         if (args[0][0] == '/')
+         if (!args.empty())
          {
              path = args[0];
          }
-         else
-         {
-             path = sh.pwd->path() + args[0];
-         }
 
-         auto node = vfs::find(path);
+         auto node = vfs::find(sh.get_path(path));
          if (!node)
          {
              sh.error("file not found : '%s'\n", path.c_str());

@@ -287,7 +287,7 @@ std::shared_ptr<fat::fat_file> fat::detail::entry_to_vfs_node(const fat::Entry &
     auto node = std::make_shared<fat_file>(parent);
     if (!long_name.empty())
     {
-        node->m_name = trim(long_name);
+        node->m_name = trim_zstr(long_name);
     }
     else
     {
@@ -295,12 +295,12 @@ std::shared_ptr<fat::fat_file> fat::detail::entry_to_vfs_node(const fat::Entry &
         {
             node->m_name.push_back(entry.filename[i]);
         }
-        node->m_name = trim(node->m_name);
+        node->m_name = trim_zstr(node->m_name);
         for (size_t i { 0 }; i < strlen(reinterpret_cast<const char*>(entry.extension)); ++i)
         {
             node->m_name.push_back(entry.extension[i]);
         }
-        node->m_name = trim(node->m_name);
+        node->m_name = trim_zstr(node->m_name);
         std::reverse(node->m_name.begin(), node->m_name.end());
     }
 

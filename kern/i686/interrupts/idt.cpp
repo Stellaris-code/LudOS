@@ -30,8 +30,6 @@ SOFTWARE.
 #include <string.h>
 #include <stdio.h>
 
-#include "utils/logging.hpp"
-
 #include "interrupts.hpp"
 
 namespace idt
@@ -57,8 +55,6 @@ void set_gate(uint8_t num, uint32_t base, uint16_t sel, uint8_t flags)
 
 void init()
 {
-    log(Info, "Initializing ISRs\n");
-
     idt_ptr.limit = sizeof(entry) * std::extent_v<decltype(idt_entries)> -1;
     idt_ptr.base  = reinterpret_cast<uint32_t>(&idt_entries);
 
@@ -116,8 +112,6 @@ void init()
     idt_flush(reinterpret_cast<uint32_t>(&idt_ptr));
 
     sti();
-
-    log(Info, "ISRs and IDT initialized\n");
 }
 
 }

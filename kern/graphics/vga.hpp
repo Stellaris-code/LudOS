@@ -27,9 +27,12 @@ SOFTWARE.
 
 #include <stdint.h>
 
+#include <vector.hpp>
+
 #include "color.hpp"
 
 #include "utils/logging.hpp"
+#include "utils/stlutils.hpp"
 
 namespace graphics
 {
@@ -70,41 +73,70 @@ static inline uint16_t entry(uint8_t uc, uint8_t color)
 
 static inline color color_to_vga(const Color& color)
 {
-    switch (color.rgb())
+    std::vector<std::pair<Color, vga::color>> colors
     {
-    case 0x0000AA:
-        return VGA_COLOR_BLUE;
-    case 0x00aa00:
-        return VGA_COLOR_GREEN;
-    case 0x00aaaa:
-        return VGA_COLOR_CYAN;
-    case 0xaa0000:
-        return VGA_COLOR_RED;
-    case 0xaa00aa:
-        return VGA_COLOR_MAGENTA;
-    case 0xaa5500:
-        return VGA_COLOR_BROWN;
-    case 0xaaaaaa:
-        return VGA_COLOR_LIGHT_GREY;
-    case 0x555555:
-        return VGA_COLOR_DARK_GREY;
-    case 0x5555ff:
-        return VGA_COLOR_LIGHT_BLUE;
-    case 0x55ff55:
-        return VGA_COLOR_LIGHT_GREEN;
-    case 0x55ffff:
-        return VGA_COLOR_LIGHT_CYAN;
-    case 0xff5555:
-        return VGA_COLOR_LIGHT_RED;
-    case 0xff55ff:
-        return VGA_COLOR_LIGHT_MAGENTA;
-    case 0xffff55:
-        return VGA_COLOR_YELLOW;
-    case 0xffffff:
-        return VGA_COLOR_WHITE;
-    }
+        {0x000000, VGA_COLOR_BLACK},
+        {0x0000aa, VGA_COLOR_BLUE},
+        {0x00aa00, VGA_COLOR_GREEN},
+        {0x00aaaa, VGA_COLOR_CYAN},
+        {0xaa0000, VGA_COLOR_RED},
+        {0xaa00aa, VGA_COLOR_MAGENTA},
+        {0xaa5500, VGA_COLOR_BROWN},
+        {0xaaaaaa, VGA_COLOR_LIGHT_GREY},
+        {0x555555, VGA_COLOR_DARK_GREY},
+        {0x5555ff, VGA_COLOR_LIGHT_BLUE},
+        {0x55ff55, VGA_COLOR_LIGHT_GREEN},
+        {0x55ffff, VGA_COLOR_LIGHT_CYAN},
+        {0xff5555, VGA_COLOR_LIGHT_RED},
+        {0xff55ff, VGA_COLOR_LIGHT_MAGENTA},
+        {0xffff55, VGA_COLOR_YELLOW},
+        {0xffffff, VGA_COLOR_WHITE}
+    };
 
-    return VGA_COLOR_BLACK;
+    using color_pair = std::pair<Color, vga::color>;
+
+    return closest<color_pair,size_t>({color, VGA_COLOR_BLACK}, colors, [](const color_pair& lhs, const color_pair& rhs)
+    {
+        return (rhs.first.r - lhs.first.r)*(rhs.first.r - lhs.first.r) +
+               (rhs.first.g - lhs.first.g)*(rhs.first.g - lhs.first.g) +
+               (rhs.first.b - lhs.first.b)*(rhs.first.b - lhs.first.b);
+    }).second;
+
+//    switch (color.rgb())
+//    {
+//    case 0x0000AA:
+//        return VGA_COLOR_BLUE;
+//    case 0x00aa00:
+//        return VGA_COLOR_GREEN;
+//    case 0x00aaaa:
+//        return VGA_COLOR_CYAN;
+//    case 0xaa0000:
+//        return VGA_COLOR_RED;
+//    case 0xaa00aa:
+//        return VGA_COLOR_MAGENTA;
+//    case 0xaa5500:
+//        return VGA_COLOR_BROWN;
+//    case 0xaaaaaa:
+//        return VGA_COLOR_LIGHT_GREY;
+//    case 0x555555:
+//        return VGA_COLOR_DARK_GREY;
+//    case 0x5555ff:
+//        return VGA_COLOR_LIGHT_BLUE;
+//    case 0x55ff55:
+//        return VGA_COLOR_LIGHT_GREEN;
+//    case 0x55ffff:
+//        return VGA_COLOR_LIGHT_CYAN;
+//    case 0xff5555:
+//        return VGA_COLOR_LIGHT_RED;
+//    case 0xff55ff:
+//        return VGA_COLOR_LIGHT_MAGENTA;
+//    case 0xffff55:
+//        return VGA_COLOR_YELLOW;
+//    case 0xffffff:
+//        return VGA_COLOR_WHITE;
+//    }
+
+//    return VGA_COLOR_BLACK;
 }
 
 }

@@ -41,6 +41,7 @@ SOFTWARE.
 #include "power/powermanagement.hpp"
 
 #include "terminal/terminal.hpp"
+#include "terminal/escape_code_macros.hpp"
 
 #include "elf/symbol_table.hpp"
 
@@ -80,9 +81,10 @@ SOFTWARE.
 // TODO : TinyGL
 // TODO : ambilight feature pour le windowing system !
 // TODO : refaire une VRAIE classe Terminal... c'est atroce l'implémentation actuelle, une horreur lovecraftienne
-// TODO : faire des terminal escape codes pour les couleurs
 // TODO : classe virtuelle FS ave constructor/destructor pour notifier de la création/desctruction d'une partition
-// TODO : cowsay
+// TODO : pas de vfs_children, on peut faire autrement (devfs, ...)
+// TODO : écran de veille ala windows
+// TODO : Ext2
 
 void global_init()
 {
@@ -93,7 +95,7 @@ void global_init()
     MessageBus::register_handler<kbd::TextEnteredEvent>([](const kbd::TextEnteredEvent& e)
     {
         term().add_input(e.c);
-        term().force_redraw();
+        term().force_redraw_input();
     });
 
     MessageBus::register_handler<kbd::KeyEvent>([](const kbd::KeyEvent& e)
@@ -144,7 +146,7 @@ void global_init()
         log(Info, "Disk : %zd\n", disk);
         for (auto partition : mbr::read_partitions(disk))
         {
-            log(Info, "Partition %zd\n", partition.partition_number);
+            log(Info, "Partition %d\n", partition.partition_number);
             auto fs = fat::read_fat_fs(disk, partition.relative_sector, true);
             auto wrapper = fat::RAIIWrapper(fs);
             if (fs.valid)
@@ -164,8 +166,12 @@ void global_init()
         panic("Cannot install initrd!\n");
     }
 
+    MessageBus::send<kbd::KeyEvent>(kbd::KeyEvent{kbd::NumLock, kbd::KeyEvent::Pressed});
+    MessageBus::send<kbd::KeyEvent>(kbd::KeyEvent{kbd::NumLock, kbd::KeyEvent::Released});
+
     Shell sh;
-    sh.params.prompt = "LudOS:{path}>";
+    sh.params.prompt = ESC_BG(13,132,203) "  LudOS " ESC_POP_COLOR ESC_BG(78,154,6) ESC_FG(13,132,203) "▶" ESC_POP_COLOR " :{path}> " ESC_POP_COLOR
+            ESC_FG(78,154,6) "▶" ESC_POP_COLOR " ";
     install_base_commands(sh);
     install_sys_commands(sh);
     install_fs_commands(sh);

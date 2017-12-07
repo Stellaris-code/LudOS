@@ -49,6 +49,22 @@ void Terminal::put_char(char32_t c)
 {
     if (m_escape_code)
     {
+        if (m_expecting_bracket)
+        {
+            if (c == '[')
+            {
+                m_expecting_bracket = false;
+                return;
+            }
+            else
+            {
+                m_escape_code = false;
+                m_escape_sequence.clear();
+                m_expecting_bracket = false;
+                return;
+            }
+        }
+
         if (c >= 0x40 && c <= 0x7E)
         {
             m_escape_code = false;
@@ -59,11 +75,14 @@ void Terminal::put_char(char32_t c)
         {
             m_escape_sequence.push_back(c);
         }
+
+        return;
     }
 
     if (c == '\e')
     {
         m_escape_code = true;
+        m_expecting_bracket = true;
     }
     else if (c == '\n')
     {
@@ -284,6 +303,16 @@ std::string Terminal::input() const
     return str;
 }
 
+void Terminal::set_input_color(size_t pos, size_t sz, ColorPair color)
+{
+    for (size_t i { m_input_off + pos }; i < std::min(m_input_off + pos + sz, m_cur_line.size()); ++i)
+    {
+        m_cur_line[i].pair = color;
+    }
+
+    force_redraw_input();
+}
+
 void Terminal::set_entry_at(TermEntry entry, size_t x, size_t y, bool absolute)
 {
     if (m_enabled)
@@ -358,6 +387,27 @@ void Terminal::reset()
 void Terminal::process_escape_code()
 {
     auto param_list = tokenize(m_escape_sequence, ";");
+
+    if (param_list.empty()) return;
+
+    if (param_list.size() == 5 && param_list[0] == "38" && param_list[1] == "2")
+    {
+        ColorPair pair = m_data.color();
+        pair.fg = graphics::Color(std::stoul(param_list[2]),std::stoul(param_list[3]),std::stoul(param_list[4]));
+
+        m_data.push_color(pair);
+    }
+    if (param_list.size() == 5 && param_list[0] == "48" && param_list[1] == "2")
+    {
+        ColorPair pair = m_data.color();
+        pair.bg = graphics::Color(std::stoul(param_list[2]),std::stoul(param_list[3]),std::stoul(param_list[4]));
+
+        m_data.push_color(pair);
+    }
+    if (param_list.size() == 1 && (param_list[0] == "39" || param_list[0] == "49"))
+    {
+        if (m_data.color_stack.size() > 1) m_data.pop_color();
+    }
 }
 
 void Terminal::resize(size_t iwidth, size_t iheight)
@@ -402,6 +452,8 @@ void Terminal::force_redraw()
     show_history(m_current_history_page);
 
     force_redraw_input();
+
+    set_title(m_data.title_str, m_data.title_color);
 }
 
 void Terminal::force_redraw_input()

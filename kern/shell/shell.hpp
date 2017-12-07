@@ -70,6 +70,8 @@ public:
 
     std::vector<Command> commands();
 
+    std::string get_path(const std::string& path);
+
 public:
     std::shared_ptr<vfs::node> pwd { nullptr };
 
@@ -79,6 +81,7 @@ private:
     void process(const std::string& in);
     void autocomplete();
     std::string prompt() const;
+    void update_coloring();
 
 private:
     std::unordered_map<std::string, Command> m_commands;

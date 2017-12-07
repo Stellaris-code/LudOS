@@ -27,6 +27,8 @@ SOFTWARE.
 
 #include "i686/cpu/cpuid.hpp"
 
+#pragma GCC push_options
+#pragma GCC target ("no-sse")
 uint16_t simd_features()
 {
     uint32_t ecx, edx, unused;
@@ -50,3 +52,4 @@ uint16_t simd_features()
 
     return result;
 }
+#pragma GCC pop_options

@@ -31,6 +31,8 @@ SOFTWARE.
 #include "graphics/video.hpp"
 #include "graphics/drawing/display_draw.hpp"
 #include "graphics/text/graphicterm.hpp"
+#include "graphics/fonts/font.hpp"
+#include "graphics/fonts/psf.hpp"
 #include "terminal/terminal.hpp"
 #include "utils/messagebus.hpp"
 #include "utils/nop.hpp"
@@ -50,7 +52,7 @@ void install_gfx_commands(Shell &sh)
              return -1;
          }
 
-         auto img = graphics::load_image(sh.pwd->path() + args[0]);
+         auto img = graphics::load_image(sh.get_path(args[0]));
          if (!img)
          {
              sh.error("Can't load '%s'\n", args[0].c_str());
@@ -65,7 +67,7 @@ void install_gfx_commands(Shell &sh)
 
          bool escape { false };
 
-         MessageBus::register_handler<kbd::KeyEvent>([&escape](const kbd::KeyEvent& e)
+         auto handl = MessageBus::register_handler<kbd::KeyEvent>([&escape](const kbd::KeyEvent& e)
          {
              if (e.state == kbd::KeyEvent::Pressed && e.key == kbd::Escape)
              {
@@ -78,7 +80,12 @@ void install_gfx_commands(Shell &sh)
              nop();
          }
 
+         MessageBus::remove_handler(handl);
+
+         graphics::clear_display(graphics::color_black);
+
          term().enable();
+         term().force_redraw();
 
          return 0;
      }});
@@ -114,7 +121,6 @@ void install_gfx_commands(Shell &sh)
          graphics::clear_display(graphics::color_black);
 
          create_term<graphics::GraphicTerm>(*graphics::screen(), term_data());
-         term().force_redraw();
 
          return 0;
      }});
@@ -128,6 +134,30 @@ void install_gfx_commands(Shell &sh)
          {
              kprintf("\t%dx%dx%d\n", mode.width, mode.height, mode.depth);
          }
+         return 0;
+     }});
+
+    sh.register_command(
+    {"setfont", "Set terminal font",
+     "Usage : 'setmode <font>'",
+     [&sh](const std::vector<std::string>& args)
+     {
+         if (args.size() != 1)
+         {
+             sh.error("setmode needs one argument\n");
+             return -1;
+         }
+         static std::vector<graphics::psf::PSFFont> fonts;
+         fonts.emplace_back();
+         if (!fonts.back().load(sh.get_path(args[0])))
+         {
+             sh.error("can't load %s\n", args[0].c_str());
+             return -2;
+         }
+
+         graphics::clear_display(graphics::color_black);
+         create_term<graphics::GraphicTerm>(*graphics::screen(), term_data(), fonts.back());
+
          return 0;
      }});
 }

@@ -298,7 +298,7 @@
 #define ACPI_USE_STANDARD_HEADERS
 
 #ifdef ACPI_USE_STANDARD_HEADERS
-#include <unistd.h>
+//#include <unistd.h>
 #endif
 
 /* Define/disable kernel-specific declarators */

@@ -39,7 +39,7 @@ void Screen::resize(size_t width, size_t height, Color color)
     m_height = height;
 
     //posix_memalign(reinterpret_cast<void**>(&m_data), 32, width*height*sizeof(Color));
-    m_data = (graphics::Color*)kmalloc(width*height*sizeof(Color));
+    m_data = reinterpret_cast<graphics::Color*>(kmalloc(width*height*sizeof(Color)));
 
     memset(data(), color.rgb(), width*height*4);
 }

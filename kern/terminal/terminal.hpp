@@ -58,6 +58,8 @@ public:
     void clear_input();
     void set_input(const std::string &str);
     void switch_to_input();
+    std::string input() const;
+    void set_input_color(size_t pos, size_t sz, ColorPair color);
 
     void write(const char* data, size_t size);
     void write_string(const char* data);
@@ -80,14 +82,11 @@ public:
     void set_title(std::u32string str, ColorPair color);
     void set_title(std::u32string str);
 
-    std::string input() const;
-
     void enable() { m_enabled = true; };
     void disable()
     {
         m_enabled = false;
         disable_impl();
-        force_redraw();
     };
     bool enabled() const { return m_enabled; }
 
@@ -135,6 +134,7 @@ private:
     size_t m_input_off { 0 };
 
     bool m_escape_code { false };
+    bool m_expecting_bracket { false };
     std::string m_escape_sequence;
 
     std::vector<TermEntry> m_cur_line;
@@ -152,12 +152,12 @@ template <typename T, typename... Args>
 void create_term(Args&&... args)
 {
     static_assert(std::is_base_of_v<Terminal, T>);
-
     extern std::unique_ptr<Terminal> current_term;
     if (current_term) current_term->disable();
     current_term = std::make_unique<T>(std::forward<Args>(args)...);
     current_term->set_title(term_data().title_str, term_data().title_color);
     current_term->scroll_bottom();
+    current_term->force_redraw();
 }
 
 void reset_term();

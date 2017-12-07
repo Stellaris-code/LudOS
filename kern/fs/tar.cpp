@@ -119,7 +119,7 @@ std::shared_ptr<tar_node> TarFS::read_header(const Header *hdr) const
     node->m_uid = read_number(hdr->uid);
     node->m_gid = read_number(hdr->gid);
     node->m_name = std::string(hdr->name, 101); node->m_name.back() = '\0';
-    node->m_name = filename(trim(node->m_name));
+    node->m_name = filename(trim_zstr(node->m_name));
 
     return node;
 }

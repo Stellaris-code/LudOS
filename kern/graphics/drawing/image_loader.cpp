@@ -60,18 +60,13 @@ std::optional<Bitmap> load_image(const std::string &path)
         warn("Failed loading '%s' : %s\n", path.c_str(), stbi_failure_reason());
         return {};
     }
-    if (depth != 4)
-    {
-        warn("Image has %d channels instead of 4\n", depth);
-        return {};
-    }
 
     Bitmap bmp(x, y);
     memcpyl(bmp.data(), img, x*y*depth);
 
-    for (size_t i { 0 }; i < x; ++i)
+    for (size_t i { 0 }; i < static_cast<size_t>(x); ++i)
     {
-        for (size_t j { 0 }; j < y; ++j)
+        for (size_t j { 0 }; j < static_cast<size_t>(y); ++j)
         {
             bmp[{i, j}] = {bmp[{i, j}].b, bmp[{i, j}].g, bmp[{i, j}].r, bmp[{i, j}].a};
         }

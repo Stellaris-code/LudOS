@@ -29,13 +29,11 @@ SOFTWARE.
 
 #include "io.hpp"
 #include "panic.hpp"
-#include "utils/logging.hpp"
 
 namespace pic
 {
 void init()
 {
-    log(Info, "Beginning PIC initialization\n");
     /* set up cascading mode */
     outb(PIC_MASTER_CMD, 0x10 + 0x01);
     io_wait();
@@ -59,15 +57,12 @@ void init()
     outb(PIC_SLAVE_DATA, 0x01);
     io_wait();
 
-    log(Info, "Resetting masks...\n");
     outb(PIC_MASTER_DATA, 0);
     io_wait();
     outb(PIC_SLAVE_DATA, 0);
     io_wait();
 
     set_mask(1); // disable keyboard interrupts before keyboard initialization
-
-    log(Info, "PIC Init done.\n");
 }
 
 void send_eoi(uint8_t irq)

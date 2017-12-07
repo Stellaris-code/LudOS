@@ -120,6 +120,7 @@ Shell::Shell()
                 m_matches.clear();
                 m_current_match = 0;
             }
+            update_coloring();
         }
     });
 }
@@ -142,7 +143,7 @@ void Shell::run()
 
 int Shell::command(const std::string &command)
 {
-    auto tokens = tokenize(command, " ", true);
+    auto tokens = quote_tokenize(command);
 
     if (tokens.empty())
     {
@@ -215,7 +216,7 @@ void Shell::autocomplete()
     {
         for (const auto& pair : m_commands)
         {
-            if (pair.first.substr(0, toks.back().size()) == toks.back() && pair.first != toks.back())
+            if (strtolower(pair.first).substr(0, toks.back().size()) == strtolower(toks.back()) && pair.first != toks.back())
             {
                 m_matches.emplace_back(pair.first);
             }
@@ -225,7 +226,7 @@ void Shell::autocomplete()
     {
         for (const auto& node : pwd->readdir())
         {
-            if (toks.size() == 1 || node->name().substr(0, toks.back().size()) == toks.back())
+            if (toks.size() == 1 || strtolower(node->name()).substr(0, toks.back().size()) == strtolower(toks.back()))
             {
                 m_matches.emplace_back(node->name());
             }
@@ -246,6 +247,27 @@ void Shell::autocomplete()
 std::string Shell::prompt() const
 {
     return format(params.prompt, {{"path", pwd->path()}});
+}
+
+// TODO : coulouring : bad command/argument/quotes
+void Shell::update_coloring()
+{
+    auto toks = quote_tokenize(term().input());
+
+    std::string input = term().input();
+
+    if (toks.empty()) return;
+
+    auto cmd = toks[0];
+
+    if (m_commands.find(cmd) != m_commands.end())
+    {
+        term().set_input_color(0, cmd.size(), {graphics::color_green, term_data().color().bg});
+    }
+    else
+    {
+        term().set_input_color(0, cmd.size(), {graphics::color_red, term_data().color().bg});
+    }
 }
 
 void Shell::error(const char *fmt, ...)
@@ -269,5 +291,17 @@ std::vector<Shell::Command> Shell::commands()
     }
 
     return vec;
+}
+
+std::string Shell::get_path(const std::string &path)
+{
+    if (path[0] == '/')
+    {
+        return path;
+    }
+    else
+    {
+        return pwd->path() + path;
+    }
 }
 

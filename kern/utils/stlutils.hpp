@@ -88,7 +88,7 @@ Cont inline merge(const Cont& lhs, const Cont& rhs)
     return cont;
 }
 
-std::string inline trim(const std::string& str)
+std::string inline trim_zstr(const std::string& str)
 {
     return std::string(str.c_str(), strlen(str.c_str()));
 }
@@ -100,6 +100,50 @@ std::string inline trim_right(std::string str)
         str.pop_back();
     }
     return str;
+}
+
+std::string inline trim_left(std::string str)
+{
+    while (isspace(str.front()))
+    {
+        str.erase(0, 1);
+    }
+    return str;
+}
+
+std::string inline trim(std::string str)
+{
+    return trim_right(trim_left(str));
+}
+
+template <class ContainerT = std::vector<std::string>>
+inline ContainerT quote_tokenize(const std::string& str)
+{
+    auto tokens = tokenize(str, "\"");
+
+    ContainerT result;
+
+    for (size_t i { 0 }; i < tokens.size(); ++i)
+    {
+        bool is_in_quotes = i % 2;
+
+        std::string el = tokens[i];
+
+        if (!is_in_quotes)
+        {
+            el = trim(el);
+            for (auto tok : tokenize(el, " ", true))
+            {
+                result.emplace_back(tok);
+            }
+        }
+        else
+        {
+            result.emplace_back(el);
+        }
+    }
+
+    return result;
 }
 
 template <typename Cont>
@@ -147,6 +191,31 @@ inline std::string strtoupper(std::string str)
 {
     std::transform(str.begin(), str.end(),str.begin(), ::toupper);
     return str;
+}
+
+template <typename T, typename U>
+inline T& closest(const T& base, std::vector<T>& values, std::function<U(const T& lhs, const T& rhs)> comp)
+{
+    assert(!values.empty());
+
+    size_t closest_idx = 0;
+    U smallest_value = comp(base, values[0]);
+
+    for (size_t i { 1 }; i < values.size(); ++i)
+    {
+        U value = comp(base, values[i]);
+        if (value == 0)
+        {
+            return values[i];
+        }
+        if (value < smallest_value)
+        {
+            smallest_value = value;
+            closest_idx = i;
+        }
+    }
+
+    return values[closest_idx];
 }
 
 inline std::string format(const std::string& format, const std::vector<std::pair<std::string, std::string>>& values)

@@ -31,6 +31,7 @@ SOFTWARE.
 #include "utils/stlutils.hpp"
 
 #include "misc/greet.hpp"
+#include "misc/cowsay.hpp"
 
 #include "fs/vfs.hpp"
 
@@ -135,7 +136,9 @@ void install_base_commands(Shell &sh)
      "Usage : echo <args>",
      [](const std::vector<std::string>& args)
      {
-         std::string str = join(args, " ");
+         std::string str;
+         if (!args.empty()) str = args[0];
+
          kprintf("%s\n", str.c_str());
          return 0;
      }});
@@ -151,7 +154,7 @@ void install_base_commands(Shell &sh)
              return -1;
          }
 
-         auto file = vfs::find(sh.pwd->path() + args[0]);
+         auto file = vfs::find(sh.get_path(args[0]));
          if (!file)
          {
              sh.error("Can't open file %s !\n", args[0].c_str());
@@ -192,10 +195,13 @@ void install_base_commands(Shell &sh)
          if (args.size() < 2)
          {
              sh.error("alias needs two arguments\n");
+             return -1;
          }
 
          std::string alias = args[0];
-         std::string cmd = join({args.begin() + 1, args.end()}, " ");
+         auto toks = std::vector<std::string>{args.begin() + 1, args.end()};
+         for (auto& tok : toks) { tok.insert(tok.begin(), '"'); tok += '"'; }
+         std::string cmd = join(toks, " ");
 
          sh.register_command({alias, "<alias>", "<alias>", [&sh, cmd](const std::vector<std::string>&)
                               {sh.command(cmd);return 0;}});
@@ -222,6 +228,21 @@ void install_base_commands(Shell &sh)
      [](const std::vector<std::string>&)
      {
          greet();
+         return 0;
+     }});
+
+    sh.register_command(
+    {"cowsay", "Let the cow speak",
+     "Usage : cowsay <txt>",
+     [&sh](const std::vector<std::string>& args)
+     {
+         if (args.empty())
+         {
+             sh.error("'cowsay' nees at least one argument");
+             return -1;
+         }
+
+         cowsay(join(args, " "));
          return 0;
      }});
 }

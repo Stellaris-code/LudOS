@@ -98,7 +98,7 @@ void read_logging_config()
     if (kgetenv("loglevel"))
     {
         std::string level = strtolower(*kgetenv("loglevel"));
-        if (level == "always")
+        if (level == "none")
         {
             log_level = Always;
         }

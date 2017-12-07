@@ -104,13 +104,13 @@ size_t Meminfo::total_memory()
     for (size_t i { 0 }; i < free_frames(); ++i)
     {
         auto free_frame = frame(i);
-        total += free_frame->len;
+        if (free_frame) total += free_frame->len;
     }
 
     return total;
 }
 
-void Meminfo::init_paging_bitmap()
+void Meminfo::init_alloc_bitmap()
 {
     for (size_t i { 0 }; i < Paging::mem_bitmap.array_size; ++i)
     {

@@ -50,7 +50,8 @@ namespace isr
 enum Exception : uint32_t
 {
     Breakpoint = 3,
-    DoubleFault = 8
+    DoubleFault = 8,
+    PageFault = 14
 };
 
 typedef bool(*isr_t)(const registers* const);

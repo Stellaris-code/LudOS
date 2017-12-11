@@ -111,11 +111,11 @@ void panic(const char *fmt, ...)
 
     term().clear();
     term().set_title(U"KERNEL PANIC", {0xaa0000, 0xffffff});
-    term().disable();
-
-    Speaker::beep(300);
+    //term().disable();
 
     putc_serial = true;
+
+    Speaker::beep(300);
 
     puts("\nKERNEL PANIC : ");
 

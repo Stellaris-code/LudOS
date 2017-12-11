@@ -85,6 +85,8 @@ SOFTWARE.
 // TODO : pas de vfs_children, on peut faire autrement (devfs, ...)
 // TODO : écran de veille ala windows
 // TODO : Ext2
+// TODO : PAE
+// TODO : commands : serial/settitle
 
 void global_init()
 {
@@ -131,7 +133,7 @@ void global_init()
         }
         else if (e.wheel<0)
         {
-            term().scroll_history(-6);
+            term().scroll_history(-3);
         }
     });
 

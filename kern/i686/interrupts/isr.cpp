@@ -75,8 +75,6 @@ constexpr const char *exception_messages[] = {
 extern "C"
 const registers* isr_handler(const registers* const regs)
 {
-    halt();
-
     // handling
     if (auto handl = handlers[regs->int_no]; handl)
     {
@@ -101,7 +99,7 @@ const registers* isr_handler(const registers* const regs)
         log_serial("Unhandeld interrupt 0x%x (type : '%s') with error code 0x%lx at 0x%lx\n", regs->int_no, exception_messages[regs->int_no], regs->err_code, regs->eip);
 
         panic_regs = regs;
-        panic("Unhandeld interrupt 0x%x (type : '%s') 0x%lx\n", regs->int_no, exception_messages[regs->int_no]);
+        panic("Unhandeld interrupt 0x%x (type : '%s')\n", regs->int_no, exception_messages[regs->int_no]);
         // handle here
 
     }

@@ -57,7 +57,9 @@ VideoMode vbe_to_video_mode(const vbe::ModeInfoBlock& info)
     VIDEO_VBE3_GET(BlueMaskSize, blue_mask_size);
     VIDEO_VBE3_GET(BlueFieldPosition, blue_field_pos);
     mode.type = info.MemoryModel == vbe::MemoryModel::Text ? VideoMode::Text : VideoMode::Graphics;
-    mode.framebuffer_addr = info.PhysBasePtr;
+    mode.framebuffer_addr = (uintptr_t)Memory::mmap((void*)info.PhysBasePtr,
+                                                    mode.bytes_per_line*mode.height,
+                                                    Memory::Write|Memory::WriteThrough|Memory::Uncached);
 
     return mode;
 }
@@ -116,6 +118,8 @@ std::optional<VideoMode> change_mode(size_t width, size_t height, size_t depth)
 
         Paging::mark_as_used(mode.info.PhysBasePtr,
                              mode.info.BytesPerScanLine*mode.info.YResolution);
+
+        if (current_mode.framebuffer_addr) Memory::unmap((void*)current_mode.framebuffer_addr, current_mode.bytes_per_line*current_mode.height);
 
         current_mode = vbe_to_video_mode(mode.info);
 

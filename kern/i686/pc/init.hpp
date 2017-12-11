@@ -125,20 +125,24 @@ inline void init(uint32_t magic, const multiboot_info_t* mbd_info)
 
     idt::init();
 
-    Paging::init();
-
     multiboot::parse_mem();
     Meminfo::init_alloc_bitmap();
 
+    Paging::init();
+
     uint64_t framebuffer_addr = bit_check(mbd_info->flags, 12) ? mbd_info->framebuffer_addr : 0xB8000;
 
-    serial::debug::write("Framebuffer address : %d\n", phys(framebuffer_addr));
+    serial::debug::write("Framebuffer address : 0x%x\n", phys(framebuffer_addr));
 
     init_printf(nullptr, [](void*, char c){putchar(c);});
 
-    create_term<TextTerminal>(phys(framebuffer_addr), 80, 25, term_data());
-    serial::debug::write("ee\n");
+    auto lfb = (uint8_t*)Memory::mmap((void*)framebuffer_addr, 80*25*sizeof(uint16_t));
+
+    create_term<TextTerminal>((uintptr_t)lfb, 80, 25, term_data());
+
     term().clear();
+
+    PIT::init(100);
 
     auto elf_info = multiboot::elf_info();
     elf::kernel_symbol_table = elf::get_symbol_table(elf_info.first, elf_info.second);
@@ -152,7 +156,7 @@ inline void init(uint32_t magic, const multiboot_info_t* mbd_info)
         return true;
     });
 
-    PIT::init(100);
+
     FPU::init();
     if (simd_features() & SSE)
     {
@@ -204,6 +208,8 @@ inline void init(uint32_t magic, const multiboot_info_t* mbd_info)
     if (ACPI_FAILURE(status))
     {
         err("ACPI Initialization error ! Message : '%s'\n", AcpiFormatException(status));
+        err("\n\n");
+        halt();
     }
 
     acpi::power::init();

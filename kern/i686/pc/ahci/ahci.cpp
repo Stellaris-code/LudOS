@@ -32,6 +32,7 @@ SOFTWARE.
 #include "utils/nop.hpp"
 #include "drivers/diskinterface.hpp"
 #include "time/timer.hpp"
+#include "mem/memmap.hpp"
 
 #include "i686/interrupts/isr.hpp"
 
@@ -79,9 +80,9 @@ bool init()
             auto type = detail::get_port_type(i);
             if (type != detail::PortType::Null) ++port_count;
             log(Info, "   Port %u, type %s\n", i, type == detail::PortType::SATA ? "SATA" :
-                                                                                   type == detail::PortType::SATAPI ? "SATAPI" :
-                                                                                                                      type == detail::PortType::SEMB ? "SEMB" :
-                                                                                                                                                       type == detail::PortType::PM ? "PM" : "Null");
+                                                  type == detail::PortType::SATAPI ? "SATAPI" :
+                                                  type == detail::PortType::SEMB ? "SEMB" :
+                                                  type == detail::PortType::PM ? "PM" : "Null");
         }
     }
 
@@ -115,7 +116,9 @@ detail::HBAMem *detail::get_hbamem_ptr()
 
     auto ahci_con = pci::find_devices(0x1, 0x6, 0x1)[0];
 
-    return reinterpret_cast<HBAMem*>(pci::get_bar_val(ahci_con, 5));
+    auto bar = pci::get_bar_val(ahci_con, 5);
+
+    return reinterpret_cast<HBAMem*>(Memory::mmap((void*)bar, 0x1100, Memory::Read|Memory::Write|Memory::Uncached|Memory::WriteThrough));
 }
 
 void detail::get_ahci_ownership()
@@ -168,16 +171,18 @@ bool detail::issue_read_command(size_t port, uint64_t sector, size_t count, uint
         return false;
     }
 
-    CommandHeader *cmdheader = reinterpret_cast<CommandHeader*>(mem->ports[port].clb);
+    //CommandHeader *cmdheader = reinterpret_cast<CommandHeader*>(mem->ports[port].clb);
+    CommandHeader* cmdheader = (CommandHeader*)&cmdlists[port];
     cmdheader += slot;
 
     cmdheader->cfl = sizeof(FisRegH2D)/sizeof(uint32_t);	// Command FIS size
     cmdheader->write = 0;		// Read from device
     cmdheader->prdtl = ((count-1)>>4) + 1;	// PRDT entries count
-//    panic("coutn : %d\n", cmdheader->prdtl);
+
     cmdheader->atapi = false;
 
-    CommandTable *cmdtbl = reinterpret_cast<CommandTable*>(cmdheader->ctba);
+    //CommandTable *cmdtbl = reinterpret_cast<CommandTable*>(cmdheader->ctba);
+    CommandTable* cmdtbl = &cmdtables[port];
     memset(cmdtbl, 0, sizeof(CommandTable) +
            (cmdheader->prdtl-1)*sizeof(PrdtEntry));
     // 8K bytes (16 sectors) per PRDT
@@ -185,14 +190,15 @@ bool detail::issue_read_command(size_t port, uint64_t sector, size_t count, uint
     int i;
     for (i=0; i<cmdheader->prdtl-1; i++)
     {
-        mkprd(cmdtbl->entries[i], reinterpret_cast<uintptr_t>(buf), 4*1024*1024);
+        mkprd(cmdtbl->entries[i], Memory::physical_address(buf), 4*1024*1024);
         buf += 4*1024*1024;
         count -= 8;	// 16 sectors
     }
-    mkprd(cmdtbl->entries[i], reinterpret_cast<uintptr_t>(buf), count*512);
+    mkprd(cmdtbl->entries[i], Memory::physical_address(buf), count*512);
 
     // Setup command
     FisRegH2D *cmdfis = reinterpret_cast<FisRegH2D*>(&cmdtbl->command_fis);
+    //FisRegH2D *cmdfis = (FisRegH2D*)&rcvfis[port];
 
     cmdfis->fis_type = FISType::RegH2D;
     cmdfis->c = 1;	// Command
@@ -268,7 +274,7 @@ bool detail::issue_write_command(size_t port, uint64_t sector, size_t count, con
     // 8K bytes (16 sectors) per PRDT
     for (int i=0; i<cmdheader->prdtl-1; i++)
     {
-        cmdtbl->entries[i].dba = static_cast<uint32_t>(reinterpret_cast<uintptr_t>(buf));
+        cmdtbl->entries[i].dba = static_cast<uint32_t>(Memory::physical_address(buf));
         cmdtbl->entries[i].dbau = 0;
         cmdtbl->entries[i].dbc = 8*1024;	// 8K bytes
         cmdtbl->entries[i].i = 1;
@@ -276,7 +282,7 @@ bool detail::issue_write_command(size_t port, uint64_t sector, size_t count, con
         count -= 16;	// 16 sectors
     }
     // Last entry
-    cmdtbl->entries[cmdheader->prdtl-1].dba = static_cast<uint32_t>(reinterpret_cast<uintptr_t>(buf));
+    cmdtbl->entries[cmdheader->prdtl-1].dba = static_cast<uint32_t>(Memory::physical_address(buf));
     cmdtbl->entries[cmdheader->prdtl-1].dbau = 0;
     cmdtbl->entries[cmdheader->prdtl-1].dbc = count<<9;	// 512 bytes per sector
     cmdtbl->entries[cmdheader->prdtl-1].i = 1;
@@ -342,8 +348,7 @@ bool detail::issue_identify_command(size_t port, ide::identify_data* buf)
         return false;
     }
 
-    CommandHeader *cmdheader = reinterpret_cast<CommandHeader*>(mem->ports[port].clb);
-    cmdheader += slot;
+    CommandHeader* cmdheader = &(cmdlists[port].hdrs[slot]);
 
     cmdheader->cfl = sizeof(FisRegH2D)/sizeof(uint32_t);	// Command FIS size
     cmdheader->write = 0;		// Read from device
@@ -351,12 +356,12 @@ bool detail::issue_identify_command(size_t port, ide::identify_data* buf)
 
     cmdheader->atapi = false;
 
-    CommandTable *cmdtbl = reinterpret_cast<CommandTable*>(cmdheader->ctba);
+    CommandTable* cmdtbl = &cmdtables[port];
     memset(cmdtbl, 0, sizeof(CommandTable) +
            (cmdheader->prdtl-1)*sizeof(PrdtEntry));
     // 8K bytes (16 sectors) per PRDT
 
-    mkprd(cmdtbl->entries[0], reinterpret_cast<uintptr_t>(buf), 512);
+    mkprd(cmdtbl->entries[0], Memory::physical_address(buf), 512);
 
     // Setup command
     FisRegH2D *cmdfis = reinterpret_cast<FisRegH2D*>(&cmdtbl->command_fis);

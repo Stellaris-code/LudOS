@@ -30,7 +30,7 @@ SOFTWARE.
 #include "panic.hpp"
 #include "utils/logging.hpp"
 #include "utils/addr.hpp"
-
+#include "mem/memmap.hpp"
 #include "time/timer.hpp"
 #include "time/time.hpp"
 #include "i686/pc/pci/pci.hpp"
@@ -76,17 +76,17 @@ ACPI_STATUS AcpiOsTableOverride(ACPI_TABLE_HEADER *ExistingTable, ACPI_TABLE_HEA
 
 void *AcpiOsMapMemory(ACPI_PHYSICAL_ADDRESS PhysicalAddress, ACPI_SIZE Length)
 {
-    return (void*)phys(PhysicalAddress);
+    return Memory::mmap(reinterpret_cast<void*>(PhysicalAddress), Length);
 }
 
-void AcpiOsUnmapMemory(void *where, ACPI_SIZE length)
+void AcpiOsUnmapMemory(void *LogicalAddress, ACPI_SIZE Length)
 {
-    // TODO : implement
+    Memory::unmap(LogicalAddress, Length);
 }
 
 ACPI_STATUS AcpiOsGetPhysicalAddress(void *LogicalAddress, ACPI_PHYSICAL_ADDRESS *PhysicalAddress)
 {
-    *PhysicalAddress = virt((ACPI_PHYSICAL_ADDRESS)LogicalAddress);
+    *PhysicalAddress = Memory::physical_address(LogicalAddress);
     return AE_OK;
 }
 
@@ -100,13 +100,16 @@ void AcpiOsFree(void *Memory)
     kfree(Memory);
 }
 
+// TODO : implement
 BOOLEAN AcpiOsReadable(void *Memory, ACPI_SIZE Length)
 {
+    panic("");
     return true;
 }
 
 BOOLEAN AcpiOsWritable(void *Memory, ACPI_SIZE Length)
 {
+    panic("");
     return false;
 }
 

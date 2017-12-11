@@ -35,8 +35,9 @@ SOFTWARE.
 #include "utils/stlutils.hpp"
 #include "elf/elf.hpp"
 #include "mem/meminfo.hpp"
-#include "i686/pc/mem/meminfo.hpp"
+#include "mem/memmap.hpp"
 #include "i686/mem/paging.hpp"
+#include "i686/pc/mem/meminfo.hpp"
 #include "utils/virt_machine_detect.hpp"
 #include "halt.hpp"
 
@@ -97,9 +98,6 @@ void parse_info()
 
 void print_info()
 {
-    //puts("Multiboot Info :");
-
-    //kprintf("Multiboot flags : 0x%x\n", info->flags);
     if (CHECK_FLAG(info->flags, 2))
     {
         log(Info, "Command line : '%s'\n", reinterpret_cast<char*>(phys(info->cmdline)));
@@ -152,7 +150,8 @@ std::pair<const elf::Elf32_Shdr *, size_t> elf_info()
     }
 
     multiboot_elf_section_header_table_t elf_info = info->u.elf_sec;
-    auto shdr = reinterpret_cast<const elf::Elf32_Shdr*>(phys(elf_info.addr));
+
+    auto shdr = (elf::Elf32_Shdr*)Memory::mmap((void*)elf_info.addr, elf_info.num*sizeof(elf::Elf32_Shdr), Memory::Read|Memory::Write);
 
     return {shdr, elf_info.num};
 }
@@ -177,7 +176,11 @@ std::vector<multiboot_module_t> get_modules()
 
         for (size_t i = 0; i < info->mods_count; i++, mod++)
         {
+            size_t len = mod->mod_end - mod->mod_start;
+
             modules.emplace_back(*mod);
+            modules.back().mod_start = (uintptr_t)Memory::mmap((void*)mod->mod_start, len, Memory::Read);
+            modules.back().mod_end = modules.back().mod_start + len;
         }
 
         return modules;

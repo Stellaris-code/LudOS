@@ -27,6 +27,8 @@ SOFTWARE.
 
 #include "utils/logging.hpp"
 
+#include "mem/memmap.hpp"
+
 namespace elf
 {
 
@@ -35,9 +37,9 @@ const uint8_t* current_elf_file;
 const char *str_table(const Elf32_Shdr *hdr, size_t strtableidx)
 {
     const char* str_table;
-    if ((str_table = reinterpret_cast<const char*>(hdr[strtableidx].sh_addr)))
+    if (hdr[strtableidx].sh_addr)
     {
-
+        str_table = (const char*)Memory::mmap((void*)hdr[strtableidx].sh_addr, hdr[strtableidx].sh_entsize);
     }
     else
     {
@@ -61,15 +63,16 @@ const Elf32_Sym *symbol(const Elf32_Shdr *symtab, size_t num)
     }
 
     const Elf32_Sym* sym;
-    if ((sym = &(reinterpret_cast<const Elf32_Sym*>(symtab->sh_addr))[num]))
+    if (symtab->sh_addr)
     {
-
+        auto ptr = (const Elf32_Sym*)symtab->sh_addr;
+        sym = &(ptr[num]);
     }
     else
     {
         sym = &(reinterpret_cast<const Elf32_Sym*>(symtab->sh_offset + current_elf_file))[num];
     }
-    return &(reinterpret_cast<const Elf32_Sym*>(symtab->sh_addr))[num];
+    return sym;
 }
 
 const Elf32_Shdr *section(const Elf32_Shdr *base, size_t size, size_t type)

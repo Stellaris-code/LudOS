@@ -136,7 +136,7 @@ void Terminal::clear_input()
     while (m_cur_line.size() > m_input_off)
     {
         m_cur_line.pop_back();
-        --m_cursor_x;
+        if (m_cursor_x > 0) --m_cursor_x;
     }
 
     force_redraw();
@@ -147,7 +147,7 @@ void Terminal::set_input(const std::string &str)
     while (m_cur_line.size() > m_input_off)
     {
         m_cur_line.pop_back();
-        --m_cursor_x;
+        if (m_cursor_x > 0) --m_cursor_x;
     }
 
     switch_to_input();
@@ -213,7 +213,7 @@ void Terminal::scroll_up()
 void Terminal::scroll_bottom()
 {
     show_history(m_data.lines() - height()+1);
-    m_cursor_y = m_data.lines() - height()+1;
+    m_cursor_y = std::min(m_data.lines() - height()+1, height()-1);
     check_pos();
 }
 
@@ -238,10 +238,10 @@ void Terminal::show_history(int page)
 
         for (size_t i { 0 }; i < screen.size(); ++i)
         {
-            clear_line(i + m_data.title_height, m_data.color().bg);
+            clear_line(std::min(i + m_data.title_height, true_height()-1), m_data.color().bg);
             for (size_t j { 0 }; j < screen[i].size(); ++j)
             {
-                set_entry_at(screen[i][j], j, i);
+                set_entry_at(screen[i][j], j, std::min(i, height()-1));
             }
         }
 
@@ -329,8 +329,6 @@ void Terminal::new_line()
         add_line_to_history();
     }
 
-    check_pos();
-
     m_cursor_x = 0;
     ++m_cursor_y;
 
@@ -367,6 +365,10 @@ void Terminal::check_pos()
     if (m_cursor_y >= height())
     {
         m_cursor_y = height()-1;
+    }
+    if (m_cursor_x >= width())
+    {
+        m_cursor_x = width()-1;
     }
 
     update_cursor();
@@ -421,10 +423,6 @@ void Terminal::resize(size_t iwidth, size_t iheight)
 
     set_title(m_data.title_str, m_data.title_color);
 
-    if (m_cursor_x >= width())
-    {
-        m_cursor_x = width()-1;
-    }
     check_pos();
 
     force_redraw();
@@ -458,9 +456,11 @@ void Terminal::force_redraw()
 
 void Terminal::force_redraw_input()
 {
-    clear_line(m_cursor_y + m_data.title_height, m_data.color().bg);
+    check_pos();
 
-    for (size_t i { 0 }; i < m_cur_line.size(); ++i)
+    clear_line(std::min(m_cursor_y + m_data.title_height, true_height()-1), m_data.color().bg);
+
+    for (size_t i { 0 }; i < std::min(m_cur_line.size(), m_cursor_x); ++i)
     {
         set_entry_at(m_cur_line[i], i, m_cursor_y);
     }

@@ -25,6 +25,10 @@ SOFTWARE.
 
 #include "symbol_table.hpp"
 
+#include "mem/memmap.hpp"
+
+#include "utils/logging.hpp"
+
 namespace elf
 {
 
@@ -36,17 +40,21 @@ SymbolTable get_symbol_table(const Elf32_Shdr *base, size_t sh_num)
 
     SymbolTable symbol_table;
 
-    const char* strtable;
-    if ((strtable = reinterpret_cast<const char*>(elf::section(base, sh_num, elf::SHT_STRTAB)->sh_addr)))
-    {
+    log_serial("size : 0x%x entsize : 0x%x\n", base->sh_size, base->sh_entsize);
 
+    const char* strtable;
+    if (elf::section(base, sh_num, elf::SHT_STRTAB)->sh_addr)
+    {
+         strtable = (const char*)Memory::mmap((void*)elf::section(base, sh_num, elf::SHT_STRTAB)->sh_addr,
+                                              elf::section(base, sh_num, elf::SHT_STRTAB)->sh_size);
     }
     else
     {
          strtable = reinterpret_cast<const char*>(current_elf_file + elf::section(base, sh_num, elf::SHT_STRTAB)->sh_offset);
     }
 
-    auto symtab = elf::section(base, sh_num, elf::SHT_SYMTAB);
+    auto symtab = (Elf32_Shdr*)elf::section(base, sh_num, elf::SHT_SYMTAB);
+    symtab->sh_addr = (Elf32_Addr)Memory::mmap((void*)symtab->sh_addr, symtab->sh_size, Memory::Read);
 
     std::string current_symbol_file;
 
@@ -65,6 +73,8 @@ SymbolTable get_symbol_table(const Elf32_Shdr *base, size_t sh_num)
             }
         }
     }
+
+    Memory::unmap((void*)symtab->sh_addr, symtab->sh_size);
 
     return symbol_table;
 }

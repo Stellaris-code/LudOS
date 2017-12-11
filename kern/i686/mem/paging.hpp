@@ -29,6 +29,10 @@ SOFTWARE.
 
 #include "utils/bitarray.hpp"
 
+#include "mem/memmap.hpp"
+
+#include "i686/cpu/registers.hpp"
+
 #include <array.hpp>
 
 struct multiboot_mmap_entry;
@@ -77,9 +81,18 @@ class Paging
 public:
     static void init();
 
-    static uintptr_t alloc_page_frame(size_t number = 1);
+    static uintptr_t alloc_virtual_page(size_t number = 1);
+    static bool release_virtual_page(uintptr_t v_addr, size_t number = 1);
 
-    static bool release_page_frame(uintptr_t p_addr, size_t number = 1);
+    static uintptr_t alloc_physical_page(size_t number = 1);
+    static bool release_physical_page(uintptr_t p_addr, size_t number = 1);
+
+    static void map_page(void* p_addr, void* v_addr, uint32_t flags = Memory::Read|Memory::Write);
+    static void unmap_page(void* v_addr);
+
+    static void identity_map(void* p_addr, size_t size, uint32_t flags = Memory::Read|Memory::Write);
+
+    static uintptr_t physical_address(const void *v_addr);
 
     static void mark_as_used(uintptr_t addr, size_t size);
 
@@ -88,14 +101,26 @@ public:
     static constexpr uint32_t page_size { 1 << 12 };
 
 private:
+    static bool page_fault_handler(const registers* regs);
+
+private:
     static constexpr uintptr_t page(uintptr_t ptr)
     {
         return ptr >> 12;
     }
 
+    static PageDirectory *get_page_directory();
     static void init_page_directory();
     static void identity_map();
-    static void map_page(void* phys, void *virt, uint32_t flags);
+    static PTEntry *page_entry(uintptr_t addr)
+    {
+        uint32_t pdindex = addr >> 22;
+        uint32_t ptindex = addr >> 12 & 0x03FF;
+
+        PageTable * pt = reinterpret_cast<PageTable*>((*get_page_directory())[pdindex].pt_addr << 12);
+
+        return &(*pt)[ptindex];
+    }
 
 private:
     static inline bitarray<ram_maxpage, uint32_t> mem_bitmap; // 0 = free / 1 = used

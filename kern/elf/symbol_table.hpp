@@ -48,7 +48,7 @@ struct SymbolTable
 {
     std::optional<SymbolInfo> get_function(uintptr_t addr)
     {
-        while (--addr > 0)
+        while (addr-- > 0)
         {
             if (auto it = table.find(addr); it != table.end())
             {

@@ -1,7 +1,7 @@
 /*
-liballoc_stubs.cpp
+memmap.hpp
 
-Copyright (c) 31 Yann BOUCHER (yann)
+Copyright (c) 09 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,46 +22,28 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-
-#include "tasking/spinlock.hpp"
-
-#include "i686/mem/paging.hpp"
+#ifndef MEMMAP_HPP
+#define MEMMAP_HPP
 
 #include <stdint.h>
 
-#include "utils/logging.hpp"
-
-// TODO : implement
-DECLARE_LOCK(liballoc_lock);
-
-extern "C"
+class Memory
 {
-int liballoc_lock()
-{
-    //LOCK(liballoc_lock);
-    return 0;
-}
-
-int liballoc_unlock()
-{
-    //UNLOCK(liballoc_lock);
-    return 0;
-}
-
-void* liballoc_alloc(size_t pages)
-{
-    uint8_t* addr = reinterpret_cast<uint8_t*>(Paging::alloc_virtual_page(pages));
-    for (size_t i { 0 }; i < pages; ++i)
+public:
+    enum MmapFlags : uint32_t
     {
-        Paging::map_page(reinterpret_cast<void*>(Paging::alloc_physical_page()),
-                         addr + i*Paging::page_size, Memory::Read|Memory::Write);
-    }
-    return addr;
-}
+        Read         = 1<<0,
+        Write        = 1<<1,
+        User         = 1<<2,
+        Uncached     = 1<<3,
+        WriteThrough = 1<<4,
+        NoExec       = 1<<5
+    };
 
-int liballoc_free(void* ptr, size_t pages)
-{
-    Memory::unmap(ptr, pages * Paging::page_size);
-    return 0;
-}
-}
+    static void* mmap(void* p_addr, size_t len, uint32_t flags = Read|Write);
+    static void unmap(void* v_addr, size_t len);
+
+    static uintptr_t physical_address(const void* v_addr);
+};
+
+#endif // MEMMAP_HPP

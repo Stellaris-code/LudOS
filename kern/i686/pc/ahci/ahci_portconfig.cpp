@@ -27,6 +27,7 @@ SOFTWARE.
 
 #include "time/timer.hpp"
 #include "utils/logging.hpp"
+#include "mem/memmap.hpp"
 
 namespace ahci
 {
@@ -102,7 +103,7 @@ void detail::clear_errs(size_t port)
 void detail::init_memory(size_t port)
 {
     memset(&cmdlists[port], 0, sizeof(cmdlists[port]));
-    mem->ports[port].clb = static_cast<uint32_t>(reinterpret_cast<uintptr_t>(&cmdlists[port]));
+    mem->ports[port].clb = Memory::physical_address(&cmdlists[port]);
 
     if (mem->s64a)
     {
@@ -111,7 +112,7 @@ void detail::init_memory(size_t port)
 
 
     memset(&rcvfis[port], 0, sizeof(rcvfis[port]));
-    mem->ports[port].fb = static_cast<uint32_t>(reinterpret_cast<uintptr_t>(&rcvfis[port]));
+    mem->ports[port].fb = Memory::physical_address(&rcvfis[port]);
 
     if (mem->s64a)
     {
@@ -123,7 +124,7 @@ void detail::init_memory(size_t port)
     for (size_t i { 0 }; i < mem->ncs; ++i)
     {
         cmdlists[port].hdrs[i].prdtl = 8;
-        cmdlists[port].hdrs[i].ctba = static_cast<uint32_t>(reinterpret_cast<uintptr_t>(&cmdtables[port]));
+        cmdlists[port].hdrs[i].ctba = Memory::physical_address(&cmdtables[port]);
         if (mem->s64a)
         {
             cmdlists[port].hdrs[i].ctbau = 0;

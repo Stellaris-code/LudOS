@@ -28,6 +28,7 @@ SOFTWARE.
 #include "shell/shell.hpp"
 #include "drivers/diskinterface.hpp"
 #include "utils/memutils.hpp"
+#include "utils/crc32.hpp"
 #include "fs/vfs.hpp"
 
 void install_fs_commands(Shell &sh)
@@ -151,6 +152,50 @@ void install_fs_commands(Shell &sh)
              auto info = DiskInterface::info(i);
              kprintf("%s : %s\n", info.drive_name.c_str(), human_readable_size(info.disk_size).c_str());
          }
+         return 0;
+     }});
+
+    sh.register_command(
+    {"crc32", "print file crc32 checksum",
+     "Usage : crc32 <file>",
+     [&sh](const std::vector<std::string>& args)
+     {
+         std::string path = "/";
+
+         if (!args.empty())
+         {
+             path = args[0];
+         }
+
+         auto node = vfs::find(sh.get_path(path));
+         if (!node)
+         {
+             sh.error("file not found : '%s'\n", path.c_str());
+             return -2;
+         }
+
+         size_t crc32;
+         for (size_t i { 0 }; i < 600; ++i)
+         {
+             std::vector<uint8_t> data(node->size());
+             if (!node->read(data.data(), data.size()))
+             {
+                 sh.error("cannot read file : '%s'\n", path.c_str());
+                 return -3;
+             }
+
+             if (i == 0) crc32 = crc(data.begin(), data.end());
+             else
+             {
+                 size_t temp = crc(data.begin(), data.end());
+                 if (temp != crc32)
+                 {
+                     kprintf("Error ! %d\n", i);
+                 }
+                 crc32 = temp;
+             }
+         }
+
          return 0;
      }});
 }

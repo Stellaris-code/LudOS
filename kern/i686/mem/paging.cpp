@@ -34,7 +34,7 @@ SOFTWARE.
 
 #include "i686/interrupts/isr.hpp"
 
-#define LASTPOS_OPTIMIZATION 1
+#include "physallocator.hpp"
 
 extern "C" int kernel_physical_end;
 
@@ -54,85 +54,6 @@ void Paging::init()
     asm volatile ("mov %0, %%cr3\n"
                   "mov %1, %%cr0\n"::"r"(pd_addr), "r"(cr));
     sti();
-}
-
-#if LASTPOS_OPTIMIZATION
-static size_t last_pos { 0 };
-#endif
-
-uintptr_t Paging::alloc_physical_page(size_t number)
-{
-#if LASTPOS_OPTIMIZATION
-loop:
-#endif
-
-    size_t counter { 0 };
-    size_t page_addr { 0 };
-
-#if LASTPOS_OPTIMIZATION
-    size_t i { last_pos };
-#else
-    size_t i { 0 };
-#endif
-    for (; i < mem_bitmap.array_size; ++i)
-    {
-        if (!mem_bitmap[i])
-        {
-            ++counter;
-            if (counter == 1)
-            {
-                page_addr = i;
-            }
-        }
-        else
-        {
-            counter = 0;
-        }
-
-        if (counter >= number)
-        {
-            for (size_t j { page_addr }; j < page_addr+counter; ++j)
-            {
-                assert(!mem_bitmap[j]);
-                mem_bitmap[j] = true;
-            }
-#if LASTPOS_OPTIMIZATION
-            last_pos = page_addr+counter;
-#endif
-            return phys(page_addr*page_size);
-        }
-    }
-
-#if LASTPOS_OPTIMIZATION
-    if (last_pos != 0)
-    {
-        last_pos = 0;
-        goto loop;
-    }
-#endif
-
-    log_serial("Out of memory\n");
-    panic("Out of memory !\n");
-
-    return 0;
-}
-
-bool Paging::release_physical_page(uintptr_t p_addr, size_t number)
-{
-    size_t base_page = page(virt(p_addr));
-    bool released = false;
-
-    for (size_t i { 0 }; i < number; ++i)
-    {
-        released |= mem_bitmap[base_page+i];
-        mem_bitmap[base_page+i] = false;
-    }
-
-#if LASTPOS_OPTIMIZATION
-    if (number > 2 && released) last_pos = base_page;
-#endif
-
-    return released;
 }
 
 void Paging::map_page(void *p_addr, void *v_addr, uint32_t flags)
@@ -158,7 +79,7 @@ void Paging::unmap_page(void *v_addr)
 
 void Paging::identity_map(void *p_addr, size_t size, uint32_t flags)
 {
-    size_t page_num = size/page_size + (size%page_size?0:1);
+    size_t page_num = size/page_size + (size%page_size?1:0);
 
     for (size_t i { 0 }; i < page_num; ++i)
     {
@@ -181,15 +102,13 @@ uintptr_t Paging::alloc_virtual_page(size_t number)
 {
     assert(number);
 
-    number += 2; // put a barrier around
-
     PTEntry* entries = page_entry(0);
 
     uintptr_t addr { 0 };
 
     size_t counter { 0 };
 
-    for (size_t i { 0 }; i < 1024*1024; ++i)
+    for (size_t i { 0 }; i < ram_maxpage; ++i)
     {
         if (!entries[i].present)
         {
@@ -202,7 +121,11 @@ uintptr_t Paging::alloc_virtual_page(size_t number)
 
         if (counter == number)
         {
-            return addr * page_size + page_size;
+            for (size_t j { 0 }; j < number; ++j)
+            {
+                entries[addr + j].present = true;
+            }
+            return addr * page_size;
         }
     }
     panic("no more virtual addresses available");
@@ -212,23 +135,13 @@ uintptr_t Paging::alloc_virtual_page(size_t number)
 bool Paging::release_virtual_page(uintptr_t v_addr, size_t number)
 {
     auto entry = page_entry(v_addr);
-
     for (size_t i { 0 }; i < number; ++i)
     {
-        release_physical_page(entry[i].phys_addr << 12);
         entry[i].present = false;
         asm volatile ("invlpg (%0)"::"r"(reinterpret_cast<uint8_t*>(v_addr) + i*page_size) : "memory");
     }
 
     return true;
-}
-
-void Paging::mark_as_used(uintptr_t addr, size_t size)
-{
-    for (size_t i { page(addr) }; i < page(addr + size); ++i)
-    {
-        mem_bitmap[i] = true;
-    }
 }
 
 PageDirectory *Paging::get_page_directory()
@@ -259,7 +172,7 @@ void Paging::identity_map()
 {
     PTEntry* entry = &page_tables[0][0];
 
-    for (uint32_t addr { 0 }; addr <= reinterpret_cast<uint32_t>(&kernel_physical_end) + page_size; addr+=0x1000, ++entry)
+    for (uint32_t addr { 0 }; addr <= reinterpret_cast<uint32_t>(&kernel_physical_end) + page_size; addr+=page_size, ++entry)
     {
         entry->phys_addr = addr >> 12;
         entry->present = true;

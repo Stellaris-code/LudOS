@@ -101,42 +101,6 @@ static inline color color_to_vga(const Color& color)
                (rhs.first.g - lhs.first.g)*(rhs.first.g - lhs.first.g) +
                (rhs.first.b - lhs.first.b)*(rhs.first.b - lhs.first.b);
     }).second;
-
-//    switch (color.rgb())
-//    {
-//    case 0x0000AA:
-//        return VGA_COLOR_BLUE;
-//    case 0x00aa00:
-//        return VGA_COLOR_GREEN;
-//    case 0x00aaaa:
-//        return VGA_COLOR_CYAN;
-//    case 0xaa0000:
-//        return VGA_COLOR_RED;
-//    case 0xaa00aa:
-//        return VGA_COLOR_MAGENTA;
-//    case 0xaa5500:
-//        return VGA_COLOR_BROWN;
-//    case 0xaaaaaa:
-//        return VGA_COLOR_LIGHT_GREY;
-//    case 0x555555:
-//        return VGA_COLOR_DARK_GREY;
-//    case 0x5555ff:
-//        return VGA_COLOR_LIGHT_BLUE;
-//    case 0x55ff55:
-//        return VGA_COLOR_LIGHT_GREEN;
-//    case 0x55ffff:
-//        return VGA_COLOR_LIGHT_CYAN;
-//    case 0xff5555:
-//        return VGA_COLOR_LIGHT_RED;
-//    case 0xff55ff:
-//        return VGA_COLOR_LIGHT_MAGENTA;
-//    case 0xffff55:
-//        return VGA_COLOR_YELLOW;
-//    case 0xffffff:
-//        return VGA_COLOR_WHITE;
-//    }
-
-//    return VGA_COLOR_BLACK;
 }
 
 }

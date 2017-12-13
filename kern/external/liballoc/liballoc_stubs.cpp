@@ -25,11 +25,12 @@ SOFTWARE.
 
 #include "tasking/spinlock.hpp"
 
-#include "i686/mem/paging.hpp"
+#include "i686/mem/physallocator.hpp"
 
 #include <stdint.h>
 
 #include "utils/logging.hpp"
+#include "panic.hpp"
 
 // TODO : implement
 DECLARE_LOCK(liballoc_lock);
@@ -53,14 +54,19 @@ void* liballoc_alloc(size_t pages)
     uint8_t* addr = reinterpret_cast<uint8_t*>(Paging::alloc_virtual_page(pages));
     for (size_t i { 0 }; i < pages; ++i)
     {
-        Paging::map_page(reinterpret_cast<void*>(Paging::alloc_physical_page()),
+        Paging::map_page(reinterpret_cast<void*>(PhysPageAllocator::alloc_physical_page()),
                          addr + i*Paging::page_size, Memory::Read|Memory::Write);
     }
     return addr;
 }
 
 int liballoc_free(void* ptr, size_t pages)
-{
+{    
+    for (size_t i { 0 }; i < pages; ++i)
+    {
+        PhysPageAllocator::release_physical_page(Memory::physical_address((uint8_t*)ptr + i*Paging::page_size));
+    }
+
     Memory::unmap(ptr, pages * Paging::page_size);
     return 0;
 }

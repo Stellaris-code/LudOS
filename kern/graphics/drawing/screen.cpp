@@ -49,7 +49,8 @@ void Screen::blit(const Bitmap &bitmap, const PointU &pos)
     //    assert(bitmap.width() + pos.x <= width());
     //    assert(bitmap.height()+ pos.y <= height());
 
-    size_t blit_width = std::min(width(), bitmap.width());
+    size_t blit_width = std::min(bitmap.width(), width() - pos.x);
+    size_t blit_height = std::min(bitmap.height(), height() - pos.y);
 
 #if 0
     for (size_t i { 0 }; i < bitmap.width(); ++i)
@@ -60,7 +61,7 @@ void Screen::blit(const Bitmap &bitmap, const PointU &pos)
         }
     }
 #else
-    for (size_t j { 0 }; j < bitmap.height(); ++j)
+    for (size_t j { 0 }; j < blit_height; ++j)
     {
         memcpyl(data() + (j+pos.y) * width() + (pos.x), bitmap.data() + (j*bitmap.width()),
                 blit_width*sizeof(Color));

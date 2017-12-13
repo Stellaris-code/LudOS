@@ -80,9 +80,9 @@ bool init()
             auto type = detail::get_port_type(i);
             if (type != detail::PortType::Null) ++port_count;
             log(Info, "   Port %u, type %s\n", i, type == detail::PortType::SATA ? "SATA" :
-                                                  type == detail::PortType::SATAPI ? "SATAPI" :
-                                                  type == detail::PortType::SEMB ? "SEMB" :
-                                                  type == detail::PortType::PM ? "PM" : "Null");
+                                                                                   type == detail::PortType::SATAPI ? "SATAPI" :
+                                                                                                                      type == detail::PortType::SEMB ? "SEMB" :
+                                                                                                                                                       type == detail::PortType::PM ? "PM" : "Null");
         }
     }
 
@@ -172,8 +172,7 @@ bool detail::issue_read_command(size_t port, uint64_t sector, size_t count, uint
     }
 
     //CommandHeader *cmdheader = reinterpret_cast<CommandHeader*>(mem->ports[port].clb);
-    CommandHeader* cmdheader = (CommandHeader*)&cmdlists[port];
-    cmdheader += slot;
+    CommandHeader* cmdheader = &(cmdlists[port].hdrs[slot]);
 
     cmdheader->cfl = sizeof(FisRegH2D)/sizeof(uint32_t);	// Command FIS size
     cmdheader->write = 0;		// Read from device
@@ -425,16 +424,33 @@ void detail::init_interface()
                 if (detail::issue_identify_command(port, &data))
                 {
                     return DiskInterface::DiskInfo{.disk_size = size_t(data.sectors_48*512),
-                                                   .sector_size = (data.sector_size*2?:512), ide::ata_string(data.model)};
+                                .sector_size = (data.sector_size*2?:512), ide::ata_string(data.model)};
                 }
                 else
                 {
                     return DiskInterface::DiskInfo{.disk_size = 0,
-                                                   .sector_size = 512, "<invalid>"};
+                                .sector_size = 512, "<invalid>"};
                 }
             });
         }
     }
+}
+
+bool detail::do_read(size_t port, uint64_t sector, size_t count, uint16_t *buf)
+{
+    static uint16_t temp[256];
+    for (size_t i { 0 }; i < count; ++i)
+    {
+        if (!issue_read_command(port, sector + i, 1, temp))
+        {
+            return false;
+        }
+
+        memcpy(buf, temp, 512);
+        buf += 256;
+    }
+
+    return true;
 }
 
 }

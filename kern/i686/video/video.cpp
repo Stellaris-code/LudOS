@@ -30,7 +30,7 @@ SOFTWARE.
 #include "vbe.hpp"
 #include "terminal/terminal.hpp"
 #include "i686/cpu/mtrr.hpp"
-#include "i686/mem/paging.hpp"
+#include "i686/mem/physallocator.hpp"
 
 #include "graphics/drawing/display_draw.hpp"
 
@@ -116,7 +116,7 @@ std::optional<VideoMode> change_mode(size_t width, size_t height, size_t depth)
                                     mtrr::WC);
         }
 
-        Paging::mark_as_used(mode.info.PhysBasePtr,
+        PhysPageAllocator::mark_as_used(mode.info.PhysBasePtr,
                              mode.info.BytesPerScanLine*mode.info.YResolution);
 
         if (current_mode.framebuffer_addr) Memory::unmap((void*)current_mode.framebuffer_addr, current_mode.bytes_per_line*current_mode.height);

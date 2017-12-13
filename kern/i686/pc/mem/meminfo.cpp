@@ -27,7 +27,7 @@ SOFTWARE.
 
 #include "../multiboot/multiboot.h"
 #include "utils/addr.hpp"
-#include "i686/mem/paging.hpp"
+#include "i686/mem/physallocator.hpp"
 
 extern "C" int kernel_physical_end;
 
@@ -112,10 +112,8 @@ size_t Meminfo::total_memory()
 
 void Meminfo::init_alloc_bitmap()
 {
-    for (size_t i { 0 }; i < Paging::mem_bitmap.array_size; ++i)
-    {
-        Paging::mem_bitmap[i] = true;
-    }
+    // TODO : adapt for 64-bit
+    PhysPageAllocator::mark_as_used(0, 0xFFFFFFFF);
 
     size_t free_frames = Meminfo::free_frames();
     for (size_t i { 0 }; i < free_frames; ++i)
@@ -123,15 +121,9 @@ void Meminfo::init_alloc_bitmap()
         multiboot_memory_map_t* mem_zone = Meminfo::frame(i);
         if (mem_zone)
         {
-            for (size_t pg = Paging::page(mem_zone->addr); pg < Paging::page(mem_zone->addr+mem_zone->len) && pg < Paging::ram_maxpage; ++pg)
-            {
-                Paging::mem_bitmap[pg] = false;
-            }
+            PhysPageAllocator::mark_as_free(mem_zone->addr, mem_zone->len);
         }
     }
     // Mark kernel space as unavailable, protect multiboot info data
-    for (size_t i { Paging::page(0) }; i < Paging::page(virt(reinterpret_cast<uintptr_t>(&kernel_physical_end + 0x80000))); ++i)
-    {
-        Paging::mem_bitmap[i] = true;
-    }
+    PhysPageAllocator::mark_as_used(0, (reinterpret_cast<uintptr_t>(&kernel_physical_end + 0x80000)));
 }

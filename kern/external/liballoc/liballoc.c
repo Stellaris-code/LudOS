@@ -105,6 +105,7 @@ static unsigned int l_pageSize  = 4096;			///< The size of an individual page. S
 static unsigned int l_pageCount = 16;			///< The number of pages to request per chunk. Set up in liballoc_init.
 unsigned long long l_allocated = 0;		///< Running total of allocated memory.
 unsigned long long l_inuse	 = 0;		///< Running total of used memory.
+unsigned long long l_max_inuse	 = 0;		///< Running total of used memory.
 
 
 static long long l_warningCount = 0;		///< Number of warnings encountered
@@ -119,11 +120,11 @@ static long long l_possibleOverruns = 0;	///< Number of possible overruns
 
 static void *liballoc_memset(void* s, int c, size_t n)
 {
-	unsigned int i;
-	for ( i = 0; i < n ; i++)
-		((char*)s)[i] = c;
-	
-	return s;
+    unsigned int i;
+    for ( i = 0; i < n ; i++)
+        ((char*)s)[i] = c;
+
+    return s;
 }
 static void* liballoc_memcpy(void* s1, const void* s2, size_t n)
 {
@@ -135,18 +136,18 @@ static void* liballoc_memcpy(void* s1, const void* s2, size_t n)
   while ( n >= sizeof(unsigned int) )
   {
       *ldest++ = *lsrc++;
-	  n -= sizeof(unsigned int);
+      n -= sizeof(unsigned int);
   }
 
   cdest = (char*)ldest;
   csrc  = (const char*)lsrc;
-  
+
   while ( n > 0 )
   {
       *cdest++ = *csrc++;
-	  n -= 1;
+      n -= 1;
   }
-  
+
   return s1;
 }
  
@@ -403,6 +404,7 @@ void *PREFIX(malloc)(size_t req_size)
 
 
 			l_inuse += size;
+            l_max_inuse = (l_inuse>l_max_inuse)?l_inuse:l_max_inuse;
 			
 			
 			p = (void*)((uintptr_t)(maj->first) + sizeof( struct liballoc_minor ));
@@ -441,6 +443,7 @@ void *PREFIX(malloc)(size_t req_size)
 			maj->usage 			+= size + sizeof( struct liballoc_minor );
 
 			l_inuse += size;
+            l_max_inuse = (l_inuse>l_max_inuse)?l_inuse:l_max_inuse;
 
 			p = (void*)((uintptr_t)(maj->first) + sizeof( struct liballoc_minor ));
 			ALIGN( p );
@@ -488,6 +491,7 @@ void *PREFIX(malloc)(size_t req_size)
 						maj->usage += size + sizeof( struct liballoc_minor );
 
 						l_inuse += size;
+                        l_max_inuse = (l_inuse>l_max_inuse)?l_inuse:l_max_inuse;
 						
 						p = (void*)((uintptr_t)min + sizeof( struct liballoc_minor ));
 						ALIGN( p );
@@ -578,8 +582,6 @@ void *PREFIX(malloc)(size_t req_size)
 
 		maj = maj->next;
 	} // while (maj != NULL)
-
-
 	
 	liballoc_unlock();		// release the lock
 
@@ -643,6 +645,7 @@ void PREFIX(free)(void *ptr)
             kprintf("liballoc: ERROR: Possible 1-3 byte overrun for magic %x != %x\n",
 								min->magic,
 								LIBALLOC_MAGIC );
+            halt();
 			FLUSH();
 			#endif
 		}
@@ -654,6 +657,7 @@ void PREFIX(free)(void *ptr)
             kprintf("liballoc: ERROR: multiple PREFIX(free)() attempt on %x from %x.\n",
 									ptr,
 									__builtin_return_address(0) );
+            halt();
 			FLUSH();
 			#endif
 		}
@@ -663,6 +667,7 @@ void PREFIX(free)(void *ptr)
             kprintf("liballoc: ERROR: Bad PREFIX(free)( %x ) called from %x\n",
 								ptr,
 								__builtin_return_address(0) );
+            halt();
 			FLUSH();
 			#endif
 		}
@@ -831,7 +836,7 @@ void*   PREFIX(realloc)(void *p, size_t size)
 
 	// If we got here then we're reallocating to a block bigger than us.
 	ptr = PREFIX(malloc)( size );					// We need to allocate new memory
-	liballoc_memcpy( ptr, p, real_size );
+    liballoc_memcpy( ptr, p, real_size );
 	PREFIX(free)( p );
 
 	return ptr;

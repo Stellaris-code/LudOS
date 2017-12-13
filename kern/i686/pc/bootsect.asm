@@ -30,7 +30,7 @@ _start:
 .ctors_until_end:
     cmp  ebx, end_ctors
     jb   .call_constructor
-
+    xchg bx, bx
     push dword [mbd_info]
     push dword [magic]
 

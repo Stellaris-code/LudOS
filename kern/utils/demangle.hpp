@@ -31,20 +31,20 @@ SOFTWARE.
 
 #include "utils/logging.hpp"
 
-inline std::string demangle(const std::string& symbol)
+inline const char* demangle(const std::string& symbol)
 {
-    int status = -1;
-    char* demangled_cstr = abi::__cxa_demangle(symbol.c_str(), nullptr, nullptr, &status);
+    static char buffer[2048];
+    size_t len = sizeof(buffer);
 
-    std::string result = symbol;
+    int status = -1;
+    char* demangled_cstr = abi::__cxa_demangle(symbol.c_str(), buffer, &len, &status);
 
     if (status == 0)
     {
-        result = demangled_cstr;
-        kfree(demangled_cstr);
+        return demangled_cstr;
     }
 
-    return result;
+    return symbol.c_str();
 }
 
 #endif // DEMANGLE_HPP

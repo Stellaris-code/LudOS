@@ -33,12 +33,9 @@ void *Memory::mmap(void *p_addr, size_t len, uint32_t flags)
 {
     size_t offset = (uintptr_t)p_addr & 0xFFF;
 
-    len += reinterpret_cast<uintptr_t>(p_addr) % Paging::page_size;
     size_t page_num = len/Paging::page_size + (len%Paging::page_size?1:0);
 
     assert(len);
-
-    //log_serial("bsize : %d / pages : %d\n", len, page_num);
 
     uintptr_t pages = Paging::alloc_virtual_page(page_num);
     for (size_t i { 0 }; i < page_num; ++i)
@@ -53,7 +50,7 @@ void *Memory::mmap(void *p_addr, size_t len, uint32_t flags)
 
 void Memory::unmap(void *v_addr, size_t len)
 {
-    size_t page_num = len/Paging::page_size + (len%Paging::page_size?0:1);
+    size_t page_num = len/Paging::page_size + (len%Paging::page_size?1:0);
 
     for (size_t i { 0 }; i < page_num; ++i)
     {

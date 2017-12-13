@@ -36,6 +36,7 @@ SOFTWARE.
 
 extern "C" unsigned long long l_allocated;		///< Running total of allocated memory.
 extern "C" unsigned long long l_inuse;		///< Running total of used memory.
+extern "C" unsigned long long l_max_inuse;		///< Running total of used memory.
 
 void install_sys_commands(Shell &sh)
 {
@@ -48,6 +49,7 @@ void install_sys_commands(Shell &sh)
          kprintf("Free memory : %s\n", human_readable_size(MemoryInfo::available_bytes - l_inuse).c_str());
          kprintf("Allocated memory : %s\n", human_readable_size(l_allocated).c_str());
          kprintf("Used memory : %s\n", human_readable_size(l_inuse).c_str());
+         kprintf("Maximal Used memory : %s\n", human_readable_size(l_max_inuse).c_str());
          return 0;
      }});
 

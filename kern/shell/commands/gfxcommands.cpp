@@ -37,6 +37,7 @@ SOFTWARE.
 #include "utils/messagebus.hpp"
 #include "utils/nop.hpp"
 #include "utils/stlutils.hpp"
+#include "utils/crc32.hpp"
 #include "drivers/kbd/kbd_mappings.hpp"
 
 void install_gfx_commands(Shell &sh)

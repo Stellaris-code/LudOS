@@ -27,7 +27,7 @@ SOFTWARE.
 
 #include <stdarg.h>
 
-#include "../kern/utils/logging.hpp"
+#include "utils/logging.hpp"
 #include "halt.hpp"
 #include "panic.hpp"
 

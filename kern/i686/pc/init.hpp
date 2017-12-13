@@ -70,9 +70,12 @@ SOFTWARE.
 extern "C" multiboot_header mbd;
 extern "C" int kernel_physical_end;
 
+extern "C" int start_ctors;
+extern "C" int end_ctors;
+
 #pragma GCC push_options
 #pragma GCC target ("no-sse")
-void early_abort(const char* str)
+inline void early_abort(const char* str)
 {
     uint16_t* addr = reinterpret_cast<uint16_t*>(0xB8000);
 
@@ -90,7 +93,17 @@ void early_abort(const char* str)
     halt();
 }
 
-void early_init()
+inline void call_ctors()
+{
+    uint32_t* ctor = (uint32_t*)&start_ctors;
+    while (ctor < (uint32_t*)&end_ctors)
+    {
+        ((void(*)())ctor)();
+        ++ctor;
+    }
+}
+
+inline void early_init()
 {
     if (simd_features() & SSE)
     {
@@ -161,7 +174,7 @@ inline void init(uint32_t magic, const multiboot_info_t* mbd_info)
     if (simd_features() & SSE)
     {
         log(Debug, "CPU is SSE capable\n");
-        enable_sse();
+
         aligned_memcpy = _memcpy_mmx;
         if (simd_features() & SSE2)
         {
@@ -215,6 +228,8 @@ inline void init(uint32_t magic, const multiboot_info_t* mbd_info)
     acpi::power::init();
 
     pci::scan();
+
+    putc_serial = true;
 
     if (!ahci::init())
     {

@@ -87,6 +87,8 @@ SOFTWARE.
 // TODO : Ext2
 // TODO : PAE
 // TODO : commands : serial/settitle
+// TODO : don't forget about fpu state
+// TODO : panic blink
 
 void global_init()
 {

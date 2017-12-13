@@ -58,7 +58,7 @@ include_directories("${CMAKE_CURRENT_SOURCE_DIR}/external/libx86emu/include")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/external/libdisasm")
 
 option(WITH_SSE "Compiles with gcc sse support" ON)
-option(WITH_SSE2 "Compiles with gcc sse2 support" ON)
+option(WITH_SSE2 "Compiles with gcc sse2 support" OFF)
 option(WITH_ARCH_NATIVE "Compiles with -march=native" OFF)
 
 if (WITH_SSE)
@@ -66,7 +66,7 @@ if (WITH_SSE)
 elseif (WITH_SSE2)
     set(SIMD_OPTIONS "-mmmx -msse -msse2 -mssse3 -ftree-vectorize")
 else()
-    set(SMID_OPTIONS "-mno-sse")
+    set(SIMD_OPTIONS "-mno-mmx -mno-sse -mno-sse2")
 endif()
 
 if (WITH_ARCH_NATIVE)
@@ -80,8 +80,8 @@ set(GENERIC_SRCS ${KERN_TERMINAL_SOURCES} ${CPP_SOURCES} ${KERN_BIOS_SOURCES} ${
 
 add_executable(${PROJECT_NAME} ${PLATFORM_SRCS} ${ISA_SRCS} ${GENERIC_SRCS} ${HEADERS} ${STB_HEADERS} ${LD_SCRIPTS})
 
-set(CMAKE_C_FLAGS "${ISA_C_FLAGS} ${PLATFORM_C_FLAGS} -g -fstack-protector -m32 ${SIMD_OPTIONS} ${ARCH_OPTIONS} -ftree-vectorize -ffast-math -std=c11 -Wall -Wextra -Wcast-qual -Wmisleading-indentation -Wno-unused-parameter -Wno-implicit-int -Wnull-dereference -lgcc -static-libgcc -ffreestanding -fno-builtin -nostdlib -fno-omit-frame-pointer -Werror=implicit-function-declaration -lgcc")
-set(CMAKE_CXX_FLAGS "${ISA_CXX_FLAGS} ${PLATFORM_CXX_FLAGS} -g -m32 -fno-exceptions ${SIMD_OPTIONS} ${ARCH_OPTIONS} -ftree-vectorize -ffast-math -fstack-protector -std=c++17 -Wall -Wextra -Wold-style-cast -Wno-unused-parameter -Wno-format -Wno-switch -Wno-packed-bitfield-compat -Wno-reorder -Wno-trigraphs -Wold-style-cast -Wcast-qual -Wmisleading-indentation -Wnull-dereference -lgcc -static-libgcc -ffreestanding -fno-builtin -nostdlib -fno-omit-frame-pointer -Werror=implicit-function-declaration -lgcc")
+set(CMAKE_C_FLAGS "${ISA_C_FLAGS} ${PLATFORM_C_FLAGS} -g -fstack-protector -m32 ${SIMD_OPTIONS} ${ARCH_OPTIONS} -ffast-math -std=c11 -Wall -Wextra -Wcast-qual -Wmisleading-indentation -Wno-unused-parameter -Wno-implicit-int -Wnull-dereference -lgcc -static-libgcc -ffreestanding -fno-builtin -nostdlib -fno-omit-frame-pointer -Werror=implicit-function-declaration -lgcc")
+set(CMAKE_CXX_FLAGS "${ISA_CXX_FLAGS} ${PLATFORM_CXX_FLAGS} -g -m32 -fno-exceptions ${SIMD_OPTIONS} ${ARCH_OPTIONS} -ffast-math -fstack-protector -std=c++17 -Wall -Wextra -Wno-unused-parameter -Wno-format -Wno-switch -Wno-packed-bitfield-compat -Wno-reorder -Wno-trigraphs -Wcast-qual -Wmisleading-indentation -Wnull-dereference -lgcc -static-libgcc -ffreestanding -fno-builtin -nostdlib -fno-omit-frame-pointer -Werror=implicit-function-declaration -lgcc")
 set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS
   "-T ${PLATFORM_LAYOUT} -N ${ISA_LINKER_FLAGS} ${PLATFORM_LINKER_FLAGS} -lgcc -fexceptions -Xlinker -Map=ld.map ")
 set_target_properties(${PROJECT_NAME} PROPERTIES SUFFIX ".bin")

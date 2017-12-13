@@ -308,6 +308,8 @@ uint32_t flush_commands(size_t port);
 
 void init_interface();
 
+[[nodiscard]] bool do_read(size_t port, uint64_t sector, size_t count, uint16_t* buf);
+
 PortType get_port_type(size_t port);
 void init_port(size_t port);
 void reset_port(size_t port);

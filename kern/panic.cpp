@@ -57,7 +57,7 @@ void print_stack_symbols()
         if (auto fun = elf::kernel_symbol_table.get_function(trace[i]); fun)
         {
             auto symbol = *fun;
-            kprintf("#%d   0x%x in %s", i+1, trace[i], demangle(symbol.name).c_str());
+            kprintf("#%d   0x%x in %s", i+1, trace[i], demangle(symbol.name));
         }
         else
         {
@@ -110,8 +110,7 @@ void panic(const char *fmt, ...)
     term_data().push_color({0xffffff, 0xaa0000});
 
     term().clear();
-    term().set_title(U"KERNEL PANIC", {0xaa0000, 0xffffff});
-    //term().disable();
+    term().set_title(U"KERNEL PANIC", {0xff5555, 0xffffff});
 
     putc_serial = true;
 

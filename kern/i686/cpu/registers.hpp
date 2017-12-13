@@ -94,7 +94,7 @@ inline void dump(const registers* regs)
         kprintf("eax : 0x%x  ebx : 0x%x  ", regs->eax, regs->ebx);
         kprintf("ecx : 0x%x  edx : 0x%x  \n", regs->ecx, regs->edx);
         kprintf("ebx : 0x%x  esi : 0x%x  ", regs->ebp, regs->esi);
-        kprintf("edi : 0x%x\n", regs->edi);
+        kprintf("edi : 0x%x  ebp : 0x%x\n", regs->edi, regs->ebp);
         kprintf("cr0 : 0x%x  cr2 : 0x%x cr3 : 0x%x  cr4 : 0x%x\n", cr0(), cr2(), cr3(), cr4());
         kprintf("gs : 0x%x  fs : 0x%x  ", regs->gs, regs->fs);
         kprintf("es : 0x%x  ds : 0x%x\n", regs->es, regs->ds);

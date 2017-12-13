@@ -32,6 +32,8 @@ SOFTWARE.
 #define STBI_NO_STDIO
 #include "stb/stb_image.h"
 
+#include "utils/crc32.hpp"
+
 #include "fs/vfs.hpp"
 
 namespace graphics
@@ -55,6 +57,8 @@ std::optional<Bitmap> load_image(const std::string &path)
     int x, y, depth;
     uint8_t* img = stbi_load_from_memory(data.data(), data.size(), &x, &y, &depth, 4);
 
+    kprintf("0x%x\n", crc(img, img + node->size()));
+
     if (!img)
     {
         warn("Failed loading '%s' : %s\n", path.c_str(), stbi_failure_reason());
@@ -68,7 +72,7 @@ std::optional<Bitmap> load_image(const std::string &path)
     {
         for (size_t j { 0 }; j < static_cast<size_t>(y); ++j)
         {
-            bmp[{i, j}] = {bmp[{i, j}].b, bmp[{i, j}].g, bmp[{i, j}].r, bmp[{i, j}].a};
+            bmp[{i, j}] = Color(bmp[{i, j}].b, bmp[{i, j}].g, bmp[{i, j}].r, bmp[{i, j}].a);
         }
     }
 

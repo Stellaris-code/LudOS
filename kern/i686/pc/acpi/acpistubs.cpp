@@ -81,7 +81,7 @@ void *AcpiOsMapMemory(ACPI_PHYSICAL_ADDRESS PhysicalAddress, ACPI_SIZE Length)
 
 void AcpiOsUnmapMemory(void *LogicalAddress, ACPI_SIZE Length)
 {
-    Memory::unmap(LogicalAddress, Length);
+    //Memory::unmap(LogicalAddress, Length);
 }
 
 ACPI_STATUS AcpiOsGetPhysicalAddress(void *LogicalAddress, ACPI_PHYSICAL_ADDRESS *PhysicalAddress)

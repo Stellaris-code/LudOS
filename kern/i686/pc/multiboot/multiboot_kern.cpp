@@ -36,7 +36,7 @@ SOFTWARE.
 #include "elf/elf.hpp"
 #include "mem/meminfo.hpp"
 #include "mem/memmap.hpp"
-#include "i686/mem/paging.hpp"
+#include "i686/mem/physallocator.hpp"
 #include "i686/pc/mem/meminfo.hpp"
 #include "utils/virt_machine_detect.hpp"
 #include "halt.hpp"
@@ -91,7 +91,7 @@ void parse_info()
 
         for (size_t i = 0; i < info->mods_count; i++, mod++)
         {
-            Paging::mark_as_used(mod->mod_start, mod->mod_end-mod->mod_start);
+            PhysPageAllocator::mark_as_used(mod->mod_start, mod->mod_end-mod->mod_start);
         }
     }
 }

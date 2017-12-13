@@ -412,7 +412,7 @@ void detail::init_interface()
         {
             DiskInterface::add_drive([port](uint32_t sector, uint8_t count, uint8_t* buf)->bool
             {
-                return detail::issue_read_command(port, sector, count, reinterpret_cast<uint16_t*>(buf));
+                return detail::do_read(port, sector, count, reinterpret_cast<uint16_t*>(buf));
             },
             [port](uint32_t sector, uint8_t count, const uint8_t* buf)->bool
             {
@@ -438,7 +438,7 @@ void detail::init_interface()
 
 bool detail::do_read(size_t port, uint64_t sector, size_t count, uint16_t *buf)
 {
-    static uint16_t temp[256];
+    /*static*/ uint16_t temp[256];
     for (size_t i { 0 }; i < count; ++i)
     {
         if (!issue_read_command(port, sector + i, 1, temp))

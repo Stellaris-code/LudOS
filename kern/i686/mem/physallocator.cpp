@@ -27,10 +27,18 @@ SOFTWARE.
 
 #include "panic.hpp"
 
+void PhysPageAllocator::init()
+{
+    for (size_t i { 0 }; i < mem_bitmap.array_size; ++i)
+    {
+        mem_bitmap[i] = true;
+    }
+}
+
 uintptr_t PhysPageAllocator::alloc_physical_page()
 {
 loop:
-    for (size_t i { 0 }; i < mem_bitmap.array_size; ++i)
+    for (size_t i { last_pos }; i < mem_bitmap.array_size; ++i)
     {
         if (!mem_bitmap[i])
         {
@@ -73,7 +81,11 @@ bool PhysPageAllocator::release_physical_page(uintptr_t p_addr)
 
 void PhysPageAllocator::mark_as_used(uintptr_t addr, size_t size)
 {
-    for (size_t i { addr >> 12 }; i < (addr + size) >> 12; ++i)
+    const size_t base_page = addr >> 12;
+    const size_t end_addr = addr + size;
+    const size_t end_page = (end_addr >> 12) + (end_addr&0xFFF?1:0);
+
+    for (size_t i { base_page }; i < end_page; ++i)
     {
         mem_bitmap[i] = true;
     }
@@ -81,7 +93,11 @@ void PhysPageAllocator::mark_as_used(uintptr_t addr, size_t size)
 
 void PhysPageAllocator::mark_as_free(uintptr_t addr, size_t size)
 {
-    for (size_t i { addr >> 12 }; i < (addr + size) >> 12; ++i)
+    const size_t base_page = addr >> 12;
+    const size_t end_addr = addr + size;
+    const size_t end_page = (end_addr >> 12) + (end_addr&0xFFF?1:0);
+
+    for (size_t i { base_page }; i < end_page; ++i)
     {
         mem_bitmap[i] = false;
     }

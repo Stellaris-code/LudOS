@@ -108,6 +108,8 @@ uintptr_t Paging::alloc_virtual_page(size_t number)
 
     size_t counter { 0 };
 
+    number += 2;
+
     for (size_t i { 0 }; i < ram_maxpage; ++i)
     {
         if (!entries[i].present)
@@ -121,11 +123,11 @@ uintptr_t Paging::alloc_virtual_page(size_t number)
 
         if (counter == number)
         {
-            for (size_t j { 0 }; j < number; ++j)
+            for (size_t j { 1 }; j < number-1; ++j)
             {
                 entries[addr + j].present = true;
             }
-            return addr * page_size;
+            return addr * page_size + page_size;
         }
     }
     panic("no more virtual addresses available");

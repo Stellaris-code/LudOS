@@ -107,13 +107,15 @@ size_t Meminfo::total_memory()
         if (free_frame) total += free_frame->len;
     }
 
+    // don't take kernel code memory in account
+    total -= ((uintptr_t)&kernel_physical_end - 0x100000);
+
     return total;
 }
 
 void Meminfo::init_alloc_bitmap()
 {
-    // TODO : adapt for 64-bit
-    PhysPageAllocator::mark_as_used(0, 0xFFFFFFFF);
+    PhysPageAllocator::init();
 
     size_t free_frames = Meminfo::free_frames();
     for (size_t i { 0 }; i < free_frames; ++i)
@@ -125,5 +127,5 @@ void Meminfo::init_alloc_bitmap()
         }
     }
     // Mark kernel space as unavailable, protect multiboot info data
-    PhysPageAllocator::mark_as_used(0, (reinterpret_cast<uintptr_t>(&kernel_physical_end + 0x80000)));
+    PhysPageAllocator::mark_as_used(0, (reinterpret_cast<uintptr_t>(&kernel_physical_end + 0x160000)));
 }

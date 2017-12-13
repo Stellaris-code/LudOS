@@ -36,6 +36,8 @@ class PhysPageAllocator
     friend class Meminfo;
 
 public:
+    static void init();
+
     static uintptr_t alloc_physical_page();
     static bool release_physical_page(uintptr_t p_addr);
 

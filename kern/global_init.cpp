@@ -86,10 +86,9 @@ SOFTWARE.
 // TODO : écran de veille ala windows
 // TODO : Ext2
 // TODO : PAE
-// TODO : commands : serial/settitle
 // TODO : don't forget about fpu state
-// TODO : panic blink
 // FIXME : un static int[256] peut tout foutre en l'air, attention aux static
+// TODO : Higher half
 
 void global_init()
 {

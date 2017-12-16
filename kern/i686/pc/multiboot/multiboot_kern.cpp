@@ -28,7 +28,6 @@ SOFTWARE.
 #include "panic.hpp"
 
 #include "utils/align.hpp"
-#include "utils/addr.hpp"
 #include "utils/memutils.hpp"
 #include "utils/env.hpp"
 #include "utils/logging.hpp"
@@ -69,7 +68,7 @@ void parse_mem()
 
     if (CHECK_FLAG (info->flags, 6))
     {
-        Meminfo::mmap_addr = reinterpret_cast<multiboot_memory_map_t *>(phys(info->mmap_addr));
+        Meminfo::mmap_addr = reinterpret_cast<multiboot_memory_map_t *>(info->mmap_addr);
     }
 
     MemoryInfo::available_bytes = Meminfo::total_memory();
@@ -79,7 +78,7 @@ void parse_info()
 {
     if (CHECK_FLAG(info->flags, 9))
     {
-        if (strncmp(reinterpret_cast<char*>(phys(info->boot_loader_name)), "GRUB", 4) != 0 && running_qemu)
+        if (strncmp(reinterpret_cast<char*>(info->boot_loader_name), "GRUB", 4) != 0 && running_qemu)
         {
             running_qemu_kernel = true;
         }
@@ -87,7 +86,7 @@ void parse_info()
 
     if (CHECK_FLAG (info->flags, 3))
     {
-        multiboot_module_t * mod { reinterpret_cast<multiboot_module_t *>(phys(info->mods_addr)) };
+        multiboot_module_t * mod { reinterpret_cast<multiboot_module_t *>(info->mods_addr) };
 
         for (size_t i = 0; i < info->mods_count; i++, mod++)
         {
@@ -100,7 +99,7 @@ void print_info()
 {
     if (CHECK_FLAG(info->flags, 2))
     {
-        log(Info, "Command line : '%s'\n", reinterpret_cast<char*>(phys(info->cmdline)));
+        log(Info, "Command line : '%s'\n", reinterpret_cast<char*>(info->cmdline));
     }
     if (CHECK_FLAG(info->flags, 1))
     {
@@ -108,7 +107,7 @@ void print_info()
     }
     if (CHECK_FLAG (info->flags, 3))
     {
-        multiboot_module_t * mod { reinterpret_cast<multiboot_module_t *>(phys(info->mods_addr)) };
+        multiboot_module_t * mod { reinterpret_cast<multiboot_module_t *>(info->mods_addr) };
 
         log(Debug, "Module count : %d\n", info->mods_count);
         log(Debug, "Modules address : 0x%x\n", info->mods_addr);
@@ -116,7 +115,7 @@ void print_info()
         {
             log(Debug, " Module start : 0x%x\n", mod->mod_start);
             log(Debug, " Module end : 0x%x\n", mod->mod_end);
-            log(Debug, " Module cmdline : '%s'\n", reinterpret_cast<char*>(phys(mod->cmdline)));
+            log(Debug, " Module cmdline : '%s'\n", reinterpret_cast<char*>(mod->cmdline));
         }
     }
     if (CHECK_FLAG(info->flags, 5))
@@ -126,7 +125,7 @@ void print_info()
     }
     if (CHECK_FLAG(info->flags, 9))
     {
-        log(Info, "Bootloader name : '%s'\n", reinterpret_cast<char*>(phys(info->boot_loader_name)));
+        log(Info, "Bootloader name : '%s'\n", reinterpret_cast<char*>(info->boot_loader_name));
     }
 
     if (CHECK_FLAG(info->flags, 12))
@@ -160,7 +159,7 @@ std::string parse_cmdline()
 {
     if (CHECK_FLAG(info->flags, 2))
     {
-        return reinterpret_cast<char*>(phys(info->cmdline));
+        return reinterpret_cast<char*>(info->cmdline);
     }
 
     return "";
@@ -172,7 +171,7 @@ std::vector<multiboot_module_t> get_modules()
     {
         std::vector<multiboot_module_t> modules;
 
-        multiboot_module_t * mod { reinterpret_cast<multiboot_module_t *>(phys(info->mods_addr)) };
+        multiboot_module_t * mod { reinterpret_cast<multiboot_module_t *>(info->mods_addr) };
 
         for (size_t i = 0; i < info->mods_count; i++, mod++)
         {

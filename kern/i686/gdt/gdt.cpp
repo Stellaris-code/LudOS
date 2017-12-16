@@ -32,7 +32,6 @@ SOFTWARE.
 #include "gdt.hpp"
 #include "panic.hpp"
 #include "../tasking/tss.hpp"
-#include "utils/addr.hpp"
 #include "utils/logging.hpp"
 
 namespace gdt

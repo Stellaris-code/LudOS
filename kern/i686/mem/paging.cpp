@@ -26,7 +26,6 @@ SOFTWARE.
 #include "paging.hpp"
 
 #include <stdint.h>
-#include "utils/addr.hpp"
 
 #include "halt.hpp"
 #include "panic.hpp"

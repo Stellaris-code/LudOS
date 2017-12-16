@@ -26,7 +26,6 @@ SOFTWARE.
 #include "x86emu_modesetting.hpp"
 
 #include "io.hpp"
-#include "utils/addr.hpp"
 #include "utils/logging.hpp"
 #include "utils/memutils.hpp"
 #include "halt.hpp"

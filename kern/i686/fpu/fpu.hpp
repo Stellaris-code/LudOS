@@ -25,13 +25,23 @@ SOFTWARE.
 #ifndef FPU_HPP
 #define FPU_HPP
 
+#include <array.hpp>
+
 extern "C" bool check_fpu_presence();
 extern "C" void setup_fpu();
+
+struct FPUState
+{
+    alignas(16) std::array<uint8_t, 512> data;
+};
 
 class FPU
 {
 public:
     static void init();
+
+    static FPUState save();
+    static void load(const FPUState& state);
 
 private:
     static bool check_cpuid();

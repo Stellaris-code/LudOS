@@ -33,6 +33,8 @@ SOFTWARE.
 #include "misc/greet.hpp"
 #include "misc/cowsay.hpp"
 
+#include "terminal/terminal.hpp"
+
 #include "fs/vfs.hpp"
 
 void install_base_commands(Shell &sh)
@@ -137,9 +139,55 @@ void install_base_commands(Shell &sh)
      [](const std::vector<std::string>& args)
      {
          std::string str;
-         if (!args.empty()) str = args[0];
+         if (args.size() > 1 && args[0] == "-s")
+         {
+             str = args[1];
+             log_serial("%s\n", str.c_str());
+         }
+         else if (!args.empty())
+         {
+             str = args[0];
+         }
 
          kprintf("%s\n", str.c_str());
+         return 0;
+     }});
+
+    sh.register_command(
+    {"settitle", "set terminal title",
+     "Usage : settitle <title>",
+     [](const std::vector<std::string>& args)
+     {
+         if (!args.empty())
+         {
+             term().set_title(u8_decode(args[0]), term_data().title_color);
+         }
+
+         return 0;
+     }});
+
+    sh.register_command(
+    {"serial", "enable echoing to serial port",
+     "Usage : serial <on/off>",
+     [](const std::vector<std::string>& args)
+     {
+         if (!args.empty())
+         {
+             if (args[0] == "on")
+             {
+                 putc_serial = true;
+                 puts("Echoing to serial port");
+             }
+             else if (args[0] == "off")
+             {
+                 putc_serial = false;
+                 puts("Serial port disabled");
+             }
+             else
+             {
+                 return -1;
+             }
+         }
          return 0;
      }});
 

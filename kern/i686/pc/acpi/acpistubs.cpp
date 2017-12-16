@@ -29,7 +29,6 @@ SOFTWARE.
 
 #include "panic.hpp"
 #include "utils/logging.hpp"
-#include "utils/addr.hpp"
 #include "mem/memmap.hpp"
 #include "time/timer.hpp"
 #include "time/time.hpp"

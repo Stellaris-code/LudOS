@@ -33,8 +33,6 @@ SOFTWARE.
 
 void FPU::init()
 {
-    //log(Debug, "Initializing FPU...\n");
-
     if (!check_cpuid() && !check_fpu_presence())
     {
         log_serial("No FPU found, aborting\n");
@@ -42,8 +40,19 @@ void FPU::init()
     }
 
     setup_fpu();
+}
 
-    //log(Info, "FPU Initialized\n");
+FPUState FPU::save()
+{
+    FPUState state;
+    asm volatile ("fxsave (%0)"::"r"(state.data.data()):"memory");
+
+    return state;
+}
+
+void FPU::load(const FPUState &state)
+{
+    asm volatile ("fxrstor (%0)"::"r"(state.data.data()):"memory");
 }
 
 bool FPU::check_cpuid()

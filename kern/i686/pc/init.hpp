@@ -61,7 +61,6 @@ SOFTWARE.
 
 #include "utils/bitops.hpp"
 #include "utils/env.hpp"
-#include "utils/addr.hpp"
 #include "utils/virt_machine_detect.hpp"
 #include "utils/logging.hpp"
 #include "utils/defs.hpp"
@@ -145,7 +144,7 @@ inline void init(uint32_t magic, const multiboot_info_t* mbd_info)
 
     uint64_t framebuffer_addr = bit_check(mbd_info->flags, 12) ? mbd_info->framebuffer_addr : 0xB8000;
 
-    serial::debug::write("Framebuffer address : 0x%x\n", phys(framebuffer_addr));
+    serial::debug::write("Framebuffer address : 0x%x\n", framebuffer_addr);
 
     init_printf(nullptr, [](void*, char c){putchar(c);});
 
@@ -228,8 +227,6 @@ inline void init(uint32_t magic, const multiboot_info_t* mbd_info)
     acpi::power::init();
 
     pci::scan();
-
-    putc_serial = true;
 
     if (!ahci::init())
     {

@@ -29,7 +29,6 @@ SOFTWARE.
 
 #include "i686/pc/serial/serialdebug.hpp"
 
-#include "utils/addr.hpp"
 #include "utils/bitops.hpp"
 #include "utils/virt_machine_detect.hpp"
 #include "panic.hpp"
@@ -38,10 +37,10 @@ SOFTWARE.
 
 SMBIOSEntryPoint *SMBIOS::locate()
 {
-    uint8_t *mem = reinterpret_cast<uint8_t*>(phys(0x0F0000));
+    uint8_t *mem = reinterpret_cast<uint8_t*>(0x0F0000);
     int length, i;
     uint8_t checksum;
-    while (reinterpret_cast<uintptr_t>(mem) < phys(0x100000))
+    while (reinterpret_cast<uintptr_t>(mem) < 0x100000)
     {
         if (mem[0] == '_' && mem[1] == 'S' && mem[2] == 'M' && mem[3] == '_')
         {
@@ -55,7 +54,7 @@ SMBIOSEntryPoint *SMBIOS::locate()
         }
         mem += 16;
     }
-    if (reinterpret_cast<uintptr_t>(mem) >= phys(0x100000))
+    if (reinterpret_cast<uintptr_t>(mem) >= 0x100000)
     {
         log(Debug, "no SMBIOS found\n");
         return nullptr;
@@ -74,8 +73,8 @@ SMBIOSBIOSInfo* SMBIOS::bios_info()
 {
     if (entry_point)
     {
-        uintptr_t mem = phys(entry_point->TableAddress);
-        while (mem < phys(entry_point->TableAddress) + entry_point->TableLength)
+        uintptr_t mem = entry_point->TableAddress;
+        while (mem < entry_point->TableAddress + entry_point->TableLength)
         {
             auto* tag = reinterpret_cast<SMBIOSTag*>(mem);
             if (tag->type == 127)
@@ -112,8 +111,8 @@ SMBIOSCPUInfo *SMBIOS::cpu_info()
 {
     if (entry_point)
     {
-        uintptr_t mem = phys(entry_point->TableAddress);
-        while (mem < phys(entry_point->TableAddress) + entry_point->TableLength)
+        uintptr_t mem = entry_point->TableAddress;
+        while (mem < entry_point->TableAddress + entry_point->TableLength)
         {
             auto* tag = reinterpret_cast<SMBIOSTag*>(mem);
             if (tag->type == 127)

@@ -75,6 +75,11 @@ else()
     set(ARCH_OPTIONS "")
 endif()
 
+# Compilation options
+set(KERNEL_VIRTUAL_BASE 0xC0000000 CACHE STRING "")
+set(CURRENT_YEAR 2017)
+
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/kern/utils/defs.hpp.in" "${CMAKE_CURRENT_SOURCE_DIR}/kern/utils/defs.hpp")
 
 set(GENERIC_SRCS ${KERN_TERMINAL_SOURCES} ${CPP_SOURCES} ${KERN_BIOS_SOURCES} ${KERN_MB_SOURCES} ${KERN_BASE_SOURCES})
 

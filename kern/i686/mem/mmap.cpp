@@ -33,6 +33,8 @@ void *Memory::mmap(void *p_addr, size_t len, uint32_t flags)
 {
     size_t offset = (uintptr_t)p_addr & 0xFFF;
 
+    len += offset;
+
     size_t page_num = len/Paging::page_size + (len%Paging::page_size?1:0);
 
     assert(len);

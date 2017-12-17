@@ -28,6 +28,7 @@ SOFTWARE.
 #include "io.hpp"
 #include "utils/logging.hpp"
 #include "utils/memutils.hpp"
+#include "mem/memmap.hpp"
 #include "halt.hpp"
 #include "panic.hpp"
 
@@ -39,9 +40,13 @@ bool x86_flag = false;
 
 void init_emu_mem()
 {
-    emu_mem = reinterpret_cast<uint8_t*>(kmalloc(0x100000));
+    const size_t len = 0x100000;
 
-    memcpy(emu_mem, reinterpret_cast<uint8_t*>(0), 0x100000);
+    emu_mem = reinterpret_cast<uint8_t*>(kmalloc(len));
+
+    auto addr = Memory::mmap((void*)0, len, Memory::Read);
+    memcpy(emu_mem, addr, len);
+    Memory::unmap(addr, len);
 
     log(Info, "Initialized x86 emulator memory\n");
 }

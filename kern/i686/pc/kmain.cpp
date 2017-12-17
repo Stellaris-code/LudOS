@@ -35,7 +35,6 @@ SOFTWARE.
 extern "C"
 void kmain(uint32_t magic, const multiboot_info_t* mbd_info)
 {
-    asm volatile ("cli\nhlt");
     i686::pc::init(magic, mbd_info);
 
     global_init();

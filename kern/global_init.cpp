@@ -89,6 +89,7 @@ SOFTWARE.
 // TODO : don't forget about fpu state
 // FIXME : un static int[256] peut tout foutre en l'air, attention aux static
 // TODO : Higher half
+// FIXME : Meminfo/MemoryInfo
 
 void global_init()
 {

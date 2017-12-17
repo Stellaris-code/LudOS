@@ -52,7 +52,7 @@ void print_stack_symbols()
     auto trace = trace_stack(0);
 
     // Discard the first function call to kmain, saves space
-    for (size_t i { 0 }; i < trace.size()-1; ++i)
+    for (size_t i { 2 }; i < trace.size()-1; ++i)
     {
         if (auto fun = elf::kernel_symbol_table.get_function(trace[i]); fun)
         {

@@ -46,6 +46,8 @@ void parse_mem();
 std::string parse_cmdline();
 std::vector<multiboot_module_t> get_modules();
 
+std::string get_str(uintptr_t addr, size_t size);
+
 std::pair<const elf::Elf32_Shdr*, size_t> elf_info();
 
 }

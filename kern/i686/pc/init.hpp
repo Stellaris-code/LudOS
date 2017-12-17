@@ -76,7 +76,7 @@ extern "C" int end_ctors;
 #pragma GCC target ("no-sse")
 inline void early_abort(const char* str)
 {
-    uint16_t* addr = reinterpret_cast<uint16_t*>(0xB8000);
+    uint16_t* addr = reinterpret_cast<uint16_t*>(0xB8000 + KERNEL_VIRTUAL_BASE);
 
     // Clear
     for (size_t i { 0 }; i < 25*80; ++i)
@@ -128,19 +128,19 @@ inline void init(uint32_t magic, const multiboot_info_t* mbd_info)
     serial::debug::init(BDA::com1_port());
     serial::debug::write("Serial COM1 : Booting LudOS v%d...\n", 1);
 
-    multiboot::check(magic, mbd, mbd_info);
-    multiboot::info = mbd_info;
-
     gdt::init();
 
     pic::init();
 
     idt::init();
 
+    Paging::init();
+
+    multiboot::check(magic, mbd, mbd_info);
+    multiboot::info = mbd_info;
+
     multiboot::parse_mem();
     Meminfo::init_alloc_bitmap();
-
-    Paging::init();
 
     uint64_t framebuffer_addr = bit_check(mbd_info->flags, 12) ? mbd_info->framebuffer_addr : 0xB8000;
 
@@ -207,7 +207,7 @@ inline void init(uint32_t magic, const multiboot_info_t* mbd_info)
 
     if (mtrr::available() && mtrr::available_variable_ranges()>0)
     {
-        log(Info, "MTRR available\n");
+        log(Info, "MTRRs available\n");
         mtrr::set_mtrrs_enabled(true);
         mtrr::set_fixed_mtrrs_enabled(false);
     }

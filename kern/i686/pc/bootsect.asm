@@ -9,7 +9,8 @@ extern end_dtors                        ; declared by the linker script
 
 extern __cxa_finalize
 
-KERNEL_VIRTUAL_BASE equ 0xE0000000                  ; 3.5GB
+%include "../kern/i686/pc/defs.asm"
+
 KERNEL_PAGE_NUMBER equ (KERNEL_VIRTUAL_BASE >> 22)
 
 section .data
@@ -24,9 +25,12 @@ BootPageDirectory:
     ; enabled because it can't fetch the next instruction! It's ok to unmap this page later.
     dd 0x00000083
     times (KERNEL_PAGE_NUMBER - 1) dd 0                 ; Pages before kernel space.
-    ; This page directory entry defines a 4MB page containing the kernel.
+    ; This page directory entry defines four 4MB pages containing the kernel.
     dd 0x00000083
-    times (1024 - KERNEL_PAGE_NUMBER - 1) dd 0  ; Pages after the kernel image.
+    dd 0x00400083
+    dd 0x00800083
+    dd 0x00b00083
+    times (1024 - KERNEL_PAGE_NUMBER - 4) dd 0  ; Pages after the kernel image.
 
 
 section .text

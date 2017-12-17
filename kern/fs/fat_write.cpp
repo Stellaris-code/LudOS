@@ -42,7 +42,7 @@ void fat_file::write_entry() const
         std::vector<uint8_t> data(info.bootsector.bytes_per_sector * info.bootsector.sectors_per_cluster);
 
         if (!DiskInterface::read(info.drive, entry_first_sector + info.base_sector,
-                            info.bootsector.sectors_per_cluster, data.data()))
+                                 info.bootsector.sectors_per_cluster, data.data()))
         {
             return;
         }
@@ -50,7 +50,7 @@ void fat_file::write_entry() const
         memcpy(data.data() + entry_idx * sizeof(Entry), reinterpret_cast<uint8_t*>(&entry), sizeof(Entry));
 
         if (!DiskInterface::write(info.drive, entry_first_sector + info.base_sector,
-                             info.bootsector.sectors_per_cluster, data.data()))
+                                  info.bootsector.sectors_per_cluster, data.data()))
         {
             return;
         }

@@ -34,11 +34,10 @@ size_t Meminfo::free_frames()
 {
     size_t counter = 0;
 
-    for (multiboot_memory_map_t *mmap = Meminfo::mmap_addr;
-         reinterpret_cast<uintptr_t>(mmap) < info->mmap_addr + info->mmap_length;
-         mmap = reinterpret_cast<multiboot_memory_map_t*>(
-             reinterpret_cast<uintptr_t>(mmap)
-             + mmap->size + sizeof(mmap->size))
+    for (multiboot_memory_map_t *mmap = mmap_addr;
+         (uintptr_t)mmap < (uintptr_t)mmap_addr + mmap_length;
+         mmap = (multiboot_memory_map_t*)((uintptr_t)mmap +
+             mmap->size + sizeof(mmap->size))
          )
     {
         if (mmap->type == 1)
@@ -55,11 +54,10 @@ multiboot_memory_map_t *Meminfo::largest_frame()
 {
     multiboot_memory_map_t* msf = Meminfo::mmap_addr;
 
-    for (multiboot_memory_map_t *mmap = Meminfo::mmap_addr;
-         reinterpret_cast<uintptr_t>(mmap) < info->mmap_addr + info->mmap_length;
-         mmap = reinterpret_cast<multiboot_memory_map_t*>(
-             reinterpret_cast<uintptr_t>(mmap)
-             + mmap->size + sizeof(mmap->size))
+    for (multiboot_memory_map_t *mmap = mmap_addr;
+         (uintptr_t)mmap < (uintptr_t)mmap_addr + mmap_length;
+         mmap = (multiboot_memory_map_t*)((uintptr_t)mmap +
+             mmap->size + sizeof(mmap->size))
          )
     {
         if (mmap->size > msf->size)
@@ -76,11 +74,10 @@ multiboot_memory_map_t *Meminfo::frame(size_t idx)
 {
     size_t counter = 0;
 
-    for (multiboot_memory_map_t *mmap = Meminfo::mmap_addr;
-         reinterpret_cast<uintptr_t>(mmap) < info->mmap_addr + info->mmap_length;
-         mmap = reinterpret_cast<multiboot_memory_map_t*>(
-             reinterpret_cast<uintptr_t>(mmap)
-             + mmap->size + sizeof(mmap->size))
+    for (multiboot_memory_map_t *mmap = mmap_addr;
+         (uintptr_t)mmap < (uintptr_t)mmap_addr + mmap_length;
+         mmap = (multiboot_memory_map_t*)((uintptr_t)mmap +
+             mmap->size + sizeof(mmap->size))
          )
     {
         if (mmap->type == 1)
@@ -107,7 +104,7 @@ size_t Meminfo::total_memory()
     }
 
     // don't take kernel code memory in account
-    total -= ((uintptr_t)&kernel_physical_end - 0x100000);
+    total -= (uintptr_t)&kernel_physical_end;
 
     return total;
 }

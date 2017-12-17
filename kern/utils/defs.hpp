@@ -32,7 +32,8 @@ SOFTWARE.
 # define PRINTF_FMT(fmt_idx,arg1_idx)
 #endif
 
-#define CURRENT_YEAR 2017 // TODO : use CMake to generate the year
+#define KERNEL_VIRTUAL_BASE 0xC0000000
+#define CURRENT_YEAR 2017
 
 #ifndef NDEBUG
 #define LUDOS_DEBUG
@@ -49,5 +50,7 @@ SOFTWARE.
 #define LUDOS_MAJOR 0
 
 #define LUDOS_VERSION_STRING "v" EXPAND_AND_QUOTE(LUDOS_MAJOR) "." EXPAND_AND_QUOTE(LUDOS_MINOR)
+
+#include <stdint.h>
 
 #endif // DEFS_HPP

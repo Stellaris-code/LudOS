@@ -33,14 +33,18 @@ SOFTWARE.
 #include "utils/virt_machine_detect.hpp"
 #include "panic.hpp"
 
+#include "mem/memmap.hpp"
+
 #include <string.h>
 
 SMBIOSEntryPoint *SMBIOS::locate()
 {
-    uint8_t *mem = reinterpret_cast<uint8_t*>(0x0F0000);
+    const size_t len = 0x10000;
+    uint8_t *addr = (uint8_t*)Memory::mmap((void*)0x0F0000, len, Memory::Read);
+    uint8_t* mem = addr;
     int length, i;
     uint8_t checksum;
-    while (reinterpret_cast<uintptr_t>(mem) < 0x100000)
+    while (mem < addr + len)
     {
         if (mem[0] == '_' && mem[1] == 'S' && mem[2] == 'M' && mem[3] == '_')
         {
@@ -54,9 +58,11 @@ SMBIOSEntryPoint *SMBIOS::locate()
         }
         mem += 16;
     }
-    if (reinterpret_cast<uintptr_t>(mem) >= 0x100000)
+    if (mem >= addr + len)
     {
         log(Debug, "no SMBIOS found\n");
+
+        Memory::unmap(addr, len);
         return nullptr;
     }
     else
@@ -65,6 +71,7 @@ SMBIOSEntryPoint *SMBIOS::locate()
         entry_point = reinterpret_cast<SMBIOSEntryPoint*>(mem);
         log(Debug, " SMBIOS version : %d.%d\n", entry_point->MajorVersion, entry_point->MinorVersion);
         log(Debug, " SMBIOS entries : %d\n", entry_point->NumberOfStructures);
+
         return entry_point;
     }
 }
@@ -73,7 +80,8 @@ SMBIOSBIOSInfo* SMBIOS::bios_info()
 {
     if (entry_point)
     {
-        uintptr_t mem = entry_point->TableAddress;
+        uintptr_t addr = (uintptr_t)Memory::mmap((void*)entry_point->TableAddress, entry_point->TableLength, Memory::Read);
+        uintptr_t mem = addr;
         while (mem < entry_point->TableAddress + entry_point->TableLength)
         {
             auto* tag = reinterpret_cast<SMBIOSTag*>(mem);
@@ -111,7 +119,8 @@ SMBIOSCPUInfo *SMBIOS::cpu_info()
 {
     if (entry_point)
     {
-        uintptr_t mem = entry_point->TableAddress;
+        uintptr_t addr = (uintptr_t)Memory::mmap((void*)entry_point->TableAddress, entry_point->TableLength, Memory::Read);
+        uintptr_t mem = addr;
         while (mem < entry_point->TableAddress + entry_point->TableLength)
         {
             auto* tag = reinterpret_cast<SMBIOSTag*>(mem);

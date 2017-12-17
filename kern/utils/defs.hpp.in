@@ -1,7 +1,7 @@
 /*
-meminfo.hpp
+defs.hpp
 
-Copyright (c) 31 Yann BOUCHER (yann)
+Copyright (c) 10 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,37 +22,35 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef PC_MEMINFO_HPP
-#define PC_MEMINFO_HPP
+#ifndef DEFS_HPP
+#define DEFS_HPP
+
+#ifdef __GNUC__
+# define PRINTF_FMT(fmt_idx,arg1_idx, ...) \
+    __attribute__((format (printf, fmt_idx, arg1_idx)))
+#else
+# define PRINTF_FMT(fmt_idx,arg1_idx)
+#endif
+
+#define KERNEL_VIRTUAL_BASE @KERNEL_VIRTUAL_BASE@
+#define CURRENT_YEAR @CURRENT_YEAR@
+
+#ifndef NDEBUG
+#define LUDOS_DEBUG
+#endif
+
+#if 0
+#define LUDOS_TESTING
+#endif
+
+#define QUOTE(str) #str
+#define EXPAND_AND_QUOTE(str) QUOTE(str)
+
+#define LUDOS_MINOR 1
+#define LUDOS_MAJOR 0
+
+#define LUDOS_VERSION_STRING "v" EXPAND_AND_QUOTE(LUDOS_MAJOR) "." EXPAND_AND_QUOTE(LUDOS_MINOR)
 
 #include <stdint.h>
 
-struct multiboot_mmap_entry;
-typedef struct multiboot_mmap_entry multiboot_memory_map_t;
-struct multiboot_info;
-typedef struct multiboot_info multiboot_info_t;
-
-namespace multiboot
-{
-void parse_mem();
-}
-
-class Meminfo
-{
-    friend void multiboot::parse_mem();
-
-public:
-    static size_t free_frames();
-    static multiboot_memory_map_t *largest_frame();
-    static multiboot_memory_map_t *frame(size_t idx);
-
-    static size_t total_memory();
-
-    static void init_alloc_bitmap();
-
-private:
-    static inline multiboot_mmap_entry *mmap_addr;
-    static inline size_t mmap_length { 0};
-};
-
-#endif // PC_MEMINFO_HPP
+#endif // DEFS_HPP

@@ -30,6 +30,7 @@ SOFTWARE.
 #include "halt.hpp"
 #include "panic.hpp"
 #include "utils/logging.hpp"
+#include "utils/bitops.hpp"
 
 #include "i686/interrupts/isr.hpp"
 
@@ -47,11 +48,16 @@ void Paging::init()
 
     isr::register_handler(isr::PageFault, page_fault_handler);
 
-    uint32_t pd_addr { reinterpret_cast<uint32_t>(page_directory.data()) };
-    uint32_t cr = cr0() | 0x80010000;
+    uint32_t pd_addr { reinterpret_cast<uint32_t>(page_directory.data()) - KERNEL_VIRTUAL_BASE };
+    uint32_t cr4_var = cr4();
+    bit_clear(cr4_var, 4); // disable 4MB pages
 
     asm volatile ("mov %0, %%cr3\n"
-                  "mov %1, %%cr0\n"::"r"(pd_addr), "r"(cr));
+                  "mov %1, %%cr4\n"
+                  "\n"::"r"(pd_addr), "r"(cr4_var));
+
+    m_initialized = true;
+
     sti();
 }
 
@@ -147,31 +153,38 @@ bool Paging::release_virtual_page(uintptr_t v_addr, size_t number)
 
 PageDirectory *Paging::get_page_directory()
 {
-    return reinterpret_cast<PageDirectory*>(0xFFFFF000);
+    if (!m_initialized)
+    {
+        return &page_directory;
+    }
+    else
+    {
+        return reinterpret_cast<PageDirectory*>(0xFFFFF000);
+    }
 }
 
 void Paging::init_page_directory()
 {
-    memset(page_directory.data(), 0, sizeof(page_directory));
+    memset(page_directory.data(), 0, page_directory.size()*sizeof(PDEntry));
     for (size_t i { 0 }; i < page_tables.size(); ++i)
     {
-        memset(&page_tables[i], 0, sizeof(page_tables[i]));
-        page_directory[i].pt_addr = reinterpret_cast<uint32_t>(&page_tables[i]) >> 12;
+        memset(&page_tables[i], 0, page_tables[i].size()*sizeof(PTEntry));
+        page_directory[i].pt_addr = (reinterpret_cast<uint32_t>(&page_tables[i]) - KERNEL_VIRTUAL_BASE) >> 12;
         page_directory[i].present = true;
         page_directory[i].write = true;
     }
 
-    identity_map();
+    map_kernel();
 
     // map last dir entry to itself
-    page_directory.back().pt_addr = reinterpret_cast<uint32_t>(page_directory.data()) >> 12;
+    page_directory.back().pt_addr = (reinterpret_cast<uint32_t>(page_directory.data()) - KERNEL_VIRTUAL_BASE) >> 12;
     page_directory.back().write = true;
     page_directory.back().present = true;
 }
 
-void Paging::identity_map()
+void Paging::map_kernel()
 {
-    PTEntry* entry = &page_tables[0][0];
+    PTEntry* entry = page_entry(KERNEL_VIRTUAL_BASE);
 
     for (uint32_t addr { 0 }; addr <= reinterpret_cast<uint32_t>(&kernel_physical_end) + page_size; addr+=page_size, ++entry)
     {

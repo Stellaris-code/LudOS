@@ -92,8 +92,15 @@ public:
     // time in ms
     static inline CallbackHandle register_callback(uint32_t duration, std::function<void()> callback, bool oneshot = true)
     {
-        m_callbacks.emplace_back(m_ticks, duration/(1000/freq()), callback, oneshot);
-        return std::prev(m_callbacks.end());
+        if (freq())
+        {
+            m_callbacks.emplace_back(m_ticks, duration/(1000/freq()), callback, oneshot);
+            return std::prev(m_callbacks.end());
+        }
+        else
+        {
+            return m_callbacks.end();
+        }
     }
 
     static inline void remove_callback(const CallbackHandle& it)

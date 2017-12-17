@@ -97,16 +97,18 @@ private:
 private:
     static PageDirectory *get_page_directory();
     static void init_page_directory();
-    static void identity_map();
+    static void map_kernel();
     static PTEntry *page_entry(uintptr_t addr)
     {
         uint32_t pdindex = addr >> 22;
         uint32_t ptindex = addr >> 12 & 0x03FF;
 
-        PageTable * pt = reinterpret_cast<PageTable*>((*get_page_directory())[pdindex].pt_addr << 12);
-
+        PageTable * pt = reinterpret_cast<PageTable*>(((*get_page_directory())[pdindex].pt_addr << 12) + KERNEL_VIRTUAL_BASE);
         return &(*pt)[ptindex];
     }
+
+private:
+    inline static bool m_initialized { false };
 };
 
 #endif // PAGING_HPP

@@ -40,7 +40,16 @@ time_t
 _DEFUN (time, (t),
         time_t * t)
 {
+    time_t tmp;
+
+    uint64_t val;
+
     // TODO : implement
-    __asm__ __volatile__ ( "rdtsc" : "=A"(*t) );
-    return *t;
+    __asm__ __volatile__ ( "rdtsc" : "=A"(val) );
+
+    tmp = val;
+
+    if (t) *t = tmp;
+
+    return tmp;
 }

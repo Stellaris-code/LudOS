@@ -64,11 +64,10 @@ void check(uint32_t magic, const multiboot_header &mbd, const multiboot_info* mb
 
 void parse_mem()
 {
-    Meminfo::info = info;
-
     if (CHECK_FLAG (info->flags, 6))
     {
-        Meminfo::mmap_addr = reinterpret_cast<multiboot_memory_map_t *>(info->mmap_addr);
+        Meminfo::mmap_addr = (multiboot_mmap_entry*)Memory::mmap((void*)info->mmap_addr, info->mmap_length);
+        Meminfo::mmap_length = info->mmap_length;
     }
 
     MemoryInfo::available_bytes = Meminfo::total_memory();
@@ -78,7 +77,7 @@ void parse_info()
 {
     if (CHECK_FLAG(info->flags, 9))
     {
-        if (strncmp(reinterpret_cast<char*>(info->boot_loader_name), "GRUB", 4) != 0 && running_qemu)
+        if (get_str(info->boot_loader_name, 256) != "GRUB" && running_qemu)
         {
             running_qemu_kernel = true;
         }
@@ -86,12 +85,16 @@ void parse_info()
 
     if (CHECK_FLAG (info->flags, 3))
     {
-        multiboot_module_t * mod { reinterpret_cast<multiboot_module_t *>(info->mods_addr) };
+        auto mmap_addr = (multiboot_module_t*)Memory::mmap((void*)info->mods_addr,
+                                                     info->mods_count*sizeof(multiboot_module_t), Memory::Read);
+        auto mod = mmap_addr;
 
         for (size_t i = 0; i < info->mods_count; i++, mod++)
         {
             PhysPageAllocator::mark_as_used(mod->mod_start, mod->mod_end-mod->mod_start);
         }
+
+        Memory::unmap(mmap_addr, info->mods_count*sizeof(multiboot_module_t));
     }
 }
 
@@ -99,7 +102,7 @@ void print_info()
 {
     if (CHECK_FLAG(info->flags, 2))
     {
-        log(Info, "Command line : '%s'\n", reinterpret_cast<char*>(info->cmdline));
+        log(Info, "Command line : '%s'\n", parse_cmdline().c_str());
     }
     if (CHECK_FLAG(info->flags, 1))
     {
@@ -107,15 +110,13 @@ void print_info()
     }
     if (CHECK_FLAG (info->flags, 3))
     {
-        multiboot_module_t * mod { reinterpret_cast<multiboot_module_t *>(info->mods_addr) };
-
         log(Debug, "Module count : %d\n", info->mods_count);
         log(Debug, "Modules address : 0x%x\n", info->mods_addr);
-        for (size_t i = 0; i < info->mods_count; i++, mod++)
+        for (const auto& mod : get_modules())
         {
-            log(Debug, " Module start : 0x%x\n", mod->mod_start);
-            log(Debug, " Module end : 0x%x\n", mod->mod_end);
-            log(Debug, " Module cmdline : '%s'\n", reinterpret_cast<char*>(mod->cmdline));
+            log(Debug, " Module start : 0x%x\n", mod.mod_start);
+            log(Debug, " Module end : 0x%x\n", mod.mod_end);
+            log(Debug, " Module cmdline : '%s'\n", get_str(mod.cmdline, 512).c_str());
         }
     }
     if (CHECK_FLAG(info->flags, 5))
@@ -125,14 +126,14 @@ void print_info()
     }
     if (CHECK_FLAG(info->flags, 9))
     {
-        log(Info, "Bootloader name : '%s'\n", reinterpret_cast<char*>(info->boot_loader_name));
+        log(Info, "Bootloader name : '%s'\n", get_str(info->boot_loader_name, 256).c_str());
     }
 
     if (CHECK_FLAG(info->flags, 12))
     {
         log(Info, "Video Framebuffer address : 0x%x\n", info->framebuffer_addr);
         log(Info, "Video type : %s\n", info->framebuffer_type == MULTIBOOT_FRAMEBUFFER_TYPE_RGB ? "RGB" :
-                                                                                                  info->framebuffer_type == MULTIBOOT_FRAMEBUFFER_TYPE_INDEXED ? "Indexed" : "EGA Text");
+                                       info->framebuffer_type == MULTIBOOT_FRAMEBUFFER_TYPE_INDEXED ? "Indexed" : "EGA Text");
         log(Info, "Video size : %dx%d\n", info->framebuffer_width, info->framebuffer_height);
     }
     else
@@ -159,7 +160,7 @@ std::string parse_cmdline()
 {
     if (CHECK_FLAG(info->flags, 2))
     {
-        return reinterpret_cast<char*>(info->cmdline);
+        return get_str(info->cmdline, 256);
     }
 
     return "";
@@ -171,7 +172,8 @@ std::vector<multiboot_module_t> get_modules()
     {
         std::vector<multiboot_module_t> modules;
 
-        multiboot_module_t * mod { reinterpret_cast<multiboot_module_t *>(info->mods_addr) };
+        auto mod = (multiboot_module_t*)Memory::mmap((void*)info->mods_addr,
+                                                     info->mods_count*sizeof(multiboot_module_t), Memory::Read);
 
         for (size_t i = 0; i < info->mods_count; i++, mod++)
         {
@@ -180,6 +182,7 @@ std::vector<multiboot_module_t> get_modules()
             modules.emplace_back(*mod);
             modules.back().mod_start = (uintptr_t)Memory::mmap((void*)mod->mod_start, len, Memory::Read);
             modules.back().mod_end = modules.back().mod_start + len;
+            modules.back().cmdline = (uintptr_t)Memory::mmap((void*)mod->cmdline, 512, Memory::Read);
         }
 
         return modules;
@@ -188,6 +191,11 @@ std::vector<multiboot_module_t> get_modules()
     {
         return {};
     }
+}
+
+std::string get_str(uintptr_t addr, size_t size)
+{
+    return (char*)Memory::mmap((void*)addr, size, Memory::Read);
 }
 
 }

@@ -304,10 +304,10 @@ std::shared_ptr<fat::fat_file> fat::detail::entry_to_vfs_node(const fat::Entry &
         std::reverse(node->m_name.begin(), node->m_name.end());
     }
 
-    node->set_flags(entry.attributes);
     node->info = info;
     node->entry = entry;
     node->m_is_dir = false;
+    node->set_flags(entry.attributes);
 
     return node;
 }

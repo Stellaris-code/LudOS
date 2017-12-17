@@ -61,7 +61,7 @@ void set_gate(size_t num, uint32_t base, uint32_t limit, uint8_t access, uint8_t
 void init()
 {
     gdt_ptr.limit = (sizeof(entry) * std::extent_v<decltype(entries)>) - 1;
-    gdt_ptr.base  = reinterpret_cast<uint32_t>(&entries);
+    gdt_ptr.base  = reinterpret_cast<uintptr_t>(&entries);
 
     tss.trap = 0x00;
     tss.iomap = 0x00;
@@ -73,7 +73,7 @@ void init()
     set_gate(2, 0, 0xFFFFFFFF, 0x92, 0xCF); // Data segment
     set_gate(3, 0, 0xFFFFFFFF, 0xFA, 0xCF); // User mode code segment
     set_gate(4, 0, 0xFFFFFFFF, 0xF2, 0xCF); // User mode data segment
-    set_gate(5, reinterpret_cast<uint32_t>(&tss), sizeof(tss), 0x89, 0xCF);
+    //set_gate(5, reinterpret_cast<uint32_t>(&tss), sizeof(tss), 0x89, 0xCF);
 
     flush();
 

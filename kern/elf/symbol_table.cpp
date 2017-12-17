@@ -40,27 +40,26 @@ SymbolTable get_symbol_table(const Elf32_Shdr *base, size_t sh_num)
 
     SymbolTable symbol_table;
 
-    log_serial("size : 0x%x entsize : 0x%x\n", base->sh_size, base->sh_entsize);
-
     const char* strtable;
     if (elf::section(base, sh_num, elf::SHT_STRTAB)->sh_addr)
     {
-         strtable = (const char*)Memory::mmap((void*)elf::section(base, sh_num, elf::SHT_STRTAB)->sh_addr,
-                                              elf::section(base, sh_num, elf::SHT_STRTAB)->sh_size);
+        strtable = (const char*)Memory::mmap((void*)elf::section(base, sh_num, elf::SHT_STRTAB)->sh_addr,
+                                             elf::section(base, sh_num, elf::SHT_STRTAB)->sh_size);
     }
     else
     {
-         strtable = reinterpret_cast<const char*>(current_elf_file + elf::section(base, sh_num, elf::SHT_STRTAB)->sh_offset);
+        strtable = reinterpret_cast<const char*>(current_elf_file + elf::section(base, sh_num, elf::SHT_STRTAB)->sh_offset);
     }
 
     auto symtab = (Elf32_Shdr*)elf::section(base, sh_num, elf::SHT_SYMTAB);
     symtab->sh_addr = (Elf32_Addr)Memory::mmap((void*)symtab->sh_addr, symtab->sh_size, Memory::Read);
+    log_serial("Mapped : 0x%x/0x%x\n", symtab->sh_addr, symtab->sh_addr + symtab->sh_size);
 
     std::string current_symbol_file;
 
     for (size_t j { 0 }; j < symtab->sh_size / symtab->sh_entsize; ++j)
     {
-        auto symbol = elf::symbol(symtab, j);
+        auto symbol = (const Elf32_Sym*)elf::symbol(symtab, j);
         if (symbol->st_name)
         {
             if (ELF32_ST_TYPE(symbol->st_info) == elf::STT_FILE)

@@ -75,6 +75,8 @@ constexpr const char *exception_messages[] = {
 extern "C"
 const registers* isr_handler(const registers* const regs)
 {
+    log_serial("interrupt %d (0x%x) (0x%x) (%p)\n", regs->int_no, regs->err_code, cr2(), __builtin_return_address(1));
+
     // handling
     if (auto handl = handlers[regs->int_no]; handl)
     {

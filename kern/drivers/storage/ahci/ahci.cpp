@@ -25,12 +25,12 @@ SOFTWARE.
 
 #include "ahci.hpp"
 
-#include "../pci/pci.hpp"
+#include "drivers/pci/pci.hpp"
 
 #include "utils/logging.hpp"
 #include "utils/bitops.hpp"
 #include "utils/nop.hpp"
-#include "drivers/diskinterface.hpp"
+#include "drivers/storage/diskinterface.hpp"
 #include "time/timer.hpp"
 #include "mem/memmap.hpp"
 
@@ -438,6 +438,7 @@ void detail::init_interface()
 
 bool detail::do_read(size_t port, uint64_t sector, size_t count, uint16_t *buf)
 {
+#if 0
     /*static*/ uint16_t temp[256];
     for (size_t i { 0 }; i < count; ++i)
     {
@@ -451,6 +452,9 @@ bool detail::do_read(size_t port, uint64_t sector, size_t count, uint16_t *buf)
     }
 
     return true;
+#else
+    return issue_read_command(port, sector, count, buf);
+#endif
 }
 
 }

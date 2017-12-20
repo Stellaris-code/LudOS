@@ -29,12 +29,11 @@ SOFTWARE.
 
 #include <functional.hpp>
 #include <vector.hpp>
+#include <map.hpp>
 
 #include "utils/memutils.hpp"
 #include "utils/defs.hpp"
 #include "panic.hpp"
-
-// TODO : add possibility to remove disk
 
 class DiskInterface
 {
@@ -94,9 +93,20 @@ public:
 
     static inline size_t add_drive(ReadFunction read_fun, WriteFunction write_fun, InfoFunction info_fun)
     {
-        m_entries.push_back({read_fun, write_fun, info_fun});
+        size_t i { 0 };
+        while (m_entries.find(i) != m_entries.end())
+        {
+            ++i;
+        }
+
+        m_entries[i] = Entry{read_fun, write_fun, info_fun};
 
         return m_drive_count++;
+    }
+
+    static inline bool remove_drive(size_t disk_num)
+    {
+        return m_entries.erase(disk_num);
     }
 
     static inline size_t add_memory_drive(void* address, size_t size)
@@ -177,7 +187,7 @@ struct Entry
 };
 
 private:
-static inline std::vector<Entry> m_entries;
+static inline std::map<size_t, Entry> m_entries;
 
 static inline size_t m_drive_count { 0 };
 };

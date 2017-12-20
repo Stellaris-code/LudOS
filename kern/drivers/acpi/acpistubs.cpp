@@ -32,7 +32,7 @@ SOFTWARE.
 #include "mem/memmap.hpp"
 #include "time/timer.hpp"
 #include "time/time.hpp"
-#include "i686/pc/pci/pci.hpp"
+#include "drivers/pci/pci.hpp"
 #include "i686/interrupts/isr.hpp"
 #include "io.hpp"
 

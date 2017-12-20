@@ -57,8 +57,6 @@ std::optional<Bitmap> load_image(const std::string &path)
     int x, y, depth;
     uint8_t* img = stbi_load_from_memory(data.data(), data.size(), &x, &y, &depth, 4);
 
-    kprintf("0x%x\n", crc(img, img + node->size()));
-
     if (!img)
     {
         warn("Failed loading '%s' : %s\n", path.c_str(), stbi_failure_reason());

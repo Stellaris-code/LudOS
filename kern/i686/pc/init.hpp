@@ -40,6 +40,7 @@ SOFTWARE.
 #include "i686/simd/simd.hpp"
 #include "i686/cpu/cpuid.hpp"
 #include "i686/pc/terminal/textterminal.hpp"
+#include "i686/pc/mem/mbmeminfo.hpp"
 #include "i686/gdt/gdt.hpp"
 #include "i686/video/x86emu_modesetting.hpp"
 #include "i686/mem/paging.hpp"
@@ -47,11 +48,11 @@ SOFTWARE.
 #include "mem/meminfo.hpp"
 #include "bios/bda.hpp"
 #include "serial/serialdebug.hpp"
-#include "pci/pci.hpp"
-#include "ide/ide_pio.hpp"
-#include "ahci/ahci.hpp"
-#include "acpi/acpi_init.hpp"
-#include "acpi/powermanagement.hpp"
+#include "drivers/pci/pci.hpp"
+#include "drivers/storage/ide/ide_pio.hpp"
+#include "drivers/storage/ahci/ahci.hpp"
+#include "drivers/acpi/acpi_init.hpp"
+#include "drivers/acpi/powermanagement.hpp"
 
 #include "graphics/vga.hpp"
 
@@ -71,6 +72,9 @@ extern "C" int kernel_physical_end;
 
 extern "C" int start_ctors;
 extern "C" int end_ctors;
+
+extern "C" int _bss_start;
+extern "C" int _bss_end;
 
 #pragma GCC push_options
 #pragma GCC target ("no-sse")
@@ -140,7 +144,7 @@ inline void init(uint32_t magic, const multiboot_info_t* mbd_info)
     multiboot::info = mbd_info;
 
     multiboot::parse_mem();
-    Meminfo::init_alloc_bitmap();
+    MultibootMeminfo::init_alloc_bitmap();
 
     uint64_t framebuffer_addr = bit_check(mbd_info->flags, 12) ? mbd_info->framebuffer_addr : 0xB8000;
 

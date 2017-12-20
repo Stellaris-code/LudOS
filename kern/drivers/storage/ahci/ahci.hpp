@@ -28,7 +28,7 @@ SOFTWARE.
 #include <stdint.h>
 
 #include "i686/cpu/registers.hpp"
-#include "i686/pc/ide/ide_common.hpp"
+#include "drivers/storage/ide/ide_common.hpp"
 
 namespace ahci
 {

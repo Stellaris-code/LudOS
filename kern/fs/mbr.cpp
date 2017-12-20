@@ -27,7 +27,7 @@ SOFTWARE.
 
 #include <array.hpp>
 
-#include "drivers/diskinterface.hpp"
+#include "drivers/storage/diskinterface.hpp"
 
 std::vector<mbr::Partition> mbr::read_partitions(size_t drive)
 {

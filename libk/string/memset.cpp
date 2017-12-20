@@ -86,7 +86,7 @@ void* _aligned_memsetl_sse2(void * dest, uint32_t val, size_t n)
 
     __asm__ __volatile__ ("movdqa (%0), %%xmm0\n"::"r"(xmm0):"memory");
 
-    for(int i = 0; i < n / 128; i++)
+    for(size_t i = 0; i < n / 128; i++)
     {
         __asm__ __volatile__ (
                     "\tmovntdq %%xmm0, (%0)\n"
@@ -100,6 +100,8 @@ void* _aligned_memsetl_sse2(void * dest, uint32_t val, size_t n)
                     : : "r" (to) : "memory");
         to += 128;
     }
+
+    return dest;
 }
 
 void _aligned_double_memsetl_sse2(void*buf1ptr, void*buf2ptr, uint32_t val, size_t n)

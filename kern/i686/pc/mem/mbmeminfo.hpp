@@ -37,7 +37,7 @@ namespace multiboot
 void parse_mem();
 }
 
-class Meminfo
+class MultibootMeminfo
 {
     friend void multiboot::parse_mem();
 

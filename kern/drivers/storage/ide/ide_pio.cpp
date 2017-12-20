@@ -27,7 +27,7 @@ SOFTWARE.
 
 #include "utils/logging.hpp"
 
-#include "drivers/diskinterface.hpp"
+#include "drivers/storage/diskinterface.hpp"
 #include "io.hpp"
 #include "utils/bitops.hpp"
 #include "utils/nop.hpp"

@@ -28,7 +28,7 @@ SOFTWARE.
 #include "utils/logging.hpp"
 #include "utils/memutils.hpp"
 #include "fs/tar.hpp"
-#include "drivers/diskinterface.hpp"
+#include "drivers/storage/diskinterface.hpp"
 
 bool install_initrd()
 {

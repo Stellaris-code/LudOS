@@ -26,7 +26,7 @@ SOFTWARE.
 #include "fscommands.hpp"
 
 #include "shell/shell.hpp"
-#include "drivers/diskinterface.hpp"
+#include "drivers/storage/diskinterface.hpp"
 #include "utils/memutils.hpp"
 #include "utils/crc32.hpp"
 #include "fs/vfs.hpp"

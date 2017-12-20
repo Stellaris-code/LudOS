@@ -86,7 +86,7 @@ void __cxa_finalize(void *f)
                 * should not destroy objects multiple times. Only one call is needed to eliminate multiple
                 * entries with the same address.
                 *
-                * FIXME:
+                * f%i%x%m%e:
                 * This presents the obvious problem: all destructors must be stored in the order they
                 * were placed in the list. I.e: the last initialized object's destructor must be first
                 * in the list of destructors to be called. But removing a destructor from the list at runtime

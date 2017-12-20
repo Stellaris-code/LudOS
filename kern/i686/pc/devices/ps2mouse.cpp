@@ -90,7 +90,7 @@ bool PS2Mouse::isr(const registers *regs)
 
     uint8_t packed_array[4];
 
-    while (status & 1)
+    while (status & 1 && packet_counter < sizeof(packed_array))
     {
         int8_t mouse_in = inb(DataPort);
 

@@ -36,7 +36,7 @@ SOFTWARE.
 #include "mem/meminfo.hpp"
 #include "mem/memmap.hpp"
 #include "i686/mem/physallocator.hpp"
-#include "i686/pc/mem/meminfo.hpp"
+#include "i686/pc/mem/mbmeminfo.hpp"
 #include "utils/virt_machine_detect.hpp"
 #include "halt.hpp"
 
@@ -66,11 +66,11 @@ void parse_mem()
 {
     if (CHECK_FLAG (info->flags, 6))
     {
-        Meminfo::mmap_addr = (multiboot_mmap_entry*)Memory::mmap((void*)info->mmap_addr, info->mmap_length);
-        Meminfo::mmap_length = info->mmap_length;
+        MultibootMeminfo::mmap_addr = (multiboot_mmap_entry*)Memory::mmap((void*)info->mmap_addr, info->mmap_length);
+        MultibootMeminfo::mmap_length = info->mmap_length;
     }
 
-    MemoryInfo::available_bytes = Meminfo::total_memory();
+    MemoryInfo::available_bytes = MultibootMeminfo::total_memory();
 }
 
 void parse_info()

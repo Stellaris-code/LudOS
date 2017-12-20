@@ -7,6 +7,9 @@ extern end_ctors                        ; of the respective
 extern start_dtors                      ; ctors and dtors section,
 extern end_dtors                        ; declared by the linker script
 
+extern _bss_start
+extern _bss_end
+
 extern __cxa_finalize
 
 %include "../kern/i686/pc/defs.asm"
@@ -29,7 +32,7 @@ BootPageDirectory:
     dd 0x00000083
     dd 0x00400083
     dd 0x00800083
-    dd 0x00b00083
+    dd 0x00c00083
     times (1024 - KERNEL_PAGE_NUMBER - 4) dd 0  ; Pages after the kernel image.
 
 
@@ -39,6 +42,15 @@ section .text
 STACKSIZE equ 0x10000                    ; that's 64k.
 
 _start:
+    ; clear bss section
+;    lea edi, [_bss_end]
+;    lea esi, [_bss_start]
+;_bss_loop:
+;    mov DWORD [esi], 0
+;    lea esi, [esi+4]
+;    cmp esi, edi
+;    jb _bss_loop
+
     ; NOTE: Until paging is set up, the code must be position-independent and use physical
     ; addresses, not virtual ones!
     mov ecx, (BootPageDirectory - KERNEL_VIRTUAL_BASE)
@@ -62,6 +74,8 @@ _start:
 higher_half_start:
     mov dword [BootPageDirectory], 0
     invlpg [0]
+
+    xchg bx, bx
 
     mov  esp, stack + STACKSIZE         ; set up the stack
 

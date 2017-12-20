@@ -103,6 +103,7 @@ uintptr_t Paging::physical_address(const void *v_addr)
     return (entry->phys_addr << 12) + offset;
 }
 
+// TODO : last_pos
 uintptr_t Paging::alloc_virtual_page(size_t number)
 {
     assert(number);
@@ -115,7 +116,8 @@ uintptr_t Paging::alloc_virtual_page(size_t number)
 
     number += 2;
 
-    for (size_t i { 0 }; i < ram_maxpage; ++i)
+    // keep first 1M free
+    for (size_t i { 0x100 }; i < ram_maxpage; ++i)
     {
         if (!entries[i].present)
         {
@@ -193,11 +195,4 @@ void Paging::map_kernel()
         entry->write = true;
         entry->user = false;
     }
-}
-
-bool Paging::page_fault_handler(const registers *regs)
-{
-    panic_regs = regs;
-    panic("Page fault !\n");
-    return false;
 }

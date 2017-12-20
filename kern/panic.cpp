@@ -47,23 +47,52 @@ SOFTWARE.
 
 const registers* panic_regs = nullptr;
 
+extern "C" void isr_common_stub();
+extern "C" void irq_common_stub();
+
+size_t trace_offset(const std::vector<uintptr_t>& trace)
+{
+    size_t offset = 0;
+#ifdef ARCH_i686
+
+
+    while (offset < trace.size() &&
+           trace[offset] != (uintptr_t)&isr_common_stub + 31 &&
+           trace[offset] != (uintptr_t)&irq_common_stub + 31)
+    {
+        ++offset;
+    }
+
+    if (offset == trace.size())
+    {
+        offset = 0;
+    }
+    else
+    {
+        ++offset;
+    }
+#endif
+
+    return offset;
+}
+
 void print_stack_symbols()
 {
     auto trace = trace_stack(0);
 
     // Discard the first function call to kmain, saves space
-    for (size_t i { 2 }; i < trace.size()-1; ++i)
+    for (size_t i = trace_offset(trace), cnt = 1; i < trace.size()-2; ++i, ++cnt)
     {
         if (auto fun = elf::kernel_symbol_table.get_function(trace[i]); fun)
         {
             auto symbol = *fun;
-            kprintf("#%d   0x%x in %s", i+1, trace[i], demangle(symbol.name));
+            kprintf("#%d   0x%x in %s", cnt, trace[i], demangle(symbol.name));
         }
         else
         {
-            kprintf("#%d    0x%x in ????", i+1, trace[i]);
+            kprintf("#%d    0x%x in ????", cnt, trace[i]);
         }
-        if (i < trace.size()-2)
+        if (i < trace.size()-1)
         {
             kprintf("\n");
         }
@@ -116,7 +145,7 @@ void panic(const char *fmt, ...)
 
     Speaker::beep(300);
 
-    puts("\nKERNEL PANIC : ");
+    puts("KERNEL PANIC : ");
 
     {
         va_list va;

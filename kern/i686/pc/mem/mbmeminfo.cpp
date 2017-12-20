@@ -23,14 +23,14 @@ SOFTWARE.
 
 */
 
-#include "meminfo.hpp"
+#include "mbmeminfo.hpp"
 
 #include "i686/pc/multiboot/multiboot.h"
 #include "i686/mem/physallocator.hpp"
 
 extern "C" int kernel_physical_end;
 
-size_t Meminfo::free_frames()
+size_t MultibootMeminfo::free_frames()
 {
     size_t counter = 0;
 
@@ -50,9 +50,9 @@ size_t Meminfo::free_frames()
     return counter;
 }
 
-multiboot_memory_map_t *Meminfo::largest_frame()
+multiboot_memory_map_t *MultibootMeminfo::largest_frame()
 {
-    multiboot_memory_map_t* msf = Meminfo::mmap_addr;
+    multiboot_memory_map_t* msf = mmap_addr;
 
     for (multiboot_memory_map_t *mmap = mmap_addr;
          (uintptr_t)mmap < (uintptr_t)mmap_addr + mmap_length;
@@ -70,7 +70,7 @@ multiboot_memory_map_t *Meminfo::largest_frame()
     return msf;
 }
 
-multiboot_memory_map_t *Meminfo::frame(size_t idx)
+multiboot_memory_map_t *MultibootMeminfo::frame(size_t idx)
 {
     size_t counter = 0;
 
@@ -93,7 +93,7 @@ multiboot_memory_map_t *Meminfo::frame(size_t idx)
     return nullptr;
 }
 
-size_t Meminfo::total_memory()
+size_t MultibootMeminfo::total_memory()
 {
     size_t total = 0;
 
@@ -109,14 +109,14 @@ size_t Meminfo::total_memory()
     return total;
 }
 
-void Meminfo::init_alloc_bitmap()
+void MultibootMeminfo::init_alloc_bitmap()
 {
     PhysPageAllocator::init();
 
-    size_t free_frames = Meminfo::free_frames();
-    for (size_t i { 0 }; i < free_frames; ++i)
+    size_t frames = free_frames();
+    for (size_t i { 0 }; i < frames; ++i)
     {
-        multiboot_memory_map_t* mem_zone = Meminfo::frame(i);
+        multiboot_memory_map_t* mem_zone = frame(i);
         if (mem_zone)
         {
             PhysPageAllocator::mark_as_free(mem_zone->addr, mem_zone->len);

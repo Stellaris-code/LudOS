@@ -30,14 +30,13 @@ SOFTWARE.
 #include <algorithm.hpp>
 #include <vector.hpp>
 
-#include "drivers/diskinterface.hpp"
+#include "drivers/storage/diskinterface.hpp"
 
 #include "utils/logging.hpp"
 #include "string.hpp"
 #include "utils/vecutils.hpp"
 
 // TODO : Passer ca en une classe, FATFs
-// TODO : AHCI fait n'importe quoi, vérifier la sortie en IDE et en AHCI comparer
 
 fat::FATInfo fat::read_fat_fs(size_t drive, size_t base_sector, bool read_only)
 {

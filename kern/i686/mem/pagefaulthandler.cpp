@@ -1,7 +1,7 @@
 /*
-get_initrd.cpp
+pagefaulthandler.cpp
 
-Copyright (c) 04 Yann BOUCHER (yann)
+Copyright (c) 17 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -23,28 +23,60 @@ SOFTWARE.
 
 */
 
-#include "initrd/initrd.hpp"
+#include "paging.hpp"
 
-#include "i686/pc/multiboot/multiboot_kern.hpp"
-#include "drivers/storage/diskinterface.hpp"
-#include "fs/vfs.hpp"
+#include "panic.hpp"
 
 #include <string.hpp>
 
-std::vector<uint8_t> initrd_buffer;
+#include "utils/stlutils.hpp"
 
-std::optional<size_t> get_initrd_disk()
+bool Paging::page_fault_handler(const registers *regs)
 {
-    for (auto module : multiboot::get_modules())
+    panic_regs = regs;
+
+    std::string message;
+
+    if (regs->err_code & 2)
     {
-        auto str = std::string(reinterpret_cast<const char*>(module.cmdline));
-        auto tokens = tokenize(str, " ", true);
-        if (tokens.back() == "initrd")
-        {
-            return DiskInterface::add_memory_drive(reinterpret_cast<const void*>(module.mod_start),
-                                                   (module.mod_end - module.mod_start));
-        }
+        message += "unprivileged ";
     }
 
-    return {};
+    if (regs->err_code & 1)
+    {
+        message += "write ";
+    }
+    else if (regs->err_code & 8)
+    {
+        message += "instruction fetch ";
+    }
+    else
+    {
+        message += "read ";
+    }
+
+    if (regs->err_code & 4)
+    {
+        message += "in a reserved bit ";
+    }
+
+    message += "at ";
+    char buf[16];
+    ksnprintf(buf, 16, "0x%x ", cr2());
+    message += trim_zstr(buf);
+
+    if (regs->err_code & 0)
+    {
+        message += "(page exists)";
+    }
+    else
+    {
+        message += "(page doesn't exist)";
+    }
+
+    message[0] = toupper(message[0]); // Capitalize
+
+    panic("Page fault : %s\n", message.c_str());
+
+    return false;
 }

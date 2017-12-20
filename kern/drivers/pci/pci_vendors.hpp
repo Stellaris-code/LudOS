@@ -1,5 +1,5 @@
  
-#include "../external/pci/pci_vendors.h"
+#include "external/pci_vendors.h"
 
 #include <string.hpp>
 

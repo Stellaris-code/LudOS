@@ -169,7 +169,7 @@
    LICENSE
      See end of file for license information.
 
-   TODO
+
       Don't decode all of the image data when only processing a partial tile
       Don't use full-width decode buffers when only processing a partial tile
       When processing wide images, break processing into tiles so data fits in L1 cache

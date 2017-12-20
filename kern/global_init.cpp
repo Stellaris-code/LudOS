@@ -36,7 +36,7 @@ SOFTWARE.
 #include "drivers/kbd/keyboard.hpp"
 #include "drivers/kbd/led_handler.hpp"
 #include "drivers/mouse/mouse.hpp"
-#include "drivers/diskinterface.hpp"
+#include "drivers/storage/diskinterface.hpp"
 
 #include "power/powermanagement.hpp"
 
@@ -56,6 +56,7 @@ SOFTWARE.
 #include "utils/memutils.hpp"
 #include "utils/virt_machine_detect.hpp"
 #include "utils/debug.hpp"
+#include "utils/crc32.hpp"
 #include "halt.hpp"
 
 #include "shell/shell.hpp"
@@ -74,7 +75,6 @@ SOFTWARE.
 // TODO : user mode
 // TODO : POC calculatrice
 // TODO : windowing system avec alloc d'un canvas etc
-// TODO : Paging
 // TODO : Son
 // TODO : Passer en IDE PCI : IDE UDMA
 // FIXME : revoir l'architecture dégeulasse de l'ownership des nodes de readdir
@@ -87,9 +87,8 @@ SOFTWARE.
 // TODO : Ext2
 // TODO : PAE
 // TODO : don't forget about fpu state
-// FIXME : un static int[256] peut tout foutre en l'air, attention aux static
-// TODO : Higher half
-// FIXME : Meminfo/MemoryInfo
+// NOTE : un static int[256] peut tout foutre en l'air, attention aux static
+// TODO : AddressSanitizer
 
 void global_init()
 {

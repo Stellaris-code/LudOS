@@ -29,7 +29,7 @@ SOFTWARE.
 
 #include "utils/stlutils.hpp"
 #include "utils/logging.hpp"
-#include "drivers/diskinterface.hpp"
+#include "drivers/storage/diskinterface.hpp"
 #include "time/time.hpp"
 
 namespace fat

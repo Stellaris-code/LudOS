@@ -1,7 +1,7 @@
 /*
-disasm.cpp
+kernel_binary.hpp
 
-Copyright (c) 12 Yann BOUCHER (yann)
+Copyright (c) 05 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,28 +22,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
+#ifndef KERNEL_BINARY_HPP
+#define KERNEL_BINARY_HPP
 
-#include "dissasembly.hpp"
+#include "elf.hpp"
 
-#include "libdis.h"
-
-DisasmInfo get_disasm(uint8_t* ptr)
+namespace elf
 {
-    x86_init(opt_none, nullptr, nullptr);
-
-    x86_insn_t instr;
-
-    size_t size = x86_disasm(ptr, 16, 0, 0, &instr);
-
-    if (!size)
-    {
-        return {"invalid instr", {0}, 1};
-    }
-
-    char line[32];
-    x86_format_insn(&instr, line, sizeof(line), intel_syntax);
-
-    x86_cleanup();
-
-    return {std::string(line), {instr.bytes, instr.bytes + instr.size}, size};
+const Elf32_Ehdr* kernel_binary();
 }
+
+#endif // KERNEL_BINARY_HPP

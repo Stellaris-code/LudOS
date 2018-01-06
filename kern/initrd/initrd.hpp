@@ -29,7 +29,9 @@ SOFTWARE.
 
 #include <optional.hpp>
 
-std::optional<size_t> get_initrd_disk();
+class Disk;
+
+Disk *get_initrd_disk();
 
 [[nodiscard]] bool install_initrd();
 

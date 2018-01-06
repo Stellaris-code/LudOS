@@ -30,7 +30,6 @@ SOFTWARE.
 #include "utils/logging.hpp"
 #include "utils/bitops.hpp"
 #include "utils/nop.hpp"
-#include "drivers/storage/diskinterface.hpp"
 #include "time/timer.hpp"
 #include "mem/memmap.hpp"
 
@@ -101,6 +100,72 @@ bool init()
     detail::init_interface();
 
     return true;
+}
+
+size_t ahci::Disk::disk_size() const
+{
+    if (!m_id_data) update_id_data();
+
+    if (m_id_data) return m_id_data->sectors_48*512;
+    else return 0;
+}
+
+size_t ahci::Disk::sector_size() const
+{
+    if (!m_id_data) update_id_data();
+
+    if (m_id_data) return m_id_data->sector_size*2?:512;
+    else return 512;
+}
+
+std::string ahci::Disk::drive_name() const
+{
+    if (!m_id_data) update_id_data();
+
+    if (m_id_data) return ide::ata_string(m_id_data->model);
+    else return "<invalid>";
+}
+
+ahci::Disk::Disk(uint16_t port)
+{
+    m_port = port;
+}
+
+void ahci::Disk::update_id_data() const
+{
+    ide::identify_data data;
+    if (detail::issue_identify_command(m_port, &data))
+    {
+        m_id_data = data;
+    }
+
+    if (!m_id_data)
+    {
+        warn("AHCI port %d returned invalid identify data\n", m_port);
+    }
+}
+
+std::vector<uint8_t> ahci::Disk::read_sector(size_t sector, size_t count) const
+{
+    std::vector<uint8_t> data(count * sector_size());
+    if (detail::do_read(m_port, sector, count, (uint16_t*)data.data()))
+    {
+        return data;
+    }
+    else
+    {
+        throw DiskException(DiskException::Unknown);
+    }
+}
+
+void ahci::Disk::write_sector(size_t sector, const std::vector<uint8_t> &data)
+{
+    const size_t count = data.size() / sector_size() + (data.size()%sector_size()?1:0);
+
+    if (!detail::issue_write_command(m_port, sector, count, (const uint16_t*)data.data()))
+    {
+        throw DiskException(DiskException::Unknown);
+    }
 }
 
 uint8_t detail::get_interrupt_line()
@@ -410,28 +475,7 @@ void detail::init_interface()
     {
         if (bit_check(mem->pi, port) && detail::get_port_type(port) != PortType::Null)
         {
-            DiskInterface::add_drive([port](uint32_t sector, uint8_t count, uint8_t* buf)->bool
-            {
-                return detail::do_read(port, sector, count, reinterpret_cast<uint16_t*>(buf));
-            },
-            [port](uint32_t sector, uint8_t count, const uint8_t* buf)->bool
-            {
-                return detail::issue_write_command(port, sector, count, reinterpret_cast<const uint16_t*>(buf));
-            },
-            [port]{
-                ide::identify_data data;
-                std::string model;
-                if (detail::issue_identify_command(port, &data))
-                {
-                    return DiskInterface::DiskInfo{.disk_size = size_t(data.sectors_48*512),
-                                .sector_size = (data.sector_size*2?:512), ide::ata_string(data.model)};
-                }
-                else
-                {
-                    return DiskInterface::DiskInfo{.disk_size = 0,
-                                .sector_size = 512, "<invalid>"};
-                }
-            });
+            ahci::Disk::create_disk(port);
         }
     }
 }

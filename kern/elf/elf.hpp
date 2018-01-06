@@ -122,6 +122,44 @@ enum ShT_Attributes
     SHF_ALLOC	= 0x02  // Exists in memory
 };
 
+
+enum Pf_Perms
+{
+    PF_R = 0x4,
+    PF_W = 0x2,
+    PF_X = 0x1
+};
+
+struct Elf32_Phdr
+{
+    Elf32_Word	p_type;
+    Elf32_Off	p_offset;
+    Elf32_Addr	p_vaddr;
+    Elf32_Addr	p_paddr;
+    Elf32_Word	p_filesz;
+    Elf32_Word	p_memsz;
+    Elf32_Word	p_flags;
+    Elf32_Word	p_align;
+};
+
+enum Pt_Types : uint32_t
+{
+    PT_NULL = 0,
+    PT_LOAD = 1,
+    PT_DYNAMIC = 2,
+    PT_INTERP = 3,
+    PT_NOTE = 4,
+    PT_SHLIB = 5,
+    PT_PHDR = 6,
+    PT_TLS = 7,
+    PT_LOOS = 0x60000000,
+    PT_HIOS = 0x6fffffff,
+    PT_LOPROC = 0x70000000,
+    PT_HIPROC = 0x7fffffff,
+    PT_GNU_EH_FRAME = PT_LOOS + 0x474e550,
+    PT_GNU_STACK = PT_LOOS + 0x474e551
+};
+
 struct Elf32_Sym
 {
     Elf32_Word		st_name;
@@ -155,6 +193,8 @@ const char* str_table(const Elf32_Shdr* hdr, size_t strtableidx);
 const char* lookup_str(const char* strtable, size_t offset);
 const Elf32_Sym* symbol(const Elf32_Shdr* symtab, size_t num);
 const Elf32_Shdr* section(const Elf32_Shdr* base, size_t size, size_t type);
+const Elf32_Phdr* program_header(const Elf32_Ehdr* base, size_t idx);
+
 bool check_file(const Elf32_Ehdr *hdr);
 bool check_supported(const Elf32_Ehdr* hdr);
 

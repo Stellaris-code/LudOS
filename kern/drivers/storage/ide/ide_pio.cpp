@@ -27,7 +27,6 @@ SOFTWARE.
 
 #include "utils/logging.hpp"
 
-#include "drivers/storage/diskinterface.hpp"
 #include "io.hpp"
 #include "utils/bitops.hpp"
 #include "utils/nop.hpp"
@@ -181,39 +180,7 @@ void ide::pio::init()
         {
             if (identify(bus, type))
             {
-                DiskInterface::add_drive([bus, type](uint32_t sector, uint8_t count, uint8_t* buf)
-                {
-                    auto status = read(bus, type, sector, count, reinterpret_cast<uint16_t*>(buf));
-                    if (!status)
-                    {
-                        DiskInterface::last_error = DiskInterface::Error::Unknown;
-                    }
-
-                    return status;
-                },
-                [bus, type](uint32_t sector, uint8_t count, const uint8_t* buf)
-                {
-                    auto status = write(bus, type, sector, count, reinterpret_cast<const uint16_t*>(buf));
-                    if (!status)
-                    {
-                        DiskInterface::last_error = DiskInterface::Error::Unknown;
-                    }
-
-                    return status;
-                },
-                [bus, type]{
-                    auto identify_data = identify(bus, type);
-                    if (identify_data)
-                    {
-                        return DiskInterface::DiskInfo{.disk_size = size_t(identify_data->sectors_48*512),
-                                                       .sector_size = (identify_data->sector_size*2?:512), ata_string(identify_data->model)};
-                    }
-                    else
-                    {
-                        return DiskInterface::DiskInfo{.disk_size = 0,
-                                                       .sector_size = 512, "<invalid>"};
-                    }
-                });
+                ide::pio::Disk::create_disk(bus, type);
             }
         }
     }
@@ -322,4 +289,88 @@ bool ide::pio::write(BusPort port, DriveType type, uint64_t block, size_t count,
         buf += 256;
     }
     return true;
+}
+
+size_t ide::pio::Disk::disk_size() const
+{
+    if (!m_id_data) update_id_data();
+
+    if (m_id_data) return m_id_data->sectors_48*512;
+    else return 0;
+}
+
+size_t ide::pio::Disk::sector_size() const
+{
+    if (!m_id_data) update_id_data();
+
+    if (m_id_data) return m_id_data->sector_size*2?:512;
+    else return 512;
+}
+
+std::string ide::pio::Disk::drive_name() const
+{
+    if (!m_id_data) update_id_data();
+
+    if (m_id_data) return ata_string(m_id_data->model);
+    else return "<invalid>";
+}
+
+void ide::pio::Disk::update_id_data() const
+{
+    m_id_data = identify(m_port, m_type);
+
+    if (!m_id_data)
+    {
+        warn("IDE PIO disk %d/%d returned invalid identify data\n", m_port, m_type);
+    }
+}
+
+std::vector<uint8_t> ide::pio::Disk::read_sector(size_t sector, size_t count) const
+{
+    std::vector<uint8_t> data(count * sector_size());
+    if (ide::pio::read(m_port, m_type, sector, count, (uint16_t*)data.data()))
+    {
+        return data;
+    }
+    else
+    {
+        throw DiskException(get_error(m_port));
+    }
+}
+
+void ide::pio::Disk::write_sector(size_t sector, const std::vector<uint8_t> &data)
+{
+    const size_t count = data.size() / sector_size() + (data.size()%sector_size()?1:0);
+
+    if (!ide::pio::write(m_port, m_type, sector, count, (const uint16_t*)data.data()))
+    {
+        throw DiskException(get_error(m_port));
+    }
+}
+
+ide::pio::Disk::Disk(BusPort port, DriveType type)
+{
+    m_port = port;
+    m_type = type;
+}
+
+DiskException::ErrorType ide::pio::get_error(ide::BusPort port)
+{
+    auto err = error_register(port);
+    if (err & ATA_ER_BBK)
+    {
+        return DiskException::BadSector;
+    }
+    if (err & ATA_ER_MC || err & ATA_ER_MCR)
+    {
+        return DiskException::NoMedia;
+    }
+    if (err & ATA_ER_ABRT)
+    {
+        return DiskException::Aborted;
+    }
+    else
+    {
+        return DiskException::Unknown;
+    }
 }

@@ -1,7 +1,25 @@
 global update_registers
 extern handle_registers_request
 
+get_eip: mov eax, [esp]
+         ret
+
 update_registers:
+    mov eax, [esp]
+
+    push ss
+    push eax
+    pushfd
+    push cs
+
+    mov [old_eax], eax
+    call get_eip
+    push eax
+
+    ; int_no, err_code
+    push dword 0
+    push dword 0
+
     ; Store general purpose
     push edi
     push esi
@@ -9,20 +27,13 @@ update_registers:
     push ebx
     push edx
     push ecx
-    push eax
+    push dword [old_eax]
 
     ; Store segments
     push ds
     push es
     push fs
     push gs
-
-    ; Switch to kernel segments
-    mov ax, 0x10
-    mov ds, ax
-    mov es, ax
-    mov fs, ax
-    mov gs, ax
 
     ; Push stack pointer
     push esp
@@ -31,20 +42,31 @@ update_registers:
     ; Set stack pointer to returned value
     mov esp, eax
     ; Restore segments
-    pop gs
-    pop fs
-    pop es
-    pop ds
+    pop ebx
+    pop ebx
+    pop ebx
+    pop ebx
 
     ; Restore general purpose
-    pop eax
-    pop ecx
-    pop edx
     pop ebx
-    pop ebp
-    pop esi
-    pop edi
+    pop ebx
+    pop ebx
+    pop ebx
+    pop ebx
+    pop ebx
+    pop ebx
 
+    ; int_no, err_code
+    pop ebx
+    pop ebx
+
+    pop ebx
+    pop ebx
+    pop ebx
+    pop ebx
+    pop ebx
 
     ret
 
+align 4
+old_eax:    dd 0

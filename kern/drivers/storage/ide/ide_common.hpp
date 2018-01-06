@@ -31,6 +31,15 @@ SOFTWARE.
 
 #include "utils/stlutils.hpp"
 
+#define ATA_ER_BBK      0x80    // Bad sector
+#define ATA_ER_UNC      0x40    // Uncorrectable data
+#define ATA_ER_MC       0x20    // No media
+#define ATA_ER_IDNF     0x10    // ID mark not found
+#define ATA_ER_MCR      0x08    // No media
+#define ATA_ER_ABRT     0x04    // Command aborted
+#define ATA_ER_TK0NF    0x02    // Track 0 not found
+#define ATA_ER_AMNF     0x01    // No address mark
+
 namespace ide
 {
 

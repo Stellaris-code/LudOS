@@ -141,4 +141,9 @@ bool check_supported(const Elf32_Ehdr *hdr)
     return true;
 }
 
+const Elf32_Phdr *program_header(const Elf32_Ehdr *base, size_t idx)
+{
+    return (const Elf32_Phdr *)((uintptr_t)base + base->e_phoff + idx*base->e_phentsize);
+}
+
 }

@@ -53,7 +53,6 @@ SymbolTable get_symbol_table(const Elf32_Shdr *base, size_t sh_num)
 
     auto symtab = (Elf32_Shdr*)elf::section(base, sh_num, elf::SHT_SYMTAB);
     symtab->sh_addr = (Elf32_Addr)Memory::mmap((void*)symtab->sh_addr, symtab->sh_size, Memory::Read);
-    log_serial("Mapped : 0x%x/0x%x\n", symtab->sh_addr, symtab->sh_addr + symtab->sh_size);
 
     std::string current_symbol_file;
 

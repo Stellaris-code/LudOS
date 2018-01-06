@@ -26,14 +26,12 @@ SOFTWARE.
 #include "initrd/initrd.hpp"
 
 #include "i686/pc/multiboot/multiboot_kern.hpp"
-#include "drivers/storage/diskinterface.hpp"
+#include "drivers/storage/disk.hpp"
 #include "fs/vfs.hpp"
 
 #include <string.hpp>
 
-std::vector<uint8_t> initrd_buffer;
-
-std::optional<size_t> get_initrd_disk()
+Disk* get_initrd_disk()
 {
     for (auto module : multiboot::get_modules())
     {
@@ -41,8 +39,8 @@ std::optional<size_t> get_initrd_disk()
         auto tokens = tokenize(str, " ", true);
         if (tokens.back() == "initrd")
         {
-            return DiskInterface::add_memory_drive(reinterpret_cast<const void*>(module.mod_start),
-                                                   (module.mod_end - module.mod_start));
+            return &MemoryDisk::create_disk(reinterpret_cast<const uint8_t*>(module.mod_start),
+                                                 module.mod_end - module.mod_start, "initramdisk");
         }
     }
 

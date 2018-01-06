@@ -50,6 +50,7 @@ SOFTWARE.
 #include "serial/serialdebug.hpp"
 #include "drivers/pci/pci.hpp"
 #include "drivers/storage/ide/ide_pio.hpp"
+#include "drivers/storage/ide/ide_dma.hpp"
 #include "drivers/storage/ahci/ahci.hpp"
 #include "drivers/acpi/acpi_init.hpp"
 #include "drivers/acpi/powermanagement.hpp"
@@ -139,6 +140,8 @@ inline void init(uint32_t magic, const multiboot_info_t* mbd_info)
     idt::init();
 
     Paging::init();
+
+    log_serial("bob : %d\n", BDA::video_io_port());
 
     multiboot::check(magic, mbd, mbd_info);
     multiboot::info = mbd_info;
@@ -232,7 +235,7 @@ inline void init(uint32_t magic, const multiboot_info_t* mbd_info)
 
     pci::scan();
 
-    if (!ahci::init())
+    if (!ahci::init() && !ide::dma::init())
     {
         ide::pio::init();
     }

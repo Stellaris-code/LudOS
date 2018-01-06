@@ -58,6 +58,19 @@ inline ContainerT tokenize(const std::string& str, const std::string& delimiters
     return tokens;
 }
 
+template <typename T, typename U, typename ContainerT = std::vector<T>, typename ContainerU = std::vector<U>>
+inline ContainerU map(const ContainerT& in, std::function<U(const T&)> fun)
+{
+    ContainerU cont(in.size());
+
+    for (size_t i { 0 }; i < in.size(); ++i)
+    {
+        cont[i] = fun(in[i]);
+    }
+
+    return cont;
+}
+
 template <typename Container = std::vector<std::string>>
 inline std::string join(const Container& cont, const std::string& join_str)
 {

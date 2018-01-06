@@ -116,7 +116,7 @@ void print_info()
         {
             log(Debug, " Module start : 0x%x\n", mod.mod_start);
             log(Debug, " Module end : 0x%x\n", mod.mod_end);
-            log(Debug, " Module cmdline : '%s'\n", get_str(mod.cmdline, 512).c_str());
+            log(Debug, " Module cmdline : '%s'\n", (char*)mod.cmdline);
         }
     }
     if (CHECK_FLAG(info->flags, 5))
@@ -151,7 +151,7 @@ std::pair<const elf::Elf32_Shdr *, size_t> elf_info()
 
     multiboot_elf_section_header_table_t elf_info = info->u.elf_sec;
 
-    auto shdr = (elf::Elf32_Shdr*)Memory::mmap((void*)elf_info.addr, elf_info.num*sizeof(elf::Elf32_Shdr), Memory::Read|Memory::Write);
+    static auto shdr = (elf::Elf32_Shdr*)Memory::mmap((void*)elf_info.addr, elf_info.num*sizeof(elf::Elf32_Shdr), Memory::Read|Memory::Write);
 
     return {shdr, elf_info.num};
 }

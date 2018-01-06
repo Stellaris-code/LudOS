@@ -32,6 +32,23 @@ SECTIONS
         *(.gnu.linkonce.r*)
     }
 
+    /* For stack unwinding (exception handling)  */
+    .eh_frame_hdr ALIGN(0x8): AT(ADDR(.eh_frame_hdr) - @KERNEL_VIRTUAL_BASE@)
+    {
+      KEEP(*(.eh_frame_hdr*))
+    }
+    .eh_frame ALIGN(0x8): AT(ADDR(.eh_frame) - @KERNEL_VIRTUAL_BASE@)
+    {
+      PROVIDE (__eh_frame_start = .);
+      KEEP(*(.eh_frame))
+      LONG (0);
+    }
+
+    .gcc_except_table : AT(ADDR(.gcc_except_table) - @KERNEL_VIRTUAL_BASE@)
+    {
+      *(.gcc_except_table)
+    }
+
     .data ALIGN(0x1000) : AT(ADDR(.data) - @KERNEL_VIRTUAL_BASE@)
     {
         data_seg = .;

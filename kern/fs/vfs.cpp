@@ -32,8 +32,6 @@ SOFTWARE.
 #include "utils/messagebus.hpp"
 #include "drivers/kbd/text_handler.hpp"
 
-#include "fat.hpp"
-
 #include <typeinfo.hpp>
 
 std::unordered_set<void*> created_node_list;

@@ -393,5 +393,5 @@ void
 internal_function
 _dl_init_paths (const char *llp)
 {
-    err("someone called this\n");
+
 }

@@ -12,7 +12,7 @@
 #define _LIBCPP_CONFIG
 
 #define _LIBCPP_BUILDING_LIBRARY
-#define _LIBCPP_NO_EXCEPTIONS
+//#define _LIBCPP_NO_EXCEPTIONS
 #define _LIBCPP_HAS_NO_THREADS
 
 #if defined(_MSC_VER) && !defined(__clang__)
@@ -972,7 +972,7 @@ template <unsigned> struct __static_assert_check {};
 #endif
 
 #ifndef _LIBCPP_HAS_NO_ASAN
-_LIBCPP_FUNC_VIS extern "C" void __sanitizer_annotate_contiguous_container(
+extern "C" void __sanitizer_annotate_contiguous_container(
   const void *, const void *, const void *, const void *);
 #endif
 

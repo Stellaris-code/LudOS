@@ -27,18 +27,15 @@ SOFTWARE.
 
 #include <array.hpp>
 
-#include "drivers/storage/diskinterface.hpp"
+#include "drivers/storage/disk.hpp"
 
-std::vector<mbr::Partition> mbr::read_partitions(size_t drive)
+std::vector<mbr::Partition> mbr::read_partitions(Disk& drive)
 {
     std::vector<Partition> partitions;
 
-    std::array<uint8_t, 512> buf;
+    auto buf = drive.read(0, 512);
 
-    if (!DiskInterface::read(drive, 0, 1, buf.data()))
-    {
-        return {};
-    }
+    if (buf.empty()) return {};
 
     std::vector<uint16_t> addresses = {static_cast<uint16_t>(0x1BE), static_cast<uint16_t>(0x1CE),
                                        static_cast<uint16_t>(0x1DE), static_cast<uint16_t>(0x1EE)};
@@ -47,7 +44,7 @@ std::vector<mbr::Partition> mbr::read_partitions(size_t drive)
         Partition part;
         part = *reinterpret_cast<Partition*>(buf.data() + addresses[i]);
         part.partition_number = i+1;
-        part.drive = drive;
+        part.drive = &drive;
 
         if (part.system_id != 0)
         {

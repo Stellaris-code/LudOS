@@ -85,7 +85,7 @@ void PhysPageAllocator::mark_as_used(uintptr_t addr, size_t size)
     const size_t end_addr = addr + size;
     const size_t end_page = (end_addr >> 12) + (end_addr&0xFFF?1:0);
 
-    for (size_t i { base_page }; i < end_page; ++i)
+    for (size_t i { base_page }; i <= end_page; ++i)
     {
         mem_bitmap[i] = true;
     }
@@ -97,7 +97,7 @@ void PhysPageAllocator::mark_as_free(uintptr_t addr, size_t size)
     const size_t end_addr = addr + size;
     const size_t end_page = (end_addr >> 12) + (end_addr&0xFFF?1:0);
 
-    for (size_t i { base_page }; i < end_page; ++i)
+    for (size_t i { base_page }; i <= end_page; ++i)
     {
         mem_bitmap[i] = false;
     }

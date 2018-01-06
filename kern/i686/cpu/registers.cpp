@@ -25,7 +25,9 @@ SOFTWARE.
 
 #include "registers.hpp"
 
-const registers* cur_regs { nullptr };
+#include "assert.h"
+
+registers cur_regs;
 
 extern "C"
 void update_registers();
@@ -33,12 +35,12 @@ void update_registers();
 const registers *get_registers()
 {
     update_registers();
-    return cur_regs;
+    return &cur_regs;
 }
 
 extern "C"
 const registers* handle_registers_request(const registers *regs)
 {
-    cur_regs = regs;
+    cur_regs = *regs;
     return regs;
 }

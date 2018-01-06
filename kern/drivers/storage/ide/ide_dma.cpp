@@ -22,3 +22,18 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
+
+#include "ide_dma.hpp"
+
+#include "drivers/pci/pci.hpp"
+
+namespace ide::dma
+{
+
+bool init()
+{
+
+    return false;
+}
+
+}

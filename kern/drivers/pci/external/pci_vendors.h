@@ -1,4 +1,5 @@
-
+#ifndef PCI_VENDORS_H
+#define PCI_VENDORS_H
 
 //PCIHDR.H: PCI Vendors, Devices, and Class Type information
 
@@ -9625,3 +9626,5 @@ const char *	PciDevSelFlags [] =
 
 // Use this value for loop control during searching:
 #define	PCI_DEVSELFLAGS_LEN	(sizeof(PciDevSelFlags)/sizeof(char *))
+
+#endif

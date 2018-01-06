@@ -443,6 +443,11 @@ string to_string(unsigned val)
     return as_string(ksnprintf, initial_string<string, unsigned>()(), "%u", val);
 }
 
+string to_hex_string(unsigned val)
+{
+    return as_string(ksnprintf, initial_string<string, unsigned>()(), "%02X", val);
+}
+
 string to_string(long val)
 {
     return as_string(ksnprintf, initial_string<string, long>()(), "%ld", val);

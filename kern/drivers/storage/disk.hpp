@@ -25,4 +25,111 @@ SOFTWARE.
 #ifndef DISK_HPP
 #define DISK_HPP
 
+#include <string.hpp>
+#include <exception.hpp>
+
+#include "utils/vecutils.hpp"
+
+class DiskException : public std::runtime_error
+{
+public:
+    enum ErrorType
+    {
+        OutOfBounds,
+        ReadOnly,
+        BadSector,
+        NoMedia,
+        Aborted,
+        Unknown
+    };
+
+    std::string to_string(ErrorType type)
+    {
+        switch (type)
+        {
+            case OutOfBounds:
+                return "Out of bounds access";
+            case ReadOnly:
+                return "Disk is read only";
+            case BadSector:
+                return "Bad sector access";
+            case NoMedia:
+                return "No media";
+            case Aborted:
+                return "Access aborted";
+            case Unknown:
+            default:
+                return "Unknown error";
+        }
+    }
+
+    explicit DiskException(ErrorType type)
+        : std::runtime_error("Disk error : " + to_string(type))
+    {
+
+    }
+};
+
+class Disk
+{
+public:
+    virtual ~Disk() = default;
+
+    virtual size_t disk_size() const = 0;
+    virtual size_t sector_size() const = 0;
+    virtual std::string drive_name() const = 0;
+
+    std::vector<uint8_t> read(size_t offset, size_t size) const;
+    std::vector<uint8_t> read() const;
+
+    void write(size_t offset, std::vector<uint8_t> data);
+
+protected:
+    virtual std::vector<uint8_t> read_sector(size_t sector, size_t count) const = 0;
+    virtual void write_sector(size_t sector, const std::vector<uint8_t>& data) = 0;
+
+public:
+    static ref_vector<Disk> disks();
+
+protected:
+    static inline std::vector<std::unique_ptr<Disk>> m_disks;
+};
+
+template <typename Derived>
+class DiskImpl : public Disk
+{
+public:
+    template <typename... Args>
+    static Derived& create_disk(Args&&... args)
+    {
+        static_assert(std::is_base_of_v<Disk, Derived>);
+        Disk::m_disks.emplace_back(std::make_unique<Derived>(std::forward<Args>(args)...));
+        return static_cast<Derived&>(*Disk::m_disks.back());
+    }
+};
+
+class MemoryDisk : public DiskImpl<MemoryDisk>
+{
+public:
+    friend class Disk;
+
+    virtual size_t disk_size() const override { return m_size; }
+    virtual size_t sector_size() const override { return 512; }
+    virtual std::string drive_name() const override { return m_name; }
+
+protected:
+    virtual std::vector<uint8_t> read_sector(size_t sector, size_t count) const override;
+    virtual void write_sector(size_t sector, const std::vector<uint8_t>& data) override;
+
+public:
+    MemoryDisk(uint8_t* data, size_t size, const std::string& name);
+    MemoryDisk(const uint8_t* data, size_t size, const std::string& name);
+
+private:
+    size_t m_size { 0 };
+    uint8_t* m_data { nullptr };
+    std::string m_name;
+    bool m_const { false };
+};
+
 #endif // DISK_HPP

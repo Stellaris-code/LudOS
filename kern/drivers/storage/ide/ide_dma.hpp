@@ -25,4 +25,11 @@ SOFTWARE.
 #ifndef IDE_DMA_HPP
 #define IDE_DMA_HPP
 
+namespace ide::dma
+{
+
+bool init();
+
+}
+
 #endif // IDE_DMA_HPP

@@ -20,6 +20,7 @@
 #include <stdlib.h>
 
 #include "utils/logging.hpp"
+#include "panic.hpp"
 
 #define _GNU_SOURCE
 #define _LIBUNWIND_IS_BAREMETAL
@@ -74,7 +75,7 @@
 #define _LIBUNWIND_BUILD_ZERO_COST_APIS
 #endif
 
-#if defined(NDEBUG) && defined(_LIBUNWIND_IS_BAREMETAL)
+#if defined(NDEBUG) && defined(_LIBUNWIND_IS_BAREMETAL) && false
 #define _LIBUNWIND_ABORT(msg)                                                  \
   do {                                                                         \
     abort();                                                                   \
@@ -82,7 +83,7 @@
 #else
 #define _LIBUNWIND_ABORT(msg)                                                  \
   do {                                                                         \
-    err("libunwind: %s %s:%d - %s\n", __func__, __FILE__,          \
+    panic("libunwind: %s %s:%d - %s\n", __func__, __FILE__,          \
             __LINE__, msg);                                                    \
     abort();                                                                   \
   } while (0)
@@ -112,7 +113,7 @@
 #endif
 
 // Macros that define away in non-Debug builds
-#ifdef NDEBUG
+#if defined(NDEBUG)
   #define _LIBUNWIND_DEBUG_LOG(msg, ...)
   #define _LIBUNWIND_TRACE_API(msg, ...)
   #define _LIBUNWIND_TRACING_UNWINDING (0)
@@ -132,19 +133,19 @@
   #define _LIBUNWIND_DEBUG_LOG(msg, ...)  _LIBUNWIND_LOG(msg, __VA_ARGS__)
   #define _LIBUNWIND_TRACE_API(msg, ...)                                       \
     do {                                                                       \
-      if (logAPIs())                                                           \
+      if (true)                                                           \
         _LIBUNWIND_LOG(msg, __VA_ARGS__);                                      \
     } while (0)
-  #define _LIBUNWIND_TRACING_UNWINDING logUnwinding()
-  #define _LIBUNWIND_TRACING_DWARF logDWARF()
+  #define _LIBUNWIND_TRACING_UNWINDING true
+  #define _LIBUNWIND_TRACING_DWARF true
   #define _LIBUNWIND_TRACE_UNWINDING(msg, ...)                                 \
     do {                                                                       \
-      if (logUnwinding())                                                      \
+      if (true)                                                      \
         _LIBUNWIND_LOG(msg, __VA_ARGS__);                                      \
     } while (0)
   #define _LIBUNWIND_TRACE_DWARF(...)                                          \
     do {                                                                       \
-      if (logDWARF())                                                          \
+      if (true)                                                          \
         err(__VA_ARGS__);                                          \
     } while (0)
 #endif

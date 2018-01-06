@@ -3878,6 +3878,7 @@ _LIBCPP_FUNC_VIS long double stold(const string& __str, size_t* __idx = 0);
 
 _LIBCPP_FUNC_VIS string to_string(int __val);
 _LIBCPP_FUNC_VIS string to_string(unsigned __val);
+_LIBCPP_FUNC_VIS string to_hex_string(unsigned val);
 _LIBCPP_FUNC_VIS string to_string(long __val);
 _LIBCPP_FUNC_VIS string to_string(unsigned long __val);
 _LIBCPP_FUNC_VIS string to_string(long long __val);

@@ -1333,6 +1333,7 @@ void UnwindCursor<A, R>::setInfoBasedOnIPRegister(bool isReturnAddress) {
 
 template <typename A, typename R>
 int UnwindCursor<A, R>::step() {
+
   // Bottom of stack is defined is when unwind info cannot be found.
   if (_unwindInfoMissing)
     return UNW_STEP_END;

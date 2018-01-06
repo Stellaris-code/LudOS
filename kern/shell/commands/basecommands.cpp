@@ -280,6 +280,18 @@ void install_base_commands(Shell &sh)
      }});
 
     sh.register_command(
+    {"clear", "clears the screen",
+     "Usage : clear",
+     [](const std::vector<std::string>&)
+     {
+         for (size_t i { 0 }; i < term().height(); ++i)
+         {
+             putchar('\n');
+         }
+         return 0;
+     }});
+
+    sh.register_command(
     {"cowsay", "Let the cow speak",
      "Usage : cowsay <txt>",
      [&sh](const std::vector<std::string>& args)

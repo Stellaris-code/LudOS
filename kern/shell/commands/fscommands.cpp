@@ -26,7 +26,7 @@ SOFTWARE.
 #include "fscommands.hpp"
 
 #include "shell/shell.hpp"
-#include "drivers/storage/diskinterface.hpp"
+#include "drivers/storage/disk.hpp"
 #include "utils/memutils.hpp"
 #include "utils/crc32.hpp"
 #include "fs/vfs.hpp"
@@ -147,10 +147,9 @@ void install_fs_commands(Shell &sh)
      "Usage : lsblk",
      [](const std::vector<std::string>&)
      {
-         for (size_t i { 0 }; i < DiskInterface::drive_count(); ++i)
+         for (auto disk : Disk::disks())
          {
-             auto info = DiskInterface::info(i);
-             kprintf("%s : %s\n", info.drive_name.c_str(), human_readable_size(info.disk_size).c_str());
+             kprintf("%s : %s\n", disk.get().drive_name().c_str(), human_readable_size(disk.get().disk_size()).c_str());
          }
          return 0;
      }});

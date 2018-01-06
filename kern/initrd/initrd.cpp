@@ -28,24 +28,27 @@ SOFTWARE.
 #include "utils/logging.hpp"
 #include "utils/memutils.hpp"
 #include "fs/tar.hpp"
-#include "drivers/storage/diskinterface.hpp"
+#include "drivers/storage/disk.hpp"
 
 bool install_initrd()
 {
     auto initrd_disk = get_initrd_disk();
     if (initrd_disk)
     {
-
-        static std::vector<uint8_t> file(DiskInterface::info(*initrd_disk).disk_size);
-        if (DiskInterface::read(*initrd_disk, 0, file.size()/ DiskInterface::info(*initrd_disk).sector_size, file.data()))
+        try
         {
-            static tar::TarFS fs(file);
+            static tar::TarFS fs(initrd_disk->read());
             auto root = fs.root_dir();
             if (vfs::mount(root, "/initrd"))
             {
                 log(Info, "Mounted initrd\n");
                 return true;
             }
+        }
+        catch (const DiskException& e)
+        {
+            err("Couldn't load initrd : %s", e.what());
+            return false;
         }
     }
 

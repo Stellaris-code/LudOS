@@ -33,10 +33,9 @@ SOFTWARE.
 
 #include "ide_common.hpp"
 
-namespace ide
-{
+#include "drivers/storage/disk.hpp"
 
-namespace pio
+namespace ide::pio
 {
 
 void init();
@@ -46,10 +45,33 @@ void init();
 
 uint8_t error_register(BusPort port);
 uint8_t status_register(BusPort port);
+DiskException::ErrorType get_error(BusPort port);
 
 std::vector<std::pair<BusPort, DriveType>> scan();
 
 std::optional<identify_data> identify(BusPort port, DriveType type);
+
+class Disk : public ::DiskImpl<ide::pio::Disk>
+{
+public:
+    Disk(BusPort port, DriveType type);
+
+    virtual size_t disk_size() const override;
+    virtual size_t sector_size() const override;
+    virtual std::string drive_name() const override;
+
+protected:
+    virtual std::vector<uint8_t> read_sector(size_t sector, size_t count) const override;
+    virtual void write_sector(size_t sector, const std::vector<uint8_t>& data) override;
+
+private:
+    void update_id_data() const;
+
+private:
+    BusPort m_port;
+    DriveType m_type;
+    mutable std::optional<identify_data> m_id_data;
+};
 
 namespace detail
 {
@@ -61,7 +83,6 @@ void poll_bsy(BusPort port);
 bool flush(BusPort port);
 bool error_set(BusPort port);
 void clear_error(BusPort port);
-}
 }
 }
 

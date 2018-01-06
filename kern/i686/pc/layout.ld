@@ -32,6 +32,23 @@ SECTIONS
         *(.gnu.linkonce.r*)
     }
 
+    /* For stack unwinding (exception handling)  */
+    .eh_frame_hdr ALIGN(0x8): AT(ADDR(.eh_frame_hdr) - 0xC0000000)
+    {
+      KEEP(*(.eh_frame_hdr*))
+    }
+    .eh_frame ALIGN(0x8): AT(ADDR(.eh_frame) - 0xC0000000)
+    {
+      PROVIDE (__eh_frame_start = .);
+      KEEP(*(.eh_frame))
+      LONG (0);
+    }
+
+    .gcc_except_table : AT(ADDR(.gcc_except_table) - 0xC0000000)
+    {
+      *(.gcc_except_table)
+    }
+
     .data ALIGN(0x1000) : AT(ADDR(.data) - 0xC0000000)
     {
         data_seg = .;

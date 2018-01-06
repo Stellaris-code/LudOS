@@ -31,6 +31,8 @@ SOFTWARE.
 #include "mem/meminfo.hpp"
 #include "power/powermanagement.hpp"
 #include "time/time.hpp"
+#include "drivers/pci/pci.hpp"
+#include "drivers/pci/pci_vendors.hpp"
 
 #include "external/liballoc/liballoc.h"
 
@@ -114,6 +116,22 @@ void install_sys_commands(Shell &sh)
      [](const std::vector<std::string>&)
      {
          kprintf("Uptime : %f sec\n", Time::uptime());
+         return 0;
+     }});
+
+    sh.register_command(
+    {"lspci", "list pci devices",
+     "Usage : 'lspci'",
+     [](const std::vector<std::string>&)
+     {
+         for (const auto& dev : pci::devices)
+         {
+             kprintf("%x:%x.%x:\n", dev.bus, dev.slot, dev.func);
+             kprintf("   Vendor : '%s' (0x%x)\n", pci::vendor_string(dev.vendorID).c_str(), dev.vendorID);
+             kprintf("   Device : '%s' (0x%x)\n", pci::dev_string(dev.vendorID, dev.deviceID).c_str(), dev.deviceID);
+             kprintf("   Class : '%s' (0x%x:0x%x:0x%x)\n", pci::class_code_string(dev.classCode, dev.subclass, dev.progIF).c_str(),
+                                                           dev.classCode, dev.subclass, dev.progIF);
+         }
          return 0;
      }});
 }

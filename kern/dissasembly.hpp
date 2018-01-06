@@ -28,10 +28,12 @@ SOFTWARE.
 #include <stdint.h>
 
 #include <string.hpp>
+#include <vector.hpp>
 
 struct DisasmInfo
 {
     std::string str;
+    std::vector<uint8_t> bytes;
     size_t len;
 };
 

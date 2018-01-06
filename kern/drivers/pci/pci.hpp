@@ -67,6 +67,10 @@ struct [[gnu::packed]] PciDevice
             uint8_t max_latency;
         };
     };
+
+    uint16_t bus;
+    uint16_t slot;
+    uint16_t func;
 };
 
 

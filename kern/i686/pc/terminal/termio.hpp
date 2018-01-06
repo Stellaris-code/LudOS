@@ -35,7 +35,7 @@ inline void termio_move_cursor(size_t x, size_t y, size_t width)
 
     const size_t index = y * width + x;
 
-    const uint16_t port_low = BDA::video_io_port();
+    static const uint16_t port_low = BDA::video_io_port();
     const uint16_t port_high = port_low + 1;
 
     // cursor LOW port to vga INDEX register

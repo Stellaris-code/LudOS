@@ -101,7 +101,10 @@ void __ubsan_handle_type_mismatch(void* data_raw,
     if ( !pointer )
         violation = "null pointer access";
     else if ( data->alignment && (pointer & (data->alignment - 1)) )
+    {
+        //violation = "alignment error";
         return; // ignore alignment issues
+    }
     else
     {
         violation = "insufficient size";

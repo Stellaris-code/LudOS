@@ -1,7 +1,7 @@
 /*
-disasm.cpp
+kernel_binary.cpp
 
-Copyright (c) 12 Yann BOUCHER (yann)
+Copyright (c) 05 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -23,27 +23,26 @@ SOFTWARE.
 
 */
 
-#include "dissasembly.hpp"
+#include "elf/kernel_binary.hpp"
 
-#include "libdis.h"
+#include "i686/pc/multiboot/multiboot_kern.hpp"
 
-DisasmInfo get_disasm(uint8_t* ptr)
+#include "utils/logging.hpp"
+#include "utils/stlutils.hpp"
+
+namespace elf
 {
-    x86_init(opt_none, nullptr, nullptr);
-
-    x86_insn_t instr;
-
-    size_t size = x86_disasm(ptr, 16, 0, 0, &instr);
-
-    if (!size)
+const Elf32_Ehdr* kernel_binary()
+{
+    for (const auto& mod : multiboot::get_modules())
     {
-        return {"invalid instr", {0}, 1};
+        std::string cmdline = (char*)mod.cmdline;
+        if (tokenize(cmdline, " ", true).back() == "kernel_binary")
+        {
+            return (const Elf32_Ehdr*)mod.mod_start;
+        }
     }
 
-    char line[32];
-    x86_format_insn(&instr, line, sizeof(line), intel_syntax);
-
-    x86_cleanup();
-
-    return {std::string(line), {instr.bytes, instr.bytes + instr.size}, size};
+    return nullptr;
+}
 }

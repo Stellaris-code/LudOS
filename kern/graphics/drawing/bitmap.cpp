@@ -43,6 +43,8 @@ Bitmap::Bitmap(size_t width, size_t height, Color color)
     resize(width, height, false, color);
 }
 
+#pragma GCC push_options
+#pragma GCC target ("no-sse")
 void Bitmap::resize(size_t width, size_t height, bool keep_ratio, Color color)
 {
     if (!keep_ratio)
@@ -62,6 +64,7 @@ void Bitmap::resize(size_t width, size_t height, bool keep_ratio, Color color)
     m_width = width;
     m_height = height;
 }
+#pragma GCC pop_options
 
 
 void Bitmap::color_multiply(const Color &color)

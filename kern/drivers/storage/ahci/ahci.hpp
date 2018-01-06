@@ -27,14 +27,38 @@ SOFTWARE.
 
 #include <stdint.h>
 
+#include <optional.hpp>
+
 #include "i686/cpu/registers.hpp"
 #include "drivers/storage/ide/ide_common.hpp"
+#include "drivers/storage/disk.hpp"
 
 namespace ahci
 {
 bool available();
 
 bool init();
+
+class Disk : public ::DiskImpl<ahci::Disk>
+{
+public:
+    Disk(uint16_t port);
+
+    virtual size_t disk_size() const override;
+    virtual size_t sector_size() const override;
+    virtual std::string drive_name() const override;
+
+protected:
+    virtual std::vector<uint8_t> read_sector(size_t sector, size_t count) const override;
+    virtual void write_sector(size_t sector, const std::vector<uint8_t>& data) override;
+
+private:
+    void update_id_data() const;
+
+private:
+    uint16_t m_port;
+    mutable std::optional<ide::identify_data> m_id_data;
+};
 
 namespace detail
 {

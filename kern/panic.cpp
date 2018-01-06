@@ -31,8 +31,10 @@ SOFTWARE.
 #include "utils/defs.hpp"
 #include "utils/demangle.hpp"
 #include "utils/nop.hpp"
+#include "utils/stlutils.hpp"
 #include "stack-trace.hpp"
 #include "elf/symbol_table.hpp"
+#include "mem/memmap.hpp"
 
 #include "terminal/terminal.hpp"
 #include "dissasembly.hpp"
@@ -102,20 +104,23 @@ void print_stack_symbols()
 void print_disassembly()
 {
     kprintf("Disassembly : \n");
-    uint8_t* ip = reinterpret_cast<uint8_t*>(panic_regs->eip);
 
-    const size_t dump_len = 6;
+    const size_t dump_len = 3;
 
-    // Move back
-    for (size_t i { 0 }; i < dump_len/2; ++i)
-    {
-        ip -= get_disasm(ip).len;
-    }
+    uint8_t* mmap_ip = (uint8_t*)Memory::mmap((void*)panic_regs->eip, dump_len * 17, Memory::Read);
+    uint8_t* ip = mmap_ip;
+
+//    // Move back
+//    for (size_t i { 0 }; i < dump_len/2; ++i)
+//    {
+//        ip -= get_disasm(ip).len;
+//    }
 
     for (size_t i { 0 }; i < dump_len; ++i)
     {
         DisasmInfo info = get_disasm(ip);
-        if (ip == reinterpret_cast<uint8_t*>(panic_regs->eip))
+        std::string bytes = join(map<uint8_t, std::string>(info.bytes, [](uint8_t c){return std::to_hex_string(c);}), " ");
+        if (ip == mmap_ip)
         {
             kprintf("->  ");
         }
@@ -123,7 +128,7 @@ void print_disassembly()
         {
             kprintf("    ");
         }
-        kprintf("%s\n", info.str.c_str());
+        kprintf("%s (%s)\n", info.str.c_str(), bytes.c_str());
         ip += info.len;
     }
 }

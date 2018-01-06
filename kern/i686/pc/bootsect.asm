@@ -75,8 +75,6 @@ higher_half_start:
     mov dword [BootPageDirectory], 0
     invlpg [0]
 
-    xchg bx, bx
-
     mov  esp, stack + STACKSIZE         ; set up the stack
 
     mov [magic], eax

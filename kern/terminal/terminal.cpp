@@ -213,7 +213,7 @@ void Terminal::scroll_up()
 void Terminal::scroll_bottom()
 {
     show_history(m_data.lines() - height()+1);
-    m_cursor_y = std::min(m_data.lines() - height()+1, height()-1);
+    m_cursor_y = (height()-1);
     check_pos();
 }
 

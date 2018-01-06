@@ -29,6 +29,8 @@ SOFTWARE.
 
 #include <vector.hpp>
 
+class Disk;
+
 namespace mbr
 {
 
@@ -47,10 +49,10 @@ struct [[gnu::packed]] Partition
 
     // Additional data
     uint8_t partition_number;
-    uint8_t drive;
+    Disk* drive { nullptr };
 };
 
-std::vector<Partition> read_partitions(size_t drive);
+std::vector<Partition> read_partitions(Disk& drive);
 
 }
 

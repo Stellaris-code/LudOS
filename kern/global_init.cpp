@@ -25,7 +25,8 @@ SOFTWARE.
 
 #include "global_init.hpp"
 
-#include "fs/fat.hpp"
+#include <exception.hpp>
+
 #include "fs/tar.hpp"
 #include "fs/vfs.hpp"
 #include "fs/mbr.hpp"
@@ -36,7 +37,7 @@ SOFTWARE.
 #include "drivers/kbd/keyboard.hpp"
 #include "drivers/kbd/led_handler.hpp"
 #include "drivers/mouse/mouse.hpp"
-#include "drivers/storage/diskinterface.hpp"
+#include "drivers/storage/disk.hpp"
 
 #include "power/powermanagement.hpp"
 
@@ -56,7 +57,11 @@ SOFTWARE.
 #include "utils/memutils.hpp"
 #include "utils/virt_machine_detect.hpp"
 #include "utils/debug.hpp"
+#include "utils/demangle.hpp"
 #include "utils/crc32.hpp"
+
+#include "cpp_runtime/exception_support.hpp"
+
 #include "halt.hpp"
 
 #include "shell/shell.hpp"
@@ -86,102 +91,115 @@ SOFTWARE.
 // TODO : écran de veille ala windows
 // TODO : Ext2
 // TODO : PAE
-// TODO : don't forget about fpu state
-// NOTE : un static int[256] peut tout foutre en l'air, attention aux static
-// TODO : AddressSanitizer
+// NOTE : don't forget about fpu state
 
 void global_init()
 {
-    kbd::install_mapping(kbd::mappings::azerty());
-    kbd::TextHandler::init();
-    kbd::install_led_handler();
+    init_exceptions();
 
-    MessageBus::register_handler<kbd::TextEnteredEvent>([](const kbd::TextEnteredEvent& e)
+    try
     {
-        term().add_input(e.c);
-        term().force_redraw_input();
-    });
 
-    MessageBus::register_handler<kbd::KeyEvent>([](const kbd::KeyEvent& e)
-    {
-        if (e.state == kbd::KeyEvent::Pressed)
+        kbd::install_mapping(kbd::mappings::azerty());
+        kbd::TextHandler::init();
+        kbd::install_led_handler();
+
+        MessageBus::register_handler<kbd::TextEnteredEvent>([](const kbd::TextEnteredEvent& e)
         {
-            if (e.key == kbd::PageUp)
+            term().add_input(e.c);
+            term().force_redraw_input();
+        });
+
+        MessageBus::register_handler<kbd::KeyEvent>([](const kbd::KeyEvent& e)
+        {
+            if (e.state == kbd::KeyEvent::Pressed)
             {
-                term().scroll_history(-10);
+                if (e.key == kbd::PageUp)
+                {
+                    term().scroll_history(-10);
+                }
+                else if (e.key == kbd::PageDown)
+                {
+                    term().scroll_history(+10);
+                }
+                else if (e.key == kbd::Delete && Keyboard::ctrl() && Keyboard::alt())
+                {
+                    reset();
+                }
+                else if (e.key == kbd::P && Keyboard::ctrl() && Keyboard::alt())
+                {
+                    panic("Panic key pressed\n");
+                }
             }
-            else if (e.key == kbd::PageDown)
+        });
+
+        Mouse::init();
+
+        MessageBus::register_handler<MouseScrollEvent>([](const MouseScrollEvent& e)
+        {
+            if (e.wheel>0)
             {
-                term().scroll_history(+10);
+                term().scroll_history(+3);
             }
-            else if (e.key == kbd::Delete && Keyboard::ctrl() && Keyboard::alt())
+            else if (e.wheel<0)
             {
-                reset();
+                term().scroll_history(-3);
             }
-            else if (e.key == kbd::P && Keyboard::ctrl() && Keyboard::alt())
+        });
+
+        vfs::init();
+        vfs::mount_dev();
+
+        log(Info, "Available drives : %zd\n", Disk::disks().size());
+
+#if 0
+        for (size_t disk { 0 }; disk < DiskInterface::drive_count(); ++disk)
+        {
+            log(Info, "Disk : %zd\n", disk);
+            for (auto partition : mbr::read_partitions(disk))
             {
-                panic("Panic key pressed\n");
+                log(Info, "Partition %d\n", partition.partition_number);
+                auto fs = fat::read_fat_fs(disk, partition.relative_sector, true);
+                auto wrapper = fat::RAIIWrapper(fs);
+                if (fs.valid)
+                {
+                    log(Info, "FAT %zd filesystem found on drive %zd, partition %d\n", fs.type, fs.drive, partition.partition_number);
+
+                    static auto root = fat::root_dir(fs);
+
+                    vfs::mount(root, "/boot");
+                }
             }
         }
-    });
-
-    Mouse::init();
-
-    MessageBus::register_handler<MouseScrollEvent>([](const MouseScrollEvent& e)
-    {
-        if (e.wheel>0)
-        {
-            term().scroll_history(+3);
-        }
-        else if (e.wheel<0)
-        {
-            term().scroll_history(-3);
-        }
-    });
-
-    vfs::init();
-    vfs::mount_dev();
-
-    log(Info, "Available drives : %zd\n", DiskInterface::drive_count());
-
-#if 1
-    for (size_t disk { 0 }; disk < DiskInterface::drive_count(); ++disk)
-    {
-        log(Info, "Disk : %zd\n", disk);
-        for (auto partition : mbr::read_partitions(disk))
-        {
-            log(Info, "Partition %d\n", partition.partition_number);
-            auto fs = fat::read_fat_fs(disk, partition.relative_sector, true);
-            auto wrapper = fat::RAIIWrapper(fs);
-            if (fs.valid)
-            {
-                log(Info, "FAT %zd filesystem found on drive %zd, partition %d\n", fs.type, fs.drive, partition.partition_number);
-
-                static auto root = fat::root_dir(fs);
-
-                vfs::mount(root, "/boot");
-            }
-        }
-    }
 #endif
 
-    if (!install_initrd())
-    {
-        panic("Cannot install initrd!\n");
+        if (!install_initrd())
+        {
+            panic("Cannot install initrd!\n");
+        }
+
+        MessageBus::send<kbd::KeyEvent>(kbd::KeyEvent{kbd::NumLock, kbd::KeyEvent::Pressed});
+        MessageBus::send<kbd::KeyEvent>(kbd::KeyEvent{kbd::NumLock, kbd::KeyEvent::Released});
+
+        Shell sh;
+        sh.params.prompt = ESC_BG(13,132,203) "  LudOS " ESC_POP_COLOR ESC_BG(78,154,6) ESC_FG(13,132,203) "▶" ESC_POP_COLOR " :{path}> " ESC_POP_COLOR
+                ESC_FG(78,154,6) "▶" ESC_POP_COLOR " ";
+        install_base_commands(sh);
+        install_sys_commands(sh);
+        install_fs_commands(sh);
+        install_gfx_commands(sh);
+
+        sh.command("run /initrd/init.sh");
+
+        sh.run();
+
     }
-
-    MessageBus::send<kbd::KeyEvent>(kbd::KeyEvent{kbd::NumLock, kbd::KeyEvent::Pressed});
-    MessageBus::send<kbd::KeyEvent>(kbd::KeyEvent{kbd::NumLock, kbd::KeyEvent::Released});
-
-    Shell sh;
-    sh.params.prompt = ESC_BG(13,132,203) "  LudOS " ESC_POP_COLOR ESC_BG(78,154,6) ESC_FG(13,132,203) "▶" ESC_POP_COLOR " :{path}> " ESC_POP_COLOR
-            ESC_FG(78,154,6) "▶" ESC_POP_COLOR " ";
-    install_base_commands(sh);
-    install_sys_commands(sh);
-    install_fs_commands(sh);
-    install_gfx_commands(sh);
-
-    sh.command("run /initrd/init.sh");
-
-    sh.run();
+    catch (const std::exception& e)
+    {
+        panic("Uncaught kernel exception : '%s'\n", e.what());
+    }
+    catch (...)
+    {
+        panic("Uncaught kernel exception of type '%s'\n", demangle(current_exception_type().name()));
+    }
 }

@@ -25,6 +25,8 @@ SOFTWARE.
 
 #include "stack-trace.hpp"
 
+#include "utils/logging.hpp"
+
 struct [[gnu::packed]] stack_frame
 {
     stack_frame* previous;
@@ -35,14 +37,12 @@ std::vector<uintptr_t> trace_stack(size_t frames)
 {
     std::vector<uintptr_t> trace;
 
-    stack_frame *fp;
+    stack_frame* fp = (stack_frame*)__builtin_frame_address(0);
 
-    asm volatile("movl %%ebp, %[fp]" : [fp] "=r" (fp));
-
-    for(size_t i = 0; (frames != 0 ? i < frames : true) && fp;
-        fp = fp->previous, i++)
+    for(size_t i = 0; (frames != 0 ? i < frames : true) && fp && fp->return_addr; i++)
     {
         trace.emplace_back(reinterpret_cast<uintptr_t>(fp->return_addr));
+        fp = fp->previous;
     }
 
     return trace;

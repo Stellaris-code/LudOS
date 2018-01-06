@@ -25,5 +25,9 @@ SOFTWARE.
 #ifndef VECUTILS_HPP
 #define VECUTILS_HPP
 
+#include <vector.hpp>
+
+template <typename T>
+using ref_vector = std::vector<std::reference_wrapper<T>>;
 
 #endif // VECUTILS_HPP

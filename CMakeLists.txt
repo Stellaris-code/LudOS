@@ -38,11 +38,14 @@ file(GLOB_RECURSE LIBK_HEADERS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "libk/*.h" "
 file(GLOB_RECURSE LIBCPP_SOURCES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "external/libc++/*.cpp" "external/libc++/*.c")
 file(GLOB_RECURSE LIBCPP_HEADERS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "external/libc++/*.hpp" "external/libc++/*.h")
 file(GLOB_RECURSE LIBCXXABI_SOURCES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "external/libcxxabi/*.cpp" "external/libcxxabi/*.c")
-file(GLOB_RECURSE LIBCXXABI_HEADERS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "external/libcxxabi/*.h" "external/libcxxabi/*.h")
+file(GLOB_RECURSE LIBCXXABI_HEADERS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "external/libcxxabi/*.hpp" "external/libcxxabi/*.h")
 file(GLOB_RECURSE LIBX86EMU_SOURCES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "external/libx86emu/*.c")
 file(GLOB_RECURSE LIBX86EMU_HEADERS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "external/libx86emu/include/*.h")
 file(GLOB_RECURSE LIBDISASM_SOURCES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "external/libdisasm/*.c")
 file(GLOB_RECURSE LIBDISASM_HEADERS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "external/libdisasm/*.h")
+file(GLOB_RECURSE LIBUNWIND_SOURCES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "external/libunwind/*.c" "external/libunwind/*.cpp" "external/libunwind/*.C")
+file(GLOB_RECURSE LIBUNWIND_ASM RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "external/libunwind/*.S")
+file(GLOB_RECURSE LIBUNWIND_HEADERS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "external/libunwind/*.h" "external/libunwind/*.hpp")
 file(GLOB_RECURSE STB_HEADERS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "external/stb/*.h")
 file(GLOB_RECURSE HEADERS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "kern/*.hpp" "kern/*.h" "kern/*.tpp")
 file(GLOB_RECURSE LD_SCRIPTS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "*.ld")
@@ -56,12 +59,14 @@ include_directories("${CMAKE_CURRENT_SOURCE_DIR}/external/acpica")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/external/libcxxabi")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/external/libx86emu/include")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/external/libdisasm")
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}/external/libunwind")
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}/external/libunwind/src")
 
 option(WITH_SSE "Compiles with gcc sse support" ON)
 option(WITH_SSE2 "Compiles with gcc sse2 support" OFF)
 option(WITH_ARCH_NATIVE "Compiles with -march=native" OFF)
-option(WITH_UBSAN "Compiles with undefined behavior sanitization" ON)
-option(WITH_ASAN "Compiles with address sanitization" ON)
+option(WITH_UBSAN "Compiles with undefined behavior sanitization" OFF)
+option(WITH_ASAN "Compiles with address sanitization" OFF)
 
 if (WITH_SSE)
     set(SIMD_OPTIONS "-mmmx -msse -mno-sse2 -ftree-vectorize")
@@ -80,9 +85,9 @@ endif()
 set(SANITIZER_OPTIONS "")
 if (WITH_UBSAN)
     set(SANITIZER_OPTIONS "${SANITIZER_OPTIONS} -fsanitize=undefined")
-elseif(WITH_ASAN)
+endif()
+if(WITH_ASAN)
     set(SANITIZER_OPTIONS "${SANITIZER_OPTIONS} -fsanitize=address")
-else()
 endif()
 
 # Compilation options
@@ -95,8 +100,8 @@ set(GENERIC_SRCS ${KERN_TERMINAL_SOURCES} ${CPP_SOURCES} ${KERN_BIOS_SOURCES} ${
 
 add_executable(${PROJECT_NAME} ${PLATFORM_SRCS} ${ISA_SRCS} ${GENERIC_SRCS} ${HEADERS} ${STB_HEADERS} ${LD_SCRIPTS})
 
-set(CMAKE_C_FLAGS "${ISA_C_FLAGS} ${PLATFORM_C_FLAGS} -g -fstack-protector -m32 ${SIMD_OPTIONS} ${ARCH_OPTIONS} -ffast-math ${SANITIZER_OPTIONS} -std=c11 -Wall -Wextra -Wcast-qual -Wmisleading-indentation -Wno-unused-parameter -Wno-implicit-int -Wnull-dereference -lgcc -static-libgcc -ffreestanding -fno-builtin -nostdlib -fno-omit-frame-pointer -Werror=implicit-function-declaration -lgcc")
-set(CMAKE_CXX_FLAGS "${ISA_CXX_FLAGS} ${PLATFORM_CXX_FLAGS} -g -m32 -fno-exceptions ${SIMD_OPTIONS} ${ARCH_OPTIONS} -ffast-math ${SANITIZER_OPTIONS} -fstack-protector -std=c++17 -Wall -Wextra -Wno-unused-parameter -Wno-format -Wno-switch -Wno-packed-bitfield-compat -Wno-reorder -Wno-trigraphs -Wcast-qual -Wmisleading-indentation -Wnull-dereference -lgcc -static-libgcc -ffreestanding -fno-builtin -nostdlib -fno-omit-frame-pointer -Werror=implicit-function-declaration -lgcc")
+set(CMAKE_C_FLAGS "${ISA_C_FLAGS} ${PLATFORM_C_FLAGS} -g -fstack-protector -m32 ${SIMD_OPTIONS} ${ARCH_OPTIONS} -funwind-tables -ffast-math ${SANITIZER_OPTIONS} -std=c11 -Wall -Wextra -Wcast-qual -Wmisleading-indentation -Wno-unused-parameter -Wno-implicit-int -Wnull-dereference -lgcc -static-libgcc -ffreestanding -fno-builtin -nostdlib -fno-omit-frame-pointer -Werror=implicit-function-declaration -lgcc")
+set(CMAKE_CXX_FLAGS "${ISA_CXX_FLAGS} ${PLATFORM_CXX_FLAGS} -g -m32 ${SIMD_OPTIONS} ${ARCH_OPTIONS} -fexceptions -ffast-math ${SANITIZER_OPTIONS} -fstack-protector -std=c++17 -Wall -Wextra -Wno-unused-parameter -Wno-format -Wno-switch -Wno-packed-bitfield-compat -Wno-reorder -Wno-trigraphs -Wcast-qual -Wmisleading-indentation -Wnull-dereference -lgcc -static-libgcc -ffreestanding -fno-builtin -nostdlib -fno-omit-frame-pointer -Werror=implicit-function-declaration -lgcc")
 set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS
   "-T ${PLATFORM_LAYOUT} -N ${ISA_LINKER_FLAGS} ${PLATFORM_LINKER_FLAGS} -lgcc -fexceptions -Xlinker -Map=ld.map ")
 set_target_properties(${PROJECT_NAME} PROPERTIES SUFFIX ".bin")
@@ -107,9 +112,16 @@ target_compile_definitions(libk
     PUBLIC __is_libk)
 set_target_properties(libk PROPERTIES COMPILE_FLAGS "-w")
 
+add_library(libunwind ${LIBUNWIND_SOURCES} ${LIBUNWIND_HEADERS} ${LIBUNWIND_ASM})
+set_target_properties(libunwind PROPERTIES LINKER_LANGUAGE CXX)
+set_target_properties(libunwind PROPERTIES COMPILE_FLAGS "-w")
+set_source_files_properties(${LIBUNWIND_ASM}
+                            PROPERTIES LANGUAGE C)
+
 add_library(libcxxabi ${LIBCXXABI_SOURCES} ${LIBCXXABI_HEADERS})
 set_target_properties(libcxxabi PROPERTIES LINKER_LANGUAGE CXX)
 set_target_properties(libcxxabi PROPERTIES COMPILE_FLAGS "-w")
+target_link_libraries(libcxxabi libunwind)
 
 add_library(libcpp ${LIBCPP_SOURCES} ${LIBCPP_HEADERS})
 set_target_properties(libcpp PROPERTIES COMPILE_FLAGS "-w")

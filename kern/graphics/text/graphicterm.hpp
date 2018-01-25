@@ -29,8 +29,11 @@ SOFTWARE.
 
 #include "graphics/fonts/font.hpp"
 #include "graphics/drawing/screen.hpp"
+#include "graphics/drawing/bitmap.hpp"
 
 #include "time/timer.hpp"
+
+#include "utils/messagebus.hpp"
 
 namespace graphics
 {
@@ -38,15 +41,17 @@ namespace graphics
 class GraphicTerm : public Terminal
 {
 public:
+
+public:
     GraphicTerm(Screen& scr, TerminalData &data, const Font& font = default_font());
     ~GraphicTerm();
 
 public:
     static Font& default_font();
+    void set_wallpaper(const Bitmap& bitmap);
 
 private:
     virtual void move_cursor(size_t x, size_t y) override;
-    virtual void beep(size_t ms) override;
     virtual void putchar(size_t x, size_t y, TermEntry entry) override;
     virtual void clear_line(size_t y, Color color) override;
     virtual void draw_impl() override;
@@ -70,7 +75,9 @@ private:
     volatile bool m_show_cursor { false };
     PointU m_cursor_pos { 0, 0 };
     Bitmap m_cursor_bitmap;
+    Bitmap m_background;
     Timer::CallbackHandle m_callback;
+    MessageBus::RAIIHandle m_msg_handle;
 };
 
 }

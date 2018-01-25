@@ -31,9 +31,12 @@ SOFTWARE.
 #include <vector.hpp>
 #include <string.hpp>
 
-class PS2Keyboard
+#include "drivers/driver.hpp"
+
+class PS2Keyboard : public Driver
 {
 public:
+    static bool accept();
     static void init();
 
     static void enable();

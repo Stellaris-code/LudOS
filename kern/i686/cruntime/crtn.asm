@@ -1,9 +1,9 @@
 section .init
 
-        pop ebp
+        leave
         ret
 
 section .fini
 
-        pop ebp
+        leave
         ret

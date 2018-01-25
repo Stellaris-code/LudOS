@@ -72,6 +72,24 @@ void Screen::blit(const Bitmap &bitmap, const PointU &pos)
 #pragma GCC push_options
 #pragma GCC optimize ("O3,tree-vectorize,omit-frame-pointer")
 #pragma GCC target ("sse2")
+void Screen::blit(const Bitmap &bitmap, const PointU &pos, const Color &white)
+{
+    for (size_t j { 0 }; j < bitmap.height(); ++j)
+    {
+        const size_t y_off = (j + pos.y)*width();
+
+        for (size_t i { 0 }; i < bitmap.width(); ++i)
+        {
+            const auto& bmp = bitmap[{i, j}];
+            if (bmp.a != 0) m_data[y_off + i+pos.x] = (bmp == color_white ? white : bmp);
+        }
+    }
+}
+#pragma GCC pop_options
+
+#pragma GCC push_options
+#pragma GCC optimize ("O3,tree-vectorize,omit-frame-pointer")
+#pragma GCC target ("sse2")
 void Screen::blit(const Bitmap &bitmap, const PointU &pos, const Color &white, const Color &transparent)
 {
     for (size_t j { 0 }; j < bitmap.height(); ++j)
@@ -81,9 +99,8 @@ void Screen::blit(const Bitmap &bitmap, const PointU &pos, const Color &white, c
         for (size_t i { 0 }; i < bitmap.width(); ++i)
         {
             const auto& bmp = bitmap[{i, j}];
-            m_data[y_off + i+pos.x] = (bmp.a == 0 ? transparent   :
-                                                    bmp == color_white ? white :
-                                                                         bmp);
+            m_data[y_off + i+pos.x] = (bmp.a == 0 ? transparent :
+                                                    bmp == color_white ? white : bmp);
         }
     }
 }

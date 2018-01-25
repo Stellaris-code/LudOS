@@ -54,6 +54,10 @@ SOFTWARE.
 #include "drivers/storage/ahci/ahci.hpp"
 #include "drivers/acpi/acpi_init.hpp"
 #include "drivers/acpi/powermanagement.hpp"
+#include "drivers/driver.hpp"
+#include "drivers/pci/pcidriver.hpp"
+
+#include "cpp_runtime/exception_support.hpp"
 
 #include "graphics/vga.hpp"
 
@@ -67,6 +71,8 @@ SOFTWARE.
 #include "utils/logging.hpp"
 #include "utils/defs.hpp"
 #include "utils/memutils.hpp"
+
+#include "drivers/pci/pcidriver.hpp"
 
 extern "C" multiboot_header mbd;
 extern "C" int kernel_physical_end;
@@ -97,17 +103,17 @@ inline void early_abort(const char* str)
     halt();
 }
 
-inline void call_ctors()
+void call_ctors()
 {
     uint32_t* ctor = (uint32_t*)&start_ctors;
     while (ctor < (uint32_t*)&end_ctors)
     {
-        ((void(*)())ctor)();
+        ((void(*)())*ctor)();
         ++ctor;
     }
 }
 
-inline void early_init()
+void early_init()
 {
     if (simd_features() & SSE)
     {
@@ -129,6 +135,8 @@ namespace pc
 inline void init(uint32_t magic, const multiboot_info_t* mbd_info)
 {
     early_init();
+
+    call_ctors(); // it is now safe to call global constructors
 
     serial::debug::init(BDA::com1_port());
     serial::debug::write("Serial COM1 : Booting LudOS v%d...\n", 1);
@@ -162,9 +170,12 @@ inline void init(uint32_t magic, const multiboot_info_t* mbd_info)
     term().clear();
 
     PIT::init(100);
+    Timer::init();
 
     auto elf_info = multiboot::elf_info();
     elf::kernel_symbol_table = elf::get_symbol_table(elf_info.first, elf_info.second);
+
+    init_exceptions();
 
     term().set_title(U"LudOS " LUDOS_VERSION_STRING " - build date " __DATE__,
     {0x000000, 0x00aaaa});
@@ -174,7 +185,6 @@ inline void init(uint32_t magic, const multiboot_info_t* mbd_info)
         asm volatile("xchg %bx, %bx");
         return true;
     });
-
 
     FPU::init();
     if (simd_features() & SSE)
@@ -219,8 +229,6 @@ inline void init(uint32_t magic, const multiboot_info_t* mbd_info)
         mtrr::set_fixed_mtrrs_enabled(false);
     }
 
-    Speaker::beep(200);
-
     init_emu_mem();
 
     auto status = acpi_init();
@@ -240,8 +248,8 @@ inline void init(uint32_t magic, const multiboot_info_t* mbd_info)
         ide::pio::init();
     }
 
-    PS2Keyboard::init();
-    PS2Mouse::init();
+    Driver::interface_init();
+    PciDriver::interface_init();
 }
 }
 }

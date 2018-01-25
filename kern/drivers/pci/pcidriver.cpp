@@ -1,7 +1,7 @@
 /*
-initrd.cpp
+pcidriver.cpp
 
-Copyright (c) 05 Yann BOUCHER (yann)
+Copyright (c) 14 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -23,47 +23,44 @@ SOFTWARE.
 
 */
 
-#include "initrd/initrd.hpp"
+#include "pcidriver.hpp"
 
+#include "pci.hpp"
 #include "utils/logging.hpp"
-#include "utils/memutils.hpp"
-#include "fs/tar.hpp"
-#include "drivers/storage/disk.hpp"
 
-bool install_initrd()
+extern "C" int start_pci_driver_ctors;
+extern "C" int end_pci_driver_ctors;
+
+namespace pci::detail
 {
-    auto initrd_disk = get_initrd_disk();
-    if (initrd_disk)
+PciDriverEntry drivers[max_drivers];
+PciDriverEntry* driver_list_ptr = drivers;
+}
+
+void PciDriver::interface_init()
+{
+    using namespace pci::detail;
+    for (const auto& dev : pci::devices)
     {
-        // TODO : make it FS agnostic
-        if (!tar::TarFS::accept(*initrd_disk))
+        for (PciDriverEntry* ptr = drivers; ptr < driver_list_ptr; ++ptr)
         {
-            err("Initrd is not a tar archive\n");
-            return false;
-        }
-
-        try
-        {
-            auto fs = FileSystem::get_disk_fs(*initrd_disk);
-            if (!fs)
-            {
-                err("Initrd is not a tar archive\n");
-                return false;
-            }
-
-            auto root = fs->root();
-            if (vfs::mount(root, "/initrd"))
-            {
-                log(Info, "Mounted initrd\n");
-                return true;
-            }
-        }
-        catch (const DiskException& e)
-        {
-            err("Couldn't load initrd : %s", e.what());
-            return false;
+            (*ptr)(dev);
         }
     }
-
-    return false;
 }
+
+class TestDriver : public PciDriver
+{
+public:
+    virtual void init()
+    {
+        //warn("Called\n");
+    }
+
+    static bool accept(const pci::PciDevice& dev)
+    {
+        return true;
+    }
+};
+
+ADD_PCI_DRIVER(TestDriver)

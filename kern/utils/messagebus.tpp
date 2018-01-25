@@ -32,10 +32,14 @@ MessageBus::Handle MessageBus::register_handler(std::function<void(const T&)> ha
 }
 
 template <typename T>
-void MessageBus::send(const T& event)
+size_t MessageBus::send(const T& event)
 {
+    size_t counter { 0 };
     for (const auto& callback : handlers[std::type_index(typeid(T))])
     {
+        ++counter;
         std::any_cast<std::function<void(const T&)>>(callback)(event);
     }
+
+    return counter;
 }

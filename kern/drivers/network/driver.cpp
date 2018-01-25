@@ -1,7 +1,7 @@
 /*
-initrd.cpp
+driver.cpp
 
-Copyright (c) 05 Yann BOUCHER (yann)
+Copyright (c) 15 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -23,47 +23,21 @@ SOFTWARE.
 
 */
 
-#include "initrd/initrd.hpp"
+#include "driver.hpp"
 
-#include "utils/logging.hpp"
-#include "utils/memutils.hpp"
-#include "fs/tar.hpp"
-#include "drivers/storage/disk.hpp"
-
-bool install_initrd()
+NetworkDriver &NetworkDriver::get()
 {
-    auto initrd_disk = get_initrd_disk();
-    if (initrd_disk)
+    if (m_nics.empty())
     {
-        // TODO : make it FS agnostic
-        if (!tar::TarFS::accept(*initrd_disk))
-        {
-            err("Initrd is not a tar archive\n");
-            return false;
-        }
-
-        try
-        {
-            auto fs = FileSystem::get_disk_fs(*initrd_disk);
-            if (!fs)
-            {
-                err("Initrd is not a tar archive\n");
-                return false;
-            }
-
-            auto root = fs->root();
-            if (vfs::mount(root, "/initrd"))
-            {
-                log(Info, "Mounted initrd\n");
-                return true;
-            }
-        }
-        catch (const DiskException& e)
-        {
-            err("Couldn't load initrd : %s", e.what());
-            return false;
-        }
+        throw NetworkException{NetworkException::NoNicFound};
     }
 
-    return false;
+    return m_nics.back();
 }
+
+void NetworkDriver::add_nic(NetworkDriver &nic)
+{
+    m_nics.emplace_back(nic);
+}
+
+

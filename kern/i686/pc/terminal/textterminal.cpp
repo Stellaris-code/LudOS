@@ -41,11 +41,6 @@ void TextTerminal::move_cursor(size_t x, size_t y)
     termio_move_cursor(x, y, 80);
 }
 
-void TextTerminal::beep(size_t ms)
-{
-    Speaker::beep(ms);
-}
-
 void TextTerminal::putchar(size_t x, size_t y, TermEntry entry)
 {
     assert(x < 80);

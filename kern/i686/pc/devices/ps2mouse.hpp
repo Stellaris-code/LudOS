@@ -27,9 +27,12 @@ SOFTWARE.
 
 #include "i686/cpu/registers.hpp"
 
-class PS2Mouse
+#include "drivers/driver.hpp"
+
+class PS2Mouse : Driver
 {
 public:
+    static bool accept();
     static void init();
 
     static void enable();

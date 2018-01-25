@@ -30,7 +30,7 @@ kpartx -a /dev/mapper/hdd
 
 sleep 1
 
-mkfs.fat -F 16 /dev/mapper/hdd1
+mkfs.ext2 /dev/mapper/hdd1
 
 mount /dev/mapper/hdd1 /mnt
 
@@ -40,16 +40,18 @@ cp -r $SRCDIR/hdd/* /mnt/
 echo "Installing boot files."
 mkdir -p  /mnt/boot/grub
 cat > /mnt/boot/grub/grub.cfg << EOF
-insmod fat
+insmod ext2
 insmod iso9660
 menuentry "LudOS" {
 	multiboot /boot/LudOS.bin loglevel=info
     module    /boot/initrd.tar initrd
+    module    /boot/stripped.bin kernel_binary
 }
 EOF
 
 echo "Installing kernel."
 cp -r ../build/bin/LudOS.bin /mnt/boot/
+cp -r ../build/bin/stripped.bin /mnt/boot/
 cp -r ../build/bin/initrd.tar /mnt/boot/
 
 echo "Installing grub."

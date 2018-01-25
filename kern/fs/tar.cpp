@@ -68,15 +68,29 @@ SOFTWARE.
 namespace tar
 {
 
-TarFS::TarFS(std::vector<uint8_t> file)
-    : m_file(file)
+TarFS::TarFS(Disk &disk)
+ : FSImpl<tar::TarFS>(disk)
 {
+    m_file = disk.read();
+
     m_root_dir = std::make_shared<tar_node>(*this, nullptr);
 
     m_root_dir->m_is_dir = true;
     m_root_dir->m_name = "";
     m_root_dir->m_data_addr = m_file.data() + sizeof(Header);
     m_root_dir->m_size = m_file.size();
+}
+
+bool TarFS::accept(const Disk &disk)
+{
+    Header hdr = *(Header*)disk.read(0, sizeof(Header)).data();
+
+    return strncmp(hdr.magic, TMAGIC, 5) == 0;
+}
+
+size_t TarFS::total_size() const
+{
+    return root()->size();
 }
 
 std::shared_ptr<tar_node> TarFS::read_header(const Header *hdr) const
@@ -200,5 +214,7 @@ std::vector<std::shared_ptr<vfs::node> > tar_node::readdir_impl()
         return std::static_pointer_cast<node>(file);
     });
 }
+
+ADD_FS(TarFS)
 
 }

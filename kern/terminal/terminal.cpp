@@ -34,6 +34,8 @@ SOFTWARE.
 #include "utils/stlutils.hpp"
 #include "unicode/utf32decoder.hpp"
 
+#include "drivers/sound/beep.hpp"
+
 std::unique_ptr<Terminal> current_term;
 std::unique_ptr<TerminalData> current_termdata;
 

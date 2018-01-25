@@ -29,6 +29,8 @@ SOFTWARE.
 
 #include "fs/tar.hpp"
 #include "fs/vfs.hpp"
+#include "fs/fs.hpp"
+#include "fs/ext2.hpp"
 #include "fs/mbr.hpp"
 #include "fs/pathutils.hpp"
 
@@ -38,6 +40,7 @@ SOFTWARE.
 #include "drivers/kbd/led_handler.hpp"
 #include "drivers/mouse/mouse.hpp"
 #include "drivers/storage/disk.hpp"
+#include "drivers/sound/beep.hpp"
 
 #include "power/powermanagement.hpp"
 
@@ -45,6 +48,8 @@ SOFTWARE.
 #include "terminal/escape_code_macros.hpp"
 
 #include "elf/symbol_table.hpp"
+
+#include "cpp_runtime/exception_support.hpp"
 
 #include "graphics/video.hpp"
 #include "graphics/drawing/display_draw.hpp"
@@ -60,8 +65,6 @@ SOFTWARE.
 #include "utils/demangle.hpp"
 #include "utils/crc32.hpp"
 
-#include "cpp_runtime/exception_support.hpp"
-
 #include "halt.hpp"
 
 #include "shell/shell.hpp"
@@ -69,36 +72,36 @@ SOFTWARE.
 #include "shell/commands/syscommands.hpp"
 #include "shell/commands/fscommands.hpp"
 #include "shell/commands/gfxcommands.hpp"
+#include "shell/commands/netcommands.hpp"
 
 #include "time/time.hpp"
 #include "time/timer.hpp"
 
 #include "initrd/initrd.hpp"
 
-// TODO : FAT32 write
 // TODO : system calls
 // TODO : user mode
 // TODO : POC calculatrice
 // TODO : windowing system avec alloc d'un canvas etc
 // TODO : Son
-// TODO : Passer en IDE PCI : IDE UDMA
 // FIXME : revoir l'architecture dégeulasse de l'ownership des nodes de readdir
 // TODO : TinyGL
 // TODO : ambilight feature pour le windowing system !
 // TODO : refaire une VRAIE classe Terminal... c'est atroce l'implémentation actuelle, une horreur lovecraftienne
-// TODO : classe virtuelle FS ave constructor/destructor pour notifier de la création/desctruction d'une partition
 // TODO : pas de vfs_children, on peut faire autrement (devfs, ...)
 // TODO : écran de veille ala windows
 // TODO : Ext2
 // TODO : PAE
 // NOTE : don't forget about fpu state
+// TODO : passer AHCI en PCI_DRIVER
+// TODO : Passer en IDE PCI : IDE UDMA
+// TODO : VirtIO drivers
 
 void global_init()
 {
-    init_exceptions();
-
     try
     {
+        beep(200);
 
         kbd::install_mapping(kbd::mappings::azerty());
         kbd::TextHandler::init();
@@ -152,23 +155,24 @@ void global_init()
 
         log(Info, "Available drives : %zd\n", Disk::disks().size());
 
-#if 0
-        for (size_t disk { 0 }; disk < DiskInterface::drive_count(); ++disk)
+#if 1
+        for (size_t disk { 0 }; disk < Disk::disks().size(); ++disk)
         {
             log(Info, "Disk : %zd\n", disk);
-            for (auto partition : mbr::read_partitions(disk))
+            for (auto partition : mbr::read_partitions(Disk::disks()[disk]))
             {
-                log(Info, "Partition %d\n", partition.partition_number);
-                auto fs = fat::read_fat_fs(disk, partition.relative_sector, true);
-                auto wrapper = fat::RAIIWrapper(fs);
-                if (fs.valid)
-                {
-                    log(Info, "FAT %zd filesystem found on drive %zd, partition %d\n", fs.type, fs.drive, partition.partition_number);
+                log(Info, "Partition %d offset %d\n", partition.partition_number, partition.data.relative_sector);
+                auto fs = Ext2FS::accept(partition.slice);
+                log(Info, "okay : %d\n", fs);
+//                auto wrapper = fat::RAIIWrapper(fs);
+//                if (fs.valid)
+//                {
+//                    log(Info, "FAT %zd filesystem found on drive %zd, partition %d\n", fs.type, fs.drive, partition.partition_number);
 
-                    static auto root = fat::root_dir(fs);
+//                    static auto root = fat::root_dir(fs);
 
-                    vfs::mount(root, "/boot");
-                }
+//                    vfs::mount(root, "/boot");
+//                }
             }
         }
 #endif
@@ -188,6 +192,7 @@ void global_init()
         install_sys_commands(sh);
         install_fs_commands(sh);
         install_gfx_commands(sh);
+        install_net_commands(sh);
 
         sh.command("run /initrd/init.sh");
 

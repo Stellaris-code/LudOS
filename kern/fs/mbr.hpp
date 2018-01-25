@@ -29,27 +29,36 @@ SOFTWARE.
 
 #include <vector.hpp>
 
+#include "drivers/storage/disk.hpp"
+
 class Disk;
 
 namespace mbr
 {
 
-struct [[gnu::packed]] Partition
+struct Partition
 {
-    uint8_t boot_flag;
-    uint8_t start_head;
-    uint16_t start_sector : 6;
-    uint16_t start_cylinder : 10;
-    uint8_t system_id;
-    uint8_t end_head;
-    uint16_t end_sector : 6;
-    uint16_t end_cylinder : 10;
-    uint32_t relative_sector;
-    uint32_t sector_count;
+    Partition(Disk& disk, size_t offset, size_t size)
+        : slice(disk, offset, size)
+    {}
+
+    struct [[gnu::packed]] Data
+    {
+        uint8_t boot_flag;
+        uint8_t start_head;
+        uint16_t start_sector : 6;
+        uint16_t start_cylinder : 10;
+        uint8_t system_id;
+        uint8_t end_head;
+        uint16_t end_sector : 6;
+        uint16_t end_cylinder : 10;
+        uint32_t relative_sector;
+        uint32_t sector_count;
+    } data;
 
     // Additional data
     uint8_t partition_number;
-    Disk* drive { nullptr };
+    DiskSlice slice;
 };
 
 std::vector<Partition> read_partitions(Disk& drive);

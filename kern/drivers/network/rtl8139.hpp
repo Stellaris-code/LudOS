@@ -1,7 +1,7 @@
 /*
-mouse.cpp
+rtl8139.hpp
 
-Copyright (c) 28 Yann BOUCHER (yann)
+Copyright (c) 15 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,36 +22,30 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
+#ifndef RTL8139_HPP
+#define RTL8139_HPP
 
-#include "mouse.hpp"
+#include "drivers/pci/pcidriver.hpp"
+#include "drivers/network/driver.hpp"
 
-#include "utils/messagebus.hpp"
-
-#include "halt.hpp"
-
-void Mouse::init()
+class RTL8139 : public NetworkDriver, public PciDriver
 {
-    MessageBus::register_handler<MousePacket>([](const MousePacket& e)
-    {
-        if (e.x != 0 || e.y != 0)
-        {
-            MessageBus::send<MouseMoveEvent>({e.x, e.y});
-        }
+public:
+    virtual void init() override;
 
-        if (e.wheel != 0)
-        {
-            MessageBus::send<MouseScrollEvent>({e.wheel});
-        }
+    virtual std::array<uint8_t, 6> mac_address() const override;
 
-        if (e.left_button || e.mid_button || e.right_button || e.button_4 || e.button_5)
-        {
-            MessageBus::send<MouseClickEvent>({e.left_button, e.mid_button, e.right_button, e.button_4, e.button_5});
-        }
+    static bool accept(const pci::PciDevice& dev);
 
-        left_pressed = e.left_button;
-        mid_pressed = e.mid_button;
-        right_pressed = e.right_button;
-        fourth_pressed = e.button_4;
-        fifth_pressed = e.button_5;
-    });
-}
+private:
+    void enable_bus_mastering();
+    void power_on();
+    void soft_reset();
+    void set_rcv_buf(uint8_t* ptr);
+
+private:
+    uint16_t m_iobase {};
+    std::array<uint8_t, 8192 + 16 + 1500> m_rcv_buf;
+};
+
+#endif // RTL8139_HPP

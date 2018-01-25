@@ -72,6 +72,7 @@ public:
     const Color* data() const { return m_data; }
 
     void blit(const Bitmap& bitmap, const PointU& pos);
+    void blit(const Bitmap &bitmap, const PointU &pos, const Color& white);
     void blit(const Bitmap &bitmap, const PointU &pos, const Color& white, const Color& transparent);
 
 private:

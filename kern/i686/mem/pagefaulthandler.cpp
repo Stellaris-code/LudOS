@@ -76,7 +76,14 @@ bool Paging::page_fault_handler(const registers *regs)
 
     message[0] = toupper(message[0]); // Capitalize
 
-    panic("Page fault : %s\n", message.c_str());
+    if (cr2() == 0)
+    {
+        panic("Null pointer access : %s\n", message.c_str());
+    }
+    else
+    {
+        panic("Page fault : %s\n", message.c_str());
+    }
 
     return false;
 }

@@ -51,6 +51,12 @@ enum PS2MouseCommands : uint8_t
     GetDeviceID = 0xF2
 };
 
+bool PS2Mouse::accept()
+{
+    // FIXME : do
+    return true;
+}
+
 void PS2Mouse::init()
 {
     enable();
@@ -211,3 +217,5 @@ void PS2Mouse::set_sample_rate(uint8_t rate)
     send_write(rate);
     if (read() != 0xFA) return;
 }
+
+ADD_DRIVER(PS2Mouse)

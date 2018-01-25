@@ -36,7 +36,6 @@ public:
 
 private:
     virtual void move_cursor(size_t, size_t) override {}
-    virtual void beep(size_t) override {}
     virtual void putchar(size_t, size_t, TermEntry) override {}
     virtual void clear_line(size_t, graphics::Color) override {}
     virtual void draw_impl() override {};

@@ -27,26 +27,25 @@ SOFTWARE.
 
 #include <array.hpp>
 
-#include "drivers/storage/disk.hpp"
-
-std::vector<mbr::Partition> mbr::read_partitions(Disk& drive)
+std::vector<mbr::Partition> mbr::read_partitions(Disk& disk)
 {
     std::vector<Partition> partitions;
 
-    auto buf = drive.read(0, 512);
+    auto buf = disk.read(0, 512);
 
     if (buf.empty()) return {};
+    if (buf[0x1fe] != 0x55 && buf[0x1ff] != 0xAA) return {}; // invalid signature
 
     std::vector<uint16_t> addresses = {static_cast<uint16_t>(0x1BE), static_cast<uint16_t>(0x1CE),
                                        static_cast<uint16_t>(0x1DE), static_cast<uint16_t>(0x1EE)};
     for (size_t i { 0 }; i < addresses.size(); ++i)
     {
-        Partition part;
-        part = *reinterpret_cast<Partition*>(buf.data() + addresses[i]);
+        Partition::Data data = *reinterpret_cast<Partition::Data*>(buf.data() + addresses[i]);
+        Partition part(disk, data.relative_sector, data.sector_count);
         part.partition_number = i+1;
-        part.drive = &drive;
+        part.data = data;
 
-        if (part.system_id != 0)
+        if (part.data.boot_flag == 0x80)
         {
             partitions.emplace_back(part);
         }

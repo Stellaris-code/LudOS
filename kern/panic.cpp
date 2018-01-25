@@ -35,6 +35,7 @@ SOFTWARE.
 #include "stack-trace.hpp"
 #include "elf/symbol_table.hpp"
 #include "mem/memmap.hpp"
+#include "drivers/sound/beep.hpp"
 
 #include "terminal/terminal.hpp"
 #include "dissasembly.hpp"
@@ -83,7 +84,7 @@ void print_stack_symbols()
     auto trace = trace_stack(0);
 
     // Discard the first function call to kmain, saves space
-    for (size_t i = trace_offset(trace), cnt = 1; i < trace.size()-2; ++i, ++cnt)
+    for (size_t i = trace_offset(trace), cnt = 1; i < trace.size(); ++i, ++cnt)
     {
         if (auto fun = elf::kernel_symbol_table.get_function(trace[i]); fun)
         {
@@ -110,11 +111,13 @@ void print_disassembly()
     uint8_t* mmap_ip = (uint8_t*)Memory::mmap((void*)panic_regs->eip, dump_len * 17, Memory::Read);
     uint8_t* ip = mmap_ip;
 
-//    // Move back
-//    for (size_t i { 0 }; i < dump_len/2; ++i)
-//    {
-//        ip -= get_disasm(ip).len;
-//    }
+#if 0
+    // Move back
+    for (size_t i { 0 }; i < dump_len/2; ++i)
+    {
+        ip -= get_disasm(ip).len;
+    }
+#endif
 
     for (size_t i { 0 }; i < dump_len; ++i)
     {
@@ -148,7 +151,7 @@ void panic(const char *fmt, ...)
 
     putc_serial = true;
 
-    Speaker::beep(300);
+    beep(300);
 
     puts("KERNEL PANIC : ");
 

@@ -1,7 +1,7 @@
 /*
-initrd.cpp
+ext2.cpp
 
-Copyright (c) 05 Yann BOUCHER (yann)
+Copyright (c) 19 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -23,47 +23,31 @@ SOFTWARE.
 
 */
 
-#include "initrd/initrd.hpp"
+#include "ext2.hpp"
 
-#include "utils/logging.hpp"
 #include "utils/memutils.hpp"
-#include "fs/tar.hpp"
-#include "drivers/storage/disk.hpp"
 
-bool install_initrd()
+// TODO : système de cache wrapper avec invalidation
+
+bool Ext2FS::accept(const Disk &disk)
 {
-    auto initrd_disk = get_initrd_disk();
-    if (initrd_disk)
+    auto superblock = read_superblock(disk);
+    if (!superblock) return false;
+
+    log(Info, "Name : '%s'\n", superblock->last_mount_path);
+
+    return superblock->ext2_signature == ext2_signature;
+}
+
+std::optional<const Ext2FS::Superblock> Ext2FS::read_superblock(const Disk &disk)
+{
+    if (disk.disk_size() < 1024*2)
     {
-        // TODO : make it FS agnostic
-        if (!tar::TarFS::accept(*initrd_disk))
-        {
-            err("Initrd is not a tar archive\n");
-            return false;
-        }
-
-        try
-        {
-            auto fs = FileSystem::get_disk_fs(*initrd_disk);
-            if (!fs)
-            {
-                err("Initrd is not a tar archive\n");
-                return false;
-            }
-
-            auto root = fs->root();
-            if (vfs::mount(root, "/initrd"))
-            {
-                log(Info, "Mounted initrd\n");
-                return true;
-            }
-        }
-        catch (const DiskException& e)
-        {
-            err("Couldn't load initrd : %s", e.what());
-            return false;
-        }
+        return {};
     }
 
-    return false;
+    auto data = disk.read(1024, 1024);
+    return *reinterpret_cast<const Ext2FS::Superblock*>(data.data());
 }
+
+//ADD_FS(Ext2FS)

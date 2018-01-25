@@ -66,6 +66,22 @@ void Bitmap::resize(size_t width, size_t height, bool keep_ratio, Color color)
 }
 #pragma GCC pop_options
 
+Bitmap Bitmap::copy(const PointU &pos, const PointU &size) const
+{
+    assert(pos.x + size.x <= width() && pos.y + size.y <= height());
+
+    Bitmap bmp(size.x, size.y);
+
+    for (size_t i { 0 }; i < size.y; ++i)
+    {
+        memcpyl(bmp.data() + i*bmp.width(),
+                data() + (pos.y+i)*width() + pos.x, bmp.width()*sizeof(Color));
+    }
+
+    return bmp;
+}
+
+
 
 void Bitmap::color_multiply(const Color &color)
 {

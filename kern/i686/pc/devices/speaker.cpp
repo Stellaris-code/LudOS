@@ -28,7 +28,19 @@ SOFTWARE.
 #include "pit.hpp"
 #include "time/timer.hpp"
 
-void Speaker::beep(uint32_t time, uint16_t freq)
+#include "utils/messagebus.hpp"
+
+#include "drivers/sound/beep.hpp"
+
+void Speaker::init()
+{
+    MessageBus::register_handler<BeepMessage>([](const BeepMessage& msg)
+    {
+        Speaker::beep_(msg.milliseconds);
+    });
+}
+
+void Speaker::beep_(uint32_t time, uint16_t freq)
 {
     play_sound(freq);
     Timer::register_callback(time, []{stop();});
@@ -51,3 +63,5 @@ void Speaker::stop()
 
     outb(0x61, tmp);
 }
+
+ADD_DRIVER(Speaker)

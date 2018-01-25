@@ -34,7 +34,6 @@ public:
 
 private:
     virtual void move_cursor(size_t x, size_t y) override;
-    virtual void beep(size_t ms) override;
     virtual void putchar(size_t x, size_t y, TermEntry entry) override;
     virtual void clear_line(size_t y, graphics::Color color) override;
     virtual void draw_impl() override;

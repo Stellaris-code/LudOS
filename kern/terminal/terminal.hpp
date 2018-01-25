@@ -45,6 +45,16 @@ struct TermInputEvent
     std::string line;
 };
 
+namespace graphics
+{
+class Bitmap;
+}
+
+struct SetBackgroundMessage
+{
+    const graphics::Bitmap& bitmap;
+};
+
 class Terminal
 {
 public:
@@ -113,7 +123,6 @@ private:
 
 private:
     virtual void move_cursor(size_t x, size_t y) = 0;
-    virtual void beep(size_t ms) = 0;
     virtual void clear_line(size_t y, graphics::Color color) = 0;
     virtual void putchar(size_t x, size_t y, TermEntry entry) = 0;
     virtual void draw_impl() = 0;

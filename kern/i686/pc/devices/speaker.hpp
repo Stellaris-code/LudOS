@@ -27,10 +27,15 @@ SOFTWARE.
 
 #include <stdint.h>
 
-class Speaker
+#include "drivers/driver.hpp"
+
+class Speaker : public Driver
 {
 public:
-    static void beep(uint32_t time, uint16_t freq = 1000);
+    static bool accept() { return true; }
+    static void init();
+
+    static void beep_(uint32_t time, uint16_t freq = 1000);
     static void stop();
 
 private:

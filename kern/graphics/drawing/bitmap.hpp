@@ -62,6 +62,8 @@ public:
     Color* data() { return m_data.data(); }
     const Color* data() const { return m_data.data(); }
 
+    Bitmap copy(const PointU& pos, const PointU& size) const;
+
     void color_multiply(const Color& color);
 
     void color_blend(const Color& white, const Color& transparent);

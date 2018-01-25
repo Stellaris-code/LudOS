@@ -62,6 +62,11 @@ private:
 public:
     using CallbackHandle = std::list<Callback>::iterator;
 
+    static inline void init()
+    {
+
+    }
+
     static inline void set_frequency(uint32_t freq)
     {
         Timer::m_freq = freq;

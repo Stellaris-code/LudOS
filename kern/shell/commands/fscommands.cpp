@@ -30,6 +30,7 @@ SOFTWARE.
 #include "utils/memutils.hpp"
 #include "utils/crc32.hpp"
 #include "fs/vfs.hpp"
+#include "fs/fs.hpp"
 
 void install_fs_commands(Shell &sh)
 {
@@ -150,6 +151,20 @@ void install_fs_commands(Shell &sh)
          for (auto disk : Disk::disks())
          {
              kprintf("%s : %s\n", disk.get().drive_name().c_str(), human_readable_size(disk.get().disk_size()).c_str());
+         }
+         return 0;
+     }});
+
+    sh.register_command(
+    {"df", "list current file systems",
+     "Usage : df",
+     [](const std::vector<std::string>&)
+     {
+         for (FileSystem& fs : FileSystem::fs_list())
+         {
+             kprintf("%s on %s : %s/%s (%d%%)\n", fs.type().c_str(), fs.disk().drive_name().c_str(),
+             human_readable_size(fs.total_size()-fs.free_size()).c_str(), human_readable_size(fs.total_size()).c_str(),
+             100-int(fs.free_size()/fs.total_size()*100.));
          }
          return 0;
      }});

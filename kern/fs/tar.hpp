@@ -33,6 +33,8 @@ SOFTWARE.
 
 #include <string.h>
 
+#include "fs.hpp"
+
 namespace tar
 {
 
@@ -56,13 +58,20 @@ struct tar_node : public vfs::node
 private:
 };
 
-class TarFS
+class TarFS : public FSImpl<TarFS>
 {
     friend struct tar_node;
 public:
-    TarFS(std::vector<uint8_t> file);
+    TarFS(Disk& disk);
 
-    std::shared_ptr<tar_node> root_dir() const { return m_root_dir; }
+    static bool accept(const Disk& disk);
+
+    virtual std::shared_ptr<vfs::node> root() const override { return m_root_dir; }
+
+    virtual std::string type() const override { return "tar"; }
+
+    virtual size_t total_size() const override;
+    virtual size_t free_size() const override { return 0; }
 
 private:
     struct Header

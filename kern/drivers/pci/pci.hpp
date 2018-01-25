@@ -83,6 +83,14 @@ enum class BARType
     Invalid = 0xFF
 };
 
+enum Reg
+{
+    DevID = 0,
+    VenID = 2,
+    Status = 4,
+    Command = 6
+};
+
 inline BARType bar_type(uint32_t bar)
 {
     if (bar & 1)

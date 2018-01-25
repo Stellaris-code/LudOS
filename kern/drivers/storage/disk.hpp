@@ -29,6 +29,12 @@ SOFTWARE.
 #include <exception.hpp>
 
 #include "utils/vecutils.hpp"
+#include "utils/messagebus.hpp"
+
+struct DiskFoundEvent
+{
+    class Disk& disk;
+};
 
 class DiskException : public std::runtime_error
 {
@@ -72,6 +78,8 @@ public:
 
 class Disk
 {
+    friend class DiskSlice;
+
 public:
     virtual ~Disk() = default;
 
@@ -104,7 +112,8 @@ public:
     {
         static_assert(std::is_base_of_v<Disk, Derived>);
         Disk::m_disks.emplace_back(std::make_unique<Derived>(std::forward<Args>(args)...));
-        return static_cast<Derived&>(*Disk::m_disks.back());
+        MessageBus::send<DiskFoundEvent>({Disk::disks().back()});
+        return static_cast<Derived&>(Disk::disks().back().get());
     }
 };
 
@@ -130,6 +139,25 @@ private:
     uint8_t* m_data { nullptr };
     std::string m_name;
     bool m_const { false };
+};
+
+class DiskSlice : public DiskImpl<DiskSlice>
+{
+public:
+    DiskSlice(Disk& disk, size_t offset, size_t size);
+
+    virtual size_t disk_size() const override { return m_size * sector_size(); }
+    virtual size_t sector_size() const override { return m_base_disk.sector_size(); }
+    virtual std::string drive_name() const override { return m_base_disk.drive_name(); }
+
+protected:
+    virtual std::vector<uint8_t> read_sector(size_t sector, size_t count) const override;
+    virtual void write_sector(size_t sector, const std::vector<uint8_t>& data) override;
+
+private:
+    Disk& m_base_disk;
+    size_t m_offset {};
+    size_t m_size {};
 };
 
 #endif // DISK_HPP

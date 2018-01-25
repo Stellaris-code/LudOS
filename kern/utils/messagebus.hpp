@@ -43,8 +43,9 @@ public:
 
     static void remove_handler(const Handle& handle);
 
+    // Returns the number of listeners who received the message
     template <typename T>
-    static void send(const T& event);
+    static size_t send(const T& event);
 
 public:
     struct RAIIHandle

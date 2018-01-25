@@ -55,8 +55,9 @@ void pci::write_reg(uint16_t bus, uint16_t slot, uint16_t func, uint16_t offset,
 
     /* write out the address */
     outl(0xCF8, address);
+    //FIXME
 
-    outl(0xCFC, val);
+    outl(0xCFC + offset&0x2, val);
 }
 
 uint16_t pci::device_id(uint16_t bus, uint16_t slot, uint16_t func)

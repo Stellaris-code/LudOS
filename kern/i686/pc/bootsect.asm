@@ -81,20 +81,10 @@ higher_half_start:
     add ebx, KERNEL_VIRTUAL_BASE
     mov [mbd_info], ebx
 
-; 0x0024a04e
-    mov  ebx, start_ctors               ; call the constructors
-
-    jmp  .ctors_until_end
-.call_constructor:
-    call [ebx]
-    add  ebx,4
-.ctors_until_end:
-    cmp  ebx, end_ctors
-    jb   .call_constructor
-
-
     push dword [mbd_info]
     push dword [magic]
+
+.kmain_call:
 
     call kmain                          ; call kernel proper
 

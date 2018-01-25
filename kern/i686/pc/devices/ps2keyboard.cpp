@@ -52,6 +52,12 @@ enum PS2KeyboardCommands : uint8_t
     KeyboardResend = 0xFE
 };
 
+bool PS2Keyboard::accept()
+{
+    // FIXME : do
+    return true;
+}
+
 void PS2Keyboard::init()
 {
     isr::register_handler(IRQ1, &isr);
@@ -263,3 +269,5 @@ void PS2Keyboard::define_e0_assoc(uint8_t i, uint8_t pos, const std::string &nam
 {
     e0_key_assocs[i] = pos;
 }
+
+ADD_DRIVER(PS2Keyboard)

@@ -1,7 +1,7 @@
 /*
-initrd.cpp
+driver.hpp
 
-Copyright (c) 05 Yann BOUCHER (yann)
+Copyright (c) 15 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,48 +22,58 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
+#ifndef NETDRIVER_HPP
+#define NETDRIVER_HPP
 
-#include "initrd/initrd.hpp"
+#include "drivers/driver.hpp"
 
-#include "utils/logging.hpp"
-#include "utils/memutils.hpp"
-#include "fs/tar.hpp"
-#include "drivers/storage/disk.hpp"
+#include <array.hpp>
+#include <stdexcept.hpp>
+#include <string.hpp>
 
-bool install_initrd()
+#include "utils/vecutils.hpp"
+
+// TODO : Use the messagebus for sending/receiving packets
+
+class NetworkException : public std::runtime_error
 {
-    auto initrd_disk = get_initrd_disk();
-    if (initrd_disk)
+public:
+    enum ErrorType
     {
-        // TODO : make it FS agnostic
-        if (!tar::TarFS::accept(*initrd_disk))
-        {
-            err("Initrd is not a tar archive\n");
-            return false;
-        }
+        NoNicFound,
+        Unkown
+    };
 
-        try
+    std::string to_string(ErrorType type)
+    {
+        switch (type)
         {
-            auto fs = FileSystem::get_disk_fs(*initrd_disk);
-            if (!fs)
-            {
-                err("Initrd is not a tar archive\n");
-                return false;
-            }
-
-            auto root = fs->root();
-            if (vfs::mount(root, "/initrd"))
-            {
-                log(Info, "Mounted initrd\n");
-                return true;
-            }
-        }
-        catch (const DiskException& e)
-        {
-            err("Couldn't load initrd : %s", e.what());
-            return false;
+            case NoNicFound:
+                return "No network controller found";
+            default:
+                return "Unknown error";
         }
     }
 
-    return false;
-}
+    explicit NetworkException(ErrorType type)
+        : std::runtime_error("Network error : " + to_string(type))
+    {
+
+    }
+};
+
+class NetworkDriver : public Driver
+{
+public:
+    static NetworkDriver& get();
+
+    virtual std::array<uint8_t, 6> mac_address() const = 0;
+
+protected:
+    static void add_nic(NetworkDriver& nic);
+
+private:
+    static inline ref_vector<NetworkDriver> m_nics;
+};
+
+#endif // NETDRIVER_HPP

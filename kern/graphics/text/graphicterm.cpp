@@ -31,12 +31,7 @@ SOFTWARE.
 #include "utils/mathutils.hpp"
 
 #include "time/timer.hpp"
-
 #include "graphics/fonts/psf.hpp"
-
-#ifdef ARCH_i686
-#include "i686/pc/devices/speaker.hpp"
-#endif
 
 namespace graphics
 {
@@ -55,6 +50,15 @@ GraphicTerm::GraphicTerm(Screen &scr, TerminalData &data, const Font &font)
             draw_impl();
         }
     }, false);
+
+    Bitmap black(1, 1);
+    black[{0, 0}] = color_black;
+    set_wallpaper(black);
+
+    m_msg_handle = MessageBus::register_handler<SetBackgroundMessage>([this](const SetBackgroundMessage& msg)
+    {
+        set_wallpaper(msg.bitmap);
+    });
 }
 
 GraphicTerm::~GraphicTerm()
@@ -75,31 +79,50 @@ Font &GraphicTerm::default_font()
     return font;
 }
 
+void GraphicTerm::set_wallpaper(const Bitmap &bitmap)
+{
+    m_background = bitmap;
+    m_background.resize(m_scr.width(), m_scr.height());
+}
+
 void GraphicTerm::move_cursor(size_t x, size_t y)
 {
     m_cursor_pos = {x*m_font.glyph_width(), y*m_font.glyph_height()};
-}
-
-void GraphicTerm::beep(size_t ms)
-{
-#ifdef ARCH_i686
-    Speaker::beep(ms);
-#endif
 }
 
 void GraphicTerm::putchar(size_t x, size_t y, TermEntry entry)
 {
     const auto& bitmap = m_font.get(entry.c).bitmap;
 
-    m_scr.blit(bitmap, {x*m_font.glyph_width(), y*m_font.glyph_height()},
-               entry.pair.fg, entry.pair.bg);
+    if (entry.pair.bg.rgb() != color_black.rgb())
+    {
+        m_scr.blit(bitmap, {x*m_font.glyph_width(), y*m_font.glyph_height()},
+                   entry.pair.fg, entry.pair.bg);
+    }
+    else
+    {
+        m_scr.blit(bitmap, {x*m_font.glyph_width(), y*m_font.glyph_height()},
+                   entry.pair.fg);
+    }
 }
 
 void GraphicTerm::clear_line(size_t y, Color color)
 {
-    aligned_memsetl(m_scr.data() + y*m_scr.width()*m_font.glyph_height(),
-                    color.rgba(), m_scr.width()*m_font.glyph_height()*
-                    sizeof(Color));
+    if (color == term_data().color().bg)
+    {
+        for (size_t i { 0 }; i < m_font.glyph_height(); ++i)
+        {
+            aligned_memcpy(m_scr.data() + (y*m_font.glyph_height() + i)*m_scr.width(),
+                           m_background.data() + (y*m_font.glyph_height() + i)*m_scr.width(),
+                           m_scr.width()*sizeof(Color));
+        }
+    }
+    else
+    {
+        aligned_memsetl(m_scr.data() + y*m_scr.width()*m_font.glyph_height(),
+                        color.rgba(), m_scr.width()*m_font.glyph_height()*
+                        sizeof(Color));
+    }
 }
 
 void GraphicTerm::draw_impl()
@@ -116,8 +139,15 @@ void GraphicTerm::disable_impl()
 
 void GraphicTerm::redraw_cursor()
 {
-    m_scr.blit(m_cursor_bitmap, m_cursor_pos, (m_show_cursor ? term_data().color().fg : term_data().color().bg),
-               term_data().color().bg);
+    if (m_show_cursor)
+    {
+        m_scr.blit(m_cursor_bitmap, m_cursor_pos, term_data().color().fg);
+    }
+    else
+    {
+        auto bckg_bitmap = m_background.copy(m_cursor_pos, {m_cursor_bitmap.width(), m_cursor_bitmap.height()});
+        m_scr.blit(bckg_bitmap, m_cursor_pos);
+    }
 }
 
 }

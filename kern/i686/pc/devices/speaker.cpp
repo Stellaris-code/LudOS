@@ -32,18 +32,18 @@ SOFTWARE.
 
 #include "drivers/sound/beep.hpp"
 
-void Speaker::init()
+Speaker::Speaker()
 {
-    MessageBus::register_handler<BeepMessage>([](const BeepMessage& msg)
+    MessageBus::register_handler<BeepMessage>([this](const BeepMessage& msg)
     {
-        Speaker::beep_(msg.milliseconds);
+        beep_(msg.milliseconds);
     });
 }
 
 void Speaker::beep_(uint32_t time, uint16_t freq)
 {
     play_sound(freq);
-    Timer::register_callback(time, []{stop();});
+    Timer::register_callback(time, [this]{stop();});
 }
 
 void Speaker::play_sound(uint16_t freq)

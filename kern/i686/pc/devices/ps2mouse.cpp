@@ -57,11 +57,11 @@ bool PS2Mouse::accept()
     return true;
 }
 
-void PS2Mouse::init()
+PS2Mouse::PS2Mouse()
 {
     enable();
 
-    isr::register_handler(IRQ12, &isr);
+    isr::register_handler(IRQ12, [this](const registers* r){return isr(r);});
 
     log(Info, "Mouse driver initialized\n");
 }

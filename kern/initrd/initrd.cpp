@@ -35,19 +35,12 @@ bool install_initrd()
     auto initrd_disk = get_initrd_disk();
     if (initrd_disk)
     {
-        // TODO : make it FS agnostic
-        if (!tar::TarFS::accept(*initrd_disk))
-        {
-            err("Initrd is not a tar archive\n");
-            return false;
-        }
-
         try
         {
             auto fs = FileSystem::get_disk_fs(*initrd_disk);
             if (!fs)
             {
-                err("Initrd is not a tar archive\n");
+                err("Initrd is not valid filesystem\n");
                 return false;
             }
 

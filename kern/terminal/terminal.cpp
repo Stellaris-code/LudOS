@@ -40,7 +40,6 @@ std::unique_ptr<Terminal> current_term;
 std::unique_ptr<TerminalData> current_termdata;
 
 // TODO : editing line wrapping
-// TODO : bouger le curseur
 
 Terminal::Terminal(size_t iwidth, size_t iheight, TerminalData &data)
     : m_width(iwidth), m_height(iheight), m_data(data)
@@ -81,7 +80,7 @@ void Terminal::put_char(char32_t c)
         return;
     }
 
-    if (c == '\e')
+    else if (c == '\e')
     {
         m_escape_code = true;
         m_expecting_bracket = true;
@@ -102,7 +101,8 @@ void Terminal::put_char(char32_t c)
 
             check_pos();
             set_entry_at({' ', m_data.color()}, m_cursor_x, m_cursor_y);
-            m_cur_line.pop_back();
+            //m_cur_line.pop_back();
+            m_cur_line.erase(m_cur_line.begin() + m_cursor_x);
         }
     }
     else if (c == '\t')
@@ -120,7 +120,7 @@ void Terminal::put_char(char32_t c)
     {
         check_pos();
         set_entry_at({c, m_data.color()}, m_cursor_x, m_cursor_y);
-        m_cur_line.push_back({c, m_data.color()});
+        m_cur_line.insert(m_cur_line.begin() + m_cursor_x, {c, m_data.color()});
         ++m_cursor_x;
     }
 
@@ -129,8 +129,11 @@ void Terminal::put_char(char32_t c)
 
 void Terminal::add_input(char32_t c)
 {
-    switch_to_input();
-    put_char(c);
+    if (m_accept_input)
+    {
+        switch_to_input();
+        put_char(c);
+    }
 }
 
 void Terminal::clear_input()
@@ -205,6 +208,13 @@ void Terminal::clear(ColorPair color)
     }
 
     draw();
+}
+
+void Terminal::move_cursor(int offset)
+{
+    m_cursor_x += offset;
+    if (m_cursor_x < m_input_off) m_cursor_x = m_input_off;
+    if (m_cursor_x > m_cur_line.size()) m_cursor_x = m_cur_line.size();
 }
 
 void Terminal::scroll_up()
@@ -295,6 +305,11 @@ void Terminal::set_title(std::u32string str)
     set_title(str, m_data.color());
 }
 
+void Terminal::set_accept_input(bool val)
+{
+    m_accept_input = val;
+}
+
 std::string Terminal::input() const
 {
     std::string str;
@@ -307,12 +322,15 @@ std::string Terminal::input() const
 
 void Terminal::set_input_color(size_t pos, size_t sz, ColorPair color)
 {
-    for (size_t i { m_input_off + pos }; i < std::min(m_input_off + pos + sz, m_cur_line.size()); ++i)
+    if (m_accept_input)
     {
-        m_cur_line[i].pair = color;
-    }
+        for (size_t i { m_input_off + pos }; i < std::min(m_input_off + pos + sz, m_cur_line.size()); ++i)
+        {
+            m_cur_line[i].pair = color;
+        }
 
-    force_redraw_input();
+        force_redraw_input();
+    }
 }
 
 void Terminal::set_entry_at(TermEntry entry, size_t x, size_t y, bool absolute)
@@ -326,7 +344,7 @@ void Terminal::set_entry_at(TermEntry entry, size_t x, size_t y, bool absolute)
 
 void Terminal::new_line()
 {
-    if (!m_line_is_input)
+    if (!m_line_is_input || true)
     {
         add_line_to_history();
     }
@@ -341,7 +359,6 @@ void Terminal::new_line()
     if (m_line_is_input)
     {
         m_line_is_input = false;
-        //put_char('\n');
         TermInputEvent ev;
         ev.line = input();
 
@@ -462,7 +479,7 @@ void Terminal::force_redraw_input()
 
     clear_line(std::min(m_cursor_y + m_data.title_height, true_height()-1), m_data.color().bg);
 
-    for (size_t i { 0 }; i < std::min(m_cur_line.size(), m_cursor_x); ++i)
+    for (size_t i { 0 }; i < std::min(m_cur_line.size(), width()); ++i)
     {
         set_entry_at(m_cur_line[i], i, m_cursor_y);
     }

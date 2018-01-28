@@ -26,14 +26,9 @@ SOFTWARE.
 #include "bitmap.hpp"
 
 #include <assert.h>
-#include <stdlib.h>
-#include <string.h>
 
 #include "utils/logging.hpp"
 
-#define STBIR_MALLOC(size, context) kmalloc(size)
-#define STBIR_FREE(ptr, context) kfree(ptr)
-#define STB_IMAGE_RESIZE_IMPLEMENTATION
 #include "stb/stb_image_resize.h"
 
 namespace graphics
@@ -43,10 +38,10 @@ Bitmap::Bitmap(size_t width, size_t height, Color color)
     resize(width, height, false, color);
 }
 
-#pragma GCC push_options
-#pragma GCC target ("no-sse")
 void Bitmap::resize(size_t width, size_t height, bool keep_ratio, Color color)
 {
+    if (width == m_width && height == m_height) return;
+
     if (!keep_ratio)
     {
         m_data.resize(width*height, color);
@@ -64,9 +59,8 @@ void Bitmap::resize(size_t width, size_t height, bool keep_ratio, Color color)
     m_width = width;
     m_height = height;
 }
-#pragma GCC pop_options
 
-Bitmap Bitmap::copy(const PointU &pos, const PointU &size) const
+Bitmap Bitmap::copy_rect(const PointU &pos, const PointU &size) const
 {
     assert(pos.x + size.x <= width() && pos.y + size.y <= height());
 

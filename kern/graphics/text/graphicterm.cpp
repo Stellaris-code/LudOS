@@ -27,11 +27,13 @@ SOFTWARE.
 
 #include "graphics/drawing/display_draw.hpp"
 #include "graphics/drawing/bitmap.hpp"
+#include "graphics/drawing/image_loader.hpp"
 
 #include "utils/mathutils.hpp"
 
 #include "time/timer.hpp"
 #include "graphics/fonts/psf.hpp"
+#include "utils/env.hpp"
 
 namespace graphics
 {
@@ -39,7 +41,7 @@ namespace graphics
 GraphicTerm::GraphicTerm(Screen &scr, TerminalData &data, const Font &font)
     : Terminal(scr.width() / font.glyph_width(), scr.height() / font.glyph_height(), data), m_scr(scr), m_font(font)
 {
-    m_cursor_bitmap.resize(2, font.glyph_height(), false, graphics::color_white);
+    m_cursor_bitmap.resize(1, font.glyph_height(), false, graphics::color_white);
 
     m_callback = Timer::register_callback(600, [this]
     {
@@ -51,13 +53,14 @@ GraphicTerm::GraphicTerm(Screen &scr, TerminalData &data, const Font &font)
         }
     }, false);
 
-    Bitmap black(1, 1);
-    black[{0, 0}] = color_black;
+    Bitmap black(m_scr.width(), m_scr.height(), color_black);
     set_wallpaper(black);
 
-    m_msg_handle = MessageBus::register_handler<SetBackgroundMessage>([this](const SetBackgroundMessage& msg)
+    update_background();
+
+    m_msg_handle = MessageBus::register_handler<EnvVarChange>([this](const EnvVarChange& msg)
     {
-        set_wallpaper(msg.bitmap);
+        if (msg.key == "TERM_BCKG") update_background();
     });
 }
 
@@ -145,8 +148,25 @@ void GraphicTerm::redraw_cursor()
     }
     else
     {
-        auto bckg_bitmap = m_background.copy(m_cursor_pos, {m_cursor_bitmap.width(), m_cursor_bitmap.height()});
+        auto bckg_bitmap = m_background.copy_rect(m_cursor_pos, {m_cursor_bitmap.width(), m_cursor_bitmap.height()});
         m_scr.blit(bckg_bitmap, m_cursor_pos);
+    }
+}
+
+void GraphicTerm::update_background()
+{
+    auto bckg = kgetenv("TERM_BCKG");
+    if (bckg && *bckg != m_background_path)
+    {
+        auto img = graphics::load_image(*bckg);
+        if (!img)
+        {
+            warn("Invalid terminal background path : '%s'\n", bckg->c_str());
+            return;
+        }
+
+        set_wallpaper(*img);
+        m_background_path = *bckg;
     }
 }
 

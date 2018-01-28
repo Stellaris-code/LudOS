@@ -27,6 +27,8 @@ SOFTWARE.
 
 #include "../cpu/registers.hpp"
 
+#include <functional.hpp>
+
 #define IRQ0 32
 #define IRQ1 33
 #define IRQ2 34
@@ -54,7 +56,7 @@ enum Exception : uint32_t
     PageFault = 14
 };
 
-typedef bool(*isr_t)(const registers* const);
+using isr_t = std::function<bool(const registers* const r)>;
 
 void register_handler(uint8_t num, isr_t handler);
 

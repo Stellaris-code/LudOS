@@ -29,103 +29,79 @@ SOFTWARE.
 
 #include <optional.hpp>
 
+#include "ext2_structures.hpp"
+
 class Ext2FS : public FSImpl<Ext2FS>
 {
-    struct Superblock
-    {
-        uint32_t inode_count;
-        uint32_t block_count;
-        uint32_t superuser_blocks;
-        uint32_t unallocated_blocks;
-        uint32_t unallocated_inodes;
-        uint32_t superblock_block_number;
-        uint32_t block_size; // size = 1024 << block_size
-        uint32_t frag_size; // size = 1024 << frag_size
-        uint32_t blocks_in_block_group;
-        uint32_t frags_in_block_group;
-        uint32_t inodes_in_block_group;
-        uint32_t last_mount_time;
-        uint32_t last_write_time;
-        uint16_t mounts_since_fsck;
-        uint16_t mounts_before_fsck;
-        uint16_t ext2_signature;
-        uint16_t fs_state;
-        uint16_t error_handling;
-        uint16_t version_minor;
-        uint32_t last_fsck_time;
-        uint32_t forced_fsck_interval;
-        uint32_t os_id;
-        uint32_t version_major;
-        uint16_t reserved_blocks_uid;
-        uint16_t reserved_blocks_gid;
-        uint32_t first_inode;
-        uint16_t inode_size;
-        uint16_t superblock_block_group;
-        uint32_t optional_features;
-        uint32_t required_features;
-        uint32_t write_required_features;
-        char fs_id[16];
-        char volume_name[16];
-        char last_mount_path[64];
-        uint32_t used_compression_algorithms;
-        uint8_t preallocated_blocks_file;
-        uint8_t preallocated_blocks_dir;
-        uint16_t unused0;
-        char journal_id[16];
-        uint32_t journal_inode;
-        uint32_t journal_device;
-        uint32_t orphan_inode_head;
-        uint8_t unused1[787];
-    };
-    static_assert(sizeof(Superblock) == 1024);
-
-    enum FSState : uint16_t
-    {
-        Clean = 1,
-        HasErrors = 2
-    };
-
-    enum ErrorHandling : uint16_t
-    {
-        Ignore = 1,
-        Remount = 2,
-        Panic = 3
-    };
-
-    enum OptFeatureFlags : uint32_t
-    {
-        DirPreallocateBlocks = 0x1,
-        AFSServerInodes = 0x2,
-        HasJournal = 0x4,
-        InodeExtendedAttributes = 0x8,
-        FSCanResizeItself = 0x10,
-        DirectoriesUseHashIndex = 0x20
-    };
-
-    enum RequiredFeatureFlags : uint32_t
-    {
-        Compression = 0x1,
-        DirectoriesHaveATypeField = 0x2,
-        FSNeedsJournalReplay = 0x4,
-        FSUsesJournal = 0x8
-    };
-
-    enum ReadOnlyFeatureFlags : uint32_t
-    {
-        SparseSuperblocks = 0x1,
-        FS64File = 0x2,
-        BinaryTreeDirContents = 0x4
-    };
-
-    static constexpr uint16_t ext2_signature = 0xef53;
+    friend class ext2_node;
 
 public:
     Ext2FS(Disk& disk);
 
     static bool accept(const Disk& disk);
 
+    virtual std::shared_ptr<vfs::node> root() const;
+
+    virtual std::string type() const { return "ext2"; }
+    virtual size_t total_size() const { return m_superblock.block_count*block_size(); }
+    virtual size_t free_size() const { return m_superblock.unallocated_blocks*block_size(); }
+
 private:
-    static std::optional<const Superblock> read_superblock(const Disk& disk);
+    static std::optional<const ext2::Superblock> read_superblock(const Disk& disk);
+
+    size_t block_group_table_block() const;
+    const ext2::BlockGroupDescriptor get_block_group(size_t inode) const;
+    std::vector<uint8_t> read_block(size_t number) const;
+    const ext2::Inode read_inode(size_t inode) const;
+    bool check_inode_presence(size_t inode) const;
+
+    std::vector<uint8_t> read_data(const ext2::Inode& inode) const;
+    std::vector<uint8_t> read_singly_indirected(size_t block_id, size_t &blocks) const;
+    std::vector<uint8_t> read_doubly_indirected(size_t block_id, size_t &blocks) const;
+    std::vector<uint8_t> read_triply_indirected(size_t block_id, size_t &blocks) const;
+
+    std::vector<const ext2::DirectoryEntry> read_directory(const std::vector<uint8_t>& data) const;
+
+    uint16_t inode_size() const;
+    uint32_t block_size() const;
+
+private:
+    ext2::Superblock m_superblock;
+};
+
+class ext2_node : public vfs::node
+{
+public:
+    ext2_node(const Ext2FS& fs, vfs::node* parent, size_t inode)
+        : vfs::node(parent), m_fs(fs), m_inode(inode), m_inode_struct(fs.read_inode(inode))
+    {
+        m_name = "BANANA";
+    }
+
+    virtual void rename(const std::string& s);
+    virtual uint32_t permissions() const { return m_inode_struct.type & 0x0FFF; }
+    virtual void set_permissions(uint32_t perms) {}
+    virtual uint32_t uid() const { return m_inode_struct.uid; }
+    virtual void set_uid(uint32_t uid) {}
+    virtual uint32_t gid() const { return m_inode_struct.gid; }
+    virtual void set_gid(uint32_t gid) {}
+    virtual uint32_t flags() const { return m_inode_struct.flags;}
+    virtual void set_flags(uint32_t flags) {}
+
+    [[nodiscard]] virtual size_t read(void*buf, size_t size) const;
+    [[nodiscard]] virtual size_t write(const void*, size_t) {}
+    virtual std::vector<std::shared_ptr<node>> readdir_impl();
+    [[nodiscard]] virtual node* mkdir(const std::string&) {}
+    [[nodiscard]] virtual node* touch(const std::string&) {}
+    virtual size_t size() const { return m_inode_struct.size_lower; }
+    virtual bool is_dir() const { return m_inode_struct.type & (int)ext2::InodeType::Directory; }
+
+private:
+    void update_dir_entry(size_t inode, const std::string& name, uint8_t type);
+
+    const Ext2FS& m_fs;
+    const size_t m_inode;
+    const ext2::Inode m_inode_struct;
 };
 
 #endif // EXT2_HPP

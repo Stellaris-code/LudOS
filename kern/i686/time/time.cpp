@@ -69,4 +69,26 @@ Date get_time_of_day()
     return to_local_time(rtc::get_time());
 }
 
+// FIXME
+Date from_unix(size_t epoch)
+{
+    Date date;
+    size_t dayclock = epoch % (60*60*24);
+    int dayno = epoch / (60*60*24);
+
+    date.sec = dayclock % 60;
+    date.min = (dayclock % 3600) / 60;
+    date.hour = dayclock / 3600;
+
+    date.year = 1970;
+    while (dayno >= 365)
+    {
+        dayno -= 365;
+        date.year++;
+    }
+    date.day = dayno;
+
+    return to_local_time(date);
+}
+
 }

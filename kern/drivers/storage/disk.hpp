@@ -31,49 +31,11 @@ SOFTWARE.
 #include "utils/vecutils.hpp"
 #include "utils/messagebus.hpp"
 
+// TODO : caching at this level
+
 struct DiskFoundEvent
 {
     class Disk& disk;
-};
-
-class DiskException : public std::runtime_error
-{
-public:
-    enum ErrorType
-    {
-        OutOfBounds,
-        ReadOnly,
-        BadSector,
-        NoMedia,
-        Aborted,
-        Unknown
-    };
-
-    std::string to_string(ErrorType type)
-    {
-        switch (type)
-        {
-            case OutOfBounds:
-                return "Out of bounds access";
-            case ReadOnly:
-                return "Disk is read only";
-            case BadSector:
-                return "Bad sector access";
-            case NoMedia:
-                return "No media";
-            case Aborted:
-                return "Access aborted";
-            case Unknown:
-            default:
-                return "Unknown error";
-        }
-    }
-
-    explicit DiskException(ErrorType type)
-        : std::runtime_error("Disk error : " + to_string(type))
-    {
-
-    }
 };
 
 class Disk
@@ -158,6 +120,46 @@ private:
     Disk& m_base_disk;
     size_t m_offset {};
     size_t m_size {};
+};
+
+class DiskException : public std::runtime_error
+{
+public:
+    enum ErrorType
+    {
+        OutOfBounds,
+        ReadOnly,
+        BadSector,
+        NoMedia,
+        Aborted,
+        Unknown
+    };
+
+    std::string to_string(ErrorType type)
+    {
+        switch (type)
+        {
+            case OutOfBounds:
+                return "Out of bounds access";
+            case ReadOnly:
+                return "Disk is read only";
+            case BadSector:
+                return "Bad sector access";
+            case NoMedia:
+                return "No media";
+            case Aborted:
+                return "Access aborted";
+            case Unknown:
+            default:
+                return "Unknown error";
+        }
+    }
+
+    explicit DiskException(const Disk& disk, ErrorType type)
+        : std::runtime_error("Disk error : " + to_string(type) + " on disk " + disk.drive_name())
+    {
+
+    }
 };
 
 #endif // DISK_HPP

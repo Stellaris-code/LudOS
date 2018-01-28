@@ -129,7 +129,6 @@ void install_base_commands(Shell &sh)
          }
 
          ksetenv(args[0], args[1]);
-         kprintf("%s : '%s'\n", args[0].c_str(), args[1].c_str());
          return 0;
      }});
 
@@ -226,12 +225,12 @@ void install_base_commands(Shell &sh)
          {
              if (int rc = sh.command(cmd); rc != 0)
              {
+                 sh.pwd = old_pwd;
                  return rc;
              }
          }
 
          sh.pwd = old_pwd;
-
          return 0;
      }});
 

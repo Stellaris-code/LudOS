@@ -154,7 +154,7 @@ std::vector<uint8_t> ahci::Disk::read_sector(size_t sector, size_t count) const
     }
     else
     {
-        throw DiskException(DiskException::Unknown);
+        throw DiskException(*this, DiskException::Unknown);
     }
 }
 
@@ -164,7 +164,7 @@ void ahci::Disk::write_sector(size_t sector, const std::vector<uint8_t> &data)
 
     if (!detail::issue_write_command(m_port, sector, count, (const uint16_t*)data.data()))
     {
-        throw DiskException(DiskException::Unknown);
+        throw DiskException(*this, DiskException::Unknown);
     }
 }
 

@@ -45,16 +45,6 @@ struct TermInputEvent
     std::string line;
 };
 
-namespace graphics
-{
-class Bitmap;
-}
-
-struct SetBackgroundMessage
-{
-    const graphics::Bitmap& bitmap;
-};
-
 class Terminal
 {
 public:
@@ -77,6 +67,8 @@ public:
     void clear();
     void clear(ColorPair color);
 
+    void move_cursor(int offset);
+
     void show_history(int page);
     size_t current_history() const;
     void scroll_history(int scroll);
@@ -91,6 +83,8 @@ public:
 
     void set_title(std::u32string str, ColorPair color);
     void set_title(std::u32string str);
+
+    void set_accept_input(bool val);
 
     void enable() { m_enabled = true; };
     void disable()
@@ -141,6 +135,7 @@ private:
     bool m_scrolling { true };
     bool m_line_is_input { false };
     size_t m_input_off { 0 };
+    bool m_accept_input { false };
 
     bool m_escape_code { false };
     bool m_expecting_bracket { false };

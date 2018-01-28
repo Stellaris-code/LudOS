@@ -62,7 +62,7 @@ public:
     Color* data() { return m_data.data(); }
     const Color* data() const { return m_data.data(); }
 
-    Bitmap copy(const PointU& pos, const PointU& size) const;
+    Bitmap copy_rect(const PointU& pos, const PointU& size) const;
 
     void color_multiply(const Color& color);
 
@@ -72,8 +72,8 @@ public:
     size_t height() const { return m_height; }
 
 private:
-    size_t m_width;
-    size_t m_height;
+    size_t m_width { 0 };
+    size_t m_height { 0 };
     std::vector<Color> m_data;
 };
 

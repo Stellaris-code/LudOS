@@ -36,33 +36,37 @@ SOFTWARE.
 class PS2Keyboard : public Driver
 {
 public:
+    PS2Keyboard();
+
+public:
     static bool accept();
-    static void init();
 
-    static void enable();
-    static void disable();
+    void enable();
+    void disable();
 
-    static void set_leds(uint8_t leds);
-    static void toggle_led(uint8_t led, bool value);
+    void set_leds(uint8_t leds);
+    void toggle_led(uint8_t led, bool value);
 
-private:
-    static bool isr(const registers*);
-
-    static void init_assocs();
-
-    static void define_assoc(uint8_t i, uint8_t pos, const std::string& name);
-    static void define_e0_assoc(uint8_t i, uint8_t pos, const std::string& name);
+    virtual std::string name() const { return "PS/2 Keyboard"; }
 
 private:
-    static inline uint8_t leds { 0 };
+    bool isr(const registers*);
 
-    static inline bool last_is_e0 { false };
+    void init_assocs();
 
-    static inline std::array<uint8_t, 256> key_assocs;
+    void define_assoc(uint8_t i, uint8_t pos, const std::string& name);
+    void define_e0_assoc(uint8_t i, uint8_t pos, const std::string& name);
 
-    static inline std::array<uint8_t, 256> e0_key_assocs;
+private:
+    uint8_t leds { 0 };
 
-    static inline std::vector<std::pair<uint8_t, std::vector<uint8_t>>> long_key_assocs;
+    bool last_is_e0 { false };
+
+    std::array<uint8_t, 256> key_assocs;
+
+    std::array<uint8_t, 256> e0_key_assocs;
+
+    std::vector<std::pair<uint8_t, std::vector<uint8_t>>> long_key_assocs;
 };
 
 #endif // KEYBOARD_HPP

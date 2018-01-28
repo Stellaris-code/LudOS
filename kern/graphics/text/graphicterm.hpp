@@ -48,7 +48,6 @@ public:
 
 public:
     static Font& default_font();
-    void set_wallpaper(const Bitmap& bitmap);
 
 private:
     virtual void move_cursor(size_t x, size_t y) override;
@@ -59,23 +58,18 @@ private:
 
 private:
     void redraw_cursor();
+    void update_background();
+    void set_wallpaper(const Bitmap& bitmap);
 
 private:
     Screen& m_scr;
     const Font& m_font;
 
-    struct Entry
-    {
-        Point<uint16_t> pos;
-        TermEntry entry;
-    };
-
-    std::vector<Entry> m_entries;
-
     volatile bool m_show_cursor { false };
     PointU m_cursor_pos { 0, 0 };
     Bitmap m_cursor_bitmap;
     Bitmap m_background;
+    std::string m_background_path;
     Timer::CallbackHandle m_callback;
     MessageBus::RAIIHandle m_msg_handle;
 };

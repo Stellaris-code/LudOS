@@ -92,33 +92,6 @@ void install_gfx_commands(Shell &sh)
      }});
 
     sh.register_command(
-    {"setbckg", "Use a certain image as a terminal background",
-     "Usage : 'setbckg <file>'",
-     [&sh](const std::vector<std::string>& args)
-     {
-         if (args.size() != 1)
-         {
-             sh.error("setbckg needs one argument\n");
-             return -1;
-         }
-
-         auto img = graphics::load_image(sh.get_path(args[0]));
-         if (!img)
-         {
-             sh.error("Can't load '%s'\n", args[0].c_str());
-             return -2;
-         }
-
-         if (!MessageBus::send<SetBackgroundMessage>({*img}))
-         {
-             // Nobody received the message
-             sh.error("Current terminal doesn't support setting background image !\n");
-         }
-
-         return 0;
-     }});
-
-    sh.register_command(
     {"setmode", "Set a graphical mode",
      "Usage : 'setmode <width>x<height>(x<depth>)'",
      [&sh](const std::vector<std::string>& args)

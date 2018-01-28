@@ -58,15 +58,15 @@ bool PS2Keyboard::accept()
     return true;
 }
 
-void PS2Keyboard::init()
+PS2Keyboard::PS2Keyboard()
 {
-    isr::register_handler(IRQ1, &isr);
+    isr::register_handler(IRQ1, [this](const registers* const r){return isr(r);});
 
     init_assocs();
 
     enable();
 
-    MessageBus::register_handler<LEDChangeEvent>([](const LEDChangeEvent& e)
+    MessageBus::register_handler<LEDChangeEvent>([this](const LEDChangeEvent& e)
     {
         if (e.caps_led != LEDState::Ignore)
         {

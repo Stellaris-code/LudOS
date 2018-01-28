@@ -334,7 +334,7 @@ std::vector<uint8_t> ide::pio::Disk::read_sector(size_t sector, size_t count) co
     }
     else
     {
-        throw DiskException(get_error(m_port));
+        throw DiskException(*this, get_error(m_port));
     }
 }
 
@@ -344,7 +344,7 @@ void ide::pio::Disk::write_sector(size_t sector, const std::vector<uint8_t> &dat
 
     if (!ide::pio::write(m_port, m_type, sector, count, (const uint16_t*)data.data()))
     {
-        throw DiskException(get_error(m_port));
+        throw DiskException(*this, get_error(m_port));
     }
 }
 

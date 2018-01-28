@@ -1021,7 +1021,7 @@ struct _LIBCPP_TEMPLATE_VIS allocator_traits
             ptrdiff_t _Np = __end1 - __begin1;
             __end2 -= _Np;
             if (_Np > 0)
-                memcpy(__end2, __begin1, _Np * sizeof(_Tp));
+                memcpy(const_cast<void*>(reinterpret_cast<const void*>(__end2)), __begin1, _Np * sizeof(_Tp));
         }
 
 private:

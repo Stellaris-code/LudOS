@@ -28,6 +28,8 @@ SOFTWARE.
 #include "pci.hpp"
 #include "utils/logging.hpp"
 
+#include <string.hpp>
+
 extern "C" int start_pci_driver_ctors;
 extern "C" int end_pci_driver_ctors;
 
@@ -52,14 +54,13 @@ void PciDriver::interface_init()
 class TestDriver : public PciDriver
 {
 public:
-    virtual void init()
-    {
-        //warn("Called\n");
-    }
+    virtual void init() {}
+
+    virtual std::string name() const { return "PCI Test driver"; }
 
     static bool accept(const pci::PciDevice& dev)
     {
-        return true;
+        return false;
     }
 };
 

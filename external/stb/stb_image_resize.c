@@ -1,7 +1,7 @@
 /*
-ps2mouse.hpp
+stb_image_resize.c
 
-Copyright (c) 27 Yann BOUCHER (yann)
+Copyright (c) 26 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,40 +22,16 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef PS2MOUSE_HPP
-#define PS2MOUSE_HPP
 
-#include "i686/cpu/registers.hpp"
+#include <stdlib.h>
+#include <string.h>
 
-#include "drivers/driver.hpp"
+#pragma GCC push_options
+#pragma GCC target ("no-sse")
 
-#include <string.hpp>
+#define STBIR_MALLOC(size, context) kmalloc(size)
+#define STBIR_FREE(ptr, context) kfree(ptr)
+#define STB_IMAGE_RESIZE_IMPLEMENTATION
+#include "stb/stb_image_resize.h"
 
-class PS2Mouse : public Driver
-{
-public:
-    PS2Mouse();
-
-public:
-    static bool accept();
-
-    void enable();
-    void disable();
-
-    void set_sample_rate(uint8_t rate);
-
-    virtual std::string name() const { return "PS/2 Mouse"; }
-
-private:
-    bool isr(const registers* regs);
-
-    void send_write(uint8_t val);
-    uint8_t read();
-
-    bool enable_intellimouse();
-
-private:
-    bool is_intellimouse { false };
-};
-
-#endif // PS2MOUSE_HPP
+#pragma GCC pop_options

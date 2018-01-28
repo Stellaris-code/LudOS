@@ -62,7 +62,7 @@ public:
     }
 };
 
-class NetworkDriver : public Driver
+class NetworkDriver : virtual public Driver
 {
 public:
     static NetworkDriver& get();

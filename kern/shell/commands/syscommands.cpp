@@ -33,6 +33,7 @@ SOFTWARE.
 #include "time/time.hpp"
 #include "drivers/pci/pci.hpp"
 #include "drivers/pci/pci_vendors.hpp"
+#include "drivers/driver.hpp"
 
 #include "external/liballoc/liballoc.h"
 
@@ -131,6 +132,18 @@ void install_sys_commands(Shell &sh)
              kprintf("   Device : '%s' (0x%x)\n", pci::dev_string(dev.vendorID, dev.deviceID).c_str(), dev.deviceID);
              kprintf("   Class : '%s' (0x%x:0x%x:0x%x)\n", pci::class_code_string(dev.classCode, dev.subclass, dev.progIF).c_str(),
                                                            dev.classCode, dev.subclass, dev.progIF);
+         }
+         return 0;
+     }});  
+
+    sh.register_command(
+    {"lsdrv", "list active drivers",
+     "Usage : 'lsdrv'",
+     [](const std::vector<std::string>&)
+     {
+         for (Driver& driver : Driver::list())
+         {
+             kprintf("\t%s\n", driver.name().c_str());
          }
          return 0;
      }});

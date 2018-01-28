@@ -164,7 +164,7 @@ void install_fs_commands(Shell &sh)
          {
              kprintf("%s on %s : %s/%s (%d%%)\n", fs.type().c_str(), fs.disk().drive_name().c_str(),
              human_readable_size(fs.total_size()-fs.free_size()).c_str(), human_readable_size(fs.total_size()).c_str(),
-             100-int(fs.free_size()/fs.total_size()*100.));
+             100-int((double)fs.free_size()/fs.total_size()*100.));
          }
          return 0;
      }});

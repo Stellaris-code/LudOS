@@ -32,17 +32,19 @@ namespace Time
 
 struct Date
 {
-    uint32_t sec;
-    uint32_t min;
-    uint32_t hour;
-    uint32_t day;
-    uint32_t month;
-    uint32_t year;
+    uint32_t sec {};
+    uint32_t min {};
+    uint32_t hour {};
+    uint32_t day {};
+    uint32_t month {};
+    uint32_t year {};
 };
 
 extern bool timer_ready;
 
 Date get_time_of_day();
+
+Date from_unix(size_t epoch);
 
 double uptime();
 uint64_t total_ticks();

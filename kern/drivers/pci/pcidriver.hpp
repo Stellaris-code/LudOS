@@ -31,12 +31,10 @@ SOFTWARE.
 
 #include "pci.hpp"
 
-class PciDriver : public Driver
+class PciDriver : virtual public Driver
 {
 public:
     static void interface_init();
-
-    static bool accept(const pci::PciDevice& dev) { return false; }
 
     void set_pci_info(const pci::PciDevice& dev) { m_dev = dev; }
 
@@ -59,13 +57,16 @@ namespace pci::detail
 #define ADD_PCI_DRIVER(name) \
 __attribute__((constructor)) void _pci_init_##name() \
 { \
+    static_assert(std::is_base_of_v<PciDriver, name>); \
+    static_assert(std::is_base_of_v<Driver, name>); \
     *pci::detail::driver_list_ptr++ = [](const pci::PciDevice& dev) \
     { \
         if (name::accept(dev)) \
         { \
-            name* obj = new name; /* notice the absence of free, we don't support PnP so it does'nt really makes sense to support driver removal */ \
+            auto obj = new name; \
             obj->set_pci_info(dev); \
             obj->init(); \
+            Driver::add_driver(std::unique_ptr<Driver>(obj)); \
         } \
     }; \
 }

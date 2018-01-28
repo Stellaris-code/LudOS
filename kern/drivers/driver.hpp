@@ -26,11 +26,41 @@ SOFTWARE.
 #define DRIVER_HPP
 
 #include <stdint.h>
+#include <type_traits.hpp>
+#include <vector.hpp>
+#include <memory.hpp>
+
+#include "utils/vecutils.hpp"
 
 class Driver
 {
 public:
+    virtual ~Driver() = default;
+
     static void interface_init();
+
+    static ref_vector<Driver> list();
+
+    static void add_driver(std::unique_ptr<Driver>&& driver);
+
+    template <typename T>
+    static ref_vector<T> get_drivers()
+    {
+        ref_vector<T> vec;
+        for (const auto& driver : m_drivers)
+        {
+            T* ptr = dynamic_cast<T*>(driver.get());
+            if (ptr) vec.emplace_back(*ptr);
+        }
+
+        return vec;
+    }
+
+public:
+    virtual std::string name() const = 0;
+
+private:
+    static inline std::vector<std::unique_ptr<Driver>> m_drivers;
 };
 
 namespace driver::detail
@@ -46,9 +76,10 @@ namespace driver::detail
 #define ADD_DRIVER(name) \
 __attribute__((constructor)) void _driver_init_##name() \
 { \
+    static_assert(std::is_base_of_v<Driver, name>); \
     *driver::detail::driver_list_ptr++ = [] { \
         if (name::accept()) \
-            name::init(); \
+            Driver::add_driver(std::make_unique<name>()); \
     }; \
 }
 

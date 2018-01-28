@@ -108,7 +108,7 @@ void MemoryDisk::write_sector(size_t sector, const std::vector<uint8_t> &data)
 {
     if (m_const)
     {
-        throw DiskException(DiskException::ReadOnly);
+        throw DiskException(*this, DiskException::ReadOnly);
     }
 
     const size_t offset = sector * sector_size();
@@ -126,7 +126,7 @@ std::vector<uint8_t> DiskSlice::read_sector(size_t sector, size_t count) const
 {
     if (sector + count > m_size)
     {
-        throw DiskException(DiskException::OutOfBounds);
+        throw DiskException(*this, DiskException::OutOfBounds);
     }
 
     return m_base_disk.read_sector(sector + m_offset, count);
@@ -136,7 +136,7 @@ void DiskSlice::write_sector(size_t sector, const std::vector<uint8_t> &data)
 {
     if (sector + data.size()/sector_size() > m_size)
     {
-        throw DiskException(DiskException::OutOfBounds);
+        throw DiskException(*this, DiskException::OutOfBounds);
     }
 
     m_base_disk.write_sector(sector + m_offset, data);

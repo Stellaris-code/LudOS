@@ -27,13 +27,15 @@ SOFTWARE.
 
 #include <stdint.h>
 
+#include "utils/logging.hpp"
+
 extern "C" int start_driver_ctors;
 extern "C" int end_driver_ctors;
 
 namespace driver::detail
 {
-    DriverEntry drivers[max_drivers];
-    DriverEntry* driver_list_ptr = drivers;
+DriverEntry drivers[max_drivers];
+DriverEntry* driver_list_ptr = drivers;
 }
 
 void Driver::interface_init()
@@ -44,4 +46,16 @@ void Driver::interface_init()
     {
         (*ptr)();
     }
+}
+
+ref_vector<Driver> Driver::list()
+{
+    ref_vector<Driver> vec;
+    for (auto& val : m_drivers) vec.emplace_back(*val);
+    return vec;
+}
+
+void Driver::add_driver(std::unique_ptr<Driver>&& driver)
+{
+    m_drivers.emplace_back(std::move(driver));
 }

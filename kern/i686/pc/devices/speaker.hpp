@@ -29,17 +29,23 @@ SOFTWARE.
 
 #include "drivers/driver.hpp"
 
+#include <string.hpp>
+
 class Speaker : public Driver
 {
 public:
-    static bool accept() { return true; }
-    static void init();
+    Speaker();
 
-    static void beep_(uint32_t time, uint16_t freq = 1000);
-    static void stop();
+public:
+    static bool accept() { return true; }
+
+    void beep_(uint32_t time, uint16_t freq = 1000);
+    void stop();
+
+    virtual std::string name() const { return "PC Speaker"; }
 
 private:
-    static void play_sound(uint16_t freq);
+    void play_sound(uint16_t freq);
 };
 
 #endif // SPEAKER_HPP

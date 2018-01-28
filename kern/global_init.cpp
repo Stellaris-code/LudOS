@@ -125,6 +125,14 @@ void global_init()
                 {
                     term().scroll_history(+10);
                 }
+                else if (e.key == kbd::Right)
+                {
+                    term().move_cursor(+1);
+                }
+                else if (e.key == kbd::Left)
+                {
+                    term().move_cursor(-1);
+                }
                 else if (e.key == kbd::Delete && Keyboard::ctrl() && Keyboard::alt())
                 {
                     reset();
@@ -162,17 +170,8 @@ void global_init()
             for (auto partition : mbr::read_partitions(Disk::disks()[disk]))
             {
                 log(Info, "Partition %d offset %d\n", partition.partition_number, partition.data.relative_sector);
-                auto fs = Ext2FS::accept(partition.slice);
-                log(Info, "okay : %d\n", fs);
-//                auto wrapper = fat::RAIIWrapper(fs);
-//                if (fs.valid)
-//                {
-//                    log(Info, "FAT %zd filesystem found on drive %zd, partition %d\n", fs.type, fs.drive, partition.partition_number);
-
-//                    static auto root = fat::root_dir(fs);
-
-//                    vfs::mount(root, "/boot");
-//                }
+                auto fs = FileSystem::get_disk_fs(partition.slice);
+                vfs::mount(fs->root(), "/disk" + std::to_string(disk+1) + "p" + std::to_string(partition.partition_number));
             }
         }
 #endif

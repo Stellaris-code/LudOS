@@ -181,7 +181,7 @@ void panic(const char *fmt, ...)
     int i = 10000;
     while (--i) nop();
 
-    Speaker::stop();
+    //FIXME : Speaker::stop();
 
     halt();
 }

@@ -172,19 +172,17 @@ void Shell::show_prompt()
 std::string Shell::read_input()
 {
     m_waiting_input = true;
-
+    term().set_accept_input(true);
     while (m_waiting_input)
     {
         wait_for_interrupts();
     }
-
+    term().set_accept_input(false);
     return m_input;
 }
 
 void Shell::process(const std::string &in)
 {
-    kprintf("%s\n", (prompt() + in).c_str());
-
     if (!in.empty())
     {
         m_command_history.emplace_front(in);
@@ -226,7 +224,7 @@ void Shell::autocomplete()
     {
         for (const auto& node : pwd->readdir())
         {
-            if (toks.size() == 1 || strtolower(node->name()).substr(0, toks.back().size()) == strtolower(toks.back()))
+            if (toks.size() <= 1 || strtolower(node->name()).substr(0, toks.back().size()) == strtolower(toks.back()))
             {
                 m_matches.emplace_back(node->name());
             }
@@ -235,7 +233,7 @@ void Shell::autocomplete()
 
     if (!m_matches.empty())
     {
-        if (!(toks.size() == 1 && actual_size != 1)) toks.pop_back();
+        if (!(toks.size() == 1 && actual_size != 1) && !toks.empty()) toks.pop_back();
 
         std::string prefix = join(toks, " ");
         if (toks.size() >= 1) prefix += " ";
@@ -262,11 +260,11 @@ void Shell::update_coloring()
 
     if (m_commands.find(cmd) != m_commands.end())
     {
-        term().set_input_color(0, cmd.size(), {graphics::color_green, term_data().color().bg});
+        term().set_input_color(0, u8_decode(cmd).size(), {graphics::color_green, term_data().color().bg});
     }
     else
     {
-        term().set_input_color(0, cmd.size(), {graphics::color_red, term_data().color().bg});
+        term().set_input_color(0, u8_decode(cmd).size(), {graphics::color_red, term_data().color().bg});
     }
 }
 

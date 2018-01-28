@@ -29,6 +29,12 @@ SOFTWARE.
 
 extern std::unordered_map<std::string, std::string> kenv;
 
+struct EnvVarChange
+{
+    std::string key;
+    std::string val;
+};
+
 void read_from_cmdline(const std::string& cmdline);
 
 std::optional<std::string> kgetenv(std::string s);

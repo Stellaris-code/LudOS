@@ -30,29 +30,63 @@ SOFTWARE.
 
 #include "utils/vecutils.hpp"
 #include "utils/messagebus.hpp"
+#include "utils/noncopyable.hpp"
 
-// TODO : caching at this level
+#include "diskcache.hpp"
+#include "panic.hpp"
 
 struct DiskFoundEvent
 {
     class Disk& disk;
 };
 
-class Disk
+struct SyncDisksCache
+{
+};
+
+class Disk : NonCopyable
 {
     friend class DiskSlice;
+    friend class DiskCache;
 
 public:
-    virtual ~Disk() = default;
+    static void system_init();
+
+    enum Type
+    {
+        Floppy,
+        OpticalDisk,
+        HardDrive,
+        NetworkDrive,
+        MemoryCard,
+        RamDrive,
+        Other,
+        Unknown
+    };
+
+public:
+    Disk();
+    virtual ~Disk();
 
     virtual size_t disk_size() const = 0;
     virtual size_t sector_size() const = 0;
     virtual std::string drive_name() const = 0;
+    virtual void flush_hardware_cache() = 0;
+    virtual Type media_type() const = 0;
+    virtual bool is_partition() const { return false; };
 
     std::vector<uint8_t> read(size_t offset, size_t size) const;
     std::vector<uint8_t> read() const;
 
     void write(size_t offset, std::vector<uint8_t> data);
+
+    void enable_caching(bool val);
+    bool caching_enabled() const { return m_caching; }
+    void flush_cache();
+
+private:
+    std::vector<uint8_t> read_cache_sector(size_t sector, size_t count) const;
+    void write_cache_sector(size_t sector, const std::vector<uint8_t>& data);
 
 protected:
     virtual std::vector<uint8_t> read_sector(size_t sector, size_t count) const = 0;
@@ -61,6 +95,10 @@ protected:
 public:
     static ref_vector<Disk> disks();
 
+private:
+    mutable DiskCache m_cache;
+    bool m_caching { false };
+
 protected:
     static inline std::vector<std::unique_ptr<Disk>> m_disks;
 };
@@ -68,6 +106,10 @@ protected:
 template <typename Derived>
 class DiskImpl : public Disk
 {
+public:
+    DiskImpl() : Disk() { }
+    DiskImpl(DiskImpl&&) : Disk() {}
+
 public:
     template <typename... Args>
     static Derived& create_disk(Args&&... args)
@@ -87,6 +129,8 @@ public:
     virtual size_t disk_size() const override { return m_size; }
     virtual size_t sector_size() const override { return 512; }
     virtual std::string drive_name() const override { return m_name; }
+    virtual void flush_hardware_cache() override {}
+    virtual Type media_type() const override { return Disk::RamDrive; }
 
 protected:
     virtual std::vector<uint8_t> read_sector(size_t sector, size_t count) const override;
@@ -111,6 +155,9 @@ public:
     virtual size_t disk_size() const override { return m_size * sector_size(); }
     virtual size_t sector_size() const override { return m_base_disk.sector_size(); }
     virtual std::string drive_name() const override { return m_base_disk.drive_name(); }
+    virtual void flush_hardware_cache() override { m_base_disk.flush_hardware_cache(); }
+    virtual Type media_type() const override { return m_base_disk.media_type(); }
+    virtual bool is_partition() const override { return true; };
 
 protected:
     virtual std::vector<uint8_t> read_sector(size_t sector, size_t count) const override;

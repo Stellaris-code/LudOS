@@ -212,4 +212,13 @@ void install_fs_commands(Shell &sh)
 
          return 0;
      }});
+
+    sh.register_command(
+    {"sync", "flush disks cache",
+     "Usage : sync",
+     [](const std::vector<std::string>&)
+     {
+         MessageBus::send(SyncDisksCache{});
+         return 0;
+     }});
 }

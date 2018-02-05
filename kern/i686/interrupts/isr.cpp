@@ -72,12 +72,13 @@ constexpr const char *exception_messages[] = {
     "Reserved"
 };
 
+#pragma GCC push_options
+#pragma GCC target ("no-sse")
+
 extern "C"
 const registers* isr_handler(const registers* const regs)
 {
-    //log_serial("interrupt %d (0x%x) (0x%x) (%p)\n", regs->int_no, regs->err_code, cr2(), __builtin_return_address(1));
 
-    // handling
     if (auto handl = handlers[regs->int_no]; handl)
     {
         if (handl(regs)) return regs;
@@ -102,7 +103,7 @@ const registers* isr_handler(const registers* const regs)
 
         panic_regs = regs;
         panic("Unhandeld interrupt 0x%x (type : '%s')\n", regs->int_no, exception_messages[regs->int_no]);
-        // handle here
+
 
     }
 
@@ -120,6 +121,7 @@ const registers* irq_handler(const registers* const regs)
 
     return regs;
 }
+#pragma GCC pop_options
 
 void isr::register_handler(uint8_t num, isr::isr_t handler)
 {

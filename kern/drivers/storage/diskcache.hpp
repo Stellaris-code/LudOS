@@ -1,7 +1,7 @@
 /*
-mbr.hpp
+diskcache.hpp
 
-Copyright (c) 30 Yann BOUCHER (yann)
+Copyright (c) 01 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,54 +22,52 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef MBR_HPP
-#define MBR_HPP
-
-#include <stdint.h>
+#ifndef DISKCACHE_HPP
+#define DISKCACHE_HPP
 
 #include <vector.hpp>
-
-#include "drivers/storage/disk.hpp"
+#include <unordered_map.hpp>
+#include <map.hpp>
 
 class Disk;
 
-namespace mbr
+class DiskCache
 {
+public:
+    DiskCache(Disk& disk);
 
-struct Partition : public DiskSlice
-{
-    Partition(Disk& disk, size_t offset, size_t size)
-        : DiskSlice(disk, offset, size)
+    static inline size_t max_cache_size = 4096*1000;
+
+public:
+    void write_sector(size_t sec, const std::vector<uint8_t>& data);
+    std::vector<uint8_t> read_sector(size_t sec, size_t count);
+    void flush();
+
+    void set_ratio(size_t ratio);
+    size_t ratio() const { return m_size_ratio; }
+
+private:
+    void add_span(size_t sec, size_t count);
+    void add_to_cache(size_t sec, const uint8_t *data, bool write = false);
+    void prune_cache();
+    void remove_entry(size_t id);
+
+    size_t mem_usage_ratio() const;
+
+public:
+    Disk& m_disk;
+
+public:
+    size_t m_size_ratio { 30 };
+
+    struct CacheEntry
     {
-        enable_caching(false);
-    }
-
-    template <typename... Args>
-    static Partition& create_disk(Args&&... args)
-    {
-        return DiskImpl<Partition>::create_disk(std::forward<Args>(args)...);
-    }
-
-    struct [[gnu::packed]] Data
-    {
-        uint8_t boot_flag;
-        uint8_t start_head;
-        uint16_t start_sector : 6;
-        uint16_t start_cylinder : 10;
-        uint8_t system_id;
-        uint8_t end_head;
-        uint16_t end_sector : 6;
-        uint16_t end_cylinder : 10;
-        uint32_t relative_sector;
-        uint32_t sector_count;
-    } data;
-
-    // Additional data
-    uint8_t partition_number;
+        std::vector<uint8_t> data {};
+        bool dirty { false };
+        uint64_t access_time;
+    };
+    std::map<size_t, DiskCache::CacheEntry> m_cache;
+    std::map<uint64_t, size_t, std::greater<>> m_access_times;
 };
 
-ref_vector<Partition> read_partitions(Disk& drive);
-
-}
-
-#endif // MBR_HPP
+#endif // DISKCACHE_HPP

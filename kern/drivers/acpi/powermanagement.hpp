@@ -33,6 +33,7 @@ SOFTWARE.
 #include "utils/builtins.hpp"
 
 #include "power/powermanagement.hpp"
+#include "utils/messagebus.hpp"
 
 #include "io.hpp"
 
@@ -97,8 +98,8 @@ inline void shutdown()
 
 inline bool init()
 {
-    ::reset = power::reset;
-    ::shutdown = power::shutdown;
+    MessageBus::register_handler<ResetMessage>([](const ResetMessage&){power::reset();}, MessageBus::Last);
+    MessageBus::register_handler<ShutdownMessage>([](const ShutdownMessage&){power::shutdown();}, MessageBus::Last);
 
     return true;
 }

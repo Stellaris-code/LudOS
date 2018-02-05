@@ -64,6 +64,8 @@ public:
     void write(const char* data, size_t size);
     void write_string(const char* data);
 
+    void forward_delete();
+
     void clear();
     void clear(ColorPair color);
 

@@ -22,8 +22,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef SPINLOCK_HPP
-#define SPINLOCK_HPP
+#ifndef _SPINLOCK_HPP
+#define _SPINLOCK_HPP
 
 typedef volatile int spinlock_t;
 
@@ -42,4 +42,4 @@ typedef volatile int spinlock_t;
         __sync_synchronize(); \
         *name = 0;
 
-#endif // SPINLOCK_HPP
+#endif // _SPINLOCK_HPP

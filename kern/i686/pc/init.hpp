@@ -250,6 +250,7 @@ inline void init(uint32_t magic, const multiboot_info_t* mbd_info)
 
     Driver::interface_init();
     PciDriver::interface_init();
+
 }
 }
 }

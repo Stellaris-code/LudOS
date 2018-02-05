@@ -28,6 +28,7 @@ SOFTWARE.
 #include "utils/virt_machine_detect.hpp"
 #include "utils/logging.hpp"
 #include "vbe.hpp"
+#include "edid.hpp"
 #include "terminal/terminal.hpp"
 #include "i686/cpu/mtrr.hpp"
 #include "i686/mem/physallocator.hpp"
@@ -125,6 +126,10 @@ std::optional<VideoMode> change_mode(size_t width, size_t height, size_t depth)
 
         scr = std::make_unique<Screen>(current_mode.width, current_mode.height);
         set_display_mode(current_mode);
+
+        auto mon_info = monitor_info();
+        if (mon_info) log_serial("Moninfo : %dx%d\n", mon_info->width, mon_info->height);
+
         return current_mode;
     }
     else
@@ -141,6 +146,16 @@ VideoMode current_video_mode()
 Screen *screen()
 {
     return scr.get();
+}
+
+std::optional<MonitorInfo> monitor_info()
+{
+    if (auto edid = EDID::get(); edid)
+    {
+        return EDID::to_monitor_info(*edid);
+    }
+
+    return {};
 }
 
 }

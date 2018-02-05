@@ -47,6 +47,8 @@ public:
     virtual size_t disk_size() const override;
     virtual size_t sector_size() const override;
     virtual std::string drive_name() const override;
+    virtual void flush_hardware_cache() override;
+    virtual Type media_type() const override { return Disk::HardDrive; }
 
 protected:
     virtual std::vector<uint8_t> read_sector(size_t sector, size_t count) const override;
@@ -302,6 +304,7 @@ static constexpr uint32_t pxis_dps = 1<<5;
 static constexpr uint32_t ata_read_dma_ex = 0x25;
 static constexpr uint32_t ata_write_dma_ex = 0x35;
 static constexpr uint32_t ata_identify = 0xEC;
+static constexpr uint32_t ata_flush_ext = 0xEA;
 
 static constexpr uint32_t ata_busy = 1<<7;
 static constexpr uint32_t ata_drq = 1<<3;
@@ -327,6 +330,7 @@ void mkprd(PrdtEntry& entry, uint64_t addr, size_t bytes);
 [[nodiscard]] bool issue_read_command(size_t port, uint64_t sector, size_t count, uint16_t* buf);
 [[nodiscard]] bool issue_write_command(size_t port, uint64_t sector, size_t count, const uint16_t* buf);
 [[nodiscard]] bool issue_identify_command(size_t port, ide::identify_data* buf);
+[[nodiscard]] bool issue_cache_flush_command(size_t port);
 
 uint32_t flush_commands(size_t port);
 

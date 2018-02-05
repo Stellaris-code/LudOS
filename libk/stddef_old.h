@@ -1,8 +1,7 @@
-
 /*
-messagebus.tpp
+stddef.h
 
-Copyright (c) 23 Yann BOUCHER (yann)
+Copyright (c) 04 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -23,40 +22,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
+#ifndef LUDOS_STDDEF_H
+#define LUDOS_STDDEF_H
 
-#include "messagebus.hpp"
+#ifdef __clang_analyzer__
+#define __null 0
+#endif
 
-#include "utils/vecutils.hpp"
+#include_next <stddef.h>
 
-template <typename T>
-MessageBus::Handle MessageBus::register_handler(std::function<void(const T&)> handler, Priority prio)
-{
-    handlers[std::type_index(typeid(T))].push_back(Entry<T>{handler, prio});
-    return {std::type_index(typeid(T)), --handlers[std::type_index(typeid(T))].end()};
-}
-
-template <typename T>
-size_t MessageBus::send(const T& event)
-{
-    size_t counter { 0 };
-    std::vector<std::any> late_callbacks;
-    for (const auto& callback : handlers[std::type_index(typeid(T))])
-    {
-        ++counter;
-        if (std::any_cast<Entry<T>>(callback).priority == Priority::Last)
-        {
-            late_callbacks.emplace_back(callback);
-        }
-        else
-        {
-            std::any_cast<Entry<T>>(callback).handler(event);
-        }
-    }
-
-    for (const auto& late_callback : late_callbacks)
-    {
-        std::any_cast<Entry<T>>(late_callback).handler(event);
-    }
-
-    return counter;
-}
+#endif // LUDOS_STDDEF_H

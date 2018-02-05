@@ -158,6 +158,14 @@ void GraphicTerm::update_background()
     auto bckg = kgetenv("TERM_BCKG");
     if (bckg && *bckg != m_background_path)
     {
+        if (bckg->empty())
+        {
+            Bitmap black(m_scr.width(), m_scr.height(), color_black);
+            set_wallpaper(black);
+
+            return;
+        }
+
         auto img = graphics::load_image(*bckg);
         if (!img)
         {

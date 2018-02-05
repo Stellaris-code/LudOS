@@ -13,13 +13,13 @@
 
 
 #include "__config.hpp"
-#include <wchar.h>  // for mbstate_t
+#include "../libk/wchar.h"  // for mbstate_t
 
 #if !defined(_LIBCPP_HAS_NO_PRAGMA_SYSTEM_HEADER)
 #pragma GCC system_header
 #endif
 
-#include_next <wchar.h>
+//#include_next <wchar.h>
 
 _LIBCPP_BEGIN_NAMESPACE_STD
 

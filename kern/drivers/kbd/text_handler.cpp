@@ -102,7 +102,7 @@ void kbd::TextHandler::handle_key(const kbd::KeyEvent &e)
             MessageBus::send<TextEnteredEvent>({static_cast<char32_t>('\t')});
             return;
         case BackSpace:
-        case Delete:
+        //case Delete:
             MessageBus::send<TextEnteredEvent>({static_cast<char32_t>('\b')});
             return;
         case Return:

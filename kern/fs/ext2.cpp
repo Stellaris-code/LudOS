@@ -33,9 +33,6 @@ SOFTWARE.
 Ext2FS::Ext2FS(Disk &disk) : FSImpl<Ext2FS>(disk)
 {
     m_superblock = *read_superblock(disk);
-    auto root = read_inode(2);
-    log(Info, "Year : %d, Flags : 0x%x, Size : %s\n", Time::from_unix(root.creation_time).year, root.flags, human_readable_size(root.size_lower).c_str());
-    read_directory(read_data(root));
 }
 
 bool Ext2FS::accept(const Disk &disk)
@@ -117,12 +114,13 @@ std::vector<uint8_t> Ext2FS::read_data(const ext2::Inode &inode) const
     for (size_t i { 0 }; i < 12; ++i)
     {
         if (blocks == 0 || inode.block_ptr[i] == 0) break;
-        data = merge(data, read_block(inode.block_ptr[i]));
+        merge(data, read_block(inode.block_ptr[i]));
         --blocks;
     }
-    data = merge(data, read_singly_indirected(inode.block_ptr[12], blocks));
-    data = merge(data, read_doubly_indirected(inode.block_ptr[13], blocks));
-    data = merge(data, read_triply_indirected(inode.block_ptr[14], blocks));
+
+    merge(data, read_singly_indirected(inode.block_ptr[12], blocks));
+    merge(data, read_doubly_indirected(inode.block_ptr[13], blocks));
+    merge(data, read_triply_indirected(inode.block_ptr[14], blocks));
 
     return data;
 }
@@ -137,8 +135,7 @@ std::vector<uint8_t> Ext2FS::read_singly_indirected(size_t block_id, size_t& blo
     for (size_t i { 0 }; i < id_num; ++i)
     {
         if (blocks == 0 || block[i] == 0) return data;
-        log_serial("Read block 0x%x (%d/%d)\n", block[i], blocks, i);
-        data = merge(data, read_block(block[i]));
+        merge(data, read_block(block[i]));
         --blocks;
     }
 
@@ -155,7 +152,7 @@ std::vector<uint8_t> Ext2FS::read_doubly_indirected(size_t block_id, size_t &blo
     for (size_t i { 0 }; i < id_num; ++i)
     {
         if (blocks == 0 || block[i] == 0) return data;
-        data = merge(data, read_singly_indirected(block[i], blocks));
+        merge(data, read_singly_indirected(block[i], blocks));
     }
 
     return data;
@@ -171,7 +168,7 @@ std::vector<uint8_t> Ext2FS::read_triply_indirected(size_t block_id, size_t &blo
     for (size_t i { 0 }; i < id_num; ++i)
     {
         if (blocks == 0 || block[i] == 0) return data;
-        data = merge(data, read_doubly_indirected(block[i], blocks));
+        merge(data, read_doubly_indirected(block[i], blocks));
     }
 
     return data;

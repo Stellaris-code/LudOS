@@ -35,6 +35,8 @@ SOFTWARE.
 
 #include "terminal/terminal.hpp"
 
+#include "time/time.hpp"
+
 #include "fs/vfs.hpp"
 
 void install_base_commands(Shell &sh)
@@ -302,6 +304,33 @@ void install_base_commands(Shell &sh)
          }
 
          cowsay(join(args, " "));
+         return 0;
+     }});
+
+    sh.register_command(
+    {"time", "benchmark command",
+     "Usage : 'time <command>'",
+     [&sh](const std::vector<std::string>& args)
+     {
+         std::string command = join(args, " ");
+
+         auto start = Time::uptime();
+         sh.command(command);
+         auto end = Time::uptime();
+
+         kprintf("Elapsed time : %f\n", end - start);
+         return 0;
+     }});
+
+    sh.register_command(
+    {"loop", "loop command to infinity",
+     "Usage : 'loop <command>'",
+     [&sh](const std::vector<std::string>& args)
+     {
+         while (true)
+         {
+             sh.command(join(args, " "));
+         }
          return 0;
      }});
 }

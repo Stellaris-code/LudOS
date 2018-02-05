@@ -91,14 +91,12 @@ inline std::string join(const Container& cont, const std::string& join_str)
 }
 
 template <typename Cont>
-Cont inline merge(const Cont& lhs, const Cont& rhs)
+inline void merge(Cont& lhs, const Cont& rhs)
 {
-    Cont cont = lhs;
-    cont.insert(cont.end(),
-                rhs.begin(),
-                rhs.end());
+    size_t old_size = lhs.size();
+    lhs.resize(old_size + rhs.size());
 
-    return cont;
+    std::copy(rhs.begin(), rhs.end(), lhs.begin() + old_size);
 }
 
 std::string inline trim_zstr(const std::string& str)

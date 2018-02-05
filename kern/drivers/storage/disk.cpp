@@ -28,8 +28,37 @@ SOFTWARE.
 #include <vector.hpp>
 
 #include "utils/stlutils.hpp"
+#include "utils/messagebus.hpp"
+
+#include "power/powermanagement.hpp"
 
 // TODO : Locks
+
+void Disk::system_init()
+{
+    MessageBus::register_handler<SyncDisksCache>([](const SyncDisksCache&)
+    {
+        for (Disk& disk : disks())
+        {
+            disk.flush_cache();
+        }
+    });
+
+    MessageBus::register_handler<ShutdownMessage>([](const ShutdownMessage&)
+    {
+        MessageBus::send(SyncDisksCache{});
+    });
+}
+
+Disk::Disk()
+    : m_cache(*this)
+{
+    enable_caching(true);
+}
+
+Disk::~Disk()
+{
+}
 
 std::vector<uint8_t> Disk::read(size_t offset, size_t size) const
 {
@@ -37,8 +66,7 @@ std::vector<uint8_t> Disk::read(size_t offset, size_t size) const
 
     const size_t sector = offset / sect_size;
     const size_t count = size / sect_size + (size%sect_size?1:0);
-
-    auto data = read_sector(sector, count);
+    auto data = read_cache_sector(sector, count);
     assert(data.size() >= size);
     data.resize(size);
 
@@ -60,14 +88,43 @@ void Disk::write(size_t offset, std::vector<uint8_t> data)
     // fill the last chunk with disk data if it's too small
     if (data.size() % sect_size)
     {
-        auto sect = read_sector(sector + count, 1);
+        auto sect = read_cache_sector(sector + count, 1);
         const size_t sect_off = data.size() / sect_size;
         std::copy(data.begin() + sect_off*sect_size, data.end(), sect.begin());
         data.resize(count * sect_size);
         std::copy(sect.begin(), sect.end(), data.begin() + sect_off*sect_size);
     }
 
-    write_sector(sector, data);
+    write_cache_sector(sector, data);
+}
+
+void Disk::enable_caching(bool val)
+{
+    if (!val && m_caching)
+    {
+        flush_cache();
+    }
+
+    m_caching = val;
+}
+
+void Disk::flush_cache()
+{
+    m_cache.flush();
+    flush_hardware_cache();
+}
+
+std::vector<uint8_t> Disk::read_cache_sector(size_t sector, size_t count) const
+{
+    if (m_caching) return m_cache.read_sector(sector, count);
+    else return read_sector(sector, count);
+}
+
+void Disk::write_cache_sector(size_t sector, const std::vector<uint8_t> &data)
+{
+
+    if (m_caching) m_cache.write_sector(sector, data);
+    else write_sector(sector, data);
 }
 
 ref_vector<Disk> Disk::disks()
@@ -82,9 +139,9 @@ ref_vector<Disk> Disk::disks()
 }
 
 MemoryDisk::MemoryDisk(uint8_t* data, size_t size, const std::string& name)
-    : m_size(size), m_data(data), m_name(name)
+    : DiskImpl<MemoryDisk>(), m_size(size), m_data(data), m_name(name)
 {
-
+    enable_caching(false);
 }
 
 MemoryDisk::MemoryDisk(const uint8_t *data, size_t size, const std::string& name)
@@ -117,9 +174,9 @@ void MemoryDisk::write_sector(size_t sector, const std::vector<uint8_t> &data)
 }
 
 DiskSlice::DiskSlice(Disk &disk, size_t offset, size_t size)
-    : m_base_disk(disk), m_offset(offset), m_size(size)
+    : DiskImpl<DiskSlice>(), m_base_disk(disk), m_offset(offset), m_size(size)
 {
-
+    enable_caching(false);
 }
 
 std::vector<uint8_t> DiskSlice::read_sector(size_t sector, size_t count) const

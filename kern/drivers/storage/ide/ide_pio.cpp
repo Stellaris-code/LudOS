@@ -278,6 +278,7 @@ bool ide::pio::read(BusPort port, DriveType type, uint64_t block, size_t count, 
         if (!detail::read_one(port, type, block + i, buf)) return false;
         buf += 256;
     }
+
     return true;
 }
 
@@ -289,6 +290,15 @@ bool ide::pio::write(BusPort port, DriveType type, uint64_t block, size_t count,
         buf += 256;
     }
     return true;
+}
+
+void ide::pio::cache_flush(BusPort port, DriveType type)
+{
+    detail::common(port, type == Master ? 0xA0 : 0xB0, 0, 0);
+
+    outb(port + 7, 0xEA);
+
+    detail::poll_bsy(port);
 }
 
 size_t ide::pio::Disk::disk_size() const
@@ -349,6 +359,7 @@ void ide::pio::Disk::write_sector(size_t sector, const std::vector<uint8_t> &dat
 }
 
 ide::pio::Disk::Disk(BusPort port, DriveType type)
+    : ::DiskImpl<ide::pio::Disk>()
 {
     m_port = port;
     m_type = type;
@@ -373,4 +384,9 @@ DiskException::ErrorType ide::pio::get_error(ide::BusPort port)
     {
         return DiskException::Unknown;
     }
+}
+
+void ide::pio::Disk::flush_hardware_cache()
+{
+    cache_flush(m_port, m_type);
 }

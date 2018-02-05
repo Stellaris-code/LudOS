@@ -24,12 +24,13 @@ SOFTWARE.
 */
 #ifndef POWERMANAGEMENT_HPP
 #define POWERMANAGEMENT_HPP
+struct ResetMessage
+{
 
-#include "panic.hpp"
+};
 
-#include <functional.hpp>
+struct ShutdownMessage
+{
 
-extern std::function<void()> reset;
-extern std::function<void()> shutdown;
-
+};
 #endif // POWERMANAGEMENT_HPP

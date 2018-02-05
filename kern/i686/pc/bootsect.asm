@@ -28,12 +28,16 @@ BootPageDirectory:
     ; enabled because it can't fetch the next instruction! It's ok to unmap this page later.
     dd 0x00000083
     times (KERNEL_PAGE_NUMBER - 1) dd 0                 ; Pages before kernel space.
-    ; This page directory entry defines four 4MB pages containing the kernel.
+    ; This page directory entry defines 8 4MB pages containing the kernel.
     dd 0x00000083
     dd 0x00400083
     dd 0x00800083
     dd 0x00c00083
-    times (1024 - KERNEL_PAGE_NUMBER - 4) dd 0  ; Pages after the kernel image.
+    dd 0x01000083
+    dd 0x01400083
+    dd 0x01800083
+    dd 0x01c00083
+    times (1024 - KERNEL_PAGE_NUMBER - 8) dd 0  ; Pages after the kernel image.
 
 
 section .text

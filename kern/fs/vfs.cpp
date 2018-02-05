@@ -36,50 +36,6 @@ SOFTWARE.
 
 std::unordered_set<void*> created_node_list;
 
-struct stdout_file : public vfs::node
-{
-    virtual size_t write(const void* buf, size_t n) override
-    {
-        auto str = std::string(reinterpret_cast<const char*>(buf), n);
-        kprintf("%s", str.c_str());
-        return n;
-    }
-};
-struct stderr_file : public vfs::node
-{
-    virtual size_t write(const void* buf, size_t n) override
-    {
-        auto str = std::string(reinterpret_cast<const char*>(buf), n);
-
-        err("%s", str.c_str());
-        return n;
-    }
-};
-
-struct stdin_file : public vfs::node
-{
-    virtual size_t read(void* data, size_t size) const override
-    {
-        std::vector<uint8_t> buf;
-
-        auto handl = MessageBus::register_handler<kbd::TextEnteredEvent>([&buf](const kbd::TextEnteredEvent& e)
-        {
-            buf.push_back(e.c);
-        });
-
-        while (buf.size() < size) { nop(); };
-
-        MessageBus::remove_handler(handl);
-
-        for (size_t i { 0 }; i < buf.size(); ++i)
-        {
-            reinterpret_cast<uint8_t*>(data)[i] = buf[i];
-        }
-
-        return buf.size();
-    }
-};
-
 namespace vfs
 {
 
@@ -91,40 +47,6 @@ void init()
     root = std::make_shared<vfs_root>();
 
     log(Info, "VFS initialized.\n");
-}
-
-void mount_dev()
-{
-    root->vfs_children.emplace_back(std::make_shared<node>(root.get()));
-    root->vfs_children.back()->rename("dev");
-    root->vfs_children.back()->m_is_dir = true;
-
-    static auto stdin_node = std::make_shared<stdin_file>();
-    stdin_node->rename("stdin");
-
-    new_descriptor(*stdin_node);
-    if (!mount(stdin_node, "/dev/stdin"))
-    {
-        warn("Can't mount '/dev/stdin'\n");
-    }
-
-    static auto stdout_node = std::make_shared<stdout_file>();
-    stdout_node->rename("stdout");
-
-    new_descriptor(*stdout_node);
-    if (!mount(stdout_node, "/dev/stdout"))
-    {
-        warn("Can't mount '/dev/stdout'\n");
-    }
-
-    static auto stderr_node = std::make_shared<stderr_file>();
-    stderr_node->rename("stderr");
-
-    new_descriptor(*stderr_node);
-    if (!mount(stderr_node, "/dev/stderr"))
-    {
-        warn("Can't mount '/dev/stderr'\n");
-    }
 }
 
 std::shared_ptr<vfs::node> find(const std::string& path)
@@ -157,8 +79,10 @@ contin:;
     return cur_node;
 }
 
-bool mount(std::shared_ptr<vfs::node> node, const std::string &mountpoint)
+bool mount(std::shared_ptr<vfs::node> node, std::string mountpoint)
 {
+    if (!node->is_dir()) mountpoint += "/" + node->name();
+
     auto point = find(parent_path(mountpoint));
     if (!point)
     {
@@ -226,11 +150,6 @@ size_t new_descriptor(vfs::node &node)
 
 node::~node()
 {
-    //    //panic("Destroyed\n");
-    //    if (this == (void*)0x5f72ec) panic("no reason stfu");
-
-    //    log_serial("Destroyed : %p\n", this);
-    //    created_node_list.erase(this);
 }
 
 std::string node::path() const
@@ -252,7 +171,8 @@ std::vector<std::shared_ptr<node> > node::readdir()
 {
     static std::vector<std::shared_ptr<const node>> fkcghugelist;
 
-    auto list = merge(vfs_children, readdir_impl());
+    auto list = vfs_children;
+    merge(list, readdir_impl());
 
     auto cur_dir = std::make_shared<symlink>(*this);
     cur_dir->rename(".");

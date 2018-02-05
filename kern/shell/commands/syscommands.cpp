@@ -34,12 +34,7 @@ SOFTWARE.
 #include "drivers/pci/pci.hpp"
 #include "drivers/pci/pci_vendors.hpp"
 #include "drivers/driver.hpp"
-
-#include "external/liballoc/liballoc.h"
-
-extern "C" unsigned long long l_allocated;		///< Running total of allocated memory.
-extern "C" unsigned long long l_inuse;		///< Running total of used memory.
-extern "C" unsigned long long l_max_inuse;		///< Running total of used memory.
+#include "utils/messagebus.hpp"
 
 void install_sys_commands(Shell &sh)
 {
@@ -48,11 +43,11 @@ void install_sys_commands(Shell &sh)
      "Usage : 'meminfo'",
      [](const std::vector<std::string>&)
      {
-         kprintf("Total memory : %s\n", human_readable_size(MemoryInfo::available_bytes).c_str());
-         kprintf("Free memory : %s\n", human_readable_size(MemoryInfo::available_bytes - l_inuse).c_str());
-         kprintf("Allocated memory : %s\n", human_readable_size(l_allocated).c_str());
-         kprintf("Used memory : %s\n", human_readable_size(l_inuse).c_str());
-         kprintf("Maximal Used memory : %s\n", human_readable_size(l_max_inuse).c_str());
+         kprintf("Total memory : %s\n", human_readable_size(MemoryInfo::total()).c_str());
+         kprintf("Free memory : %s\n", human_readable_size(MemoryInfo::free()).c_str());
+         kprintf("Allocated memory : %s\n", human_readable_size(MemoryInfo::allocated()).c_str());
+         kprintf("Used memory : %s\n", human_readable_size(MemoryInfo::used()).c_str());
+         kprintf("Maximal Used memory : %s\n", human_readable_size(MemoryInfo::max_usage()).c_str());
          return 0;
      }});
 
@@ -87,7 +82,7 @@ void install_sys_commands(Shell &sh)
      "Usage : 'halt'",
      [](const std::vector<std::string>&)
      {
-         shutdown();
+         MessageBus::send(ShutdownMessage{});
          return 0;
      }});
 
@@ -96,13 +91,13 @@ void install_sys_commands(Shell &sh)
      "Usage : 'reboot'",
      [](const std::vector<std::string>&)
      {
-         reset();
+         MessageBus::send(ResetMessage{});
          return 0;
      }});
 
     sh.register_command(
-    {"time", "prints current date",
-     "Usage : 'time'",
+    {"date", "prints current date",
+     "Usage : 'date'",
      [](const std::vector<std::string>&)
      {
          auto date = Time::get_time_of_day();

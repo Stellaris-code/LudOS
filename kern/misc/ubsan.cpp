@@ -60,12 +60,12 @@ static void ubsan_abort(const struct ubsan_source_location* location,
 //    if ( !location || !location->filename )
 //        location = &unknown_location;
 
-//    log_serial("Sanitizer error in %s at %d;%d : '%s'\n", location->filename, location->line, location->column,
-//               violation);
-//    halt();
+    log_serial("Sanitizer error in %s at %d;%d : '%s'\n", location->filename, location->line, location->column,
+               violation);
+
     err("Sanitizer error in %s at %d;%d : '%s'\n", location->filename, location->line, location->column,
         violation);
-    //halt();
+    halt();
 }
 
 #define ABORT_VARIANT(name, params, call) \

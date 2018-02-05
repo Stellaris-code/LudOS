@@ -1,8 +1,7 @@
-
 /*
-messagebus.tpp
+noncopyable.hpp
 
-Copyright (c) 23 Yann BOUCHER (yann)
+Copyright (c) 03 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -23,40 +22,19 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
+#ifndef NONCOPYABLE_HPP
+#define NONCOPYABLE_HPP
 
-#include "messagebus.hpp"
-
-#include "utils/vecutils.hpp"
-
-template <typename T>
-MessageBus::Handle MessageBus::register_handler(std::function<void(const T&)> handler, Priority prio)
+class NonCopyable
 {
-    handlers[std::type_index(typeid(T))].push_back(Entry<T>{handler, prio});
-    return {std::type_index(typeid(T)), --handlers[std::type_index(typeid(T))].end()};
-}
+public:
+    NonCopyable() = default;
+    NonCopyable& operator=(NonCopyable&&) = default;
+    NonCopyable(NonCopyable&& other) = default;
 
-template <typename T>
-size_t MessageBus::send(const T& event)
-{
-    size_t counter { 0 };
-    std::vector<std::any> late_callbacks;
-    for (const auto& callback : handlers[std::type_index(typeid(T))])
-    {
-        ++counter;
-        if (std::any_cast<Entry<T>>(callback).priority == Priority::Last)
-        {
-            late_callbacks.emplace_back(callback);
-        }
-        else
-        {
-            std::any_cast<Entry<T>>(callback).handler(event);
-        }
-    }
+private:
+    NonCopyable(const NonCopyable& other) = delete; // non construction-copyable
+    NonCopyable& operator=(const NonCopyable&) = delete; // non copyable
+};
 
-    for (const auto& late_callback : late_callbacks)
-    {
-        std::any_cast<Entry<T>>(late_callback).handler(event);
-    }
-
-    return counter;
-}
+#endif // NONCOPYABLE_HPP

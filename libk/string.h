@@ -66,7 +66,11 @@ char * _strerror_r(
         int errnum,
         int internal,
         int *errptr);
-int posix_memalign(void **res, size_t align, size_t len);
+int posix_memalign(void **res, size_t align, size_t len)
+#ifdef __cplusplus
+throw()
+#endif
+;
 
 long long strtoll(const char *str, char **endptr, int base);
 unsigned long long strtoull(const char *str, char **endptr, int base);

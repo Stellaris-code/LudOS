@@ -133,11 +133,9 @@ private:
 
 void init();
 
-void mount_dev();
-
 std::shared_ptr<node> find(const std::string& path);
 
-bool mount(std::shared_ptr<node> node, const std::string& mountpoint);
+bool mount(std::shared_ptr<node> node, std::string mountpoint);
 
 void traverse(const vfs::node& node, size_t indent = 0);
 void traverse(const std::string& path);

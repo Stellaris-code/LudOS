@@ -1,8 +1,7 @@
-
 /*
-messagebus.tpp
+edid.hpp
 
-Copyright (c) 23 Yann BOUCHER (yann)
+Copyright (c) 04 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -23,40 +22,44 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
+#ifndef EDID_HPP
+#define EDID_HPP
 
-#include "messagebus.hpp"
+#include <stdint.h>
 
-#include "utils/vecutils.hpp"
+#include <utility.hpp>
+#include <optional.hpp>
 
-template <typename T>
-MessageBus::Handle MessageBus::register_handler(std::function<void(const T&)> handler, Priority prio)
+#include "graphics/video.hpp"
+
+struct EDIDInfo
 {
-    handlers[std::type_index(typeid(T))].push_back(Entry<T>{handler, prio});
-    return {std::type_index(typeid(T)), --handlers[std::type_index(typeid(T))].end()};
+    uint8_t header[8];
+    uint8_t manufacturer_id[2];
+    uint16_t product_code;
+    uint32_t serial_number;
+    uint8_t week;
+    uint8_t year;
+    uint8_t edid_version;
+    uint8_t edid_rev;
+    uint8_t input_type;
+    uint8_t max_honz_size;
+    uint8_t max_vert_size;
+    uint8_t gamma;
+    uint8_t features;
+    uint8_t chroma_info[10];
+    uint8_t established_timings_1;
+    uint8_t established_timings_2;
+    uint16_t standard_timings[8];
+};
+
+namespace EDID
+{
+
+std::optional<EDIDInfo> get();
+
+graphics::MonitorInfo to_monitor_info(const EDIDInfo& info);
+
 }
 
-template <typename T>
-size_t MessageBus::send(const T& event)
-{
-    size_t counter { 0 };
-    std::vector<std::any> late_callbacks;
-    for (const auto& callback : handlers[std::type_index(typeid(T))])
-    {
-        ++counter;
-        if (std::any_cast<Entry<T>>(callback).priority == Priority::Last)
-        {
-            late_callbacks.emplace_back(callback);
-        }
-        else
-        {
-            std::any_cast<Entry<T>>(callback).handler(event);
-        }
-    }
-
-    for (const auto& late_callback : late_callbacks)
-    {
-        std::any_cast<Entry<T>>(late_callback).handler(event);
-    }
-
-    return counter;
-}
+#endif // EDID_HPP

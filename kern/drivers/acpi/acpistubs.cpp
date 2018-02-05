@@ -35,6 +35,7 @@ SOFTWARE.
 #include "drivers/pci/pci.hpp"
 #include "i686/interrupts/isr.hpp"
 #include "io.hpp"
+#include "tasking/spinlock.hpp"
 
 #include <stdlib.h>
 
@@ -258,7 +259,11 @@ ACPI_STATUS AcpiOsCreateLock(ACPI_SPINLOCK *lock)
         return AE_BAD_PARAMETER;
     }
 
+#ifdef __clang_analyser__
+    *lock = const_cast<void*>((void*)(new spinlock_t));
+#else
     *lock = new spinlock_t;
+#endif
 
     if (*lock == nullptr)
     {
@@ -270,7 +275,7 @@ ACPI_STATUS AcpiOsCreateLock(ACPI_SPINLOCK *lock)
 
 void AcpiOsDeleteLock(ACPI_SPINLOCK lock)
 {
-    kfree(reinterpret_cast<void*>(const_cast<int*>(lock)));
+    kfree((void*)(lock));
 }
 
 ACPI_STATUS AcpiOsReadMemory(ACPI_PHYSICAL_ADDRESS addr, UINT64* value, UINT32 width)

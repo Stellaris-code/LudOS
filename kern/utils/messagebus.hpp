@@ -38,8 +38,14 @@ public:
     using Handle = std::pair<std::type_index, std::list<std::any>::const_iterator>;
 
 public:
+    enum Priority
+    {
+        Normal,
+        Last
+    };
+
     template <typename T>
-    static Handle register_handler(std::function<void(const T&)> handler);
+    static Handle register_handler(std::function<void(const T&)> handler, Priority prio = Normal);
 
     static void remove_handler(const Handle& handle);
 
@@ -69,6 +75,13 @@ public:
     };
 
 private:
+    template <typename T>
+    struct Entry
+    {
+        std::function<void(const T&)> handler;
+        Priority priority;
+    };
+
     static inline std::unordered_map<std::type_index, std::list<std::any>> handlers;
 };
 

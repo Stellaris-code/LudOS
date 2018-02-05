@@ -65,6 +65,8 @@ void Paging::map_page(void *p_addr, void *v_addr, uint32_t flags)
 {
     auto entry = page_entry(reinterpret_cast<uintptr_t>(v_addr));
 
+    assert(!entry->present);
+
     //log_serial("Mapping : %p->%p\n", p_addr, v_addr);
 
     entry->phys_addr = reinterpret_cast<uintptr_t>(p_addr) >> 12;
@@ -132,7 +134,7 @@ uintptr_t Paging::alloc_virtual_page(size_t number)
         {
             for (size_t j { 1 }; j < number-1; ++j)
             {
-                entries[addr + j].present = true;
+                //entries[addr + j].present = true;
             }
             return addr * page_size + page_size;
         }
@@ -146,6 +148,7 @@ bool Paging::release_virtual_page(uintptr_t v_addr, size_t number)
     auto entry = page_entry(v_addr);
     for (size_t i { 0 }; i < number; ++i)
     {
+        assert(entry[i].present);
         entry[i].present = false;
         asm volatile ("invlpg (%0)"::"r"(reinterpret_cast<uint8_t*>(v_addr) + i*page_size) : "memory");
     }
@@ -170,8 +173,8 @@ void Paging::init_page_directory()
     memset(page_directory.data(), 0, page_directory.size()*sizeof(PDEntry));
     for (size_t i { 0 }; i < page_tables.size(); ++i)
     {
-        memset(&page_tables[i], 0, page_tables[i].size()*sizeof(PTEntry));
-        page_directory[i].pt_addr = (reinterpret_cast<uint32_t>(&page_tables[i]) - KERNEL_VIRTUAL_BASE) >> 12;
+        memset(page_tables[i].data(), 0, page_tables[i].size()*sizeof(PTEntry));
+        page_directory[i].pt_addr = (reinterpret_cast<uintptr_t>(page_tables[i].data()) - KERNEL_VIRTUAL_BASE) >> 12;
         page_directory[i].present = true;
         page_directory[i].write = true;
     }
@@ -179,7 +182,7 @@ void Paging::init_page_directory()
     map_kernel();
 
     // map last dir entry to itself
-    page_directory.back().pt_addr = (reinterpret_cast<uint32_t>(page_directory.data()) - KERNEL_VIRTUAL_BASE) >> 12;
+    page_directory.back().pt_addr = (reinterpret_cast<uintptr_t>(page_directory.data()) - KERNEL_VIRTUAL_BASE) >> 12;
     page_directory.back().write = true;
     page_directory.back().present = true;
 }

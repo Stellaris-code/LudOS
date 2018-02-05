@@ -27,9 +27,39 @@ SOFTWARE.
 
 #include <stdint.h>
 
+extern "C" unsigned long long l_allocated;		///< Running total of allocated memory.
+extern "C" unsigned long long l_inuse;		///< Running total of used memory.
+extern "C" unsigned long long l_max_inuse;
+
 struct MemoryInfo
 {
     static inline size_t available_bytes { 0 };
+
+    static inline size_t total()
+    {
+        return MemoryInfo::available_bytes;
+    }
+    static inline size_t free()
+    {
+        return MemoryInfo::available_bytes - l_inuse;
+    }
+    static inline size_t allocated()
+    {
+        return l_allocated;
+    }
+    static inline size_t used()
+    {
+        return l_inuse;
+    }
+    static inline size_t max_usage()
+    {
+        return l_max_inuse;
+    }
+
+    static inline size_t usage_ratio()
+    {
+        return used()*100/total();
+    }
 };
 
 #endif // MEMINFO_HPP

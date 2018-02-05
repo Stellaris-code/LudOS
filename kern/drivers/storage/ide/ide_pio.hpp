@@ -50,6 +50,7 @@ DiskException::ErrorType get_error(BusPort port);
 std::vector<std::pair<BusPort, DriveType>> scan();
 
 std::optional<identify_data> identify(BusPort port, DriveType type);
+void cache_flush(BusPort port, DriveType type);
 
 class Disk : public ::DiskImpl<ide::pio::Disk>
 {
@@ -59,6 +60,8 @@ public:
     virtual size_t disk_size() const override;
     virtual size_t sector_size() const override;
     virtual std::string drive_name() const override;
+    virtual void flush_hardware_cache() override;
+    virtual Type media_type() const override { return Disk::HardDrive; }
 
 protected:
     virtual std::vector<uint8_t> read_sector(size_t sector, size_t count) const override;

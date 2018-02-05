@@ -27,27 +27,32 @@ SOFTWARE.
 
 #include <array.hpp>
 
-std::vector<mbr::Partition> mbr::read_partitions(Disk& disk)
+#include "utils/memutils.hpp"
+
+ref_vector<mbr::Partition> mbr::read_partitions(Disk& disk)
 {
-    std::vector<Partition> partitions;
+    ref_vector<Partition> partitions;
 
     auto buf = disk.read(0, 512);
 
     if (buf.empty()) return {};
-    if (buf[0x1fe] != 0x55 && buf[0x1ff] != 0xAA) return {}; // invalid signature
+    if (buf[0x1fe] != 0x55 && buf[0x1ff] != 0xAA)
+    {
+        return {}; // invalid signature
+    }
 
     std::vector<uint16_t> addresses = {static_cast<uint16_t>(0x1BE), static_cast<uint16_t>(0x1CE),
                                        static_cast<uint16_t>(0x1DE), static_cast<uint16_t>(0x1EE)};
     for (size_t i { 0 }; i < addresses.size(); ++i)
     {
         Partition::Data data = *reinterpret_cast<Partition::Data*>(buf.data() + addresses[i]);
-        Partition part(disk, data.relative_sector, data.sector_count);
-        part.partition_number = i+1;
-        part.data = data;
 
-        if (part.data.boot_flag == 0x80)
+        if (data.boot_flag == 0x80)
         {
-            partitions.emplace_back(part);
+            auto& ref = Partition::create_disk(disk, (size_t)data.relative_sector, (size_t)data.sector_count);
+            ref.partition_number = i+1;
+            ref.data = data;
+            partitions.emplace_back(ref);
         }
     }
 

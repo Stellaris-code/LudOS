@@ -120,7 +120,8 @@ void Terminal::put_char(char32_t c)
     {
         check_pos();
         set_entry_at({c, m_data.color()}, m_cursor_x, m_cursor_y);
-        m_cur_line.insert(m_cur_line.begin() + m_cursor_x, {c, m_data.color()});
+        if (m_cursor_x < width()-1) m_cur_line.insert(m_cur_line.begin() + m_cursor_x, {c, m_data.color()});
+        else    m_cur_line.push_back({c, m_data.color()});
         ++m_cursor_x;
     }
 
@@ -188,6 +189,14 @@ void Terminal::write(const char *data, size_t size)
 void Terminal::write_string(const char *data)
 {
     write(data, strlen(data));
+}
+
+void Terminal::forward_delete()
+{
+    if (m_cursor_x < m_cur_line.size())
+    {
+        m_cur_line.erase(m_cur_line.begin() + m_cursor_x);
+    }
 }
 
 void Terminal::clear()

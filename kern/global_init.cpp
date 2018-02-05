@@ -29,6 +29,7 @@ SOFTWARE.
 
 #include "fs/tar.hpp"
 #include "fs/vfs.hpp"
+#include "fs/devfs.hpp"
 #include "fs/fs.hpp"
 #include "fs/ext2.hpp"
 #include "fs/mbr.hpp"
@@ -90,12 +91,22 @@ SOFTWARE.
 // TODO : refaire une VRAIE classe Terminal... c'est atroce l'implémentation actuelle, une horreur lovecraftienne
 // TODO : pas de vfs_children, on peut faire autrement (devfs, ...)
 // TODO : écran de veille ala windows
-// TODO : Ext2
 // TODO : PAE
 // NOTE : don't forget about fpu state
 // TODO : passer AHCI en PCI_DRIVER
 // TODO : Passer en IDE PCI : IDE UDMA
 // TODO : VirtIO drivers
+// TODO : BASIC interpreter
+// TODO : cache bu sec/count pair ?
+// TODO : mount disk on detection
+// TODO : block devices for disks
+// TODO : exception stack dump
+// TODO : vfs : read/write prend un arg offset, et return un vector
+
+/**********************************/
+// If someting doesn't work :
+// - SSE and FPU state between interrupts !!
+/**********************************/
 
 void global_init()
 {
@@ -135,7 +146,12 @@ void global_init()
                 }
                 else if (e.key == kbd::Delete && Keyboard::ctrl() && Keyboard::alt())
                 {
-                    reset();
+                    MessageBus::send(ResetMessage{});
+                }
+                else if (e.key == kbd::Delete)
+                {
+                    term().forward_delete();
+                    term().force_redraw_input();
                 }
                 else if (e.key == kbd::P && Keyboard::ctrl() && Keyboard::alt())
                 {
@@ -158,8 +174,10 @@ void global_init()
             }
         });
 
+        Disk::system_init();
+
         vfs::init();
-        vfs::mount_dev();
+        devfs::init();
 
         log(Info, "Available drives : %zd\n", Disk::disks().size());
 
@@ -167,10 +185,11 @@ void global_init()
         for (size_t disk { 0 }; disk < Disk::disks().size(); ++disk)
         {
             log(Info, "Disk : %zd\n", disk);
-            for (auto partition : mbr::read_partitions(Disk::disks()[disk]))
+            auto partitions = mbr::read_partitions(Disk::disks()[disk]);
+            for (mbr::Partition& partition : partitions)
             {
                 log(Info, "Partition %d offset %d\n", partition.partition_number, partition.data.relative_sector);
-                auto fs = FileSystem::get_disk_fs(partition.slice);
+                auto fs = FileSystem::get_disk_fs(partition);
                 vfs::mount(fs->root(), "/disk" + std::to_string(disk+1) + "p" + std::to_string(partition.partition_number));
             }
         }

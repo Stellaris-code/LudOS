@@ -45,6 +45,10 @@ public:
     static void mark_as_free(uintptr_t addr, size_t size);
 
 private:
+    static uintptr_t find_free_page();
+    static void clear_page(uintptr_t p_addr);
+
+private:
     static inline bitarray<1024*1024, uint32_t> mem_bitmap; // 0 = free / 1 = used
     static inline size_t last_pos { 0 };
 };

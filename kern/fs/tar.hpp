@@ -46,7 +46,7 @@ struct tar_node : public vfs::node
         : vfs::node(parent), m_fs(fs)
     {}
 
-    virtual size_t read(void* buf, size_t bytes) const override;
+    [[nodiscard]] virtual std::vector<uint8_t> read(size_t offset, size_t size) const override;
 
     virtual std::vector<std::shared_ptr<vfs::node>> readdir_impl() override;
 

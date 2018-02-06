@@ -68,8 +68,9 @@ struct node
     virtual uint32_t flags() const { return m_flags; }
     virtual void set_flags(uint32_t flags) { m_flags = flags; }
 
-    [[nodiscard]] virtual size_t read(void*, size_t) const { return 0; }
-    [[nodiscard]] virtual size_t write(const void*, size_t) { return 0; }
+    [[nodiscard]] virtual std::vector<uint8_t> read(size_t offset, size_t size) const { return {}; }
+    [[nodiscard]] std::vector<uint8_t> read() const { return read(0, size()); }
+    [[nodiscard]] virtual bool write(size_t offset, const std::vector<uint8_t>& data) { return false; }
     virtual std::vector<std::shared_ptr<node>> readdir_impl() { return {}; }
     [[nodiscard]] virtual node* mkdir(const std::string&) { return nullptr; };
     [[nodiscard]] virtual node* touch(const std::string&) { return nullptr; }
@@ -117,8 +118,8 @@ struct symlink : public node
 
     }
 
-    [[nodiscard]] virtual size_t read(void* b, size_t n) const { return m_target.read(b, n); }
-    [[nodiscard]] virtual size_t write(const void* b, size_t n) { return m_target.write(b, n); }
+    [[nodiscard]] virtual std::vector<uint8_t> read(size_t offset, size_t size) const { return m_target.read(offset, size); }
+    [[nodiscard]] virtual bool write(size_t offset, const std::vector<uint8_t>& data) { return m_target.write(offset, data); }
     virtual std::vector<std::shared_ptr<node>> readdir_impl() { return m_target.readdir_impl(); }
     [[nodiscard]] virtual node* mkdir(const std::string& s) { return m_target.mkdir(s); };
     [[nodiscard]] virtual node* touch(const std::string& s) { return m_target.touch(s); }

@@ -208,18 +208,12 @@ void ext2_node::rename(const std::string &s)
     }
 }
 
-size_t ext2_node::read(void *buf, size_t size) const
+std::vector<uint8_t> ext2_node::read(size_t offset, size_t size) const
 {
-    if (is_dir()) return 0;
+    if (is_dir()) return {};
 
     auto data = m_fs.read_data(m_inode_struct);
-    if (size < data.size())
-    {
-        data.resize(size);
-    }
-
-    memcpy(buf, data.data(), data.size());
-    return data.size();
+    return std::vector<uint8_t>(data.begin() + offset, data.begin() + offset + size);
 }
 
 std::vector<std::shared_ptr<vfs::node>> ext2_node::readdir_impl()

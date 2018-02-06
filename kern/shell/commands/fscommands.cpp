@@ -121,8 +121,8 @@ void install_fs_commands(Shell &sh)
              return -2;
          }
 
-         std::vector<uint8_t> data(node->size());
-         if (!node->read(data.data(), data.size()))
+         std::vector<uint8_t> data = node->read();
+         if (data.empty())
          {
              sh.error("cannot read file : '%s'\n", path.c_str());
              return -3;
@@ -191,8 +191,8 @@ void install_fs_commands(Shell &sh)
          size_t crc32;
          for (size_t i { 0 }; i < 600; ++i)
          {
-             std::vector<uint8_t> data(node->size());
-             if (!node->read(data.data(), data.size()))
+             std::vector<uint8_t> data = node->read();
+             if (data.empty())
              {
                  sh.error("cannot read file : '%s'\n", path.c_str());
                  return -3;

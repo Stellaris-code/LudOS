@@ -101,7 +101,6 @@ SOFTWARE.
 // TODO : mount disk on detection
 // TODO : block devices for disks
 // TODO : exception stack dump
-// TODO : vfs : read/write prend un arg offset, et return un vector
 
 /**********************************/
 // If someting doesn't work :
@@ -182,9 +181,10 @@ void global_init()
         log(Info, "Available drives : %zd\n", Disk::disks().size());
 
 #if 1
-        for (size_t disk { 0 }; disk < Disk::disks().size(); ++disk)
+        size_t disk_amnt = Disk::disks().size();
+        for (size_t disk { 0 }; disk < disk_amnt; ++disk)
         {
-            log(Info, "Disk : %zd\n", disk);
+            log(Info, "Disk : %zd, name '%s'\n", disk, Disk::disks()[disk].get().drive_name().c_str());
             auto partitions = mbr::read_partitions(Disk::disks()[disk]);
             for (mbr::Partition& partition : partitions)
             {

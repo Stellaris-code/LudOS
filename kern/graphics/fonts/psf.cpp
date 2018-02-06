@@ -62,8 +62,8 @@ bool PSFFont::load(const std::string &path)
     auto file = vfs::find(path);
     if (!file) return false;
 
-    m_data.resize(file->size());
-    if (!file->read(m_data.data(), m_data.size())) return false;
+    m_data = file->read();
+    if (m_data.empty()) return false;
 
     return load_psf();
 }

@@ -37,27 +37,26 @@ namespace devfs
 
 struct stdout_file : public vfs::node
 {
-    virtual size_t write(const void* buf, size_t n) override
+    [[nodiscard]] virtual bool write(size_t offset, const std::vector<uint8_t>& data) override
     {
-        auto str = std::string(reinterpret_cast<const char*>(buf), n);
+        auto str = std::string((char*)data.data(), data.size());
         kprintf("%s", str.c_str());
-        return n;
+        return true;
     }
 };
 struct stderr_file : public vfs::node
 {
-    virtual size_t write(const void* buf, size_t n) override
+    [[nodiscard]] virtual bool write(size_t offset, const std::vector<uint8_t>& data) override
     {
-        auto str = std::string(reinterpret_cast<const char*>(buf), n);
-
+        auto str = std::string((char*)data.data(), data.size());
         err("%s", str.c_str());
-        return n;
+        return true;
     }
 };
 
 struct stdin_file : public vfs::node
 {
-    virtual size_t read(void* data, size_t size) const override
+    [[nodiscard]] virtual std::vector<uint8_t> read(size_t offset, size_t size) const override
     {
         std::vector<uint8_t> buf;
 
@@ -70,12 +69,7 @@ struct stdin_file : public vfs::node
 
         MessageBus::remove_handler(handl);
 
-        for (size_t i { 0 }; i < buf.size(); ++i)
-        {
-            reinterpret_cast<uint8_t*>(data)[i] = buf[i];
-        }
-
-        return buf.size();
+        return buf;
     }
 };
 
@@ -89,18 +83,14 @@ struct disk_file : public vfs::node
 
     virtual size_t size() const override { return m_disk.disk_size(); }
     virtual bool is_dir() const override { return false; }
-    virtual size_t read(void* buf, size_t size) const override
+    [[nodiscard]] virtual std::vector<uint8_t> read(size_t offset, size_t size) const override
     {
-        auto data = m_disk.read(0, size);
-        std::copy(data.begin(), data.end(), (uint8_t*)buf);
-
-        return data.size();
+        return m_disk.read(offset, size);
     }
-    virtual size_t write(const void* buf, size_t n) override
+    [[nodiscard]] virtual bool write(size_t offset, const std::vector<uint8_t>& data) override
     {
-        uint8_t* ptr = (uint8_t*)buf;
-        auto data = std::vector<uint8_t>(ptr, ptr + n);
-        m_disk.write(0, data);
+        m_disk.write(offset, data);
+        return true;
     }
 
     private:

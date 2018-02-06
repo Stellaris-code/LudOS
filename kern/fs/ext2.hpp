@@ -78,23 +78,23 @@ public:
         m_name = "BANANA";
     }
 
-    virtual void rename(const std::string& s);
-    virtual uint32_t permissions() const { return m_inode_struct.type & 0x0FFF; }
-    virtual void set_permissions(uint32_t perms) {}
-    virtual uint32_t uid() const { return m_inode_struct.uid; }
-    virtual void set_uid(uint32_t uid) {}
-    virtual uint32_t gid() const { return m_inode_struct.gid; }
-    virtual void set_gid(uint32_t gid) {}
-    virtual uint32_t flags() const { return m_inode_struct.flags;}
-    virtual void set_flags(uint32_t flags) {}
+    virtual void rename(const std::string& s) override;
+    virtual uint32_t permissions() const override { return m_inode_struct.type & 0x0FFF; }
+    virtual void set_permissions(uint32_t perms) override {}
+    virtual uint32_t uid() const override { return m_inode_struct.uid; }
+    virtual void set_uid(uint32_t uid) override {}
+    virtual uint32_t gid() const override { return m_inode_struct.gid; }
+    virtual void set_gid(uint32_t gid) override {}
+    virtual uint32_t flags() const override { return m_inode_struct.flags;}
+    virtual void set_flags(uint32_t flags) override {}
 
-    [[nodiscard]] virtual size_t read(void*buf, size_t size) const;
-    [[nodiscard]] virtual size_t write(const void*, size_t) {}
-    virtual std::vector<std::shared_ptr<node>> readdir_impl();
-    [[nodiscard]] virtual node* mkdir(const std::string&) {}
-    [[nodiscard]] virtual node* touch(const std::string&) {}
-    virtual size_t size() const { return m_inode_struct.size_lower; }
-    virtual bool is_dir() const { return m_inode_struct.type & (int)ext2::InodeType::Directory; }
+    [[nodiscard]] virtual std::vector<uint8_t> read(size_t offset, size_t size) const override;
+    [[nodiscard]] virtual bool write(size_t offset, const std::vector<uint8_t>& data) override { return false; }
+    virtual std::vector<std::shared_ptr<node>> readdir_impl() override;
+    [[nodiscard]] virtual node* mkdir(const std::string&) override {}
+    [[nodiscard]] virtual node* touch(const std::string&) override {}
+    virtual size_t size() const override { return m_inode_struct.size_lower; }
+    virtual bool is_dir() const override { return m_inode_struct.type & (int)ext2::InodeType::Directory; }
 
 private:
     void update_dir_entry(size_t inode, const std::string& name, uint8_t type);

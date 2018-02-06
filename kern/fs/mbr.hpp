@@ -41,7 +41,7 @@ struct Partition : public DiskSlice
     Partition(Disk& disk, size_t offset, size_t size)
         : DiskSlice(disk, offset, size)
     {
-        enable_caching(false);
+        //enable_caching(false);
     }
 
     template <typename... Args>

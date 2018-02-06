@@ -48,8 +48,8 @@ std::optional<Bitmap> load_image(const std::string &path)
         return {};
     }
 
-    std::vector<uint8_t> data(node->size());
-    if (!node->read(data.data(), data.size()))
+    std::vector<uint8_t> data = node->read();
+    if (data.empty())
     {
         return {};
     }

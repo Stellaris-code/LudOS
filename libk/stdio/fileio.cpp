@@ -53,7 +53,7 @@ int fprintf(FILE * stream, const char * format, ...)
     tfp_format(nullptr, [](void*, char c){ fprintf_data.emplace_back(c); }, format, va);
     va_end(va);
 
-    size_t size = node.get().write(fprintf_data.data(), fprintf_data.size());
+    size_t size = node.get().write(0, fprintf_data);
     if (!size)
     {
         errno = EIO;

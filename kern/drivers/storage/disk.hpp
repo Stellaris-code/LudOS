@@ -154,7 +154,7 @@ public:
 
     virtual size_t disk_size() const override { return m_size * sector_size(); }
     virtual size_t sector_size() const override { return m_base_disk.sector_size(); }
-    virtual std::string drive_name() const override { return m_base_disk.drive_name(); }
+    virtual std::string drive_name() const override { return m_base_disk.drive_name() + " - slice"; }
     virtual void flush_hardware_cache() override { m_base_disk.flush_hardware_cache(); }
     virtual Type media_type() const override { return m_base_disk.media_type(); }
     virtual bool is_partition() const override { return true; };

@@ -31,6 +31,8 @@ SOFTWARE.
 
 ref_vector<mbr::Partition> mbr::read_partitions(Disk& disk)
 {
+    if(!disk.caching_enabled()){err("%s : %d\n", disk.drive_name().c_str(), disk.is_partition());}
+
     ref_vector<Partition> partitions;
 
     auto buf = disk.read(0, 512);

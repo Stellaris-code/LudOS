@@ -33,11 +33,11 @@ struct [[gnu::packed]] stack_frame
     uintptr_t return_addr;
 };
 
-std::vector<uintptr_t> trace_stack(size_t frames)
+std::vector<uintptr_t> trace_stack(void *addr, size_t frames)
 {
     std::vector<uintptr_t> trace;
 
-    stack_frame* fp = (stack_frame*)__builtin_frame_address(0);
+    stack_frame* fp = (stack_frame*)(addr ?: __builtin_frame_address(0));
 
     for(size_t i = 0; (frames != 0 ? i < frames : true) && fp && fp->return_addr; i++)
     {

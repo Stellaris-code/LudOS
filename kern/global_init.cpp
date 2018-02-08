@@ -96,11 +96,10 @@ SOFTWARE.
 // TODO : passer AHCI en PCI_DRIVER
 // TODO : Passer en IDE PCI : IDE UDMA
 // TODO : VirtIO drivers
+// TODO : Ext2 lecture selon offset
 // TODO : BASIC interpreter
 // TODO : cache bu sec/count pair ?
-// TODO : mount disk on detection
-// TODO : block devices for disks
-// TODO : exception stack dump
+// TODO : mount disk on detection ?
 
 /**********************************/
 // If someting doesn't work :
@@ -219,10 +218,12 @@ void global_init()
     }
     catch (const std::exception& e)
     {
+        panic_use_exception_frame = true;
         panic("Uncaught kernel exception : '%s'\n", e.what());
     }
     catch (...)
     {
+        panic_use_exception_frame = true;
         panic("Uncaught kernel exception of type '%s'\n", demangle(current_exception_type().name()));
     }
 }

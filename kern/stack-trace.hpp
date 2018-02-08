@@ -29,6 +29,6 @@ SOFTWARE.
 #include <vector.hpp>
 
 /// if frames == 0, print until no more frames are available
-std::vector<uintptr_t> trace_stack(size_t frames);
+std::vector<uintptr_t> trace_stack(void* addr, size_t frames);
 
 #endif // STACKTRACE_HPP

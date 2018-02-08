@@ -346,6 +346,9 @@ _Unwind_RaiseException(_Unwind_Exception *exception_object) {
   unw_cursor_t cursor;
   unw_getcontext(&uc);
 
+  //panic_stack_ptr = __builtin_frame_address(0);
+  set_exception_frame_ptr(__builtin_frame_address(0));
+
   // Mark that this is a non-forced unwind, so _Unwind_Resume()
   // can do the right thing.
   exception_object->private_1 = 0;

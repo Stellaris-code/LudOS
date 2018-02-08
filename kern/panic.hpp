@@ -30,6 +30,7 @@ SOFTWARE.
 #include "i686/cpu/registers.hpp"
 
 extern const registers* panic_regs;
+extern bool panic_use_exception_frame;
 
 #ifdef __cplusplus
 extern "C"
@@ -39,6 +40,8 @@ extern "C"
 __attribute__((noreturn))
 PRINTF_FMT(1, 2)
 void panic(const char* __restrict fmt, ...);
+
+void set_exception_frame_ptr(void* ptr);
 
 #ifdef __cplusplus
 }

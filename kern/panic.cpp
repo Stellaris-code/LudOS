@@ -49,6 +49,9 @@ SOFTWARE.
 #include "halt.hpp"
 
 const registers* panic_regs = nullptr;
+bool panic_use_exception_frame = false;
+
+std::vector<uintptr_t> exception_stack_frame;
 
 extern "C" void isr_common_stub();
 extern "C" void irq_common_stub();
@@ -81,7 +84,7 @@ size_t trace_offset(const std::vector<uintptr_t>& trace)
 
 void print_stack_symbols()
 {
-    auto trace = trace_stack(0);
+    auto trace = (panic_use_exception_frame?exception_stack_frame:trace_stack(nullptr, 0));
 
     // Discard the first function call to kmain, saves space
     for (size_t i = trace_offset(trace), cnt = 1; i < trace.size(); ++i, ++cnt)
@@ -184,4 +187,10 @@ void panic(const char *fmt, ...)
     //FIXME : Speaker::stop();
 
     halt();
+}
+
+void set_exception_frame_ptr(void *ptr)
+{
+    if (ptr) exception_stack_frame = trace_stack(ptr, 0);
+    else exception_stack_frame.clear();
 }

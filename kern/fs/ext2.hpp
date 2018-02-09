@@ -55,10 +55,14 @@ private:
     const ext2::Inode read_inode(size_t inode) const;
     bool check_inode_presence(size_t inode) const;
 
+    std::vector<uint8_t> read_data_block(const ext2::Inode& inode, size_t blk_id) const;
     std::vector<uint8_t> read_data(const ext2::Inode& inode) const;
-    std::vector<uint8_t> read_singly_indirected(size_t block_id, size_t &blocks) const;
-    std::vector<uint8_t> read_doubly_indirected(size_t block_id, size_t &blocks) const;
-    std::vector<uint8_t> read_triply_indirected(size_t block_id, size_t &blocks) const;
+    std::vector<uint8_t> read_singly_indirected_old(size_t block_id, size_t &blocks) const;
+    std::vector<uint8_t> read_singly_indirected(size_t indirected_block, size_t blk_id) const;
+    std::vector<uint8_t> read_doubly_indirected(size_t indirected_block, size_t blk_id) const;
+    std::vector<uint8_t> read_doubly_indirected_old(size_t block_id, size_t &blocks) const;
+    std::vector<uint8_t> read_triply_indirected(size_t indirected_block, size_t blk_id) const;
+    std::vector<uint8_t> read_triply_indirected_old(size_t block_id, size_t &blocks) const;
 
     std::vector<const ext2::DirectoryEntry> read_directory(const std::vector<uint8_t>& data) const;
 

@@ -46,6 +46,8 @@ namespace vfs
 {
 struct node
 {
+    friend struct symlink;
+
     node(node* parent = nullptr)
     {
         set_parent(parent);
@@ -55,7 +57,7 @@ struct node
     node(const node&) = delete;
     node(node&&) = default;
 
-    ~node();
+    virtual ~node();
 
     virtual std::string name() const { return m_name; }
     virtual void rename(const std::string& name) { m_name = name; }
@@ -68,24 +70,31 @@ struct node
     virtual uint32_t flags() const { return m_flags; }
     virtual void set_flags(uint32_t flags) { m_flags = flags; }
 
-    [[nodiscard]] virtual std::vector<uint8_t> read(size_t offset, size_t size) const { return {}; }
-    [[nodiscard]] std::vector<uint8_t> read() const { return read(0, size()); }
-    [[nodiscard]] virtual bool write(size_t offset, const std::vector<uint8_t>& data) { return false; }
-    virtual std::vector<std::shared_ptr<node>> readdir_impl() { return {}; }
-    [[nodiscard]] virtual node* mkdir(const std::string&) { return nullptr; };
-    [[nodiscard]] virtual node* touch(const std::string&) { return nullptr; }
     virtual size_t size() const { return 0; }
     virtual bool is_dir() const { return m_is_dir; }
+
+    [[nodiscard]] std::vector<uint8_t> read(size_t offset, size_t size) const;
+    [[nodiscard]] std::vector<uint8_t> read() const { return read(0, size()); }
+    [[nodiscard]] bool write(size_t offset, const std::vector<uint8_t>& data);
+    [[nodiscard]] node* mkdir(const std::string&);
+    [[nodiscard]] node* touch(const std::string&);
+    std::vector<std::shared_ptr<node>> readdir();
+    std::vector<std::shared_ptr<const node>> readdir() const;
 
     node* parent() const { return m_parent; }
     void set_parent(node* parent) { m_parent = parent; }
 
     std::string path() const;
 
-    std::vector<std::shared_ptr<node>> readdir();
-    std::vector<std::shared_ptr<const node>> readdir() const;
-
     std::vector<std::shared_ptr<node>> vfs_children {};
+    bool m_is_dir { false };
+
+protected:
+    [[nodiscard]] virtual std::vector<uint8_t> read_impl(size_t, size_t) const { return {}; }
+    [[nodiscard]] virtual bool write_impl(size_t, const std::vector<uint8_t>&) { return false; }
+    virtual std::vector<std::shared_ptr<node>> readdir_impl() { return {}; }
+    [[nodiscard]] virtual node* mkdir_impl(const std::string&) { return nullptr; }
+    [[nodiscard]] virtual node* touch_impl(const std::string&) { return nullptr; }
 
     uint32_t m_perms { 0 };
     uint32_t m_uid { 0 };
@@ -93,7 +102,6 @@ struct node
     uint32_t m_flags { 0 };
 
     std::string m_name {};
-    bool m_is_dir { false };
 
     node* m_parent { nullptr };
 };
@@ -102,31 +110,37 @@ size_t new_descriptor(node &node);
 
 struct vfs_root : public node
 {
-    vfs_root() : node(nullptr) {}
+    vfs_root() : node(nullptr) {m_is_dir = true;}
 
     virtual std::string name() const override { return ""; }
-    virtual node* mkdir(const std::string&) override { panic("not implemented"); }
-    virtual node* touch(const std::string&) override { panic("not implemented"); }
     virtual bool is_dir() const override { return true; }
+
+protected:
+    virtual node* mkdir_impl(const std::string&) override { panic("not implemented"); }
+    virtual node* touch_impl(const std::string&) override { panic("not implemented"); }
 };
 
 struct symlink : public node
 {
+
     symlink(node& target)
         : m_target(target)
     {
 
     }
 
-    [[nodiscard]] virtual std::vector<uint8_t> read(size_t offset, size_t size) const { return m_target.read(offset, size); }
-    [[nodiscard]] virtual bool write(size_t offset, const std::vector<uint8_t>& data) { return m_target.write(offset, data); }
-    virtual std::vector<std::shared_ptr<node>> readdir_impl() { return m_target.readdir_impl(); }
-    [[nodiscard]] virtual node* mkdir(const std::string& s) { return m_target.mkdir(s); };
-    [[nodiscard]] virtual node* touch(const std::string& s) { return m_target.touch(s); }
-    virtual size_t size() const { return m_target.size(); }
-    virtual bool is_dir() const { return m_target.is_dir(); }
+    virtual size_t size() const override { return m_target.size(); }
+    virtual bool is_dir() const override { return m_target.is_dir(); }
 
     node& target() const { return m_target; }
+
+protected:
+
+    [[nodiscard]] virtual std::vector<uint8_t> read_impl(size_t offset, size_t size) const override { return m_target.read(offset, size); }
+    [[nodiscard]] virtual bool write_impl(size_t offset, const std::vector<uint8_t>& data) override { return m_target.write(offset, data); }
+    virtual std::vector<std::shared_ptr<node>> readdir_impl() override { return m_target.readdir_impl(); }
+    [[nodiscard]] virtual node* mkdir_impl(const std::string& s) override { return m_target.mkdir(s); };
+    [[nodiscard]] virtual node* touch_impl(const std::string& s) override { return m_target.touch(s); }
 
 private:
     node& m_target;

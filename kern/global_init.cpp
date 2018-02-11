@@ -94,12 +94,11 @@ SOFTWARE.
 // TODO : PAE
 // NOTE : don't forget about fpu state
 // TODO : passer AHCI en PCI_DRIVER
-// TODO : Passer en IDE PCI : IDE UDMA
 // TODO : VirtIO drivers
-// TODO : Ext2 lecture selon offset
 // TODO : BASIC interpreter
 // TODO : cache bu sec/count pair ?
 // TODO : mount disk on detection ?
+// BUG : IDE PIO seems to be not working, investigate this
 
 /**********************************/
 // If someting doesn't work :

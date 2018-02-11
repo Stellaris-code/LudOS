@@ -42,11 +42,13 @@ class TarFS;
 
 struct tar_node : public vfs::node
 {
+    friend class TarFS;
+
     tar_node(const TarFS& fs, vfs::node* parent)
         : vfs::node(parent), m_fs(fs)
     {}
 
-    [[nodiscard]] virtual std::vector<uint8_t> read(size_t offset, size_t size) const override;
+    [[nodiscard]] virtual std::vector<uint8_t> read_impl(size_t offset, size_t size) const override;
 
     virtual std::vector<std::shared_ptr<vfs::node>> readdir_impl() override;
 

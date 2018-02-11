@@ -138,7 +138,7 @@ void install_sys_commands(Shell &sh)
      {
          for (Driver& driver : Driver::list())
          {
-             kprintf("\t%s\n", driver.name().c_str());
+             kprintf("\t%s\n", driver.driver_name().c_str());
          }
          return 0;
      }});

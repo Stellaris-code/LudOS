@@ -25,7 +25,240 @@ SOFTWARE.
 
 #include "ide_common.hpp"
 
+#include "io.hpp"
+
+#include <array.hpp>
+
+#include "utils/logging.hpp"
+#include "utils/bitops.hpp"
+#include "utils/nop.hpp"
+
 namespace ide
 {
+
+void select(uint16_t port, uint8_t type, uint64_t block, uint16_t count)
+{
+    outb(port + 6, 0x40 | type);
+
+    outb(port + 2, (count >> 8) & 0xFF);
+
+    outb(port + 3, (block >> 24) & 0xFF);
+    outb(port + 4, (block >> 32) & 0xFF);
+    outb(port + 5, (block >> 40) & 0xFF);
+
+    outb(port + 2, count & 0xFF);
+
+    outb(port + 3, block & 0xFF);
+    outb(port + 4, (block >> 8) & 0xFF);
+    outb(port + 5, (block >> 16) & 0xFF);
+
+    // 400ns
+    for (size_t i { 0 }; i < 5; ++i)
+    {
+        inb(port + 6);
+    }
+}
+
+std::optional<identify_data> identify(uint16_t port, uint8_t type)
+{
+    select(port, type == Master ? 0xA0 : 0xB0, 0, 0);
+
+    outb(port + 7, 0xEC);
+
+    const char* port_name;
+    if (port == Primary)
+    {
+        port_name = "Primary";
+    }
+    else if (port == Secondary)
+    {
+        port_name = "Secondary";
+    }
+    else if (port == Third)
+    {
+        port_name = "Third";
+    }
+    else
+    {
+        port_name = "Fourth";
+    }
+
+    uint8_t status = inb(port + 7);
+    if (status)
+    {
+
+        poll(port);
+        do
+        {
+            status = inb(port + 7);
+            if(status & 0x01)
+            {
+                log(Debug, "ATA %s%s has ERR set. Disabled.\n", port_name, type==Master?" master":" slave");
+                return {};
+            }
+        } while(!(status & 0x08));
+
+        log(Debug, "ATA %s%s is online.\n", port_name, type==Master?" master":" slave");
+
+        std::array<uint16_t, 256> buffer;
+
+        poll(port);
+
+        for(size_t i = 0; i<256; i++)
+        {
+            buffer[i] = inw(port + 0);
+        }
+
+        identify_data* id_data;
+        id_data = reinterpret_cast<identify_data*>(buffer.data());
+
+        log(Debug, "Firmware : %s, model : %s\n", ata_string(id_data->firmware).c_str(), ata_string(id_data->model).c_str());
+
+        return *id_data;
+    }
+    else
+    {
+        log(Debug, "ATA %s%s doesn't exist.\n", port_name, type==Master?" master":" slave");
+
+        return {};
+    }
+}
+
+void poll(uint16_t port)
+{
+    size_t max_iters { 0x10000 };
+    while (!(inb(port + 7) & 0x08) && max_iters-- > 0) { nop(); }
+}
+
+void poll_bsy(uint16_t port)
+{
+    size_t max_iters { 0x10000 };
+    while ((inb(port + 7) & 0x80) && max_iters-- > 0) { nop(); }
+}
+
+bool flush(uint16_t port)
+{
+    poll_bsy(port);
+    poll(port);
+
+    outb(port + 7, 0xEA);
+
+    poll_bsy(port);
+    poll(port);
+
+    if (error_set(port))
+    {
+        bool stat = !error_set(port);
+        if (!stat)
+        {
+            clear_error(port);
+
+            return stat;
+        }
+    }
+
+    return true;
+}
+
+bool error_set(uint16_t port)
+{
+    return bit_check(status_register(port), 0) || bit_check(status_register(port), 5);
+}
+
+void clear_error(uint16_t port)
+{
+    outb(port + 7, 0x00); // nop
+}
+
+uint8_t error_register(uint16_t port)
+{
+    return inb(port + 1);
+}
+
+uint8_t status_register(uint16_t port)
+{
+    return inb(port + 7);
+}
+
+uint8_t drive_register(uint16_t port)
+{
+    return inb(port + 6);
+}
+
+DiskException::ErrorType get_error(uint16_t port)
+{
+    auto err = error_register(port);
+    if (err & ATA_ER_BBK)
+    {
+        return DiskException::BadSector;
+    }
+    if (err & ATA_ER_MC || err & ATA_ER_MCR)
+    {
+        return DiskException::NoMedia;
+    }
+    if (err & ATA_ER_ABRT)
+    {
+        return DiskException::Aborted;
+    }
+    else
+    {
+        return DiskException::Unknown;
+    }
+}
+
+void cache_flush(uint16_t port, uint8_t type)
+{
+    select(port, type == Master ? 0xA0 : 0xB0, 0, 0);
+
+    outb(port + 7, 0xEA);
+
+    poll_bsy(port);
+}
+
+IDEDisk::IDEDisk(uint16_t port, uint8_t type)
+    : ::DiskImpl<IDEDisk>()
+{
+    m_port = port;
+    m_type = type;
+}
+
+size_t IDEDisk::disk_size() const
+{
+    if (!m_id_data) update_id_data();
+
+    if (m_id_data) return m_id_data->sectors_48*512;
+    else return 0;
+}
+
+size_t IDEDisk::sector_size() const
+{
+    if (!m_id_data) update_id_data();
+
+    if (m_id_data) return m_id_data->sector_size*2?:512;
+    else return 512;
+}
+
+std::string IDEDisk::drive_name() const
+{
+    if (!m_id_data) update_id_data();
+
+    if (m_id_data) return ata_string(m_id_data->model);
+    else return "<invalid>";
+}
+
+void IDEDisk::update_id_data() const
+{
+    m_id_data = identify(m_port, m_type);
+
+    if (!m_id_data)
+    {
+        warn("IDE PIO disk 0x%x/0x%x returned invalid identify data\n", m_port, m_type);
+    }
+}
+
+void IDEDisk::flush_hardware_cache()
+{
+    cache_flush(m_port, m_type);
+}
 
 }

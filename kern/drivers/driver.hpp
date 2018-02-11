@@ -57,7 +57,7 @@ public:
     }
 
 public:
-    virtual std::string name() const = 0;
+    virtual std::string driver_name() const = 0;
 
 private:
     static inline std::vector<std::unique_ptr<Driver>> m_drivers;

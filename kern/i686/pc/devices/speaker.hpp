@@ -42,7 +42,7 @@ public:
     void beep_(uint32_t time, uint16_t freq = 1000);
     void stop();
 
-    virtual std::string name() const { return "PC Speaker"; }
+    virtual std::string driver_name() const override { return "PC Speaker"; }
 
 private:
     void play_sound(uint16_t freq);

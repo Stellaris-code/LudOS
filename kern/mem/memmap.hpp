@@ -44,6 +44,18 @@ public:
     static void unmap(void* v_addr, size_t len);
 
     static uintptr_t physical_address(const void* v_addr);
+
+    static size_t page_size();
+
+    static inline uintptr_t page(uintptr_t addr)
+    {
+        return addr & ~(page_size()-1);
+    }
+
+    static inline uintptr_t offset(uintptr_t addr)
+    {
+        return addr & (page_size()-1);
+    }
 };
 
 #endif // MEMMAP_HPP

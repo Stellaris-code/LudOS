@@ -174,6 +174,7 @@ class DiskException : public std::runtime_error
 public:
     enum ErrorType
     {
+        OK = 0,
         OutOfBounds,
         ReadOnly,
         BadSector,
@@ -205,7 +206,7 @@ public:
     explicit DiskException(const Disk& disk, ErrorType type)
         : std::runtime_error("Disk error : " + to_string(type) + " on disk " + disk.drive_name())
     {
-
+        assert(type != OK);
     }
 };
 

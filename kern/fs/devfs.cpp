@@ -37,7 +37,8 @@ namespace devfs
 
 struct stdout_file : public vfs::node
 {
-    [[nodiscard]] virtual bool write(size_t offset, const std::vector<uint8_t>& data) override
+protected:
+    [[nodiscard]] virtual bool write_impl(size_t offset, const std::vector<uint8_t>& data) override
     {
         auto str = std::string((char*)data.data(), data.size());
         kprintf("%s", str.c_str());
@@ -46,7 +47,8 @@ struct stdout_file : public vfs::node
 };
 struct stderr_file : public vfs::node
 {
-    [[nodiscard]] virtual bool write(size_t offset, const std::vector<uint8_t>& data) override
+protected:
+    [[nodiscard]] virtual bool write_impl(size_t offset, const std::vector<uint8_t>& data) override
     {
         auto str = std::string((char*)data.data(), data.size());
         err("%s", str.c_str());
@@ -56,7 +58,8 @@ struct stderr_file : public vfs::node
 
 struct stdin_file : public vfs::node
 {
-    [[nodiscard]] virtual std::vector<uint8_t> read(size_t offset, size_t size) const override
+protected:
+    [[nodiscard]] virtual std::vector<uint8_t> read_impl(size_t offset, size_t size) const override
     {
         std::vector<uint8_t> buf;
 
@@ -65,7 +68,7 @@ struct stdin_file : public vfs::node
             buf.push_back(e.c);
         });
 
-        while (buf.size() < size) { nop(); };
+        while (buf.size() < size) { wait_for_interrupts(); };
 
         MessageBus::remove_handler(handl);
 
@@ -83,11 +86,13 @@ struct disk_file : public vfs::node
 
     virtual size_t size() const override { return m_disk.disk_size(); }
     virtual bool is_dir() const override { return false; }
-    [[nodiscard]] virtual std::vector<uint8_t> read(size_t offset, size_t size) const override
+
+protected:
+    [[nodiscard]] virtual std::vector<uint8_t> read_impl(size_t offset, size_t size) const override
     {
         return m_disk.read(offset, size);
     }
-    [[nodiscard]] virtual bool write(size_t offset, const std::vector<uint8_t>& data) override
+    [[nodiscard]] virtual bool write_impl(size_t offset, const std::vector<uint8_t>& data) override
     {
         m_disk.write(offset, data);
         return true;
@@ -99,7 +104,7 @@ struct disk_file : public vfs::node
 
 void init()
 {
-    auto devfs_root = std::make_shared<vfs::node>(vfs::root.get());
+    std::shared_ptr<vfs::node> devfs_root = std::make_shared<vfs::node>(vfs::root.get());
     devfs_root->m_is_dir = true;
     vfs::mount(devfs_root, "/dev");
 

@@ -152,6 +152,40 @@ node::~node()
 {
 }
 
+std::vector<uint8_t> node::read(size_t offset, size_t size) const
+{
+    assert(!is_dir());
+    assert(offset + size <= this->size());
+
+    auto data = read_impl(offset, size);
+
+    assert(data.size() == size);
+
+    return data;
+}
+
+bool node::write(size_t offset, const std::vector<uint8_t> &data)
+{
+    assert(!is_dir());
+    assert(offset + data.size() <= size());
+
+    return write_impl(offset, data);
+}
+
+node *node::mkdir(const std::string & str)
+{
+    assert(is_dir());
+
+    return mkdir_impl(str);
+}
+
+node *node::touch(const std::string & str)
+{
+    assert(is_dir());
+
+    return touch_impl(str);
+}
+
 std::string node::path() const
 {
     std::string suffix;
@@ -169,6 +203,8 @@ std::string node::path() const
 
 std::vector<std::shared_ptr<node> > node::readdir()
 {
+    assert(is_dir());
+
     static std::vector<std::shared_ptr<const node>> fkcghugelist;
 
     auto list = vfs_children;

@@ -243,14 +243,13 @@ inline void init(uint32_t magic, const multiboot_info_t* mbd_info)
 
     pci::scan();
 
-    if (!ahci::init() && !ide::dma::init())
-    {
-        ide::pio::init();
-    }
-
     Driver::interface_init();
     PciDriver::interface_init();
 
+    if (Driver::get_drivers<ide::dma::Controller>().empty() && !ahci::init())
+    {
+        ide::pio::init();
+    }
 }
 }
 }

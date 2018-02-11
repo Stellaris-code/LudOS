@@ -79,13 +79,6 @@ bool RTL8139::accept(const pci::PciDevice &dev)
     return dev.vendorID == 0x10ec && dev.deviceID == 0x8139;
 }
 
-void RTL8139::enable_bus_mastering()
-{
-    auto reg = pci::read_reg(m_dev.bus, m_dev.slot, m_dev.func, pci::Reg::Command);
-    reg |= 0b100; // set bit 2
-    pci::write_reg(m_dev.bus, m_dev.slot, m_dev.func, pci::Reg::Command, reg);
-}
-
 void RTL8139::power_on()
 {
     outb(m_iobase + CONFIG_1, 0);

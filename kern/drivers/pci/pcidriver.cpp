@@ -51,12 +51,19 @@ void PciDriver::interface_init()
     }
 }
 
+void PciDriver::enable_bus_mastering()
+{
+    auto reg = pci::read_reg(m_dev.bus, m_dev.slot, m_dev.func, pci::Reg::Command);
+    reg |= 0b100; // set bit 2
+    pci::write_reg(m_dev.bus, m_dev.slot, m_dev.func, pci::Reg::Command, reg);
+}
+
 class TestDriver : public PciDriver
 {
 public:
     virtual void init() {}
 
-    virtual std::string name() const { return "PCI Test driver"; }
+    virtual std::string driver_name() const override { return "PCI Test driver"; }
 
     static bool accept(const pci::PciDevice& dev)
     {

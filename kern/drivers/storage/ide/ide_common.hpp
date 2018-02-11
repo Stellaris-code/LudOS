@@ -28,8 +28,11 @@ SOFTWARE.
 #include <stdint.h>
 
 #include <string.hpp>
+#include <optional.hpp>
 
 #include "utils/stlutils.hpp"
+
+#include "drivers/storage/disk.hpp"
 
 #define ATA_ER_BBK      0x80    // Bad sector
 #define ATA_ER_UNC      0x40    // Uncorrectable data
@@ -84,6 +87,11 @@ enum BusPort : uint16_t
     Fourth = 0x168
 };
 
+static constexpr uint32_t ata_read_dma_ex = 0x25;
+static constexpr uint32_t ata_write_dma_ex = 0x35;
+static constexpr uint32_t ata_identify = 0xEC;
+static constexpr uint32_t ata_flush_ext = 0xEA;
+
 template <typename T>
 std::string ata_string(T&& arr)
 {
@@ -99,6 +107,44 @@ std::string ata_string(T&& arr)
 
     return trim_right(str);
 }
+
+uint8_t error_register(uint16_t port);
+uint8_t status_register(uint16_t port);
+uint8_t drive_register(uint16_t port);
+DiskException::ErrorType get_error(uint16_t port);
+void poll(uint16_t port);
+void poll_bsy(uint16_t port);
+bool flush(uint16_t port);
+bool error_set(uint16_t port);
+void clear_error(uint16_t port);
+void cache_flush(uint16_t port, uint8_t type);
+
+void select(uint16_t port, uint8_t type, uint64_t block, uint16_t count);
+std::optional<identify_data> identify(uint16_t port, uint8_t type);
+
+class IDEDisk : public ::DiskImpl<IDEDisk>
+{
+public:
+    IDEDisk(uint16_t port, uint8_t type);
+
+    virtual size_t disk_size() const override;
+    virtual size_t sector_size() const override;
+    virtual std::string drive_name() const override;
+    virtual void flush_hardware_cache() override;
+    virtual Type media_type() const override { return Disk::HardDrive; }
+
+protected:
+    virtual std::vector<uint8_t> read_sector(size_t sector, size_t count) const override = 0;
+    virtual void write_sector(size_t sector, const std::vector<uint8_t>& data) override = 0;
+
+protected:
+    void update_id_data() const;
+
+protected:
+    uint16_t m_port;
+    uint8_t m_type;
+    mutable std::optional<identify_data> m_id_data;
+};
 
 }
 

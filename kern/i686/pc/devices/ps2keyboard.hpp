@@ -47,7 +47,7 @@ public:
     void set_leds(uint8_t leds);
     void toggle_led(uint8_t led, bool value);
 
-    virtual std::string name() const { return "PS/2 Keyboard"; }
+    virtual std::string driver_name() const override { return "PS/2 Keyboard"; }
 
 private:
     bool isr(const registers*);

@@ -87,8 +87,8 @@ enum Reg
 {
     DevID = 0,
     VenID = 2,
-    Status = 4,
-    Command = 6
+    Status = 6,
+    Command = 4
 };
 
 inline BARType bar_type(uint32_t bar)

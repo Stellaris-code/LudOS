@@ -117,6 +117,10 @@ const registers* irq_handler(const registers* const regs)
     {
         handl(regs);
     }
+    else
+    {
+        //log_serial("Unhandled irq %d\n", regs->int_no);
+    }
     pic::send_eoi(regs->int_no-31);
 
     return regs;

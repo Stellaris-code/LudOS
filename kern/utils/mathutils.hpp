@@ -41,4 +41,26 @@ T round_to(T value, T roundTo)
     return (value + (roundTo - 1)) & ~(roundTo - 1);
 }
 
+inline size_t intlog(double base, double x)
+{
+    return static_cast<size_t>(log10(x) / log10(base));
+}
+
+template <typename T>
+inline T ipow(T base, T exp)
+{
+    static_assert(std::is_integral_v<T>);
+
+    T result = 1;
+    while (exp)
+    {
+        if (exp & 1)
+            result *= base;
+        exp >>= 1;
+        base *= base;
+    }
+
+    return result;
+}
+
 #endif // MATHUTILS_HPP

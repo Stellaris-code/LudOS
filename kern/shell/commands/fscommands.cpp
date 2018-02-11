@@ -104,7 +104,7 @@ void install_fs_commands(Shell &sh)
 
     sh.register_command(
     {"cat", "print file contents",
-     "Usage : cat <file>",
+     "Usage : cat <file> (offset) (size)",
      [&sh](const std::vector<std::string>& args)
      {
          std::string path = "/";
@@ -121,7 +121,19 @@ void install_fs_commands(Shell &sh)
              return -2;
          }
 
-         std::vector<uint8_t> data = node->read();
+         size_t offset = 0;
+         size_t size = node->size();
+
+         if (args.size() >= 2)
+         {
+             offset = std::stoul(args[1]);
+         }
+         if (args.size() >= 3)
+         {
+             size = std::stoul(args[2]);
+         }
+
+         std::vector<uint8_t> data = node->read(offset, size);
          if (data.empty())
          {
              sh.error("cannot read file : '%s'\n", path.c_str());

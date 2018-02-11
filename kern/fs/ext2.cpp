@@ -29,6 +29,7 @@ SOFTWARE.
 #include "time/time.hpp"
 #include "utils/bitops.hpp"
 #include "utils/vecutils.hpp"
+#include "utils/mathutils.hpp"
 
 Ext2FS::Ext2FS(Disk &disk) : FSImpl<Ext2FS>(disk)
 {
@@ -119,142 +120,51 @@ std::vector<uint8_t> Ext2FS::read_data_block(const ext2::Inode &inode, size_t bl
 
     if (blk_id < entries_per_block)
     {
-        return read_singly_indirected(inode.block_ptr[12], blk_id);
+        return read_indirected(inode.block_ptr[12], blk_id, 1);
     }
     blk_id -= entries_per_block;
 
     if (blk_id < entries_per_block*entries_per_block)
     {
-        return read_doubly_indirected(inode.block_ptr[13], blk_id);
+        return read_indirected(inode.block_ptr[13], blk_id, 2);
     }
     blk_id -= entries_per_block*entries_per_block;
 
-    return read_triply_indirected(inode.block_ptr[14], blk_id);
+    return read_indirected(inode.block_ptr[14], blk_id, 3);
 }
 
-std::vector<uint8_t> Ext2FS::read_data(const ext2::Inode &inode) const
+std::vector<uint8_t> Ext2FS::read_indirected(size_t indirected_block, size_t blk_id, size_t depth) const
 {
-#if 0
     std::vector<uint8_t> data;
-    size_t blocks = inode.blocks_512 / (block_size()/512) + (inode.blocks_512%(block_size()/512)?1:0);
-    for (size_t i { 0 }; i < 12; ++i)
+    size_t entries = ipow<size_t>(block_size()/sizeof(uint32_t), depth-1);
+    auto vec = read_block(indirected_block);
+    uint32_t* block = (uint32_t*)vec.data();
+
+    if (depth <= 1) return read_block(block[blk_id]);
+    else
     {
-        if (blocks == 0 || inode.block_ptr[i] == 0) break;
-        merge(data, read_block(inode.block_ptr[i]));
-        --blocks;
+        size_t tgt_block_idx = blk_id / entries;
+        size_t offset = blk_id % entries;
+
+        return read_indirected(block[tgt_block_idx], offset, depth - 1);
     }
+}
 
-    merge(data, read_singly_indirected_old(inode.block_ptr[12], blocks));
-    merge(data, read_doubly_indirected_old(inode.block_ptr[13], blocks));
-    merge(data, read_triply_indirected(inode.block_ptr[14], blocks));
-
-    return data;
-#else
+std::vector<uint8_t> Ext2FS::read_data(const ext2::Inode &inode, size_t offset, size_t size) const
+{
     size_t blocks = inode.blocks_512 / (block_size()/512) + (inode.blocks_512%(block_size()/512)?1:0);
+
+    assert(offset + size <= blocks);
+
     std::vector<uint8_t> data;
     data.reserve(blocks);
 
-    for (size_t i { 0 }; i < blocks; ++i)
+    for (size_t i { offset }; i < offset + size; ++i)
     {
         merge(data, read_data_block(inode, i));
     }
 
     return data;
-#endif
-}
-
-std::vector<uint8_t> Ext2FS::read_singly_indirected(size_t indirected_block, size_t blk_id) const
-{
-    std::vector<uint8_t> data;
-    assert(blk_id < block_size()/sizeof(uint32_t));
-    auto vec = read_block(indirected_block);
-    uint32_t* block = (uint32_t*)vec.data();
-
-    return read_block(block[blk_id]);
-}
-std::vector<uint8_t> Ext2FS::read_doubly_indirected(size_t indirected_block, size_t blk_id) const
-{
-    std::vector<uint8_t> data;
-    size_t id_num = block_size()/sizeof(uint32_t);
-    auto vec = read_block(indirected_block);
-    uint32_t* block = (uint32_t*)vec.data();
-
-    size_t singly_block_idx = blk_id / id_num;
-    size_t offset = blk_id % id_num;
-
-    return read_singly_indirected(block[singly_block_idx], offset);
-}
-
-std::vector<uint8_t> Ext2FS::read_triply_indirected(size_t indirected_block, size_t blk_id) const
-{
-    std::vector<uint8_t> data;
-    size_t id_num = block_size()/sizeof(uint32_t);
-    auto vec = read_block(indirected_block);
-    uint32_t* block = (uint32_t*)vec.data();
-
-    size_t doubly_block_idx = blk_id / (id_num*id_num);
-    size_t offset = blk_id % (id_num*id_num);
-
-    return read_doubly_indirected(block[doubly_block_idx], offset);
-}
-
-std::vector<uint8_t> Ext2FS::read_singly_indirected_old(size_t block_id, size_t& blocks) const
-{
-    std::vector<uint8_t> data;
-
-    for (size_t i { 0 }; i < block_size()/sizeof(uint32_t); ++i)
-    {
-        if (blocks == 0) return data;
-        merge(data, read_singly_indirected(block_id, i));
-        --blocks;
-    }
-
-    return data;
-}
-
-std::vector<uint8_t> Ext2FS::read_doubly_indirected_old(size_t block_id, size_t &blocks) const
-{
-    size_t id_num = block_size()/sizeof(uint32_t);
-    std::vector<uint8_t> data;
-
-    for (size_t i { 0 }; i < id_num*id_num; ++i)
-    {
-        if (blocks == 0) return data;
-        merge(data, read_doubly_indirected(block_id, i));
-        --blocks;
-    }
-
-    return data;
-}
-
-std::vector<uint8_t> Ext2FS::read_triply_indirected_old(size_t block_id, size_t &blocks) const
-{
-#if 0
-    std::vector<uint8_t> data;
-    size_t id_num = block_size()/sizeof(uint32_t);
-    auto vec = read_block(block_id);
-    uint32_t* block = (uint32_t*)vec.data();
-
-    for (size_t i { 0 }; i < id_num; ++i)
-    {
-        if (blocks == 0 || block[i] == 0) return data;
-        merge(data, read_doubly_indirected(block[i], blocks));
-    }
-
-    return data;
-#else
-    size_t id_num = block_size()/sizeof(uint32_t);
-    std::vector<uint8_t> data;
-
-    for (size_t i { 0 }; i < id_num*id_num*id_num; ++i)
-    {
-        if (blocks == 0) return data;
-        merge(data, read_triply_indirected(block_id, i));
-        --blocks;
-    }
-
-    return data;
-#endif
 }
 
 std::vector<const ext2::DirectoryEntry> Ext2FS::read_directory(const std::vector<uint8_t> &data) const
@@ -291,12 +201,17 @@ void ext2_node::rename(const std::string &s)
     }
 }
 
-std::vector<uint8_t> ext2_node::read(size_t offset, size_t size) const
+std::vector<uint8_t> ext2_node::read_impl(size_t offset, size_t size) const
 {
     if (is_dir()) return {};
 
-    auto data = m_fs.read_data(m_inode_struct);
-    return std::vector<uint8_t>(data.begin() + offset, data.begin() + offset + size);
+    size_t block_off = offset/m_fs.block_size();
+    size_t block_size = size/m_fs.block_size() + (size%m_fs.block_size()?1:0);
+
+    size_t byte_off = offset % m_fs.block_size();
+
+    auto data = m_fs.read_data(m_inode_struct, block_off, block_size);
+    return std::vector<uint8_t>(data.begin() + byte_off, data.begin() + offset + size);
 }
 
 std::vector<std::shared_ptr<vfs::node>> ext2_node::readdir_impl()
@@ -304,15 +219,15 @@ std::vector<std::shared_ptr<vfs::node>> ext2_node::readdir_impl()
     if (!is_dir()) return {};
 
     std::vector<std::shared_ptr<vfs::node>> vec;
-
-    for (const auto& entry : m_fs.read_directory(m_fs.read_data(m_inode_struct)))
+    size_t blocks = m_inode_struct.blocks_512 / (m_fs.block_size()/512) + (m_inode_struct.blocks_512%(m_fs.block_size()/512)?1:0);
+    for (const auto& entry : m_fs.read_directory(m_fs.read_data(m_inode_struct, 0, blocks)))
     {
         if (std::string(entry.name, entry.name_len) != "." &&
                 std::string(entry.name, entry.name_len) != "..")
         {
             vec.push_back(std::static_pointer_cast<vfs::node>(
                               std::make_shared<ext2_node>(m_fs, this, entry.inode)));
-            vec.back()->m_name = std::string(entry.name, entry.name_len);
+            vec.back()->rename(std::string(entry.name, entry.name_len));
         }
     }
 

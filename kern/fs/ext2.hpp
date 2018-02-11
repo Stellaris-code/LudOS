@@ -55,14 +55,9 @@ private:
     const ext2::Inode read_inode(size_t inode) const;
     bool check_inode_presence(size_t inode) const;
 
+    std::vector<uint8_t> read_data(const ext2::Inode& inode, size_t offset, size_t size) const;
     std::vector<uint8_t> read_data_block(const ext2::Inode& inode, size_t blk_id) const;
-    std::vector<uint8_t> read_data(const ext2::Inode& inode) const;
-    std::vector<uint8_t> read_singly_indirected_old(size_t block_id, size_t &blocks) const;
-    std::vector<uint8_t> read_singly_indirected(size_t indirected_block, size_t blk_id) const;
-    std::vector<uint8_t> read_doubly_indirected(size_t indirected_block, size_t blk_id) const;
-    std::vector<uint8_t> read_doubly_indirected_old(size_t block_id, size_t &blocks) const;
-    std::vector<uint8_t> read_triply_indirected(size_t indirected_block, size_t blk_id) const;
-    std::vector<uint8_t> read_triply_indirected_old(size_t block_id, size_t &blocks) const;
+    std::vector<uint8_t> read_indirected(size_t indirected_block, size_t blk_id, size_t depth) const;
 
     std::vector<const ext2::DirectoryEntry> read_directory(const std::vector<uint8_t>& data) const;
 
@@ -79,7 +74,6 @@ public:
     ext2_node(const Ext2FS& fs, vfs::node* parent, size_t inode)
         : vfs::node(parent), m_fs(fs), m_inode(inode), m_inode_struct(fs.read_inode(inode))
     {
-        m_name = "BANANA";
     }
 
     virtual void rename(const std::string& s) override;
@@ -92,11 +86,11 @@ public:
     virtual uint32_t flags() const override { return m_inode_struct.flags;}
     virtual void set_flags(uint32_t flags) override {}
 
-    [[nodiscard]] virtual std::vector<uint8_t> read(size_t offset, size_t size) const override;
-    [[nodiscard]] virtual bool write(size_t offset, const std::vector<uint8_t>& data) override { return false; }
+    [[nodiscard]] virtual std::vector<uint8_t> read_impl(size_t offset, size_t size) const override;
+    [[nodiscard]] virtual bool write_impl(size_t offset, const std::vector<uint8_t>& data) override { return false; }
     virtual std::vector<std::shared_ptr<node>> readdir_impl() override;
-    [[nodiscard]] virtual node* mkdir(const std::string&) override {}
-    [[nodiscard]] virtual node* touch(const std::string&) override {}
+    [[nodiscard]] virtual node* mkdir_impl(const std::string&) override { return nullptr; }
+    [[nodiscard]] virtual node* touch_impl(const std::string&) override { return nullptr; }
     virtual size_t size() const override { return m_inode_struct.size_lower; }
     virtual bool is_dir() const override { return m_inode_struct.type & (int)ext2::InodeType::Directory; }
 

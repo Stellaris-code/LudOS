@@ -44,7 +44,7 @@ public:
 
     void set_sample_rate(uint8_t rate);
 
-    virtual std::string name() const { return "PS/2 Mouse"; }
+    virtual std::string driver_name() const override { return "PS/2 Mouse"; }
 
 private:
     bool isr(const registers* regs);

@@ -37,10 +37,9 @@ public:
 
     static bool accept(const pci::PciDevice& dev);
 
-    virtual std::string name() const override { return "Realtek RTL8139"; }
+    virtual std::string driver_name() const override { return "Realtek RTL8139"; }
 
 private:
-    void enable_bus_mastering();
     void power_on();
     void soft_reset();
     void set_rcv_buf(uint8_t* ptr);

@@ -41,34 +41,37 @@ public:
     virtual void init() = 0;
 
 protected:
+    void enable_bus_mastering();
+
+protected:
     pci::PciDevice m_dev;
 };
 
 namespace pci::detail
 {
-    using PciDriverEntry = void(*)(const pci::PciDevice& dev);
+using PciDriverEntry = void(*)(const pci::PciDevice& dev);
 
-    constexpr size_t max_drivers { 0x2000 };
+constexpr size_t max_drivers { 0x2000 };
 
-    extern PciDriverEntry drivers[max_drivers];
-    extern PciDriverEntry* driver_list_ptr;
+extern PciDriverEntry drivers[max_drivers];
+extern PciDriverEntry* driver_list_ptr;
 }
 
 #define ADD_PCI_DRIVER(name) \
-__attribute__((constructor)) void _pci_init_##name() \
+    __attribute__((constructor)) void _pci_init_##name() \
 { \
     static_assert(std::is_base_of_v<PciDriver, name>); \
     static_assert(std::is_base_of_v<Driver, name>); \
     *pci::detail::driver_list_ptr++ = [](const pci::PciDevice& dev) \
-    { \
-        if (name::accept(dev)) \
-        { \
-            auto obj = new name; \
-            obj->set_pci_info(dev); \
-            obj->init(); \
-            Driver::add_driver(std::unique_ptr<Driver>(obj)); \
-        } \
+{ \
+    if (name::accept(dev)) \
+{ \
+    auto obj = new name; \
+    obj->set_pci_info(dev); \
+    obj->init(); \
+    Driver::add_driver(std::unique_ptr<Driver>(obj)); \
+    } \
     }; \
-}
+    }
 
 #endif // PCIDRIVER_HPP

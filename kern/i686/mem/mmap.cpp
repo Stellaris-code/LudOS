@@ -64,3 +64,8 @@ uintptr_t Memory::physical_address(const void *v_addr)
 {
     return Paging::physical_address(v_addr);
 }
+
+size_t Memory::page_size()
+{
+    return Paging::page_size;
+}

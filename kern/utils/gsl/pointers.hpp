@@ -17,7 +17,7 @@
 #ifndef GSL_POINTERS_H
 #define GSL_POINTERS_H
 
-//#include <gsl/gsl_assert>  // for Ensures, Expects
+#include <utils/gsl/gsl_assert.hpp>  // for Ensures, Expects
 
 #include <algorithm.hpp>    // for forward
 #include <iosfwd.hpp>       // for ptrdiff_t, nullptr_t, ostream, size_t
@@ -95,7 +95,7 @@ public:
 
     constexpr operator T() const { return get(); }
     constexpr T operator->() const { return get(); }
-    constexpr decltype(auto) operator*() const { return *get(); } 
+    constexpr decltype(auto) operator*() const { return *get(); }
 
     // prevents compilation when someone attempts to assign a null pointer constant
     not_null(nullptr_t) = delete;
@@ -186,4 +186,4 @@ struct hash<gsl::not_null<T>>
 #endif // defined(_MSC_VER) && _MSC_VER < 1910
 
 #endif // GSL_POINTERS_H
- 
+

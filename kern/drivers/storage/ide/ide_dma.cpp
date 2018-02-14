@@ -61,13 +61,9 @@ bool Controller::accept(const pci::PciDevice &dev)
     return dev.classCode == 0x1 && dev.subclass == 0x1;
 }
 
-std::vector<uint8_t> buf;
-
 void Controller::init()
 {
     enable_bus_mastering();
-
-    warn("Int : %d, Bus master base : 0x%x\n", m_dev.int_line, pci::get_bar_val(m_dev, 4));
 
     for (auto pair : scan())
     {
@@ -76,9 +72,6 @@ void Controller::init()
 
     isr::register_handler(IRQ14, [this](const registers* r){return int14_handler(r);});
     isr::register_handler(IRQ15, [this](const registers* r){return int15_handler(r);});
-
-    //    buf.resize(512);
-    //    send_command(BusPort::Primary, DriveType::Master, ata_read_dma_ex, true, 0, 1, buf);
 }
 
 bool Controller::common_handler(BusPort port)
@@ -104,10 +97,6 @@ bool Controller::common_handler(BusPort port)
 
         bit_clear(status, 0); bit_clear(status, 1); // clear error and interrupt bits
         send_status_byte(port, status);
-    }
-    else
-    {
-        log_serial("Spurious IDE interrupt, ignoring\n");
     }
 
     return true;
@@ -140,7 +129,7 @@ std::vector<std::pair<uint16_t, uint8_t> > Controller::scan()
     return result;
 }
 
-void Controller::send_command(BusPort bus, DriveType type, uint8_t command, bool read, size_t block, size_t count, const std::vector<uint8_t> &buffer)
+void Controller::send_command(BusPort bus, DriveType type, uint8_t command, bool read, size_t block, size_t count, gsl::span<const uint8_t> data)
 {
     auto status = status_byte(bus);
     bit_clear(status, 0); bit_clear(status, 1); // clear error and interrupt bits
@@ -148,7 +137,7 @@ void Controller::send_command(BusPort bus, DriveType type, uint8_t command, bool
 
     send_command_byte(bus, (!(read)&1) << 3); // set operation direction
 
-    prepare_prdt(bus, buffer);
+    prepare_prdt(bus, data);
 
     select(io_base(bus), type, block, count);
 
@@ -175,12 +164,12 @@ uint16_t Controller::io_base(BusPort bus)
     }
 }
 
-void Controller::prepare_prdt(BusPort bus, const std::vector<uint8_t> &buffer)
+void Controller::prepare_prdt(BusPort bus, gsl::span<const uint8_t> data)
 {
     PRD* prd_ptr = (PRD*)PRDT;
 
-    uintptr_t begin = (uintptr_t)buffer.data();
-    uintptr_t end = begin + buffer.size();
+    uintptr_t begin = (uintptr_t)data.data();
+    uintptr_t end = begin + data.size();
 
     //log_serial("From : 0x%x, to 0x%x\n", begin, end);
 
@@ -198,11 +187,6 @@ void Controller::prepare_prdt(BusPort bus, const std::vector<uint8_t> &buffer)
         prd_ptr->end_of_prdt = (pg == Memory::page(end));
 
         ++prd_ptr;
-    }
-
-    for (size_t i { 0 }; i < buffer.size()-1; i++)
-    {
-        //assert(Memory::physical_address(&buffer[i]) + 1 == Memory::physical_address(&buffer[i + 1]));
     }
 
     send_prdt(bus);
@@ -268,7 +252,7 @@ std::vector<uint8_t> Disk::read_sector(size_t sector, size_t count) const
     return data;
 }
 
-void Disk::write_sector(size_t sector, const std::vector<uint8_t> &data)
+void Disk::write_sector(size_t sector, gsl::span<const uint8_t> data)
 {
     volatile auto& int_status = raised_ints[m_port==BusPort::Primary][m_type==DriveType::Slave];
 

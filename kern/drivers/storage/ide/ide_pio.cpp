@@ -161,7 +161,7 @@ std::vector<uint8_t> ide::pio::Disk::read_sector(size_t sector, size_t count) co
     }
 }
 
-void ide::pio::Disk::write_sector(size_t sector, const std::vector<uint8_t> &data)
+void ide::pio::Disk::write_sector(size_t sector, gsl::span<const uint8_t> data)
 {
     const size_t count = data.size() / sector_size() + (data.size()%sector_size()?1:0);
 

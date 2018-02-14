@@ -77,7 +77,7 @@ SymbolTable get_symbol_table(const Elf32_Shdr *base, size_t sh_num)
     return symbol_table;
 }
 
-SymbolTable get_symbol_table_file(const std::vector<uint8_t> &file)
+SymbolTable get_symbol_table_file(gsl::span<const uint8_t> file)
 {
     const Elf32_Ehdr* hdr = reinterpret_cast<const Elf32_Ehdr*>(file.data());
     if (!elf::check_supported(hdr)) return {};

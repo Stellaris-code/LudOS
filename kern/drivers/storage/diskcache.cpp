@@ -40,7 +40,7 @@ DiskCache::DiskCache(Disk &disk)
 
 }
 
-void DiskCache::write_sector(size_t sec, const std::vector<uint8_t> &data)
+void DiskCache::write_sector(size_t sec, gsl::span<const uint8_t> data)
 {
     auto chunks = split(data, m_disk.sector_size());
     for (size_t i { 0 }; i < chunks.size(); ++i)

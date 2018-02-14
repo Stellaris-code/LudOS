@@ -29,6 +29,8 @@ SOFTWARE.
 #include <vector.hpp>
 #include <functional.hpp>
 
+#include <utils/gsl/gsl_span.hpp>
+
 #include <ctype.h>
 
 template <class ContainerT = std::vector<std::string>>
@@ -157,8 +159,8 @@ inline ContainerT quote_tokenize(const std::string& str)
     return result;
 }
 
-template <typename Cont>
-inline std::vector<Cont> split(const Cont& cont, size_t chunk_size, bool fill = false)
+template <typename Cont, bool fill = false>
+inline std::vector<Cont> split(const Cont& cont, size_t chunk_size)
 {
     std::vector<Cont> chunks;
 
@@ -174,10 +176,32 @@ inline std::vector<Cont> split(const Cont& cont, size_t chunk_size, bool fill = 
     if (base < cont.size())
     {
         chunks.emplace_back(cont.begin() + base, cont.end());
-        if (fill)
+        if constexpr (fill)
         {
             chunks.back().resize(chunk_size);
         }
+    }
+
+    return chunks;
+}
+
+template <typename T>
+inline std::vector<gsl::span<T>> split(gsl::span<T> cont, size_t chunk_size)
+{
+    std::vector<gsl::span<T>> chunks;
+
+    size_t base = 0;
+
+    while (base + chunk_size <= cont.size())
+    {
+        chunks.emplace_back(cont.subspan(base, chunk_size));
+
+        base += chunk_size;
+    }
+
+    if (base < cont.size())
+    {
+        chunks.emplace_back(cont.subspan(base));
     }
 
     return chunks;

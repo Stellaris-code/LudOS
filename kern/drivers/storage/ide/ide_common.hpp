@@ -135,7 +135,7 @@ public:
 
 protected:
     virtual std::vector<uint8_t> read_sector(size_t sector, size_t count) const override = 0;
-    virtual void write_sector(size_t sector, const std::vector<uint8_t>& data) override = 0;
+    virtual void write_sector(size_t sector, gsl::span<const uint8_t> data) override = 0;
 
 protected:
     void update_id_data() const;

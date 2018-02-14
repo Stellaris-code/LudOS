@@ -53,11 +53,11 @@ private:
 
     std::vector<std::pair<uint16_t, uint8_t> > scan();
 
-    void send_command(BusPort bus, DriveType type, uint8_t command, bool read, size_t block, size_t count, const std::vector<uint8_t>& buffer);
+    void send_command(BusPort bus, DriveType type, uint8_t command, bool read, size_t block, size_t count, gsl::span<const uint8_t> data);
     
     uint16_t io_base(BusPort bus);
     
-    void prepare_prdt(BusPort bus, const std::vector<uint8_t>& buffer);
+    void prepare_prdt(BusPort bus, gsl::span<const uint8_t> data);
     
     uint8_t status_byte(BusPort bus);
     void send_status_byte(BusPort bus, uint8_t val);
@@ -78,7 +78,7 @@ public:
 
 protected:
     virtual std::vector<uint8_t> read_sector(size_t sector, size_t count) const override;
-    virtual void write_sector(size_t sector, const std::vector<uint8_t>& data) override;
+    virtual void write_sector(size_t sector, gsl::span<const uint8_t> data) override;
 
 private:
     Controller& m_cont;

@@ -32,6 +32,8 @@ SOFTWARE.
 #include "utils/messagebus.hpp"
 #include "utils/noncopyable.hpp"
 
+#include <utils/gsl/gsl_span.hpp>
+
 #include "diskcache.hpp"
 #include "panic.hpp"
 
@@ -78,7 +80,7 @@ public:
     std::vector<uint8_t> read(size_t offset, size_t size) const;
     std::vector<uint8_t> read() const;
 
-    void write(size_t offset, std::vector<uint8_t> data);
+    void write(size_t offset, gsl::span<const uint8_t> data);
 
     void enable_caching(bool val);
     bool caching_enabled() const { return m_caching; }
@@ -86,11 +88,11 @@ public:
 
 private:
     std::vector<uint8_t> read_cache_sector(size_t sector, size_t count) const;
-    void write_cache_sector(size_t sector, const std::vector<uint8_t>& data);
+    void write_cache_sector(size_t sector, gsl::span<const uint8_t> data);
 
 protected:
     virtual std::vector<uint8_t> read_sector(size_t sector, size_t count) const = 0;
-    virtual void write_sector(size_t sector, const std::vector<uint8_t>& data) = 0;
+    virtual void write_sector(size_t sector, gsl::span<const uint8_t> data) = 0;
 
 public:
     static ref_vector<Disk> disks();
@@ -134,7 +136,7 @@ public:
 
 protected:
     virtual std::vector<uint8_t> read_sector(size_t sector, size_t count) const override;
-    virtual void write_sector(size_t sector, const std::vector<uint8_t>& data) override;
+    virtual void write_sector(size_t sector, gsl::span<const uint8_t> data) override;
 
 public:
     MemoryDisk(uint8_t* data, size_t size, const std::string& name);
@@ -161,7 +163,7 @@ public:
 
 protected:
     virtual std::vector<uint8_t> read_sector(size_t sector, size_t count) const override;
-    virtual void write_sector(size_t sector, const std::vector<uint8_t>& data) override;
+    virtual void write_sector(size_t sector, gsl::span<const uint8_t> data) override;
 
 private:
     Disk& m_base_disk;

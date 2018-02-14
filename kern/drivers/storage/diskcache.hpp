@@ -29,6 +29,8 @@ SOFTWARE.
 #include <unordered_map.hpp>
 #include <map.hpp>
 
+#include <utils/gsl/gsl_span.hpp>
+
 class Disk;
 
 class DiskCache
@@ -39,7 +41,7 @@ public:
     static inline size_t max_cache_size = 4096*1000;
 
 public:
-    void write_sector(size_t sec, const std::vector<uint8_t>& data);
+    void write_sector(size_t sec, gsl::span<const uint8_t> data);
     std::vector<uint8_t> read_sector(size_t sec, size_t count);
     void flush();
 

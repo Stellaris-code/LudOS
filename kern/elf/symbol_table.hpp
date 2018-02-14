@@ -30,7 +30,8 @@ SOFTWARE.
 #include <unordered_map.hpp>
 #include <string.hpp>
 #include <optional.hpp>
-#include <vector.hpp>
+
+#include <utils/gsl/gsl_span.hpp>
 
 #include "elf.hpp"
 
@@ -64,7 +65,7 @@ struct SymbolTable
 
 SymbolTable get_symbol_table(const Elf32_Shdr* base, size_t sh_num);
 
-SymbolTable get_symbol_table_file(const std::vector<uint8_t>& file);
+SymbolTable get_symbol_table_file(gsl::span<const uint8_t> file);
 
 extern SymbolTable kernel_symbol_table;
 

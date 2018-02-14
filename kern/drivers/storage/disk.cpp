@@ -78,12 +78,14 @@ std::vector<uint8_t> Disk::read() const
     return read(0, disk_size());
 }
 
-void Disk::write(size_t offset, std::vector<uint8_t> data)
+void Disk::write(size_t offset, gsl::span<const uint8_t> data)
 {
     const size_t sect_size = sector_size();
 
     const size_t sector = offset / sect_size;
     const size_t count = data.size() / sect_size + (data.size()%sect_size?1:0);
+
+    write_cache_sector(sector, data);
 
     // fill the last chunk with disk data if it's too small
     if (data.size() % sect_size)
@@ -91,11 +93,9 @@ void Disk::write(size_t offset, std::vector<uint8_t> data)
         auto sect = read_cache_sector(sector + count, 1);
         const size_t sect_off = data.size() / sect_size;
         std::copy(data.begin() + sect_off*sect_size, data.end(), sect.begin());
-        data.resize(count * sect_size);
-        std::copy(sect.begin(), sect.end(), data.begin() + sect_off*sect_size);
-    }
 
-    write_cache_sector(sector, data);
+        write_cache_sector(sector, sect);
+    }
 }
 
 void Disk::enable_caching(bool val)
@@ -120,7 +120,7 @@ std::vector<uint8_t> Disk::read_cache_sector(size_t sector, size_t count) const
     else return read_sector(sector, count);
 }
 
-void Disk::write_cache_sector(size_t sector, const std::vector<uint8_t> &data)
+void Disk::write_cache_sector(size_t sector, gsl::span<const uint8_t> data)
 {
 
     if (m_caching) m_cache.write_sector(sector, data);
@@ -161,7 +161,7 @@ std::vector<uint8_t> MemoryDisk::read_sector(size_t sector, size_t count) const
     return data;
 }
 
-void MemoryDisk::write_sector(size_t sector, const std::vector<uint8_t> &data)
+void MemoryDisk::write_sector(size_t sector, gsl::span<const uint8_t> data)
 {
     if (m_const)
     {
@@ -189,7 +189,7 @@ std::vector<uint8_t> DiskSlice::read_sector(size_t sector, size_t count) const
     return m_base_disk.read_sector(sector + m_offset, count);
 }
 
-void DiskSlice::write_sector(size_t sector, const std::vector<uint8_t> &data)
+void DiskSlice::write_sector(size_t sector, gsl::span<const uint8_t> data)
 {
     if (sector + data.size()/sector_size() > m_size)
     {

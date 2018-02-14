@@ -98,6 +98,7 @@ SOFTWARE.
 // TODO : BASIC interpreter
 // TODO : cache bu sec/count pair ?
 // TODO : mount disk on detection ?
+// TODO : MemBuffer class
 // BUG : IDE PIO seems to be not working, investigate this
 
 /**********************************/

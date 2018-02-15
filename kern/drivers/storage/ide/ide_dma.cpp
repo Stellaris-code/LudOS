@@ -29,6 +29,7 @@ SOFTWARE.
 #include "io.hpp"
 #include "utils/bitops.hpp"
 #include "utils/memutils.hpp"
+#include "time/timer.hpp"
 
 #include "ide_common.hpp"
 
@@ -226,7 +227,9 @@ Disk::Disk(Controller& controller, BusPort port, DriveType type)
 
 }
 
-std::vector<uint8_t> Disk::read_sector(size_t sector, size_t count) const
+// TODO : unify
+
+MemBuffer Disk::read_sector(size_t sector, size_t count) const
 {
     volatile auto& int_status = raised_ints[m_port==BusPort::Primary][m_type==DriveType::Slave];
 
@@ -234,11 +237,13 @@ std::vector<uint8_t> Disk::read_sector(size_t sector, size_t count) const
 
     (void)status_register(m_port); // read status port to reset drive
 
-    std::vector<uint8_t> data(sector_size()*count);
+    MemBuffer data(sector_size()*count);
     m_cont.send_command((BusPort)m_port, (DriveType)m_type, ata_read_dma_ex, true, sector, count, data);
 
-    // TODO : timeout
-    while (!int_status) { wait_for_interrupts(); }
+    if (!Timer::sleep_until_int([&int_status]{return int_status;}, 2000))
+    {
+        throw DiskException(*this, DiskException::TimeOut);
+    }
 
     int_status = false;
 
@@ -264,8 +269,10 @@ void Disk::write_sector(size_t sector, gsl::span<const uint8_t> data)
 
     m_cont.send_command((BusPort)m_port, (DriveType)m_type, ata_write_dma_ex, true, sector, count, data);
 
-    // TODO : timeout
-    while (!int_status) { wait_for_interrupts(); }
+    if (!Timer::sleep_until_int([&int_status]{return int_status;}, 2000))
+    {
+        throw DiskException(*this, DiskException::TimeOut);
+    }
 
     int_status = false;
 

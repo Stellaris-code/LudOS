@@ -51,9 +51,9 @@ void DiskCache::write_sector(size_t sec, gsl::span<const uint8_t> data)
     prune_cache();
 }
 
-std::vector<uint8_t> DiskCache::read_sector(size_t sec, size_t count)
+MemBuffer DiskCache::read_sector(size_t sec, size_t count)
 {
-    std::vector<uint8_t> data;
+    MemBuffer data;
     data.reserve(count*m_disk.sector_size());
 
     add_span(sec, count);
@@ -138,11 +138,11 @@ void DiskCache::add_to_cache(size_t sec, const uint8_t *data, bool write)
         //log_serial("Cache miss\n");
 
         m_access_times.emplace(ticks, sec);
-        m_cache[sec] = CacheEntry{std::vector<uint8_t>(data, data + m_disk.sector_size()), write, ticks};
+        m_cache[sec] = CacheEntry{MemBuffer(data, data + m_disk.sector_size()), write, ticks};
     }
     else
     {
-        m_cache.at(sec).data = std::vector<uint8_t>(data, data + m_disk.sector_size());
+        m_cache.at(sec).data = MemBuffer(data, data + m_disk.sector_size());
         m_cache.at(sec).dirty = write;
         m_access_times.erase(m_cache.at(sec).access_time);
         m_cache.at(sec).access_time = ticks;

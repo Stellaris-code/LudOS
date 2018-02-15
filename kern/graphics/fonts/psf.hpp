@@ -29,6 +29,8 @@ SOFTWARE.
 
 #include <unordered_map.hpp>
 
+#include "utils/membuffer.hpp"
+
 namespace graphics::psf
 {
 
@@ -65,7 +67,7 @@ private:
 
 private:
     std::unordered_map<uint32_t, size_t> m_unicode_jump_table;
-    std::vector<uint8_t> m_data;
+    MemBuffer m_data;
     const header* m_hdr { nullptr };
 };
 

@@ -1,5 +1,5 @@
 /*
-ide_pio.hpp
+membuffer.hpp
 
 Copyright (c) 15 Yann BOUCHER (yann)
 
@@ -22,50 +22,40 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef IDE_PIO_HPP
-#define IDE_PIO_HPP
-
-#include <stdint.h>
+#ifndef MEMBUFFER_HPP
+#define MEMBUFFER_HPP
 
 #include <vector.hpp>
-#include <utility.hpp>
-#include <optional.hpp>
 
-#include "ide_common.hpp"
+#include "noncopyable.hpp"
 
-#include "drivers/storage/disk.hpp"
-
-namespace ide::pio
-{
-
-void init();
-
-[[nodiscard]] bool read(uint16_t port, uint8_t type, uint64_t block, size_t count, uint16_t* buf);
-[[nodiscard]] bool write(uint16_t port, uint8_t type, uint64_t block, size_t count, const uint16_t* buf);
-
-std::vector<std::pair<BusPort, DriveType>> scan();
-
-class Disk : public IDEDisk
+class MemBuffer : private std::vector<uint8_t>, NonCopyable
 {
 public:
-    Disk(BusPort port, DriveType type);
+    MemBuffer(const std::vector<uint8_t>&& vec)
+        : std::vector<uint8_t>(vec)
+    {}
 
-    template <typename... Args>
-    static Disk& create_disk(Args&&... args)
+    using vector::vector;
+
+    using vector::operator[];
+    using vector::begin;
+    using vector::end;
+    using vector::empty;
+    using vector::data;
+    using vector::size;
+    using vector::pointer;
+    using vector::resize;
+    using vector::reserve;
+    using vector::push_back;
+    using vector::emplace_back;
+
+    MemBuffer copy() const
     {
-        return DiskImpl<Disk>::create_disk(std::forward<Args>(args)...);
+        MemBuffer buf(size());
+        std::copy(begin(), end(), buf.begin());
+        return buf;
     }
-
-protected:
-    virtual MemBuffer read_sector(size_t sector, size_t count) const override;
-    virtual void write_sector(size_t sector, gsl::span<const uint8_t> data) override;
 };
 
-namespace detail
-{
-bool read_one(uint16_t port, uint8_t type, uint64_t block, uint16_t* buf);
-bool write_one(uint16_t port, uint8_t type, uint64_t block, const uint16_t* buf);
-}
-}
-
-#endif // IDE_PIO_HPP
+#endif // MEMBUFFER_HPP

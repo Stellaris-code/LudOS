@@ -151,9 +151,9 @@ void ahci::Disk::update_id_data() const
     }
 }
 
-std::vector<uint8_t> ahci::Disk::read_sector(size_t sector, size_t count) const
+MemBuffer ahci::Disk::read_sector(size_t sector, size_t count) const
 {
-    std::vector<uint8_t> data(count * sector_size());
+    MemBuffer data(count * sector_size());
     if (detail::do_read(m_port, sector, count, (uint16_t*)data.data()))
     {
         return data;

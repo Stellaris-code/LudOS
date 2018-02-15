@@ -60,7 +60,7 @@ Disk::~Disk()
 {
 }
 
-std::vector<uint8_t> Disk::read(size_t offset, size_t size) const
+MemBuffer Disk::read(size_t offset, size_t size) const
 {
     const size_t sect_size = sector_size();
 
@@ -73,7 +73,7 @@ std::vector<uint8_t> Disk::read(size_t offset, size_t size) const
     return data;
 }
 
-std::vector<uint8_t> Disk::read() const
+MemBuffer Disk::read() const
 {
     return read(0, disk_size());
 }
@@ -114,7 +114,7 @@ void Disk::flush_cache()
     flush_hardware_cache();
 }
 
-std::vector<uint8_t> Disk::read_cache_sector(size_t sector, size_t count) const
+MemBuffer Disk::read_cache_sector(size_t sector, size_t count) const
 {
     if (m_caching) return m_cache.read_sector(sector, count);
     else return read_sector(sector, count);
@@ -150,9 +150,9 @@ MemoryDisk::MemoryDisk(const uint8_t *data, size_t size, const std::string& name
     m_const = true;
 }
 
-std::vector<uint8_t> MemoryDisk::read_sector(size_t sector, size_t count) const
+MemBuffer MemoryDisk::read_sector(size_t sector, size_t count) const
 {
-    std::vector<uint8_t> data(count * sector_size());
+    MemBuffer data(count * sector_size());
 
     const size_t offset = sector * sector_size();
 
@@ -179,7 +179,7 @@ DiskSlice::DiskSlice(Disk &disk, size_t offset, size_t size)
     enable_caching(true);
 }
 
-std::vector<uint8_t> DiskSlice::read_sector(size_t sector, size_t count) const
+MemBuffer DiskSlice::read_sector(size_t sector, size_t count) const
 {
     if (sector + count > m_size)
     {

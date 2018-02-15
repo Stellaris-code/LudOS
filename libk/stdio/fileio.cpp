@@ -28,6 +28,8 @@ SOFTWARE.
 
 #include "fs/vfs.hpp"
 
+#include "utils/membuffer.hpp"
+
 std::vector<uint8_t> fprintf_data;
 
 FILE stdin_real { 0 };

@@ -31,6 +31,7 @@ SOFTWARE.
 #include "utils/vecutils.hpp"
 #include "utils/messagebus.hpp"
 #include "utils/noncopyable.hpp"
+#include "utils/membuffer.hpp"
 
 #include <utils/gsl/gsl_span.hpp>
 
@@ -77,8 +78,8 @@ public:
     virtual Type media_type() const = 0;
     virtual bool is_partition() const { return false; };
 
-    std::vector<uint8_t> read(size_t offset, size_t size) const;
-    std::vector<uint8_t> read() const;
+    MemBuffer read(size_t offset, size_t size) const;
+    MemBuffer read() const;
 
     void write(size_t offset, gsl::span<const uint8_t> data);
 
@@ -87,11 +88,11 @@ public:
     void flush_cache();
 
 private:
-    std::vector<uint8_t> read_cache_sector(size_t sector, size_t count) const;
+    MemBuffer read_cache_sector(size_t sector, size_t count) const;
     void write_cache_sector(size_t sector, gsl::span<const uint8_t> data);
 
 protected:
-    virtual std::vector<uint8_t> read_sector(size_t sector, size_t count) const = 0;
+    virtual MemBuffer read_sector(size_t sector, size_t count) const = 0;
     virtual void write_sector(size_t sector, gsl::span<const uint8_t> data) = 0;
 
 public:
@@ -135,7 +136,7 @@ public:
     virtual Type media_type() const override { return Disk::RamDrive; }
 
 protected:
-    virtual std::vector<uint8_t> read_sector(size_t sector, size_t count) const override;
+    virtual MemBuffer read_sector(size_t sector, size_t count) const override;
     virtual void write_sector(size_t sector, gsl::span<const uint8_t> data) override;
 
 public:
@@ -162,7 +163,7 @@ public:
     virtual bool is_partition() const override { return true; };
 
 protected:
-    virtual std::vector<uint8_t> read_sector(size_t sector, size_t count) const override;
+    virtual MemBuffer read_sector(size_t sector, size_t count) const override;
     virtual void write_sector(size_t sector, gsl::span<const uint8_t> data) override;
 
 private:
@@ -182,6 +183,7 @@ public:
         BadSector,
         NoMedia,
         Aborted,
+        TimeOut,
         Unknown
     };
 
@@ -199,6 +201,8 @@ public:
                 return "No media";
             case Aborted:
                 return "Access aborted";
+            case TimeOut:
+                return "Device didn't respond";
             case Unknown:
             default:
                 return "Unknown error";

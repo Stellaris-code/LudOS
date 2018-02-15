@@ -38,7 +38,7 @@ namespace devfs
 struct stdout_file : public vfs::node
 {
 protected:
-    [[nodiscard]] virtual bool write_impl(size_t offset, const std::vector<uint8_t>& data) override
+    [[nodiscard]] virtual bool write_impl(size_t offset, gsl::span<const uint8_t> data) override
     {
         auto str = std::string((char*)data.data(), data.size());
         kprintf("%s", str.c_str());
@@ -48,7 +48,7 @@ protected:
 struct stderr_file : public vfs::node
 {
 protected:
-    [[nodiscard]] virtual bool write_impl(size_t offset, const std::vector<uint8_t>& data) override
+    [[nodiscard]] virtual bool write_impl(size_t offset, gsl::span<const uint8_t> data) override
     {
         auto str = std::string((char*)data.data(), data.size());
         err("%s", str.c_str());
@@ -59,9 +59,9 @@ protected:
 struct stdin_file : public vfs::node
 {
 protected:
-    [[nodiscard]] virtual std::vector<uint8_t> read_impl(size_t offset, size_t size) const override
+    [[nodiscard]] virtual MemBuffer read_impl(size_t offset, size_t size) const override
     {
-        std::vector<uint8_t> buf;
+        MemBuffer buf;
 
         auto handl = MessageBus::register_handler<kbd::TextEnteredEvent>([&buf](const kbd::TextEnteredEvent& e)
         {
@@ -88,11 +88,11 @@ struct disk_file : public vfs::node
     virtual bool is_dir() const override { return false; }
 
 protected:
-    [[nodiscard]] virtual std::vector<uint8_t> read_impl(size_t offset, size_t size) const override
+    [[nodiscard]] virtual MemBuffer read_impl(size_t offset, size_t size) const override
     {
         return m_disk.read(offset, size);
     }
-    [[nodiscard]] virtual bool write_impl(size_t offset, const std::vector<uint8_t>& data) override
+    [[nodiscard]] virtual bool write_impl(size_t offset, gsl::span<const uint8_t> data) override
     {
         m_disk.write(offset, data);
         return true;

@@ -133,7 +133,7 @@ void install_fs_commands(Shell &sh)
              size = std::stoul(args[2]);
          }
 
-         std::vector<uint8_t> data = node->read(offset, size);
+         auto data = node->read(offset, size);
          if (data.empty())
          {
              sh.error("cannot read file : '%s'\n", path.c_str());
@@ -203,7 +203,7 @@ void install_fs_commands(Shell &sh)
          size_t crc32;
          for (size_t i { 0 }; i < 600; ++i)
          {
-             std::vector<uint8_t> data = node->read();
+             auto data = node->read();
              if (data.empty())
              {
                  sh.error("cannot read file : '%s'\n", path.c_str());

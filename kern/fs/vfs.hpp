@@ -35,9 +35,11 @@ SOFTWARE.
 #include <type_traits.hpp>
 #include <unordered_map.hpp>
 #include <unordered_set.hpp>
+#include <utils/gsl/gsl_span.hpp>
 
 #include "utils/stlutils.hpp"
 #include "utils/logging.hpp"
+#include "utils/membuffer.hpp"
 #include "panic.hpp"
 
 extern std::unordered_set<void*> created_node_list;
@@ -51,7 +53,6 @@ struct node
     node(node* parent = nullptr)
     {
         set_parent(parent);
-        //created_node_list.emplace(this);
     }
 
     node(const node&) = delete;
@@ -73,9 +74,9 @@ struct node
     virtual size_t size() const { return 0; }
     virtual bool is_dir() const { return m_is_dir; }
 
-    [[nodiscard]] std::vector<uint8_t> read(size_t offset, size_t size) const;
-    [[nodiscard]] std::vector<uint8_t> read() const { return read(0, size()); }
-    [[nodiscard]] bool write(size_t offset, const std::vector<uint8_t>& data);
+    [[nodiscard]] MemBuffer read(size_t offset, size_t size) const;
+    [[nodiscard]] MemBuffer read() const { return read(0, size()); }
+    [[nodiscard]] bool write(size_t offset, gsl::span<const uint8_t> data);
     [[nodiscard]] node* mkdir(const std::string&);
     [[nodiscard]] node* touch(const std::string&);
     std::vector<std::shared_ptr<node>> readdir();
@@ -90,8 +91,8 @@ struct node
     bool m_is_dir { false };
 
 protected:
-    [[nodiscard]] virtual std::vector<uint8_t> read_impl(size_t, size_t) const { return {}; }
-    [[nodiscard]] virtual bool write_impl(size_t, const std::vector<uint8_t>&) { return false; }
+    [[nodiscard]] virtual MemBuffer read_impl(size_t, size_t) const { return {}; }
+    [[nodiscard]] virtual bool write_impl(size_t, gsl::span<const uint8_t>) { return false; }
     virtual std::vector<std::shared_ptr<node>> readdir_impl() { return {}; }
     [[nodiscard]] virtual node* mkdir_impl(const std::string&) { return nullptr; }
     [[nodiscard]] virtual node* touch_impl(const std::string&) { return nullptr; }
@@ -136,8 +137,8 @@ struct symlink : public node
 
 protected:
 
-    [[nodiscard]] virtual std::vector<uint8_t> read_impl(size_t offset, size_t size) const override { return m_target.read(offset, size); }
-    [[nodiscard]] virtual bool write_impl(size_t offset, const std::vector<uint8_t>& data) override { return m_target.write(offset, data); }
+    [[nodiscard]] virtual MemBuffer read_impl(size_t offset, size_t size) const override { return m_target.read(offset, size); }
+    [[nodiscard]] virtual bool write_impl(size_t offset, gsl::span<const uint8_t> data) override { return m_target.write(offset, data); }
     virtual std::vector<std::shared_ptr<node>> readdir_impl() override { return m_target.readdir_impl(); }
     [[nodiscard]] virtual node* mkdir_impl(const std::string& s) override { return m_target.mkdir(s); };
     [[nodiscard]] virtual node* touch_impl(const std::string& s) override { return m_target.touch(s); }

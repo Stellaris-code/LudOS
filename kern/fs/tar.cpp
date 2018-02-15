@@ -188,10 +188,10 @@ bool TarFS::check_sum(const TarFS::Header *hdr) const
     return read_number(hdr->chksum) == sum;
 }
 
-[[nodiscard]] std::vector<uint8_t> tar_node::read_impl(size_t offset, size_t size) const
+[[nodiscard]] MemBuffer tar_node::read_impl(size_t offset, size_t size) const
 {
     size_t amnt = std::min(size, this->size());
-    return std::vector<uint8_t>(m_data_addr + offset, m_data_addr + offset + amnt);
+    return MemBuffer(m_data_addr + offset, m_data_addr + offset + amnt);
 }
 
 std::vector<std::shared_ptr<vfs::node> > tar_node::readdir_impl()

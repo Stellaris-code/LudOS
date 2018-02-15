@@ -210,7 +210,7 @@ void install_base_commands(Shell &sh)
              return -2;
          }
 
-         std::vector<uint8_t> vec = file->read();
+         auto vec = file->read();
          if (vec.empty())
          {
              sh.error("Can't read file %s !\n", args[0].c_str());

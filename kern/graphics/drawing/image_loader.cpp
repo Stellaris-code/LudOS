@@ -48,7 +48,7 @@ std::optional<Bitmap> load_image(const std::string &path)
         return {};
     }
 
-    std::vector<uint8_t> data = node->read();
+    auto data = node->read();
     if (data.empty())
     {
         return {};

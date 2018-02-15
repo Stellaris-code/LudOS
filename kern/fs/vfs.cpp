@@ -152,7 +152,7 @@ node::~node()
 {
 }
 
-std::vector<uint8_t> node::read(size_t offset, size_t size) const
+MemBuffer node::read(size_t offset, size_t size) const
 {
     assert(!is_dir());
     assert(offset + size <= this->size());
@@ -164,7 +164,7 @@ std::vector<uint8_t> node::read(size_t offset, size_t size) const
     return data;
 }
 
-bool node::write(size_t offset, const std::vector<uint8_t> &data)
+bool node::write(size_t offset, gsl::span<const uint8_t> data)
 {
     assert(!is_dir());
     assert(offset + data.size() <= size());

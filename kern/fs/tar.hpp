@@ -35,6 +35,8 @@ SOFTWARE.
 
 #include "fs.hpp"
 
+#include "utils/membuffer.hpp"
+
 namespace tar
 {
 
@@ -48,7 +50,7 @@ struct tar_node : public vfs::node
         : vfs::node(parent), m_fs(fs)
     {}
 
-    [[nodiscard]] virtual std::vector<uint8_t> read_impl(size_t offset, size_t size) const override;
+    [[nodiscard]] virtual MemBuffer read_impl(size_t offset, size_t size) const override;
 
     virtual std::vector<std::shared_ptr<vfs::node>> readdir_impl() override;
 
@@ -117,7 +119,7 @@ private:
     }
 
 private:
-   std::vector<uint8_t> m_file;
+   MemBuffer m_file;
    mutable std::shared_ptr<tar_node> m_root_dir;
 };
 

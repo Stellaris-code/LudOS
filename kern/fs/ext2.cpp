@@ -73,7 +73,7 @@ const ext2::BlockGroupDescriptor Ext2FS::get_block_group(size_t inode) const
     return ((ext2::BlockGroupDescriptor*)data.data())[offset];
 }
 
-std::vector<uint8_t> Ext2FS::read_block(size_t number) const
+MemBuffer Ext2FS::read_block(size_t number) const
 {
     assert(number < m_superblock.block_count);
     auto vec = m_disk.read(number * block_size(), block_size());
@@ -108,7 +108,7 @@ bool Ext2FS::check_inode_presence(size_t inode) const
     return bit_check(block[offset / 8], offset % 8);
 }
 
-std::vector<uint8_t> Ext2FS::read_data_block(const ext2::Inode &inode, size_t blk_id) const
+MemBuffer Ext2FS::read_data_block(const ext2::Inode &inode, size_t blk_id) const
 {
     size_t entries_per_block = block_size()/sizeof(uint32_t);
 
@@ -133,9 +133,9 @@ std::vector<uint8_t> Ext2FS::read_data_block(const ext2::Inode &inode, size_t bl
     return read_indirected(inode.block_ptr[14], blk_id, 3);
 }
 
-std::vector<uint8_t> Ext2FS::read_indirected(size_t indirected_block, size_t blk_id, size_t depth) const
+MemBuffer Ext2FS::read_indirected(size_t indirected_block, size_t blk_id, size_t depth) const
 {
-    std::vector<uint8_t> data;
+    MemBuffer data;
     size_t entries = ipow<size_t>(block_size()/sizeof(uint32_t), depth-1);
     auto vec = read_block(indirected_block);
     uint32_t* block = (uint32_t*)vec.data();
@@ -150,13 +150,13 @@ std::vector<uint8_t> Ext2FS::read_indirected(size_t indirected_block, size_t blk
     }
 }
 
-std::vector<uint8_t> Ext2FS::read_data(const ext2::Inode &inode, size_t offset, size_t size) const
+MemBuffer Ext2FS::read_data(const ext2::Inode &inode, size_t offset, size_t size) const
 {
     size_t blocks = inode.blocks_512 / (block_size()/512) + (inode.blocks_512%(block_size()/512)?1:0);
 
     assert(offset + size <= blocks);
 
-    std::vector<uint8_t> data;
+    MemBuffer data;
     data.reserve(blocks);
 
     for (size_t i { offset }; i < offset + size; ++i)
@@ -167,14 +167,14 @@ std::vector<uint8_t> Ext2FS::read_data(const ext2::Inode &inode, size_t offset, 
     return data;
 }
 
-std::vector<const ext2::DirectoryEntry> Ext2FS::read_directory(const std::vector<uint8_t> &data) const
+std::vector<const ext2::DirectoryEntry> Ext2FS::read_directory(gsl::span<const uint8_t> data) const
 {
     std::vector<const ext2::DirectoryEntry> entries;
     const uint8_t* ptr = (const uint8_t*)data.data();
 
-    while (ptr <= &data.back())
+    while (ptr < data.data() + data.size())
     {
-        if (((ext2::DirectoryEntry*)ptr)->inode) entries.emplace_back(*(const ext2::DirectoryEntry*)ptr);
+        if (((const ext2::DirectoryEntry*)ptr)->inode) entries.emplace_back(*(const ext2::DirectoryEntry*)ptr);
         ptr += entries.back().record_len;
     }
 
@@ -201,7 +201,7 @@ void ext2_node::rename(const std::string &s)
     }
 }
 
-std::vector<uint8_t> ext2_node::read_impl(size_t offset, size_t size) const
+MemBuffer ext2_node::read_impl(size_t offset, size_t size) const
 {
     if (is_dir()) return {};
 
@@ -211,7 +211,9 @@ std::vector<uint8_t> ext2_node::read_impl(size_t offset, size_t size) const
     size_t byte_off = offset % m_fs.block_size();
 
     auto data = m_fs.read_data(m_inode_struct, block_off, block_size);
-    return std::vector<uint8_t>(data.begin() + byte_off, data.begin() + offset + size);
+
+    if (byte_off == 0) { data.resize(size); return data; }
+    else { return MemBuffer(data.begin() + byte_off, data.begin() + offset + size); }
 }
 
 std::vector<std::shared_ptr<vfs::node>> ext2_node::readdir_impl()

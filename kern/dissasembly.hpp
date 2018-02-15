@@ -28,12 +28,13 @@ SOFTWARE.
 #include <stdint.h>
 
 #include <string.hpp>
-#include <vector.hpp>
+
+#include "utils/membuffer.hpp"
 
 struct DisasmInfo
 {
     std::string str;
-    std::vector<uint8_t> bytes;
+    MemBuffer bytes;
     size_t len;
 };
 

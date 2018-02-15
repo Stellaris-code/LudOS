@@ -31,6 +31,8 @@ SOFTWARE.
 
 #include <utils/gsl/gsl_span.hpp>
 
+#include "utils/membuffer.hpp"
+
 class Disk;
 
 class DiskCache
@@ -42,7 +44,7 @@ public:
 
 public:
     void write_sector(size_t sec, gsl::span<const uint8_t> data);
-    std::vector<uint8_t> read_sector(size_t sec, size_t count);
+    MemBuffer read_sector(size_t sec, size_t count);
     void flush();
 
     void set_ratio(size_t ratio);
@@ -64,7 +66,7 @@ public:
 
     struct CacheEntry
     {
-        std::vector<uint8_t> data {};
+        MemBuffer data {};
         bool dirty { false };
         uint64_t access_time;
     };

@@ -94,6 +94,15 @@ public:
         return callback();
     }
 
+    static inline bool sleep_until_int(std::function<bool()> callback, uint32_t timeout = 0)
+    {
+        uint32_t interval = timeout/(1000/freq());
+        m_ticks = 0;
+        while (!callback() && (timeout == 0 || m_ticks < interval)) { wait_for_interrupts(); }
+
+        return callback();
+    }
+
     // time in ms
     static inline CallbackHandle register_callback(uint32_t duration, std::function<void()> callback, bool oneshot = true)
     {

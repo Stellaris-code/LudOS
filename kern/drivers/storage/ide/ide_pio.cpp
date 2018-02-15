@@ -148,9 +148,9 @@ bool ide::pio::write(uint16_t port, uint8_t type, uint64_t block, size_t count, 
     return true;
 }
 
-std::vector<uint8_t> ide::pio::Disk::read_sector(size_t sector, size_t count) const
+MemBuffer ide::pio::Disk::read_sector(size_t sector, size_t count) const
 {
-    std::vector<uint8_t> data(count * sector_size());
+    MemBuffer data(count * sector_size());
     if (ide::pio::read(m_port, m_type, sector, count, (uint16_t*)data.data()))
     {
         return data;

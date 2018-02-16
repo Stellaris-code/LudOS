@@ -61,23 +61,6 @@ void install_sys_commands(Shell &sh)
      }});
 
     sh.register_command(
-    {"dump", "dump memory area",
-     "Usage : 'dump <addr> <size>'",
-     [&sh](const std::vector<std::string>& args)
-     {
-         if (args.size() != 2)
-         {
-             sh.error("'dump' needs two arguments !\n");
-             return -1;
-         }
-
-         const void* addr = reinterpret_cast<const void*>(std::stoul(args[0]));
-         size_t size = std::stoul(args[1]);
-         dump(addr, size);
-         return 0;
-     }});
-
-    sh.register_command(
     {"halt", "stops computer",
      "Usage : 'halt'",
      [](const std::vector<std::string>&)

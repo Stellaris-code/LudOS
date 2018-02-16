@@ -98,8 +98,8 @@ protected:
         return true;
     }
 
-    private:
-        Disk& m_disk;
+public:
+    Disk& m_disk;
 };
 
 void init()
@@ -150,11 +150,15 @@ void init()
 namespace detail
 {
 
-void add_drive(Disk &disk)
+std::string drive_label(const Disk& disk)
 {
-    std::string prefix;
+    static std::map<std::string, std::string> label_mappings;
+    static std::map<std::string, size_t> disk_partitions;
     static std::array<std::string, Disk::Unknown + 1> suffixes;
     if (suffixes[0].empty()) suffixes.fill("a");
+
+    std::string prefix;
+    std::string name;
 
     switch (disk.media_type())
     {
@@ -173,8 +177,19 @@ void add_drive(Disk &disk)
             prefix = "sd"; break;
     }
 
-    auto node = std::make_shared<disk_file>(disk, prefix + suffixes[disk.media_type()]);
-    vfs::mount(node, "/dev");
+    if (disk.is_partition())
+    {
+        // TODO : GUID
+        auto parent_name = static_cast<const DiskSlice*>(&disk)->parent().drive_name();
+
+        name = label_mappings.at(parent_name) + std::to_string(++disk_partitions[parent_name]);
+    }
+    else
+    {
+        name = prefix + suffixes[disk.media_type()];
+
+        label_mappings[disk.drive_name()] = name;
+    }
 
     if (suffixes[disk.media_type()].back() != 'z')
     {
@@ -184,6 +199,16 @@ void add_drive(Disk &disk)
     {
         suffixes[disk.media_type()] += "a";
     }
+
+    return name;
+}
+
+void add_drive(Disk &disk)
+{
+    std::string name = drive_label(disk);
+
+    auto node = std::make_shared<disk_file>(disk, name);
+    vfs::mount(node, "/dev");
 }
 }
 

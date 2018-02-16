@@ -68,9 +68,10 @@ MemBuffer Disk::read(size_t offset, size_t size) const
     const size_t count = size / sect_size + (size%sect_size?1:0);
     auto data = read_cache_sector(sector, count);
     assert(data.size() >= size);
-    data.resize(size);
 
-    return data;
+    offset %= sect_size;
+
+    return MemBuffer{data.begin() + offset, data.begin() + offset + size};
 }
 
 MemBuffer Disk::read() const
@@ -80,6 +81,8 @@ MemBuffer Disk::read() const
 
 void Disk::write(size_t offset, gsl::span<const uint8_t> data)
 {
+    // TODO : offset !
+
     const size_t sect_size = sector_size();
 
     const size_t sector = offset / sect_size;
@@ -176,7 +179,7 @@ void MemoryDisk::write_sector(size_t sector, gsl::span<const uint8_t> data)
 DiskSlice::DiskSlice(Disk &disk, size_t offset, size_t size)
     : DiskImpl<DiskSlice>(), m_base_disk(disk), m_offset(offset), m_size(size)
 {
-    enable_caching(true);
+    enable_caching(false);
 }
 
 MemBuffer DiskSlice::read_sector(size_t sector, size_t count) const

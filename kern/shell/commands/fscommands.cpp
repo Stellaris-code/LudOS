@@ -226,6 +226,50 @@ void install_fs_commands(Shell &sh)
      }});
 
     sh.register_command(
+    {"dump", "dump file",
+     "Usage : 'dump <file> (offset) (size)'",
+     [&sh](const std::vector<std::string>& args)
+     {
+         std::string path = "/";
+
+         if (!args.empty())
+         {
+             path = args[0];
+         }
+
+         auto node = vfs::find(sh.get_path(path));
+         if (!node)
+         {
+             sh.error("file not found : '%s'\n", path.c_str());
+             return -2;
+         }
+
+         size_t offset = 0;
+
+         if (args.size() >= 2)
+         {
+             offset = std::stoul(args[1]);
+         }
+
+         size_t size = node->size() - offset;
+         if (args.size() >= 3)
+         {
+             size = std::stoul(args[2]);
+         }
+
+         auto data = node->read(offset, size);
+         if (data.empty())
+         {
+             sh.error("cannot read file : '%s'\n", path.c_str());
+             return -3;
+         }
+
+         dump(data.data(), data.size());
+
+         return 0;
+     }});
+
+    sh.register_command(
     {"sync", "flush disks cache",
      "Usage : sync",
      [](const std::vector<std::string>&)

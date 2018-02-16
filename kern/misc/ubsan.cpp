@@ -351,8 +351,6 @@ struct ubsan_nonnull_arg_data
     struct ubsan_source_location attr_location;
 };
 
-// TODO: GCC's libubsan does not have the second parameter, but its builtin
-//       somehow has it and conflict if we don't match it.
 void __ubsan_handle_nonnull_arg(void* data_raw,
                                 intptr_t index_raw)
 {

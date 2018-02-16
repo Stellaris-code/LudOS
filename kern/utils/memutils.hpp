@@ -54,7 +54,10 @@ inline void dump(const void* address, size_t amnt)
     const size_t byte_disp_size = 3; // 2 + 1 space
     const size_t bytes_per_line = line_size/(byte_disp_size) - intlog(16, amnt) + 1;
 
+    size_t current_amnt = amnt;
+
     const size_t cols = amnt/bytes_per_line + (amnt%bytes_per_line ? 1 : 0);
+
     for (size_t i { 0 }; i < cols; ++i)
     {
         kprintf("%x ", i*bytes_per_line);
@@ -63,11 +66,13 @@ inline void dump(const void* address, size_t amnt)
             kprintf(" ");
         }
 
-        for (size_t j { 0 }; j < bytes_per_line; ++j)
+        for (size_t j { 0 }; j < std::min(bytes_per_line, current_amnt); ++j)
         {
             kprintf("%02x ", reinterpret_cast<const uint8_t*>(address)[i*bytes_per_line + j]);
         }
         kprintf("\n");
+
+        current_amnt -= bytes_per_line;
     }
 }
 

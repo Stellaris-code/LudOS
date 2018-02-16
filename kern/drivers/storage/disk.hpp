@@ -162,6 +162,9 @@ public:
     virtual Type media_type() const override { return m_base_disk.media_type(); }
     virtual bool is_partition() const override { return true; };
 
+    Disk& parent() { return m_base_disk; }
+    const Disk& parent() const { return m_base_disk; }
+
 protected:
     virtual MemBuffer read_sector(size_t sector, size_t count) const override;
     virtual void write_sector(size_t sector, gsl::span<const uint8_t> data) override;

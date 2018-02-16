@@ -98,7 +98,8 @@ SOFTWARE.
 // TODO : BASIC interpreter
 // TODO : cache bu sec/count pair ?
 // TODO : mount disk on detection ?
-// TODO : MemBuffer class
+// TODO : sda1/sda2 for partitions, method partitions()
+// TODO : disk GUID
 // BUG : IDE PIO seems to be not working, investigate this
 
 /**********************************/
@@ -189,7 +190,7 @@ void global_init()
             {
                 log(Info, "Partition %d offset %d\n", partition.partition_number, partition.data.relative_sector);
                 auto fs = FileSystem::get_disk_fs(partition);
-                vfs::mount(fs->root(), "/disk" + std::to_string(disk+1) + "p" + std::to_string(partition.partition_number));
+                if (fs) vfs::mount(fs->root(), "/disk" + std::to_string(disk+1) + "p" + std::to_string(partition.partition_number));
             }
         }
 #endif

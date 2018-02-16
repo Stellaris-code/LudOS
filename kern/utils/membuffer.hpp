@@ -29,7 +29,7 @@ SOFTWARE.
 
 #include "noncopyable.hpp"
 
-class MemBuffer : private std::vector<uint8_t>, NonCopyable
+class MemBuffer : public std::vector<uint8_t>, NonCopyable
 {
 public:
     MemBuffer(const std::vector<uint8_t>&& vec)

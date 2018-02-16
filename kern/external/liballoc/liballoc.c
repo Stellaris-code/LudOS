@@ -4,6 +4,8 @@
 
 #include "panic.hpp"
 
+#include "halt.hpp"
+
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wformat"
 
@@ -645,7 +647,7 @@ void PREFIX(free)(void *ptr)
             kprintf("liballoc: ERROR: Possible 1-3 byte overrun for magic %x != %x\n",
 								min->magic,
 								LIBALLOC_MAGIC );
-            halt();
+            //halt();
 			FLUSH();
 			#endif
 		}
@@ -657,7 +659,7 @@ void PREFIX(free)(void *ptr)
             kprintf("liballoc: ERROR: multiple PREFIX(free)() attempt on %x from %x.\n",
 									ptr,
 									__builtin_return_address(0) );
-            halt();
+            //halt();
 			FLUSH();
 			#endif
 		}
@@ -667,7 +669,7 @@ void PREFIX(free)(void *ptr)
             kprintf("liballoc: ERROR: Bad PREFIX(free)( %x ) called from %x\n",
 								ptr,
 								__builtin_return_address(0) );
-            halt();
+            //halt();
 			FLUSH();
 			#endif
 		}

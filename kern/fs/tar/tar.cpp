@@ -27,7 +27,7 @@ SOFTWARE.
 
 #include <stdlib.h>
 
-#include "pathutils.hpp"
+#include "fs/pathutils.hpp"
 #include "utils/memutils.hpp"
 
 #define TMAGIC   "ustar"        /* ustar and a null */

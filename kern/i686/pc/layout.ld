@@ -2,18 +2,14 @@ ENTRY(_start)
 
 SECTIONS
 {
-    . = 0xC0000000 + 1M; /* + 1M */
-
-    .boot ALIGN(0x1000) : AT(ADDR(.boot) - 0xC0000000)
-    {
-        mbd = .;
-        *(.multiboot_header)
-    }
+    . = 0xC0000000 + 1M;
 
     _load_start = .;
 
     .text ALIGN(0x1000) : AT(ADDR(.text) - 0xC0000000)
     {
+        mbd = .;
+        *(.multiboot_header)
         *(.text)
         *(.gnu.linkonce.t*)
     }

@@ -1,7 +1,7 @@
 /*
-initrd.cpp
+ext2_write.cpp
 
-Copyright (c) 05 Yann BOUCHER (yann)
+Copyright (c) 18 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -23,40 +23,19 @@ SOFTWARE.
 
 */
 
-#include "initrd/initrd.hpp"
+#include "ext2.hpp"
 
-#include "utils/logging.hpp"
-#include "utils/memutils.hpp"
-#include "fs/tar/tar.hpp"
-#include "drivers/storage/disk.hpp"
-
-bool install_initrd()
+void ext2_node::rename_impl(const std::string &s)
 {
-    auto initrd_disk = get_initrd_disk();
-    if (initrd_disk)
+    if (parent())
     {
-        try
-        {
-            auto fs = FileSystem::get_disk_fs(*initrd_disk);
-            if (!fs)
-            {
-                err("Initrd is not valid filesystem\n");
-                return false;
-            }
-
-            auto root = fs->root();
-            if (vfs::mount(root, "/initrd"))
-            {
-                log(Info, "Mounted initrd\n");
-                return true;
-            }
-        }
-        catch (const DiskException& e)
-        {
-            err("Couldn't load initrd : %s", e.what());
-            return false;
-        }
+        static_cast<ext2_node*>(parent())->update_dir_entry(m_inode, s,
+                                                            (uint8_t)(is_dir() ? ext2::DirectoryType::Directory : ext2::DirectoryType::Regular));
     }
+}
 
-    return false;
+void ext2_node::update_dir_entry(size_t inode, const std::string &name, uint8_t type)
+{
+    // TODO
+
 }

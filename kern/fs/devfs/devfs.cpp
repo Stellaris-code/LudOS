@@ -25,7 +25,7 @@ SOFTWARE.
 
 #include "devfs.hpp"
 
-#include "vfs.hpp"
+#include "fs/vfs.hpp"
 
 #include "utils/messagebus.hpp"
 #include "drivers/kbd/keyboard.hpp"

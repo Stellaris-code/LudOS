@@ -61,7 +61,7 @@ struct node
     virtual ~node();
 
     virtual std::string name() const { return m_name; }
-    virtual void rename(const std::string& name) { m_name = name; }
+    void rename(const std::string& name);
     virtual uint32_t permissions() const { return m_perms; }
     virtual void set_permissions(uint32_t perms) { m_perms = perms; }
     virtual uint32_t uid() const { return m_uid; }
@@ -96,6 +96,7 @@ protected:
     virtual std::vector<std::shared_ptr<node>> readdir_impl() { return {}; }
     [[nodiscard]] virtual node* mkdir_impl(const std::string&) { return nullptr; }
     [[nodiscard]] virtual node* touch_impl(const std::string&) { return nullptr; }
+    virtual void rename_impl(const std::string&) {}
 
     uint32_t m_perms { 0 };
     uint32_t m_uid { 0 };

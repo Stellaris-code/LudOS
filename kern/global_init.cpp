@@ -27,12 +27,12 @@ SOFTWARE.
 
 #include <exception.hpp>
 
-#include "fs/tar.hpp"
+#include "fs/tar/tar.hpp"
 #include "fs/vfs.hpp"
-#include "fs/devfs.hpp"
+#include "fs/devfs/devfs.hpp"
 #include "fs/fs.hpp"
-#include "fs/ext2.hpp"
-#include "fs/mbr.hpp"
+#include "fs/ext2/ext2.hpp"
+#include "fs/mbr/mbr.hpp"
 #include "fs/pathutils.hpp"
 
 #include "drivers/kbd/kbd_mappings.hpp"
@@ -98,8 +98,7 @@ SOFTWARE.
 // TODO : BASIC interpreter
 // TODO : cache bu sec/count pair ?
 // TODO : mount disk on detection ?
-// TODO : sda1/sda2 for partitions, method partitions()
-// TODO : disk GUID
+// TODO : ext2 write
 // BUG : IDE PIO seems to be not working, investigate this
 
 /**********************************/
@@ -214,8 +213,10 @@ void global_init()
 
         sh.command("run /initrd/init.sh");
 
-        sh.run();
+        MemBuffer buf(512*16);
+        MemoryDisk::create_disk(buf.data(), buf.size(), "scratch");
 
+        sh.run();
     }
     catch (const std::exception& e)
     {

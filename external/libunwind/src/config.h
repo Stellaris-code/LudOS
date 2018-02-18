@@ -93,7 +93,7 @@
 #define _LIBUNWIND_LOG(msg, ...)
 #else
 #define _LIBUNWIND_LOG(msg, ...)                                               \
-  err("libunwind: " msg "\n", __VA_ARGS__)
+
 #endif
 
 #if defined(_LIBUNWIND_HAS_NO_THREADS)
@@ -146,7 +146,7 @@
   #define _LIBUNWIND_TRACE_DWARF(...)                                          \
     do {                                                                       \
       if (true)                                                          \
-        err(__VA_ARGS__);                                          \
+        /*err(__VA_ARGS__)*/;                                          \
     } while (0)
 #endif
 

@@ -36,6 +36,7 @@ bool checkKeyMgrRegisteredFDEs(uintptr_t targetAddr, void *&fde);
 #include "Registers.hpp"
 
 #include "elf/kernel_binary.hpp"
+#include "utils/logging.hpp"
 
 #ifdef __APPLE__
 
@@ -449,6 +450,8 @@ inline bool LocalAddressSpace::findUnwindSections(pint_t targetAddr,
         {
             EHHeaderParser<LocalAddressSpace>::EHHeaderInfo hdrInfo;
             uintptr_t eh_frame_hdr_start = phdr->p_vaddr;
+
+            log_serial("EHDR Version : %d", *(uint8_t*)eh_frame_hdr_start);
 
             info.dwarf_index_section = eh_frame_hdr_start;
             info.dwarf_index_section_length = phdr->p_memsz;

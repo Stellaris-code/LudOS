@@ -152,10 +152,25 @@ node::~node()
 {
 }
 
+void node::rename(const std::string &name)
+{
+    // Check if no entries with the same name already exist
+    if (parent())
+    {
+        for (auto node : parent()->readdir())
+        {
+            if (node->name() == name) return;
+        }
+    }
+
+    m_name = name;
+    rename_impl(name);
+}
+
 MemBuffer node::read(size_t offset, size_t size) const
 {
     assert(!is_dir());
-    assert(offset + size <= this->size());
+    if (this->size()) assert(offset + size <= this->size());
 
     auto data = read_impl(offset, size);
 
@@ -167,7 +182,7 @@ MemBuffer node::read(size_t offset, size_t size) const
 bool node::write(size_t offset, gsl::span<const uint8_t> data)
 {
     assert(!is_dir());
-    assert(offset + data.size() <= size());
+    if (size()) assert(offset + data.size() <= size());
 
     return write_impl(offset, data);
 }

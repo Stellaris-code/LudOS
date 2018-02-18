@@ -2,18 +2,14 @@ ENTRY(_start)
 
 SECTIONS
 {
-    . = @KERNEL_VIRTUAL_BASE@ + 1M; /* + 1M */
-
-    .boot ALIGN(0x1000) : AT(ADDR(.boot) - @KERNEL_VIRTUAL_BASE@)
-    {
-        mbd = .;
-        *(.multiboot_header)
-    }
+    . = @KERNEL_VIRTUAL_BASE@ + 1M;
 
     _load_start = .;
 
     .text ALIGN(0x1000) : AT(ADDR(.text) - @KERNEL_VIRTUAL_BASE@)
     {
+        mbd = .;
+        *(.multiboot_header)
         *(.text)
         *(.gnu.linkonce.t*)
     }

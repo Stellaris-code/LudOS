@@ -25,7 +25,7 @@ SOFTWARE.
 #ifndef TAR_HPP
 #define TAR_HPP
 
-#include "vfs.hpp"
+#include "fs/vfs.hpp"
 
 #include <vector.hpp>
 #include <type_traits.hpp>
@@ -33,7 +33,7 @@ SOFTWARE.
 
 #include <string.h>
 
-#include "fs.hpp"
+#include "fs/fs.hpp"
 
 #include "utils/membuffer.hpp"
 

@@ -191,16 +191,6 @@ uint32_t Ext2FS::block_size() const
     return 1024<<m_superblock.block_size;
 }
 
-void ext2_node::rename(const std::string &s)
-{
-    m_name = s;
-    if (parent())
-    {
-        static_cast<ext2_node*>(parent())->update_dir_entry(m_inode, s,
-                                                            (uint8_t)(is_dir() ? ext2::DirectoryType::Directory : ext2::DirectoryType::Regular));
-    }
-}
-
 MemBuffer ext2_node::read_impl(size_t offset, size_t size) const
 {
     if (is_dir()) return {};
@@ -234,11 +224,6 @@ std::vector<std::shared_ptr<vfs::node>> ext2_node::readdir_impl()
     }
 
     return vec;
-}
-
-void ext2_node::update_dir_entry(size_t inode, const std::string &name, uint8_t type)
-{
-    // TODO
 }
 
 ADD_FS(Ext2FS)

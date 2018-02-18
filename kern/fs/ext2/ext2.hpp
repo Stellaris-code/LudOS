@@ -25,7 +25,7 @@ SOFTWARE.
 #ifndef EXT2_HPP
 #define EXT2_HPP
 
-#include "fs.hpp"
+#include "fs/fs.hpp"
 
 #include <optional.hpp>
 
@@ -76,7 +76,6 @@ public:
     {
     }
 
-    virtual void rename(const std::string& s) override;
     virtual uint32_t permissions() const override { return m_inode_struct.type & 0x0FFF; }
     virtual void set_permissions(uint32_t perms) override {}
     virtual uint32_t uid() const override { return m_inode_struct.uid; }
@@ -91,6 +90,7 @@ public:
     virtual std::vector<std::shared_ptr<node>> readdir_impl() override;
     [[nodiscard]] virtual node* mkdir_impl(const std::string&) override { return nullptr; }
     [[nodiscard]] virtual node* touch_impl(const std::string&) override { return nullptr; }
+    virtual void rename_impl(const std::string& s) override;
     virtual size_t size() const override { return m_inode_struct.size_lower; }
     virtual bool is_dir() const override { return m_inode_struct.type & (int)ext2::InodeType::Directory; }
 

@@ -81,23 +81,36 @@ MemBuffer Disk::read() const
 
 void Disk::write(size_t offset, gsl::span<const uint8_t> data)
 {
-    // TODO : offset !
-
     const size_t sect_size = sector_size();
 
-    const size_t sector = offset / sect_size;
+    const size_t base = offset / sect_size;
+    const size_t byte_offset = offset % sect_size;
     const size_t count = data.size() / sect_size + (data.size()%sect_size?1:0);
 
-    write_cache_sector(sector, data);
+    auto chunks = split(data, sect_size);
 
-    // fill the last chunk with disk data if it's too small
-    if (data.size() % sect_size)
+    for (size_t i { 0 }; i < count; ++i)
     {
-        auto sect = read_cache_sector(sector + count, 1);
-        const size_t sect_off = data.size() / sect_size;
-        std::copy(data.begin() + sect_off*sect_size, data.end(), sect.begin());
+        if (i == 0 || i == count-1)
+        {
+            auto sect_data = read_cache_sector(i + base, 1);
+            std::copy(chunks[i].begin(), chunks[i].end(),
+                    sect_data.begin() + byte_offset);
 
-        write_cache_sector(sector, sect);
+            write_cache_sector(i + base, sect_data);
+        }
+        else if (i == count-1)
+        {
+            auto sect_data = read_cache_sector(i + base, 1);
+            std::copy(chunks[i].begin(), chunks[i].end(),
+                    sect_data.begin());
+
+            write_cache_sector(i + base, sect_data);
+        }
+        else
+        {
+            write_cache_sector(i + base, chunks[i]);
+        }
     }
 }
 

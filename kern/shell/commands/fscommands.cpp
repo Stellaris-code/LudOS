@@ -270,6 +270,76 @@ void install_fs_commands(Shell &sh)
      }});
 
     sh.register_command(
+    {"write", "write to file",
+     "Usage : 'write <file> <data> (offset)'",
+     [&sh](const std::vector<std::string>& args)
+     {
+         std::string path = "/";
+
+         if (args.size() < 2)
+         {
+             sh.error("'write' needs at least 2 arguments\n");
+             return -1;
+         }
+         path = args[0];
+
+         auto node = vfs::find(sh.get_path(path));
+         if (!node)
+         {
+             sh.error("file not found : '%s'\n", path.c_str());
+             return -2;
+         }
+
+         std::string data = args[1];
+
+         size_t offset = 0;
+         if (args.size() >= 3) offset = std::stoul(args[2]);
+
+         if (!node->write(offset, {(uint8_t*)data.data(), (int)data.size()}))
+         {
+             sh.error("cannot write to file : '%s'\n", path.c_str());
+             return -3;
+         }
+
+         return 0;
+     }});
+
+
+    sh.register_command(
+    {"ren", "rename file file",
+     "Usage : 'ren <old> <new>'",
+     [&sh](const std::vector<std::string>& args)
+     {
+         std::string path = "/";
+
+         if (args.size() != 2)
+         {
+             sh.error("'ren' needs 2 arguments\n");
+             return -1;
+         }
+         path = args[0];
+
+         auto node = vfs::find(sh.get_path(path));
+         if (!node)
+         {
+             sh.error("file not found : '%s'\n", path.c_str());
+             return -2;
+         }
+
+         try
+         {
+             node->rename(args[1]);
+         }
+         catch (const std::exception& e)
+         {
+             sh.error("Can't rename file '%s' to '%s' : %s\n", args[0].c_str(), args[1].c_str(), e.what());
+             return -3;
+         }
+
+         return 0;
+     }});
+
+    sh.register_command(
     {"sync", "flush disks cache",
      "Usage : sync",
      [](const std::vector<std::string>&)

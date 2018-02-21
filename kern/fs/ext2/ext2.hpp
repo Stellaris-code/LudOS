@@ -53,6 +53,7 @@ private:
     const ext2::BlockGroupDescriptor get_block_group(size_t inode) const;
     MemBuffer read_block(size_t number) const;
     const ext2::Inode read_inode(size_t inode) const;
+    std::vector<const ext2::DirectoryEntry> read_directory_entries(size_t inode) const;
     bool check_inode_presence(size_t inode) const;
 
     MemBuffer read_data(const ext2::Inode& inode, size_t offset, size_t size) const;
@@ -60,6 +61,7 @@ private:
     MemBuffer read_indirected(size_t indirected_block, size_t blk_id, size_t depth) const;
 
     std::vector<const ext2::DirectoryEntry> read_directory(gsl::span<const uint8_t> data) const;
+    void write_directory_entries(const ext2::Inode& inode, gsl::span<const ext2::DirectoryEntry> entries);
 
     uint16_t inode_size() const;
     uint32_t block_size() const;
@@ -71,18 +73,20 @@ private:
 class ext2_node : public vfs::node
 {
 public:
-    ext2_node(const Ext2FS& fs, vfs::node* parent, size_t inode)
-        : vfs::node(parent), m_fs(fs), m_inode(inode), m_inode_struct(fs.read_inode(inode))
+    ext2_node(const Ext2FS& p_fs, vfs::node* p_parent, size_t p_inode)
+        : vfs::node(p_parent), fs(p_fs), inode(p_inode), inode_struct(fs.read_inode(inode))
     {
     }
 
-    virtual uint32_t permissions() const override { return m_inode_struct.type & 0x0FFF; }
+    virtual std::string name() const override;
+    virtual void rename_impl(const std::string& s) override;
+    virtual uint32_t permissions() const override { return inode_struct.type & 0x0FFF; }
     virtual void set_permissions(uint32_t perms) override {}
-    virtual uint32_t uid() const override { return m_inode_struct.uid; }
+    virtual uint32_t uid() const override { return inode_struct.uid; }
     virtual void set_uid(uint32_t uid) override {}
-    virtual uint32_t gid() const override { return m_inode_struct.gid; }
+    virtual uint32_t gid() const override { return inode_struct.gid; }
     virtual void set_gid(uint32_t gid) override {}
-    virtual uint32_t flags() const override { return m_inode_struct.flags;}
+    virtual uint32_t flags() const override { return inode_struct.flags;}
     virtual void set_flags(uint32_t flags) override {}
 
     [[nodiscard]] virtual MemBuffer read_impl(size_t offset, size_t size) const override;
@@ -90,16 +94,17 @@ public:
     virtual std::vector<std::shared_ptr<node>> readdir_impl() override;
     [[nodiscard]] virtual node* mkdir_impl(const std::string&) override { return nullptr; }
     [[nodiscard]] virtual node* touch_impl(const std::string&) override { return nullptr; }
-    virtual void rename_impl(const std::string& s) override;
-    virtual size_t size() const override { return m_inode_struct.size_lower; }
-    virtual bool is_dir() const override { return m_inode_struct.type & (int)ext2::InodeType::Directory; }
+    virtual size_t size() const override { return inode_struct.size_lower; }
+    virtual bool is_dir() const override { return inode_struct.type & (int)ext2::InodeType::Directory; }
+
+public:
+
+    const Ext2FS& fs;
+    const size_t inode;
+    const ext2::Inode inode_struct;
 
 private:
     void update_dir_entry(size_t inode, const std::string& name, uint8_t type);
-
-    const Ext2FS& m_fs;
-    const size_t m_inode;
-    const ext2::Inode m_inode_struct;
 };
 
 #endif // EXT2_HPP

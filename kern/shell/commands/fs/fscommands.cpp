@@ -25,6 +25,8 @@ SOFTWARE.
 
 #include "fscommands.hpp"
 
+#include "shell/commands/fs/ext2/ext2fscommands.hpp"
+
 #include "shell/shell.hpp"
 #include "drivers/storage/disk.hpp"
 #include "utils/memutils.hpp"
@@ -347,4 +349,6 @@ void install_fs_commands(Shell &sh)
          MessageBus::send(SyncDisksCache{});
          return 0;
      }});
+
+    install_ext2fs_commands(sh);
 }

@@ -28,5 +28,6 @@ SOFTWARE.
 class Shell;
 
 void install_fs_commands(Shell& sh);
+void install_ext2fs_commands(Shell& sh);
 
 #endif // FSCOMMANDS_HPP

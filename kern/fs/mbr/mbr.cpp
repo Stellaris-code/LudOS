@@ -54,6 +54,7 @@ ref_vector<mbr::Partition> mbr::read_partitions(Disk& disk)
             auto& ref = Partition::create_disk(disk, (size_t)data.relative_sector, (size_t)data.sector_count);
             ref.partition_number = i+1;
             ref.data = data;
+
             partitions.emplace_back(ref);
         }
     }

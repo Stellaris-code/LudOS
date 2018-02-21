@@ -25,11 +25,17 @@ SOFTWARE.
 
 #include "ext2.hpp"
 
+void Ext2FS::write_directory_entries(const ext2::Inode &inode, gsl::span<const ext2::DirectoryEntry> entries)
+{
+
+    // TODO : enlever cet appel dans read_directory
+}
+
 void ext2_node::rename_impl(const std::string &s)
 {
     if (parent())
     {
-        static_cast<ext2_node*>(parent())->update_dir_entry(m_inode, s,
+        static_cast<ext2_node*>(parent())->update_dir_entry(inode, s,
                                                             (uint8_t)(is_dir() ? ext2::DirectoryType::Directory : ext2::DirectoryType::Regular));
     }
 }

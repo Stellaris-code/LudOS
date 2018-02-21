@@ -131,7 +131,7 @@ inline Time::Date get_time()
         day = (day & 0x0F) + ((day / 16) * 10);
         month = (month & 0x0F) + ((month / 16) * 10);
         year = (year & 0x0F) + ((year / 16) * 10);
-        if(detail::century_register())
+        if (detail::century_register())
         {
             century = (century & 0x0F) + ((century / 16) * 10);
         }
@@ -146,7 +146,7 @@ inline Time::Date get_time()
 
     // Calculate the full (4-digit) year
 
-    if(detail::century_register())
+    if (detail::century_register())
     {
         year += century * 100;
     }
@@ -156,7 +156,21 @@ inline Time::Date get_time()
         if(year < CURRENT_YEAR) year += 100;
     }
 
-    return Time::Date{second, minute, hour, day, month, year};
+    uint32_t yday = day;
+
+    for (int i = month - 1; i >= 1; --i)
+    {
+        yday += Time::days_in_months[i - 1];
+        if (i == 2) // February, handle leap years
+        {
+            if (year % 4 != 0);
+            else if (year % 100 != 0) yday++;
+            else if (year % 400 != 0);
+            else yday++;
+        }
+    }
+
+    return Time::Date{second, minute, hour, day, yday, month, year};
 }
 
 }

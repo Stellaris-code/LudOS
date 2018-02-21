@@ -83,8 +83,9 @@ void install_sys_commands(Shell &sh)
      "Usage : 'date'",
      [](const std::vector<std::string>&)
      {
-         auto date = Time::get_time_of_day();
-         kprintf("%d/%d/%d %d:%d:%d\n", date.day, date.month, date.year,
+         // FIXME
+         auto date = Time::to_local_time(Time::get_time_of_day());
+         kprintf("%d/%d/%d %d:%d:%d\n", date.mday, date.month, date.year,
                                         date.hour, date.min, date.sec);
          return 0;
      }});
@@ -123,6 +124,15 @@ void install_sys_commands(Shell &sh)
          {
              kprintf("\t%s\n", driver.driver_name().c_str());
          }
+         return 0;
+     }});
+
+    sh.register_command(
+    {"epoch", "print current unix time",
+     "Usage : 'epoch'",
+     [](const std::vector<std::string>&)
+     {
+         kprintf("%d\n", Time::epoch());
          return 0;
      }});
 }

@@ -69,11 +69,11 @@ SOFTWARE.
 #include "halt.hpp"
 
 #include "shell/shell.hpp"
-#include "shell/commands/basecommands.hpp"
-#include "shell/commands/syscommands.hpp"
-#include "shell/commands/fscommands.hpp"
-#include "shell/commands/gfxcommands.hpp"
-#include "shell/commands/netcommands.hpp"
+#include "shell/commands/base/basecommands.hpp"
+#include "shell/commands/sys/syscommands.hpp"
+#include "shell/commands/fs/fscommands.hpp"
+#include "shell/commands/graphics/gfxcommands.hpp"
+#include "shell/commands/network/netcommands.hpp"
 
 #include "time/time.hpp"
 #include "time/timer.hpp"
@@ -92,18 +92,33 @@ SOFTWARE.
 // TODO : pas de vfs_children, on peut faire autrement (devfs, ...)
 // TODO : écran de veille ala windows
 // TODO : PAE
-// NOTE : don't forget about fpu state
-// TODO : passer AHCI en PCI_DRIVER
+// TODO : passer AHCI en PciDriver
 // TODO : VirtIO drivers
 // TODO : BASIC interpreter
 // TODO : cache bu sec/count pair ?
 // TODO : mount disk on detection ?
 // TODO : ext2 write
-// BUG : IDE PIO seems to be not working, investigate this
+// TODO : Date to std::string
+// TODO : mount remplace un directory existant
+// TODO : time.cpp au bon endroit
 
 /**********************************/
-// If someting doesn't work :
-// - SSE and FPU state between interrupts !!
+// BUGS
+// * BUG : IDE PIO seems to be not working, investigate this
+// * BUG : /dev/sda affiche que des zero
+/**********************************/
+
+/**********************************/
+// AWFUL HACKS
+// * early pic eoi to allow dma during kbd interrupt !
+// --> should be removed with tasking
+/**********************************/
+
+/**********************************/
+// NOTES
+// * If someting doesn't work :
+// --> SSE and FPU state between interrupts !!
+// * don't forget about fpu state
 /**********************************/
 
 void global_init()

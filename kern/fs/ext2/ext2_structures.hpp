@@ -173,7 +173,8 @@ enum class InodeType : uint16_t
 {
     Socket = 0xC000,
     Symlink = 0xA000,
-    Regular = 0x6000,
+    Regular = 0x8000,
+    BlockDev = 0x6000,
     Directory = 0x4000,
     CharDev = 0x2000,
     Fifo = 0x1000

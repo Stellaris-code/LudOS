@@ -81,6 +81,7 @@ struct node
     [[nodiscard]] node* touch(const std::string&);
     std::vector<std::shared_ptr<node>> readdir();
     std::vector<std::shared_ptr<const node>> readdir() const;
+    void remove(const vfs::node* child);
 
     node* parent() const { return m_parent; }
     void set_parent(node* parent) { m_parent = parent; }
@@ -97,6 +98,7 @@ protected:
     [[nodiscard]] virtual node* mkdir_impl(const std::string&) { return nullptr; }
     [[nodiscard]] virtual node* touch_impl(const std::string&) { return nullptr; }
     virtual void rename_impl(const std::string&) {}
+    virtual void remove_impl(const vfs::node* child) {}
 
     uint32_t m_perms { 0 };
     uint32_t m_uid { 0 };

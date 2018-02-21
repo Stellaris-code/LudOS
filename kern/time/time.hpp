@@ -35,19 +35,32 @@ struct Date
     uint32_t sec {};
     uint32_t min {};
     uint32_t hour {};
-    uint32_t day {};
+    uint32_t mday {};
+    uint32_t yday {};
     uint32_t month {};
     uint32_t year {};
 };
 
+static constexpr size_t secs_in_day = 86400;
+static constexpr size_t secs_in_week = 604800;
+static constexpr size_t secs_in_month = 2629743;
+static constexpr size_t secs_in_year = 31556926;
+
+static constexpr uint32_t days_in_months[12] =
+{ 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
+
 extern bool timer_ready;
 
 Date get_time_of_day();
+Date to_local_time(Date utc_date);
 
 Date from_unix(size_t epoch);
+size_t to_unix(const Date& date);
 
 double uptime();
 uint64_t total_ticks();
+
+size_t epoch();
 
 }
 

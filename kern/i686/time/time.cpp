@@ -50,45 +50,12 @@ double uptime()
     return ticks / (double(clock_speed()) * 1'000'000.0); // MHz -> Hz
 }
 
-Date to_local_time(Date utc_date)
-{
-    // heure d'été
-    if (utc_date.month >= 4 && utc_date.month <= 7)
-    {
-        ++utc_date.hour;
-    }
-
-    // UTC+1
-    ++utc_date.hour;
-
-    return utc_date;
-}
-
+#pragma GCC push_options
+#pragma GCC target ("no-sse")
 Date get_time_of_day()
 {
-    return to_local_time(rtc::get_time());
+    return rtc::get_time();
 }
-
-// FIXME
-Date from_unix(size_t epoch)
-{
-    Date date;
-    size_t dayclock = epoch % (60*60*24);
-    int dayno = epoch / (60*60*24);
-
-    date.sec = dayclock % 60;
-    date.min = (dayclock % 3600) / 60;
-    date.hour = dayclock / 3600;
-
-    date.year = 1970;
-    while (dayno >= 365)
-    {
-        dayno -= 365;
-        date.year++;
-    }
-    date.day = dayno;
-
-    return to_local_time(date);
-}
+#pragma GCC pop_options
 
 }

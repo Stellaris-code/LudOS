@@ -30,6 +30,7 @@ SOFTWARE.
 #include "utils/bitops.hpp"
 #include "utils/memutils.hpp"
 #include "time/timer.hpp"
+#include "i686/interrupts/interrupts.hpp"
 
 #include "ide_common.hpp"
 
@@ -143,6 +144,9 @@ void Controller::send_command(BusPort bus, DriveType type, uint8_t command, bool
     select(io_base(bus), type, block, count);
 
     outb(io_base(bus) + 7, command);
+
+    //assert(interrupts_enabled());
+    sti();
 
     send_command_byte(bus, ((read&1) << 3) | 0b1); // set start bit
 }

@@ -223,6 +223,7 @@ std::vector<std::shared_ptr<node> > node::readdir()
     static std::vector<std::shared_ptr<const node>> fkcghugelist;
 
     auto list = vfs_children;
+
     merge(list, readdir_impl());
 
     auto cur_dir = std::make_shared<symlink>(*this);
@@ -249,14 +250,20 @@ std::vector<std::shared_ptr<node> > node::readdir()
 std::vector<std::shared_ptr<const node> > node::readdir() const
 {
     static std::vector<std::shared_ptr<const node>> fkcghugelist;
-
     std::vector<std::shared_ptr<const node>> vec;
+
     for (auto el : const_cast<node*>(this)->readdir())
     {
         vec.emplace_back(el);
         fkcghugelist.emplace_back(el);
     }
+
     return vec;
+}
+
+void node::remove(const node *child)
+{
+    remove_impl(child);
 }
 
 bool is_symlink(const node &node)

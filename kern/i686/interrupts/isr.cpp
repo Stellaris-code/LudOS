@@ -113,6 +113,7 @@ const registers* isr_handler(const registers* const regs)
 extern "C"
 const registers* irq_handler(const registers* const regs)
 {
+    pic::send_eoi(regs->int_no-31);
     if (auto handl = handlers[regs->int_no]; handl)
     {
         handl(regs);
@@ -121,7 +122,7 @@ const registers* irq_handler(const registers* const regs)
     {
         //log_serial("Unhandled irq %d\n", regs->int_no);
     }
-    pic::send_eoi(regs->int_no-31);
+
 
     return regs;
 }

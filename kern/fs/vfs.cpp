@@ -224,7 +224,7 @@ std::vector<std::shared_ptr<node> > node::readdir()
 
     auto list = vfs_children;
 
-    merge(list, readdir_impl());
+    merge(list, (m_mounted_node ? m_mounted_node->readdir_impl() : readdir_impl()));
 
     auto cur_dir = std::make_shared<symlink>(*this);
     cur_dir->rename(".");
@@ -261,9 +261,10 @@ std::vector<std::shared_ptr<const node> > node::readdir() const
     return vec;
 }
 
-void node::remove(const node *child)
+bool node::remove(const node *child)
 {
-    remove_impl(child);
+    if (m_mounted_node) return m_mounted_node->remove_impl(child);
+    return remove_impl(child);
 }
 
 bool is_symlink(const node &node)
@@ -274,6 +275,29 @@ bool is_symlink(const node &node)
 node &link_target(const node &link)
 {
     return static_cast<const symlink&>(link).target();
+}
+
+node *vfs_root::add_node(const std::string &name, bool dir)
+{
+    m_children.emplace_back(std::make_shared<vfs::node>(this));
+    auto node = m_children.back();
+
+    node->m_name = name;
+    node->m_is_dir = dir;
+    // TODO : m_stat
+
+    return node.get();
+}
+
+bool vfs_root::remove_impl(const node *child)
+{
+    bool found = false;
+    m_children.erase(std::remove_if(m_children.begin(), m_children.end(), [child, &found](std::shared_ptr<node> node)
+    {
+        return found = (node.get() == child);
+    }));
+
+    return found;
 }
 
 }

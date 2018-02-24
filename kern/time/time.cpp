@@ -25,6 +25,8 @@ SOFTWARE.
 
 #include "time/time.hpp"
 
+#include <stdio.h>
+
 namespace Time
 {
 #pragma GCC push_options
@@ -94,6 +96,16 @@ size_t to_unix(const Date &date)
 size_t epoch()
 {
     return to_unix(get_time_of_day());
+}
+
+const char* to_string(const Date &date)
+{
+    static char buf[256];
+
+    ksnprintf(buf, sizeof(buf), "%d/%d/%d %d:%d:%d", date.mday, date.month, date.year,
+                                   date.hour, date.min, date.sec);
+
+    return buf;
 }
 
 }

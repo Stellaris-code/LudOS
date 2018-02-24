@@ -162,9 +162,10 @@ void install_fs_commands(Shell &sh)
      "Usage : lsblk",
      [](const std::vector<std::string>&)
      {
-         for (auto disk : Disk::disks())
+         for (Disk& disk : Disk::disks())
          {
-             kprintf("%s : %s\n", disk.get().drive_name().c_str(), human_readable_size(disk.get().disk_size()).c_str());
+             kprintf("%s : %s (%s)\n", disk.drive_name().c_str(), human_readable_size(disk.disk_size()).c_str(),
+                                       disk.read_only() ? "ro" : "rw");
          }
          return 0;
      }});
@@ -308,7 +309,7 @@ void install_fs_commands(Shell &sh)
 
 
     sh.register_command(
-    {"ren", "rename file file",
+    {"ren", "rename file",
      "Usage : 'ren <old> <new>'",
      [&sh](const std::vector<std::string>& args)
      {
@@ -350,5 +351,73 @@ void install_fs_commands(Shell &sh)
          return 0;
      }});
 
+    sh.register_command(
+    {"mkdir", "creates a directory in the current path",
+     "Usage : mkdir <name>",
+     [&sh](const std::vector<std::string>& args)
+     {
+         if (args.size() != 1)
+         {
+             sh.error("mkdir needs one argument !\n");
+             return -1;
+         }
+
+         if (!sh.pwd->mkdir(args[0]))
+         {
+             sh.error("Could not create directory '%s'\n", args[0].c_str());
+             return -2;
+         }
+
+         return 0;
+     }});
+
+    sh.register_command(
+    {"touch", "creates a file in the current path",
+     "Usage : touch <name>",
+     [&sh](const std::vector<std::string>& args)
+     {
+         if (args.size() != 1)
+         {
+             sh.error("touch needs one argument !\n");
+             return -1;
+         }
+
+         if (!sh.pwd->touch(args[0]))
+         {
+             sh.error("Could not create file '%s'\n", args[0].c_str());
+             return -2;
+         }
+
+         return 0;
+     }});
+
+    sh.register_command(
+    {"rm", "removes a file in the current path",
+     "Usage : rm <name>",
+     [&sh](const std::vector<std::string>& args)
+     {
+         if (args.size() != 1)
+         {
+             sh.error("rm needs one argument !\n");
+             return -1;
+         }
+
+         auto node = vfs::find(sh.get_path(args[0]));
+         if (!node)
+         {
+             sh.error("Can't find '%s' !\n", args[0].c_str());
+             return -2;
+         }
+
+         if (!sh.pwd->remove(node.get()))
+         {
+             sh.error("Can't remove '%s' !\n", args[0].c_str());
+             return -3;
+         }
+
+         return 0;
+     }});
+
     install_ext2fs_commands(sh);
 }
+

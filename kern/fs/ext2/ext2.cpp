@@ -241,6 +241,14 @@ std::vector<std::shared_ptr<vfs::node>> ext2_node::readdir_impl()
     return vec;
 }
 
+vfs::node::Stat ext2_node::stat() const
+{
+    Stat stat;
+    stat.perms = inode_struct.type & 0x0FFF;
+
+    return stat;
+}
+
 std::string ext2_node::name() const
 {
     if (!parent() || !dynamic_cast<ext2_node*>(parent())) return vfs::node::name();

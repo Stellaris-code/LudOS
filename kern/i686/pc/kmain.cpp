@@ -39,8 +39,5 @@ void kmain(uint32_t magic, const multiboot_info_t* mbd_info)
 
     global_init();
 
-    while (1)
-    {
-        nop();
-    }
+    halt();
 }

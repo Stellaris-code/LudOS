@@ -49,6 +49,16 @@ namespace vfs
 struct node
 {
     friend struct symlink;
+    friend struct vfs_root;
+    friend bool mount(std::shared_ptr<node> node, std::string mountpoint);
+
+    struct Stat
+    {
+        uint32_t perms { 0 };
+        uint32_t uid { 0 };
+        uint32_t gid { 0 };
+        uint32_t flags { 0 };
+    };
 
     node(node* parent = nullptr)
     {
@@ -62,14 +72,9 @@ struct node
 
     virtual std::string name() const { return m_name; }
     void rename(const std::string& name);
-    virtual uint32_t permissions() const { return m_perms; }
-    virtual void set_permissions(uint32_t perms) { m_perms = perms; }
-    virtual uint32_t uid() const { return m_uid; }
-    virtual void set_uid(uint32_t uid) { m_uid = uid; }
-    virtual uint32_t gid() const { return m_gid; }
-    virtual void set_gid(uint32_t gid) { m_gid = gid; }
-    virtual uint32_t flags() const { return m_flags; }
-    virtual void set_flags(uint32_t flags) { m_flags = flags; }
+
+    virtual Stat stat() const { return m_stat; }
+    virtual void set_stat(const Stat& stat) { m_stat = stat; }
 
     virtual size_t size() const { return 0; }
     virtual bool is_dir() const { return m_is_dir; }
@@ -81,15 +86,12 @@ struct node
     [[nodiscard]] node* touch(const std::string&);
     std::vector<std::shared_ptr<node>> readdir();
     std::vector<std::shared_ptr<const node>> readdir() const;
-    void remove(const vfs::node* child);
+    bool remove(const vfs::node* child);
 
     node* parent() const { return m_parent; }
     void set_parent(node* parent) { m_parent = parent; }
 
     std::string path() const;
-
-    std::vector<std::shared_ptr<node>> vfs_children {};
-    bool m_is_dir { false };
 
 protected:
     [[nodiscard]] virtual MemBuffer read_impl(size_t, size_t) const { return {}; }
@@ -98,16 +100,19 @@ protected:
     [[nodiscard]] virtual node* mkdir_impl(const std::string&) { return nullptr; }
     [[nodiscard]] virtual node* touch_impl(const std::string&) { return nullptr; }
     virtual void rename_impl(const std::string&) {}
-    virtual void remove_impl(const vfs::node* child) {}
+    virtual bool remove_impl(const vfs::node*) { return false; }
 
-    uint32_t m_perms { 0 };
-    uint32_t m_uid { 0 };
-    uint32_t m_gid { 0 };
-    uint32_t m_flags { 0 };
+    Stat m_stat;
 
     std::string m_name {};
 
     node* m_parent { nullptr };
+
+    std::vector<std::shared_ptr<node>> vfs_children {};
+    bool m_is_dir { false };
+
+private:
+    std::shared_ptr<node> m_mounted_node {};
 };
 
 size_t new_descriptor(node &node);
@@ -119,9 +124,17 @@ struct vfs_root : public node
     virtual std::string name() const override { return ""; }
     virtual bool is_dir() const override { return true; }
 
+private:
+    node* add_node(const std::string& name, bool dir);
+
 protected:
-    virtual node* mkdir_impl(const std::string&) override { panic("not implemented"); }
-    virtual node* touch_impl(const std::string&) override { panic("not implemented"); }
+    virtual node* mkdir_impl(const std::string& str) override { return add_node(str, true); }
+    virtual node* touch_impl(const std::string& str) override { return add_node(str, false); }
+    virtual std::vector<std::shared_ptr<node>> readdir_impl() override { return m_children; }
+    virtual bool remove_impl(const vfs::node* child) override;
+
+private:
+    std::vector<std::shared_ptr<node>> m_children;
 };
 
 struct symlink : public node

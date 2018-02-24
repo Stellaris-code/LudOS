@@ -1,27 +1,37 @@
 ENTRY(_start)
 
+PHDRS
+{
+  mb_hdr PT_LOAD;
+  text PT_LOAD;
+}
+
 SECTIONS
 {
     . = 0xC0000000 + 1M;
 
     _load_start = .;
 
-    .text ALIGN(0x1000) : AT(ADDR(.text) - 0xC0000000)
+    .mb_section ALIGN(0x4) : AT(ADDR(.mb_section) - 0xC0000000)
     {
         mbd = .;
         *(.multiboot_header)
+    } :mb_hdr
+    
+    .text ALIGN(0x1000) : AT(ADDR(.text) - 0xC0000000)
+    {
         *(.text)
         *(.gnu.linkonce.t*)
-    }
+    } :text
 
     .rodata ALIGN(0x1000) : AT(ADDR(.rodata) - 0xC0000000)
     {
         start_ctors = .;
-        *(SORT(.ctors*))  /* Note the "SORT" */
+        KEEP (*(SORT(.ctors*)))
         end_ctors = .;
 
         start_dtors = .;
-        *(SORT(.dtors*))
+        KEEP(*(SORT(.dtors*)))
         end_dtors = .;
 
         *(.rodata*)

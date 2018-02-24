@@ -40,6 +40,11 @@ void ext2_node::rename_impl(const std::string &s)
     }
 }
 
+void ext2_node::set_stat(const vfs::node::Stat &stat)
+{
+
+}
+
 void ext2_node::update_dir_entry(size_t inode, const std::string &name, uint8_t type)
 {
     // TODO

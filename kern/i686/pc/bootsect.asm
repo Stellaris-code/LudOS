@@ -37,7 +37,11 @@ BootPageDirectory:
     dd 0x01400083
     dd 0x01800083
     dd 0x01c00083
-    times (1024 - KERNEL_PAGE_NUMBER - 8) dd 0  ; Pages after the kernel image.
+    dd 0x02000083
+    dd 0x02400083
+    dd 0x02800083
+    dd 0x02c00083
+    times (1024 - KERNEL_PAGE_NUMBER - 12) dd 0  ; Pages after the kernel image.
 
 
 section .text
@@ -89,7 +93,6 @@ higher_half_start:
     push dword [magic]
 
 .kmain_call:
-
     call kmain                          ; call kernel proper
 
     mov  ebx, end_dtors                 ; call the destructors

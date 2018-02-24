@@ -60,6 +60,16 @@ Disk::~Disk()
 {
 }
 
+bool Disk::read_only() const
+{
+    return m_read_only;
+}
+
+void Disk::set_read_only(bool val)
+{
+    m_read_only = val;
+}
+
 MemBuffer Disk::read(size_t offset, size_t size) const
 {
     const size_t sect_size = sector_size();
@@ -81,6 +91,8 @@ MemBuffer Disk::read() const
 
 void Disk::write(size_t offset, gsl::span<const uint8_t> data)
 {
+    if (read_only()) return;
+
     const size_t sect_size = sector_size();
 
     const size_t base = offset / sect_size;

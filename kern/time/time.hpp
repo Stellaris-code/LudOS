@@ -62,6 +62,8 @@ uint64_t total_ticks();
 
 size_t epoch();
 
+const char *to_string(const Date& date);
+
 }
 
 #endif // TIME_HPP

@@ -80,14 +80,8 @@ public:
 
     virtual std::string name() const override;
     virtual void rename_impl(const std::string& s) override;
-    virtual uint32_t permissions() const override { return inode_struct.type & 0x0FFF; }
-    virtual void set_permissions(uint32_t perms) override {}
-    virtual uint32_t uid() const override { return inode_struct.uid; }
-    virtual void set_uid(uint32_t uid) override {}
-    virtual uint32_t gid() const override { return inode_struct.gid; }
-    virtual void set_gid(uint32_t gid) override {}
-    virtual uint32_t flags() const override { return inode_struct.flags;}
-    virtual void set_flags(uint32_t flags) override {}
+    virtual Stat stat() const override;
+    virtual void set_stat(const Stat& stat) override;
 
     [[nodiscard]] virtual MemBuffer read_impl(size_t offset, size_t size) const override;
     [[nodiscard]] virtual bool write_impl(size_t offset, gsl::span<const uint8_t> data) override { return false; }

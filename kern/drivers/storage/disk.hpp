@@ -78,6 +78,9 @@ public:
     virtual Type media_type() const = 0;
     virtual bool is_partition() const { return false; };
 
+    bool read_only() const;
+    void set_read_only(bool val);
+
     MemBuffer read(size_t offset, size_t size) const;
     MemBuffer read() const;
 
@@ -100,6 +103,7 @@ public:
 
 private:
     mutable DiskCache m_cache;
+    bool m_read_only { false };
     bool m_caching { false };
 
 protected:

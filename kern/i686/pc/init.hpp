@@ -106,8 +106,10 @@ inline void early_abort(const char* str)
 void call_ctors()
 {
     uint32_t* ctor = (uint32_t*)&start_ctors;
+    //ctor += 1;
     while (ctor < (uint32_t*)&end_ctors)
     {
+        //serial::debug::write("ctor %p (%p)\n", ctor, &end_ctors);
         ((void(*)())*ctor)();
         ++ctor;
     }
@@ -136,8 +138,6 @@ inline void init(uint32_t magic, const multiboot_info_t* mbd_info)
 {
     early_init();
 
-    call_ctors(); // it is now safe to call global constructors
-
     serial::debug::init(BDA::com1_port());
     serial::debug::write("Serial COM1 : Booting LudOS v%d...\n", 1);
 
@@ -149,7 +149,7 @@ inline void init(uint32_t magic, const multiboot_info_t* mbd_info)
 
     Paging::init();
 
-    log_serial("bob : %d\n", BDA::video_io_port());
+    call_ctors(); // it is now safe to call global constructors
 
     multiboot::check(magic, mbd, mbd_info);
     multiboot::info = mbd_info;

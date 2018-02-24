@@ -37,6 +37,8 @@ namespace devfs
 
 struct stdout_file : public vfs::node
 {
+    using node::node;
+
 protected:
     [[nodiscard]] virtual bool write_impl(size_t offset, gsl::span<const uint8_t> data) override
     {
@@ -47,6 +49,7 @@ protected:
 };
 struct stderr_file : public vfs::node
 {
+    using node::node;
 protected:
     [[nodiscard]] virtual bool write_impl(size_t offset, gsl::span<const uint8_t> data) override
     {
@@ -58,6 +61,7 @@ protected:
 
 struct stdin_file : public vfs::node
 {
+    using node::node;
 protected:
     [[nodiscard]] virtual MemBuffer read_impl(size_t offset, size_t size) const override
     {
@@ -102,14 +106,24 @@ public:
     Disk& m_disk;
 };
 
+struct devfs_root : public vfs::node
+{
+    using node::node;
+public:
+    virtual bool is_dir() const override { return true; }
+
+    std::vector<int> children;
+};
+
 void init()
 {
-    std::shared_ptr<vfs::node> devfs_root = std::make_shared<vfs::node>(vfs::root.get());
-    devfs_root->m_is_dir = true;
-    vfs::mount(devfs_root, "/dev");
+    auto root = std::make_shared<devfs_root>(vfs::root.get());
+    vfs::mount(root, "/dev");
 
-    auto stdin_node = std::make_shared<stdin_file>();
+    auto stdin_node = std::make_shared<stdin_file>(root.get());
     stdin_node->rename("stdin");
+
+    root->children.emplace_back(6);
 
     vfs::new_descriptor(*stdin_node);
     if (!mount(stdin_node, "/dev"))
@@ -117,7 +131,7 @@ void init()
         warn("Can't mount '/dev/stdin'\n");
     }
 
-    auto stdout_node = std::make_shared<stdout_file>();
+    auto stdout_node = std::make_shared<stdout_file>(root.get());
     stdout_node->rename("stdout");
 
     vfs::new_descriptor(*stdout_node);
@@ -126,7 +140,7 @@ void init()
         warn("Can't mount '/dev/stdout'\n");
     }
 
-    auto stderr_node = std::make_shared<stderr_file>();
+    auto stderr_node = std::make_shared<stderr_file>(root.get());
     stderr_node->rename("stderr");
 
     vfs::new_descriptor(*stderr_node);

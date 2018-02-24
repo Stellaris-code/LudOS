@@ -98,9 +98,8 @@ SOFTWARE.
 // TODO : cache bu sec/count pair ?
 // TODO : mount disk on detection ?
 // TODO : ext2 write
-// TODO : Date to std::string
-// TODO : mount remplace un directory existant
-// TODO : time.cpp au bon endroit
+// TODO : mount remplace un directory existant ?
+// TODO : vfs mkstat
 
 /**********************************/
 // BUGS
@@ -118,6 +117,7 @@ SOFTWARE.
 // NOTES
 // * If someting doesn't work :
 // --> SSE and FPU state between interrupts !!
+// --> ctors ?
 // * don't forget about fpu state
 /**********************************/
 
@@ -226,10 +226,10 @@ void global_init()
         install_gfx_commands(sh);
         install_net_commands(sh);
 
-        sh.command("run /initrd/init.sh");
-
         MemBuffer buf(512*16);
         MemoryDisk::create_disk(buf.data(), buf.size(), "scratch");
+
+        sh.command("run /initrd/init.sh");
 
         sh.run();
     }

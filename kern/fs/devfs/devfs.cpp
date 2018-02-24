@@ -80,74 +80,39 @@ protected:
     }
 };
 
-struct disk_file : public vfs::node
-{
-    disk_file(Disk& disk, const std::string& node_name)
-        : m_disk(disk)
-    {
-        m_name = node_name;
-    }
-
-    virtual size_t size() const override { return m_disk.disk_size(); }
-    virtual bool is_dir() const override { return false; }
-
-protected:
-    [[nodiscard]] virtual MemBuffer read_impl(size_t offset, size_t size) const override
-    {
-        return m_disk.read(offset, size);
-    }
-    [[nodiscard]] virtual bool write_impl(size_t offset, gsl::span<const uint8_t> data) override
-    {
-        m_disk.write(offset, data);
-        return true;
-    }
-
-public:
-    Disk& m_disk;
-};
-
 struct devfs_root : public vfs::node
 {
     using node::node;
 public:
     virtual bool is_dir() const override { return true; }
+    virtual std::vector<std::shared_ptr<node>> readdir_impl() override { return children; }
 
-    std::vector<int> children;
+    std::vector<std::shared_ptr<node>> children;
 };
+
+std::shared_ptr<devfs_root> root;
 
 void init()
 {
-    auto root = std::make_shared<devfs_root>(vfs::root.get());
-    vfs::mount(root, "/dev");
+    auto dir = vfs::root->mkdir("dev");
+
+    root = std::make_shared<devfs_root>(vfs::root.get());
+    vfs::mount(root, dir);
 
     auto stdin_node = std::make_shared<stdin_file>(root.get());
     stdin_node->rename("stdin");
 
-    root->children.emplace_back(6);
-
-    vfs::new_descriptor(*stdin_node);
-    if (!mount(stdin_node, "/dev"))
-    {
-        warn("Can't mount '/dev/stdin'\n");
-    }
+    root->children.emplace_back(stdin_node);
 
     auto stdout_node = std::make_shared<stdout_file>(root.get());
     stdout_node->rename("stdout");
 
-    vfs::new_descriptor(*stdout_node);
-    if (!mount(stdout_node, "/dev"))
-    {
-        warn("Can't mount '/dev/stdout'\n");
-    }
+    root->children.emplace_back(stdout_node);
 
     auto stderr_node = std::make_shared<stderr_file>(root.get());
     stderr_node->rename("stderr");
 
-    vfs::new_descriptor(*stderr_node);
-    if (!mount(stderr_node, "/dev"))
-    {
-        warn("Can't mount '/dev/stderr'\n");
-    }
+    root->children.emplace_back(stderr_node);
 
     // add existing drives
     for (Disk& disk : Disk::disks())
@@ -222,8 +187,21 @@ void add_drive(Disk &disk)
     std::string name = drive_label(disk);
 
     auto node = std::make_shared<disk_file>(disk, name);
-    vfs::mount(node, "/dev");
+    root->children.emplace_back(node);
 }
+}
+
+size_t disk_file::size() const { return m_disk.disk_size(); }
+
+MemBuffer disk_file::read_impl(size_t offset, size_t size) const
+{
+    return m_disk.read(offset, size);
+}
+
+bool disk_file::write_impl(size_t offset, gsl::span<const uint8_t> data)
+{
+    m_disk.write(offset, data);
+    return true;
 }
 
 }

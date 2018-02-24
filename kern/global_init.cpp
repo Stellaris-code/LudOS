@@ -89,7 +89,6 @@ SOFTWARE.
 // TODO : TinyGL
 // TODO : ambilight feature pour le windowing system !
 // TODO : refaire une VRAIE classe Terminal... c'est atroce l'implémentation actuelle, une horreur lovecraftienne
-// TODO : pas de vfs_children, on peut faire autrement (devfs, ...)
 // TODO : écran de veille ala windows
 // TODO : PAE
 // TODO : passer AHCI en PciDriver
@@ -98,13 +97,11 @@ SOFTWARE.
 // TODO : cache bu sec/count pair ?
 // TODO : mount disk on detection ?
 // TODO : ext2 write
-// TODO : mount remplace un directory existant ?
-// TODO : vfs mkstat
+// TODO : vfs sanitize names
 
 /**********************************/
 // BUGS
 // * BUG : IDE PIO seems to be not working, investigate this
-// * BUG : /dev/sda affiche que des zero
 /**********************************/
 
 /**********************************/
@@ -195,17 +192,11 @@ void global_init()
         log(Info, "Available drives : %zd\n", Disk::disks().size());
 
 #if 1
+        // Detect disk partitions
         size_t disk_amnt = Disk::disks().size();
         for (size_t disk { 0 }; disk < disk_amnt; ++disk)
         {
-            log(Info, "Disk : %zd, name '%s'\n", disk, Disk::disks()[disk].get().drive_name().c_str());
-            auto partitions = mbr::read_partitions(Disk::disks()[disk]);
-            for (mbr::Partition& partition : partitions)
-            {
-                log(Info, "Partition %d offset %d\n", partition.partition_number, partition.data.relative_sector);
-                auto fs = FileSystem::get_disk_fs(partition);
-                if (fs) vfs::mount(fs->root(), "/disk" + std::to_string(disk+1) + "p" + std::to_string(partition.partition_number));
-            }
+            mbr::read_partitions(Disk::disks()[disk]);
         }
 #endif
 

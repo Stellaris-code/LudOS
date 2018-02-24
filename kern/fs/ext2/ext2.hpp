@@ -86,8 +86,8 @@ public:
     [[nodiscard]] virtual MemBuffer read_impl(size_t offset, size_t size) const override;
     [[nodiscard]] virtual bool write_impl(size_t offset, gsl::span<const uint8_t> data) override { return false; }
     virtual std::vector<std::shared_ptr<node>> readdir_impl() override;
-    [[nodiscard]] virtual node* mkdir_impl(const std::string&) override { return nullptr; }
-    [[nodiscard]] virtual node* touch_impl(const std::string&) override { return nullptr; }
+    [[nodiscard]] virtual std::shared_ptr<node> mkdir_impl(const std::string&) override { return nullptr; }
+    [[nodiscard]] virtual std::shared_ptr<node> touch_impl(const std::string&) override { return nullptr; }
     virtual size_t size() const override { return inode_struct.size_lower; }
     virtual bool is_dir() const override { return inode_struct.type & (int)ext2::InodeType::Directory; }
 

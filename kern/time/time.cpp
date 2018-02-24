@@ -45,12 +45,22 @@ Date to_local_time(Date utc_date)
     return utc_date;
 }
 #pragma GCC pop_options
+
+bool leap_year(size_t year)
+{
+    if (year % 4 != 0) return false;
+    else if (year % 100 != 0) return true;
+    else if (year % 400 != 0) return false;
+    else return true;
+}
+
 // FIXME
 Date from_unix(size_t epoch)
 {
     Date date;
     size_t dayclock = epoch % (60*60*24);
-    int dayno = epoch / (60*60*24);
+    size_t total_dayno = epoch / (60*60*24);
+    size_t dayno = total_dayno;
 
     date.sec = dayclock % 60;
     date.min = (dayclock % 3600) / 60;
@@ -58,14 +68,29 @@ Date from_unix(size_t epoch)
 
     date.year = 1970;
 
-    while (dayno >= 365)
+    while (dayno >= (leap_year(date.year) ? 366 : 365))
     {
-        dayno -= 365;
+        dayno -= (leap_year(date.year) ? 366 : 365);
         date.year++;
     }
     date.yday = dayno;
 
-    return to_local_time(date);
+    for (size_t y { 1970 }; y <= date.year; ++y)
+    {
+        for (size_t m { 0 }; m < 12; ++m)
+        {
+            if (dayno < days_in_months[m] + (m == 1 && leap_year(y) ? 1 : 0))
+            {
+                date.month = (m + 1) % 12 + 1;
+                break;
+            }
+            dayno -= days_in_months[m] + (m == 1 && leap_year(y) ? 1 : 0);
+        }
+    }
+
+    date.mday = dayno + 1;
+
+    return date;
 }
 
 size_t to_unix(const Date &date)

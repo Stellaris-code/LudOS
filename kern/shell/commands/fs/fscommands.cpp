@@ -33,6 +33,9 @@ SOFTWARE.
 #include "utils/crc32.hpp"
 #include "fs/vfs.hpp"
 #include "fs/fs.hpp"
+#include "fs/pathutils.hpp"
+#include "fs/devfs/devfs.hpp"
+#include "time/time.hpp"
 
 void install_fs_commands(Shell &sh)
 {
@@ -50,7 +53,11 @@ void install_fs_commands(Shell &sh)
      "Usage : ls",
      [&sh](const std::vector<std::string>&)
      {
-         for (const auto& entry : sh.pwd->readdir())
+         auto vec = sh.pwd->readdir();
+         std::sort(vec.begin(), vec.end(), [](const auto& lhs, const auto& rhs)
+         { return lhs->name() == "." || lhs->name() == ".." ? false : lhs->name() < rhs->name(); });
+
+         for (const auto& entry : vec)
          {
              kprintf("\t%s", entry->name().c_str());
              if (entry->is_dir())
@@ -165,7 +172,7 @@ void install_fs_commands(Shell &sh)
          for (Disk& disk : Disk::disks())
          {
              kprintf("%s : %s (%s)\n", disk.drive_name().c_str(), human_readable_size(disk.disk_size()).c_str(),
-                                       disk.read_only() ? "ro" : "rw");
+             disk.read_only() ? "ro" : "rw");
          }
          return 0;
      }});
@@ -351,8 +358,9 @@ void install_fs_commands(Shell &sh)
          return 0;
      }});
 
+    // TODO : do this to others
     sh.register_command(
-    {"mkdir", "creates a directory in the current path",
+    {"mkdir", "creates a directory",
      "Usage : mkdir <name>",
      [&sh](const std::vector<std::string>& args)
      {
@@ -362,17 +370,24 @@ void install_fs_commands(Shell &sh)
              return -1;
          }
 
-         if (!sh.pwd->mkdir(args[0]))
+         auto node = vfs::find(sh.get_path(parent_path(args[0])));
+         if (!node)
          {
-             sh.error("Could not create directory '%s'\n", args[0].c_str());
-             return -2;
+             sh.error("Could not find path '%s'\n", sh.get_path(parent_path(args[0])).c_str());
+             return -3;
+         }
+
+         if (!node->mkdir(filename(args[0])))
+         {
+             sh.error("Could not create directory '%s'\n", filename(args[0].c_str()));
+             return -3;
          }
 
          return 0;
      }});
 
     sh.register_command(
-    {"touch", "creates a file in the current path",
+    {"touch", "creates a file",
      "Usage : touch <name>",
      [&sh](const std::vector<std::string>& args)
      {
@@ -392,7 +407,7 @@ void install_fs_commands(Shell &sh)
      }});
 
     sh.register_command(
-    {"rm", "removes a file in the current path",
+    {"rm", "removes a file",
      "Usage : rm <name>",
      [&sh](const std::vector<std::string>& args)
      {
@@ -414,6 +429,121 @@ void install_fs_commands(Shell &sh)
              sh.error("Can't remove '%s' !\n", args[0].c_str());
              return -3;
          }
+
+         return 0;
+     }});
+
+    sh.register_command(
+    {"mount", "mounts a file system",
+     "Usage : mount <disk> <target>",
+     [&sh](const std::vector<std::string>& args)
+     {
+         if (args.size() != 2)
+         {
+             sh.error("mount needs two arguments !\n");
+             return -1;
+         }
+
+         auto vfs_disk_node = vfs::find(sh.get_path(args[0]));
+         if (!vfs_disk_node)
+         {
+             sh.error("Can't find disk file '%s' !\n", args[0].c_str());
+             return -2;
+         }
+         auto disk_node = dynamic_cast<devfs::disk_file*>(vfs_disk_node.get());
+         if (!disk_node)
+         {
+             sh.error("'%s' is not a disk file\n", args[0].c_str());
+             return -3;
+         }
+
+         auto target_node = vfs::find(sh.get_path(args[1]));
+         if (!target_node)
+         {
+             sh.error("Can't find mount point '%s' !\n", args[1].c_str());
+             return -4;
+         }
+
+         auto fs = FileSystem::get_disk_fs(disk_node->disk());
+         if (!fs)
+         {
+             sh.error("'%s' does'nt contain a valid file system\n", args[0].c_str());
+             return -5;
+         }
+
+         if (!vfs::mount(fs->root(), target_node))
+         {
+             sh.error("Can't mount '%s' on '%s'\n", args[0].c_str(), args[1].c_str());
+             return -6;
+         }
+
+         return 0;
+     }});
+
+    sh.register_command(
+    {"umount", "unmounts a file system",
+     "Usage : umount <target>",
+     [&sh](const std::vector<std::string>& args)
+     {
+         if (args.size() != 1)
+         {
+             sh.error("umount needs one argument !\n");
+             return -1;
+         }
+
+         auto target_node = vfs::find(sh.get_path(args[0]));
+         if (!target_node)
+         {
+             sh.error("Can't find mount point '%s' !\n", args[0].c_str());
+             return -2;
+         }
+
+         if (!vfs::umount(target_node))
+         {
+             sh.error("Can't unmount '%s' !\n", args[0].c_str());
+             return -3;
+         }
+
+         return 0;
+     }});
+
+    sh.register_command(
+    {"stat", "shows file info",
+     "Usage : stat <file>",
+     [&sh](const std::vector<std::string>& args)
+     {
+         if (args.size() != 1)
+         {
+             sh.error("stat needs one argument !\n");
+             return -1;
+         }
+
+         auto target_node = vfs::find(sh.get_path(args[0]));
+         if (!target_node)
+         {
+             sh.error("Can't find '%s' !\n", args[0].c_str());
+             return -2;
+         }
+
+         auto stat = target_node->stat();
+
+         std::string perm_str(6, '-');
+         if (stat.perms & vfs::Permissions::UserRead) perm_str[0] = 'r';
+         if (stat.perms & vfs::Permissions::UserWrite) perm_str[1] = 'w';
+         if (stat.perms & vfs::Permissions::UserExec) perm_str[2] = 'x';
+         if (stat.perms & vfs::Permissions::GroupRead) perm_str[3] = 'r';
+         if (stat.perms & vfs::Permissions::GroupWrite) perm_str[4] = 'w';
+         if (stat.perms & vfs::Permissions::GroupExec) perm_str[5] = 'x';
+         if (stat.perms & vfs::Permissions::OtherRead) perm_str[6] = 'r';
+         if (stat.perms & vfs::Permissions::OtherWrite) perm_str[7] = 'w';
+         if (stat.perms & vfs::Permissions::OtherExec) perm_str[8] = 'x';
+
+         kprintf("Permissions : %s\n", perm_str.c_str());
+         kprintf("uid : %d    gid : %d\n", stat.uid, stat.gid);
+         kprintf("Flags : 0x%x\n", stat.flags);
+         kprintf("Creation time : %s\n", stat.creation_time ? Time::to_string(Time::to_local_time(Time::from_unix(stat.creation_time))) : "-");
+         kprintf("Access time : %s\n", stat.access_time ? Time::to_string(Time::to_local_time(Time::from_unix(stat.access_time))) : "-");
+         kprintf("Modification time : %s\n", stat.modification_time ? Time::to_string(Time::to_local_time(Time::from_unix(stat.modification_time))) : "-");
 
          return 0;
      }});

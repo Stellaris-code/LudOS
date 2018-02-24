@@ -25,10 +25,32 @@ SOFTWARE.
 #ifndef DEVFS_HPP
 #define DEVFS_HPP
 
+#include "fs/vfs.hpp"
+
 class Disk;
 
 namespace devfs
 {
+struct disk_file : public vfs::node
+{
+    disk_file(Disk& disk, const std::string& node_name)
+        : m_disk(disk)
+    {
+        m_name = node_name;
+    }
+
+    virtual size_t size() const override;
+    virtual bool is_dir() const override { return false; }
+    Disk& disk() { return m_disk; }
+
+protected:
+    [[nodiscard]] virtual MemBuffer read_impl(size_t offset, size_t size) const override;
+    [[nodiscard]] virtual bool write_impl(size_t offset, gsl::span<const uint8_t> data) override;
+
+public:
+    Disk& m_disk;
+};
+
 void init();
 
 namespace detail

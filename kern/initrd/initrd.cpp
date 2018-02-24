@@ -45,7 +45,8 @@ bool install_initrd()
             }
 
             auto root = fs->root();
-            if (vfs::mount(root, "/initrd"))
+            auto initrd = vfs::root->mkdir("initrd");
+            if (vfs::mount(root, initrd))
             {
                 log(Info, "Mounted initrd\n");
                 return true;

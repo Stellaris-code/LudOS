@@ -245,6 +245,12 @@ vfs::node::Stat ext2_node::stat() const
 {
     Stat stat;
     stat.perms = inode_struct.type & 0x0FFF;
+    stat.access_time = inode_struct.access_time;
+    stat.modification_time = inode_struct.modification_time;
+    stat.creation_time = inode_struct.creation_time;
+    stat.uid = inode_struct.uid;
+    stat.gid = inode_struct.gid;
+    stat.flags = inode_struct.flags;
 
     return stat;
 }

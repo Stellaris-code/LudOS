@@ -31,6 +31,7 @@ SOFTWARE.
 #include "utils/nop.hpp"
 #include "utils/messagebus.hpp"
 #include "drivers/kbd/text_handler.hpp"
+#include "time/time.hpp"
 
 #include <typeinfo.hpp>
 
@@ -79,24 +80,16 @@ contin:;
     return cur_node;
 }
 
-bool mount(std::shared_ptr<vfs::node> node, std::string mountpoint)
+bool mount(std::shared_ptr<vfs::node> target, std::shared_ptr<vfs::node> mountpoint)
 {
-    if (!node->is_dir()) mountpoint += "/" + node->name();
+    if (!target->is_dir())
+    {
+        return false;
+    }
 
-    auto point = find(parent_path(mountpoint));
-    if (!point)
-    {
-        err("Mountpoint root '%s' doesn't exist\n", parent_path(mountpoint).c_str());
-        return false;
-    }
-    if (find(mountpoint))
-    {
-        err("Mountpoint '%s' exists\n", mountpoint.c_str());
-        return false;
-    }
-    point->vfs_children.emplace_back(node);
-    point->vfs_children.back()->rename(filename(mountpoint));
-    point->vfs_children.back()->set_parent(point.get());
+    mountpoint->m_mounted_node = target;
+    target->set_parent(mountpoint.get());
+
     return true;
 }
 
@@ -165,6 +158,8 @@ void node::rename(const std::string &name)
 
     m_name = name;
     rename_impl(name);
+
+    update_modification_time();
 }
 
 MemBuffer node::read(size_t offset, size_t size) const
@@ -176,6 +171,8 @@ MemBuffer node::read(size_t offset, size_t size) const
 
     assert(data.size() == size);
 
+    update_access_time();
+
     return data;
 }
 
@@ -184,21 +181,33 @@ bool node::write(size_t offset, gsl::span<const uint8_t> data)
     assert(!is_dir());
     if (size()) assert(offset + data.size() <= size());
 
-    return write_impl(offset, data);
+    auto result = write_impl(offset, data);
+    update_modification_time();
+    return result;
 }
 
-node *node::mkdir(const std::string & str)
+std::shared_ptr<node> node::mkdir(const std::string & str)
 {
     assert(is_dir());
 
-    return mkdir_impl(str);
+    auto node = mkdir_impl(str);
+    assert(node->parent() == this);
+
+    update_modification_time();
+
+    return node;
 }
 
-node *node::touch(const std::string & str)
+std::shared_ptr<node> node::touch(const std::string & str)
 {
     assert(is_dir());
 
-    return touch_impl(str);
+    auto node = touch_impl(str);
+    assert(node->parent() == this);
+
+    update_modification_time();
+
+    return node;
 }
 
 std::string node::path() const
@@ -216,15 +225,37 @@ std::string node::path() const
     }
 }
 
+void node::update_access_time() const
+{
+    auto stat = this->stat();
+    stat.access_time = Time::epoch();
+    const_cast<node*>(this)->set_stat(stat);
+}
+
+void node::update_modification_time()
+{
+    auto stat = this->stat();
+    stat.modification_time = stat.access_time = Time::epoch();
+    set_stat(stat);
+}
+
+node::Stat node::mkstat()
+{
+    Stat stat;
+    stat.access_time = stat.creation_time = stat.modification_time = Time::epoch();
+    stat.uid = stat.gid = 0;
+    stat.perms = 0x0FFF;
+
+    return stat;
+}
+
 std::vector<std::shared_ptr<node> > node::readdir()
 {
     assert(is_dir());
 
     static std::vector<std::shared_ptr<const node>> fkcghugelist;
 
-    auto list = vfs_children;
-
-    merge(list, (m_mounted_node ? m_mounted_node->readdir_impl() : readdir_impl()));
+    auto list = (m_mounted_node ? m_mounted_node->readdir_impl() : readdir_impl());
 
     auto cur_dir = std::make_shared<symlink>(*this);
     cur_dir->rename(".");
@@ -243,6 +274,8 @@ std::vector<std::shared_ptr<node> > node::readdir()
     {
         fkcghugelist.emplace_back(el);
     }
+
+    update_access_time();
 
     return list;
 }
@@ -277,7 +310,7 @@ node &link_target(const node &link)
     return static_cast<const symlink&>(link).target();
 }
 
-node *vfs_root::add_node(const std::string &name, bool dir)
+std::shared_ptr<node> vfs_root::add_node(const std::string &name, bool dir)
 {
     m_children.emplace_back(std::make_shared<vfs::node>(this));
     auto node = m_children.back();
@@ -286,7 +319,7 @@ node *vfs_root::add_node(const std::string &name, bool dir)
     node->m_is_dir = dir;
     // TODO : m_stat
 
-    return node.get();
+    return node;
 }
 
 bool vfs_root::remove_impl(const node *child)
@@ -298,6 +331,15 @@ bool vfs_root::remove_impl(const node *child)
     }));
 
     return found;
+}
+
+bool umount(std::shared_ptr<node> target)
+{
+    if (target->m_mounted_node == nullptr) return false;
+
+    target->m_mounted_node = nullptr;
+
+    return true;
 }
 
 }

@@ -204,7 +204,6 @@ void MemoryDisk::write_sector(size_t sector, gsl::span<const uint8_t> data)
 DiskSlice::DiskSlice(Disk &disk, size_t offset, size_t size)
     : DiskImpl<DiskSlice>(), m_base_disk(disk), m_offset(offset), m_size(size)
 {
-    enable_caching(false);
 }
 
 MemBuffer DiskSlice::read_sector(size_t sector, size_t count) const

@@ -132,6 +132,8 @@ std::shared_ptr<tar_node> TarFS::read_header(const Header *hdr) const
     node->m_stat.perms = read_number(hdr->mode);
     node->m_stat.uid = read_number(hdr->uid);
     node->m_stat.gid = read_number(hdr->gid);
+    node->m_stat.creation_time = node->m_stat.modification_time = read_number(hdr->mtime);
+    node->m_stat.access_time = 0;
     node->m_name = std::string(hdr->name, 101); node->m_name.back() = '\0';
     node->m_name = filename(trim_zstr(node->m_name));
 

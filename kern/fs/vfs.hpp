@@ -46,23 +46,45 @@ extern std::unordered_set<void*> created_node_list;
 
 namespace vfs
 {
+enum Permissions : uint16_t
+{
+    SUID = 0x0800,
+    SGID = 0x0400,
+    StickyBit = 0x0200,
+    UserRead = 0x0100,
+    UserWrite = 0x0080,
+    UserExec = 0x0040,
+    GroupRead = 0x0020,
+    GroupWrite = 0x0010,
+    GroupExec = 0x0008,
+    OtherRead = 0x0004,
+    OtherWrite = 0x0002,
+    OtherExec = 0x0001
+};
+
 struct node
 {
     friend struct symlink;
     friend struct vfs_root;
-    friend bool mount(std::shared_ptr<node> node, std::string mountpoint);
+    friend bool mount(std::shared_ptr<node> target, std::shared_ptr<node> mountpoint);
+    friend bool umount(std::shared_ptr<node> target);
+
 
     struct Stat
     {
-        uint32_t perms { 0 };
-        uint32_t uid { 0 };
-        uint32_t gid { 0 };
+        uint16_t perms { 0 };
+        uint16_t uid { 0 };
+        uint16_t gid { 0 };
         uint32_t flags { 0 };
+        size_t access_time { 0 };
+        size_t creation_time { 0 };
+        size_t modification_time { 0 };
     };
 
     node(node* parent = nullptr)
     {
         set_parent(parent);
+        m_stat = mkstat();
     }
 
     node(const node&) = delete;
@@ -82,8 +104,8 @@ struct node
     [[nodiscard]] MemBuffer read(size_t offset, size_t size) const;
     [[nodiscard]] MemBuffer read() const { return read(0, size()); }
     [[nodiscard]] bool write(size_t offset, gsl::span<const uint8_t> data);
-    [[nodiscard]] node* mkdir(const std::string&);
-    [[nodiscard]] node* touch(const std::string&);
+    [[nodiscard]] std::shared_ptr<node> mkdir(const std::string&);
+    [[nodiscard]] std::shared_ptr<node> touch(const std::string&);
     std::vector<std::shared_ptr<node>> readdir();
     std::vector<std::shared_ptr<const node>> readdir() const;
     bool remove(const vfs::node* child);
@@ -97,18 +119,25 @@ protected:
     [[nodiscard]] virtual MemBuffer read_impl(size_t, size_t) const { return {}; }
     [[nodiscard]] virtual bool write_impl(size_t, gsl::span<const uint8_t>) { return false; }
     virtual std::vector<std::shared_ptr<node>> readdir_impl() { return {}; }
-    [[nodiscard]] virtual node* mkdir_impl(const std::string&) { return nullptr; }
-    [[nodiscard]] virtual node* touch_impl(const std::string&) { return nullptr; }
+    [[nodiscard]] virtual std::shared_ptr<node> mkdir_impl(const std::string&) { return nullptr; }
+    [[nodiscard]] virtual std::shared_ptr<node> touch_impl(const std::string&) { return nullptr; }
     virtual void rename_impl(const std::string&) {}
     virtual bool remove_impl(const vfs::node*) { return false; }
 
-    Stat m_stat;
+private:
+    void update_access_time() const;
+    void update_modification_time();
+
+    static Stat mkstat();
+
+protected:
+
+    mutable Stat m_stat;
 
     std::string m_name {};
 
     node* m_parent { nullptr };
 
-    std::vector<std::shared_ptr<node>> vfs_children {};
     bool m_is_dir { false };
 
 private:
@@ -125,11 +154,11 @@ struct vfs_root : public node
     virtual bool is_dir() const override { return true; }
 
 private:
-    node* add_node(const std::string& name, bool dir);
+    std::shared_ptr<node> add_node(const std::string& name, bool dir);
 
 protected:
-    virtual node* mkdir_impl(const std::string& str) override { return add_node(str, true); }
-    virtual node* touch_impl(const std::string& str) override { return add_node(str, false); }
+    virtual std::shared_ptr<node> mkdir_impl(const std::string& str) override { return add_node(str, true); }
+    virtual std::shared_ptr<node> touch_impl(const std::string& str) override { return add_node(str, false); }
     virtual std::vector<std::shared_ptr<node>> readdir_impl() override { return m_children; }
     virtual bool remove_impl(const vfs::node* child) override;
 
@@ -156,8 +185,8 @@ protected:
     [[nodiscard]] virtual MemBuffer read_impl(size_t offset, size_t size) const override { return m_target.read(offset, size); }
     [[nodiscard]] virtual bool write_impl(size_t offset, gsl::span<const uint8_t> data) override { return m_target.write(offset, data); }
     virtual std::vector<std::shared_ptr<node>> readdir_impl() override { return m_target.readdir_impl(); }
-    [[nodiscard]] virtual node* mkdir_impl(const std::string& s) override { return m_target.mkdir(s); };
-    [[nodiscard]] virtual node* touch_impl(const std::string& s) override { return m_target.touch(s); }
+    [[nodiscard]] virtual std::shared_ptr<node> mkdir_impl(const std::string& s) override { return m_target.mkdir(s); };
+    [[nodiscard]] virtual std::shared_ptr<node> touch_impl(const std::string& s) override { return m_target.touch(s); }
 
 private:
     node& m_target;
@@ -167,7 +196,8 @@ void init();
 
 std::shared_ptr<node> find(const std::string& path);
 
-bool mount(std::shared_ptr<node> node, std::string mountpoint);
+bool mount(std::shared_ptr<node> target, std::shared_ptr<node> mountpoint);
+bool umount(std::shared_ptr<node> target);
 
 void traverse(const vfs::node& node, size_t indent = 0);
 void traverse(const std::string& path);

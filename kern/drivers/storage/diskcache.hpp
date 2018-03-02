@@ -52,7 +52,7 @@ public:
 
 private:
     void add_span(size_t sec, size_t count);
-    void add_to_cache(size_t sec, const uint8_t *data, bool write = false);
+    void add_to_cache(size_t sec, gsl::span<const uint8_t> data, bool write = false);
     void prune_cache();
     void remove_entry(size_t id);
 

@@ -91,10 +91,12 @@ public:
     void flush_cache();
 
 private:
+    void write_offseted_sector(size_t base, size_t byte_off, gsl::span<const uint8_t> data);
+
     MemBuffer read_cache_sector(size_t sector, size_t count) const;
     void write_cache_sector(size_t sector, gsl::span<const uint8_t> data);
 
-protected:
+public:
     virtual MemBuffer read_sector(size_t sector, size_t count) const = 0;
     virtual void write_sector(size_t sector, gsl::span<const uint8_t> data) = 0;
 
@@ -109,6 +111,8 @@ private:
 protected:
     static inline std::vector<std::unique_ptr<Disk>> m_disks;
 };
+
+void test_writes(Disk& disk);
 
 template <typename Derived>
 class DiskImpl : public Disk

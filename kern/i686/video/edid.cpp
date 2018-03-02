@@ -80,7 +80,7 @@ graphics::MonitorInfo to_monitor_info(const EDIDInfo &info)
 
     log_serial("data : 0x%x\n", info.standard_timings[0]);
 
-    size_t mon_width = size_t(info.standard_timings[0]&0xFF+31)*8;
+    size_t mon_width = size_t((info.standard_timings[0]&0xFF)+31)*8;
     size_t mon_height = mon_width*ratio.second/ratio.first;
 
     return graphics::MonitorInfo{

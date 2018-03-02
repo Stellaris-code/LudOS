@@ -43,6 +43,8 @@ public:
     virtual size_t total_size() const = 0;
     virtual size_t free_size() const = 0;
 
+    virtual void umount() = 0;
+
     const Disk& disk() const { return m_disk; }
 
     static bool accept(const Disk& disk) { assert(false); return false; }

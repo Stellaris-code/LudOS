@@ -78,7 +78,6 @@ constexpr const char *exception_messages[] = {
 extern "C"
 const registers* isr_handler(const registers* const regs)
 {
-
     if (auto handl = handlers[regs->int_no]; handl)
     {
         if (handl(regs)) return regs;

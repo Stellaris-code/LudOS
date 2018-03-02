@@ -29,8 +29,10 @@ SOFTWARE.
 
 #include "utils/stlutils.hpp"
 #include "utils/messagebus.hpp"
+#include "utils/memutils.hpp"
 
 #include "power/powermanagement.hpp"
+#include "time/timer.hpp"
 
 // TODO : Locks
 
@@ -75,11 +77,18 @@ MemBuffer Disk::read(size_t offset, size_t size) const
     const size_t sect_size = sector_size();
 
     const size_t sector = offset / sect_size;
-    const size_t count = size / sect_size + (size%sect_size?1:0);
+    const size_t count = ((offset+size)/sect_size + ((offset+size)%sect_size?1:0))
+            - (offset/sect_size + (offset%sect_size?1:0))
+            + ((offset+size)%sect_size?1:0);
+
+    assert(count <= disk_size()/sector_size() + (disk_size()%sector_size()?1:0));
+
     auto data = read_cache_sector(sector, count);
     assert(data.size() >= size);
 
     offset %= sect_size;
+
+    assert(data.size() >= offset + size);
 
     return MemBuffer{data.begin() + offset, data.begin() + offset + size};
 }
@@ -89,6 +98,32 @@ MemBuffer Disk::read() const
     return read(0, disk_size());
 }
 
+void Disk::write_offseted_sector(size_t base, size_t byte_off, gsl::span<const uint8_t> data)
+{
+    assert((size_t)data.size() <= sector_size());
+    assert(data.size() + byte_off <= disk_size());
+
+    gsl::span<const uint8_t> spans[2];
+    spans[0] = data.subspan(0, std::min<size_t>(sector_size() - byte_off, data.size()));
+
+    if (sector_size() - byte_off < (size_t)data.size())
+    {
+        spans[1] = data.subspan(sector_size() - byte_off);
+    }
+
+    for (size_t i { 0 }; i < 2; ++i)
+    {
+        auto sect_data = read_cache_sector(base+i, 1);
+
+        assert((size_t)spans[i].size() <= sect_data.size() - byte_off);
+
+        std::copy(spans[i].begin(), spans[i].end(), sect_data.begin() + byte_off);
+        write_cache_sector(base+i, sect_data);
+
+        byte_off = 0;
+    }
+}
+
 void Disk::write(size_t offset, gsl::span<const uint8_t> data)
 {
     if (read_only()) return;
@@ -96,33 +131,14 @@ void Disk::write(size_t offset, gsl::span<const uint8_t> data)
     const size_t sect_size = sector_size();
 
     const size_t base = offset / sect_size;
-    const size_t byte_offset = offset % sect_size;
     const size_t count = data.size() / sect_size + (data.size()%sect_size?1:0);
 
     auto chunks = split(data, sect_size);
 
     for (size_t i { 0 }; i < count; ++i)
     {
-        if (i == 0 || i == count-1)
-        {
-            auto sect_data = read_cache_sector(i + base, 1);
-            std::copy(chunks[i].begin(), chunks[i].end(),
-                    sect_data.begin() + byte_offset);
-
-            write_cache_sector(i + base, sect_data);
-        }
-        else if (i == count-1)
-        {
-            auto sect_data = read_cache_sector(i + base, 1);
-            std::copy(chunks[i].begin(), chunks[i].end(),
-                    sect_data.begin());
-
-            write_cache_sector(i + base, sect_data);
-        }
-        else
-        {
-            write_cache_sector(i + base, chunks[i]);
-        }
+        write_offseted_sector(base + i, offset % sect_size, chunks[i]);
+        offset -= sect_size;
     }
 }
 
@@ -224,4 +240,40 @@ void DiskSlice::write_sector(size_t sector, gsl::span<const uint8_t> data)
     }
 
     m_base_disk.write_sector(sector + m_offset, data);
+}
+
+void test_writes(Disk &disk)
+{
+    log(Notice, "Testing writes on disk %s\n", disk.drive_name().c_str());
+
+    std::vector<uint8_t> data(disk.sector_size()*11+23);
+    for (size_t i { 0 }; i < data.size(); ++i)
+    {
+        data[i] = i % 0x100;
+    }
+
+    bool caching_state = disk.caching_enabled();
+
+    disk.enable_caching(false);
+
+    for (size_t i { 0 }; i < 100; ++i)
+    {
+        disk.write(i*160, data);
+
+        disk.flush_cache();
+
+        auto result = disk.read(i*160, data.size());
+        assert(result.size() == data.size());
+
+        for (size_t j { 0 }; j < result.size(); ++j)
+        {
+            if (result[j] != data[j])
+            {
+                warn("Difference at %d (0x%x, 0x%x)\n", j, data[j], result[j]);
+                break;
+            }
+        }
+    }
+
+    disk.enable_caching(caching_state);
 }

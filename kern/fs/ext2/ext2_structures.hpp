@@ -104,7 +104,7 @@ enum class OptFeatureFlags : uint32_t
     AFSServerInodes = 0x2,
     HasJournal = 0x4,
     InodeExtendedAttributes = 0x8,
-    FSCanResizeItself = 0x10,
+    InodeResize = 0x10,
     DirectoriesUseHashIndex = 0x20
 };
 

@@ -32,6 +32,8 @@ SOFTWARE.
 #include "utils/messagebus.hpp"
 #include "drivers/kbd/text_handler.hpp"
 #include "time/time.hpp"
+#include "power/powermanagement.hpp"
+#include "drivers/storage/disk.hpp"
 
 #include <typeinfo.hpp>
 
@@ -42,10 +44,21 @@ namespace vfs
 
 std::vector<std::reference_wrapper<node>> descriptors;
 std::shared_ptr<vfs_root> root;
+std::vector<node*> mounted_nodes;
 
 void init()
 {
     root = std::make_shared<vfs_root>();
+
+    MessageBus::register_handler<ShutdownMessage>([](const ShutdownMessage&)
+    {
+        for (auto ptr : mounted_nodes)
+        {
+            if (ptr) ptr->~node(); // force unmounting of mounted nodes
+        }
+
+        MessageBus::send(SyncDisksCache{});
+    });
 
     log(Info, "VFS initialized.\n");
 }
@@ -89,6 +102,22 @@ bool mount(std::shared_ptr<vfs::node> target, std::shared_ptr<vfs::node> mountpo
 
     mountpoint->m_mounted_node = target;
     target->set_parent(mountpoint.get());
+
+    mounted_nodes.emplace_back(target.get());
+
+    return true;
+}
+
+bool umount(std::shared_ptr<node> target)
+{
+    if (target->m_mounted_node == nullptr) return false;
+
+    for (auto& ptr : mounted_nodes)
+    {
+        if (ptr == target->m_mounted_node.get()) ptr = nullptr;
+    }
+
+    target->m_mounted_node = nullptr;
 
     return true;
 }
@@ -331,15 +360,6 @@ bool vfs_root::remove_impl(const node *child)
     }));
 
     return found;
-}
-
-bool umount(std::shared_ptr<node> target)
-{
-    if (target->m_mounted_node == nullptr) return false;
-
-    target->m_mounted_node = nullptr;
-
-    return true;
 }
 
 }

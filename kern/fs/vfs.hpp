@@ -207,6 +207,7 @@ node& link_target(const vfs::node& link);
 
 extern std::vector<std::reference_wrapper<node>> descriptors;
 extern std::shared_ptr<vfs_root> root;
+extern std::vector<node*> mounted_nodes;
 };
 
 #endif // VFS_HPP

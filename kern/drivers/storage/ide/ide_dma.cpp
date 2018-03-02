@@ -187,6 +187,8 @@ void Controller::prepare_prdt(BusPort bus, gsl::span<const uint8_t> data)
 
         pg = Memory::page(pg);
 
+        assert(size < 4*1024*1024);
+
         prd_ptr->byte_count = size;
         prd_ptr->phys_buf_addr = addr;
         prd_ptr->end_of_prdt = (pg == Memory::page(end));
@@ -263,6 +265,9 @@ MemBuffer Disk::read_sector(size_t sector, size_t count) const
 
 void Disk::write_sector(size_t sector, gsl::span<const uint8_t> data)
 {
+    assert(data.size() % sector_size() == 0);
+    assert(sector <= m_id_data->sectors_48);
+
     volatile auto& int_status = raised_ints[m_port==BusPort::Primary][m_type==DriveType::Slave];
 
     int_status = false;
@@ -271,7 +276,7 @@ void Disk::write_sector(size_t sector, gsl::span<const uint8_t> data)
 
     size_t count = data.size() / sector_size() + (data.size()%sector_size()?1:0);
 
-    m_cont.send_command((BusPort)m_port, (DriveType)m_type, ata_write_dma_ex, true, sector, count, data);
+    m_cont.send_command((BusPort)m_port, (DriveType)m_type, ata_write_dma_ex, false, sector, count, data);
 
     if (!Timer::sleep_until_int([&int_status]{return int_status;}, 2000))
     {

@@ -53,6 +53,8 @@ bool available()
 
 bool init()
 {
+    if (!available()) return false;
+
     mem = detail::get_hbamem_ptr();
     if (!mem)
     {
@@ -338,24 +340,20 @@ bool detail::issue_write_command(size_t port, uint64_t sector, size_t count, con
     cmdheader->prdtl = ((count-1)>>4) + 1;	// PRDT entries count
     cmdheader->atapi = false;
 
-    CommandTable *cmdtbl = reinterpret_cast<CommandTable*>(cmdheader->ctba);
+    //CommandTable *cmdtbl = reinterpret_cast<CommandTable*>(cmdheader->ctba);
+    CommandTable *cmdtbl = &cmdtables[port];
     memset(cmdtbl, 0, sizeof(CommandTable) +
            (cmdheader->prdtl-1)*sizeof(PrdtEntry));
-    // 8K bytes (16 sectors) per PRDT
-    for (int i=0; i<cmdheader->prdtl-1; i++)
+
+    int i;
+    for (i=0; i<cmdheader->prdtl-1; i++)
     {
-        cmdtbl->entries[i].dba = static_cast<uint32_t>(Memory::physical_address(buf));
-        cmdtbl->entries[i].dbau = 0;
-        cmdtbl->entries[i].dbc = 8*1024;	// 8K bytes
-        cmdtbl->entries[i].i = 1;
-        buf += 4*1024;	// 4K words
-        count -= 16;	// 16 sectors
+        mkprd(cmdtbl->entries[i], Memory::physical_address(buf), 4*1024*1024);
+        buf += 4*1024*1024;
+        count -= 8;	// 16 sectors
     }
-    // Last entry
-    cmdtbl->entries[cmdheader->prdtl-1].dba = static_cast<uint32_t>(Memory::physical_address(buf));
-    cmdtbl->entries[cmdheader->prdtl-1].dbau = 0;
-    cmdtbl->entries[cmdheader->prdtl-1].dbc = count<<9;	// 512 bytes per sector
-    cmdtbl->entries[cmdheader->prdtl-1].i = 1;
+
+    mkprd(cmdtbl->entries[i], Memory::physical_address(buf), count*512);
 
     // Setup command
     FisRegH2D *cmdfis = reinterpret_cast<FisRegH2D*>(&cmdtbl->command_fis);

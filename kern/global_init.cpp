@@ -95,9 +95,10 @@ SOFTWARE.
 // TODO : VirtIO drivers
 // TODO : BASIC interpreter
 // TODO : cache bu sec/count pair ?
-// TODO : mount disk on detection ?
-// TODO : ext2 write
+// TODO : ext2 write !!
 // TODO : vfs sanitize names
+// TODO : fix cpp exceptions
+// TODO : vfs canonicalize
 
 /**********************************/
 // BUGS
@@ -219,6 +220,9 @@ void global_init()
 
         MemBuffer buf(512*16);
         MemoryDisk::create_disk(buf.data(), buf.size(), "scratch");
+
+        Disk::disks()[0].get().enable_caching(false);
+        Disk::disks()[1].get().enable_caching(false);
 
         sh.command("run /initrd/init.sh");
 

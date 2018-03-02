@@ -45,7 +45,7 @@ void DiskCache::write_sector(size_t sec, gsl::span<const uint8_t> data)
     auto chunks = split(data, m_disk.sector_size());
     for (size_t i { 0 }; i < chunks.size(); ++i)
     {
-        add_to_cache(sec + i, data.data() + m_disk.sector_size()*i, true);
+        add_to_cache(sec + i, chunks[i], true);
     }
 
     prune_cache();
@@ -98,19 +98,20 @@ void DiskCache::add_span(size_t sec, size_t count)
             size_t len { 1 };
             while (m_cache.count(i + len) == 0 && len < count) { ++len; };
 
-#if 0
+#if 1
             auto data = split(m_disk.read_sector(i, len), m_disk.sector_size());
 
             for (size_t j { 0 }; j < len; ++j)
             {
-                add_to_cache(i+j, data[j].data());
+                add_to_cache(i+j, data[j]);
             }
 #else
             auto data = m_disk.read_sector(i, len);
 
             for (size_t j { 0 }; j < len; ++j)
             {
-                add_to_cache(sec + j, data.data() + j*m_disk.sector_size());
+                add_to_cache(sec + j, gsl::span<const uint8_t>(data.data() + j*m_disk.sector_size(),
+                                                               data.data() + (j+1)*m_disk.sector_size()));
             }
 #endif
 
@@ -129,7 +130,7 @@ void DiskCache::add_span(size_t sec, size_t count)
 #endif
 }
 
-void DiskCache::add_to_cache(size_t sec, const uint8_t *data, bool write)
+void DiskCache::add_to_cache(size_t sec, gsl::span<const uint8_t> data, bool write)
 {
     auto ticks = Time::total_ticks();
 
@@ -138,12 +139,14 @@ void DiskCache::add_to_cache(size_t sec, const uint8_t *data, bool write)
         //log_serial("Cache miss\n");
 
         m_access_times.emplace(ticks, sec);
-        m_cache[sec] = CacheEntry{MemBuffer(data, data + m_disk.sector_size()), write, ticks};
+        m_cache[sec] = CacheEntry{MemBuffer(data.begin(), data.end()), write, ticks};
     }
     else
     {
-        m_cache.at(sec).data = MemBuffer(data, data + m_disk.sector_size());
+        m_cache.at(sec).data = MemBuffer(data.begin(), data.end());
         m_cache.at(sec).dirty = write;
+
+        assert(m_access_times.count(m_cache.at(sec).access_time));
         m_access_times.erase(m_cache.at(sec).access_time);
         m_cache.at(sec).access_time = ticks;
         m_access_times.emplace(ticks, sec);

@@ -42,7 +42,7 @@ struct stdout_file : public vfs::node
 protected:
     [[nodiscard]] virtual bool write_impl(size_t offset, gsl::span<const uint8_t> data) override
     {
-        auto str = std::string((char*)data.data(), data.size());
+        auto str = std::string((const char*)data.data(), data.size());
         kprintf("%s", str.c_str());
         return true;
     }
@@ -53,7 +53,7 @@ struct stderr_file : public vfs::node
 protected:
     [[nodiscard]] virtual bool write_impl(size_t offset, gsl::span<const uint8_t> data) override
     {
-        auto str = std::string((char*)data.data(), data.size());
+        auto str = std::string((const char*)data.data(), data.size());
         err("%s", str.c_str());
         return true;
     }

@@ -65,6 +65,7 @@ option(WITH_SSE2 "Compiles with gcc sse2 support" OFF)
 option(WITH_ARCH_NATIVE "Compiles with -march=native" OFF)
 option(WITH_UBSAN "Compiles with undefined behavior sanitization" OFF)
 option(WITH_ASAN "Compiles with address sanitization" OFF)
+option(USE_CLANG_TIDY "Run clang-tidy on build" OFF)
 
 if (WITH_SSE)
     set(SIMD_OPTIONS "-mmmx -msse -mno-sse2 -ftree-vectorize")
@@ -146,6 +147,14 @@ target_link_libraries(${PROJECT_NAME} libk libcpp libcxxabi libx86emu libdisasm 
 target_link_libraries(libx86emu libk)
 
 set(CMAKE_CXX_LINK_EXECUTABLE "/usr/local/cross/bin/${ARCH}-elf-ld --build-id=none  --eh-frame-hdr -T ${PLATFORM_LAYOUT} ${ISA_LINKER_FLAGS} <OBJECTS> -o <TARGET> <LINK_LIBRARIES>-L/usr/tooLargeForHome/cross_src/build-gcc/i686-elf/libgcc/ -lgcc")
+
+if (USE_CLANG_TIDY)
+    set(DO_CLANG_TIDY "clang-tidy" "-checks=-*,clang-analyzer-*,-clang-analyzer-cplusplus*,cppcoreguidelines-*")
+    set_target_properties(
+      ${PROJECT_NAME} PROPERTIES
+      CXX_CLANG_TIDY "${DO_CLANG_TIDY}"
+    )
+endif()
 
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
     COMMAND "./multiboot-check.sh" $<TARGET_FILE:${PROJECT_NAME}>

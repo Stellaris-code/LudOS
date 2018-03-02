@@ -80,6 +80,9 @@ extern "C" int kernel_physical_end;
 extern "C" int start_ctors;
 extern "C" int end_ctors;
 
+extern "C" int start_dtors;
+extern "C" int end_dtors;
+
 extern "C" int _bss_start;
 extern "C" int _bss_end;
 
@@ -141,6 +144,10 @@ inline void init(uint32_t magic, const multiboot_info_t* mbd_info)
     serial::debug::init(BDA::com1_port());
     serial::debug::write("Serial COM1 : Booting LudOS v%d...\n", 1);
 
+    //serial::debug::write("from : %p/%p\n", &start_dtors, &end_dtors);
+
+    call_ctors(); // it is now safe to call global constructors
+
     gdt::init();
 
     pic::init();
@@ -148,8 +155,6 @@ inline void init(uint32_t magic, const multiboot_info_t* mbd_info)
     idt::init();
 
     Paging::init();
-
-    call_ctors(); // it is now safe to call global constructors
 
     multiboot::check(magic, mbd, mbd_info);
     multiboot::info = mbd_info;
@@ -246,7 +251,7 @@ inline void init(uint32_t magic, const multiboot_info_t* mbd_info)
     Driver::interface_init();
     PciDriver::interface_init();
 
-    if (Driver::get_drivers<ide::dma::Controller>().empty() && !ahci::init())
+    if (!ahci::init() && Driver::get_drivers<ide::dma::Controller>().empty())
     {
         ide::pio::init();
     }

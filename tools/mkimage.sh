@@ -30,7 +30,7 @@ kpartx -a /dev/mapper/hdd
 
 sleep 1
 
-mkfs.ext2 /dev/mapper/hdd1
+mkfs.ext2 -O ^dir_index /dev/mapper/hdd1
 
 mount /dev/mapper/hdd1 /mnt
 

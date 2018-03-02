@@ -74,6 +74,8 @@ public:
 
     virtual std::string type() const override { return "tar"; }
 
+    virtual void umount() override {};
+
     virtual size_t total_size() const override;
     virtual size_t free_size() const override { return 0; }
 

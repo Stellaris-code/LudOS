@@ -280,21 +280,21 @@ node::Stat node::mkstat()
 
 std::vector<std::shared_ptr<node> > node::readdir()
 {
-    assert(is_dir());
+    //assert(is_dir());
 
     static std::vector<std::shared_ptr<const node>> fkcghugelist;
 
     auto list = (m_mounted_node ? m_mounted_node->readdir_impl() : readdir_impl());
 
     auto cur_dir = std::make_shared<symlink>(*this);
-    cur_dir->rename(".");
+    cur_dir->m_name = ".";
 
     list.emplace_back(cur_dir);
 
     if (m_parent)
     {
         auto parent_dir = std::make_shared<symlink>(*m_parent);
-        parent_dir->rename("..");
+        parent_dir->m_name = "..";
 
         list.emplace_back(parent_dir);
     }

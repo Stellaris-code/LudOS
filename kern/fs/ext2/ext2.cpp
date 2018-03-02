@@ -44,7 +44,8 @@ Ext2FS::Ext2FS(Disk &disk) : FSImpl<Ext2FS>(disk)
 
     m_superblock.last_mount_time = Time::epoch();
     ++m_superblock.mounts_since_fsck;
-    m_superblock.fs_state = (int)ext2::FSState::HasErrors;
+    m_previous_state = m_superblock.fs_state;
+    m_superblock.fs_state = (uint16_t)ext2::FSState::HasErrors;
 
     update_superblock();
 }
@@ -59,7 +60,9 @@ bool Ext2FS::accept(const Disk &disk)
 
 std::shared_ptr<vfs::node> Ext2FS::root() const
 {
-    return std::make_shared<ext2_node>(*(Ext2FS*)this, nullptr, "", 2);
+    std::shared_ptr<ext2_node> ptr = std::make_shared<ext2_node>(*(Ext2FS*)this, nullptr, "", 2);
+    assert(ptr->is_dir());
+    return ptr;
 }
 
 std::optional<const ext2::Superblock> Ext2FS::read_superblock(const Disk &disk)
@@ -337,6 +340,13 @@ void Ext2FS::error(const std::string &message) const
 
 MemBuffer ext2_node::read_impl(size_t offset, size_t size) const
 {
+    if (is_link())
+    {
+        auto ptr = link_target();
+        if (ptr) return ptr->read(offset, size);
+        else return {};
+    }
+
     size_t block_off = offset/fs.block_size();
     size_t block_size = size/fs.block_size() + (size%fs.block_size()?1:0);
 
@@ -350,13 +360,20 @@ MemBuffer ext2_node::read_impl(size_t offset, size_t size) const
 
 std::vector<std::shared_ptr<vfs::node>> ext2_node::readdir_impl()
 {
+    if (is_link())
+    {
+        auto ptr = link_target();
+        if (ptr) return ptr->readdir();
+        else return {};
+    }
+
     std::vector<std::shared_ptr<vfs::node>> vec;
 
     for (const auto& entry : fs.read_directory_entries(inode))
     {
         auto entry_name = std::string(entry.name, entry.name_len);
         if (entry_name != "." &&
-            entry_name != "..")
+                entry_name != "..")
         {
             vec.push_back(std::static_pointer_cast<vfs::node>(
                               std::make_shared<ext2_node>(fs, this, entry_name, entry.inode)));
@@ -365,6 +382,35 @@ std::vector<std::shared_ptr<vfs::node>> ext2_node::readdir_impl()
     }
 
     return vec;
+}
+
+size_t ext2_node::size() const
+{
+    if (is_link())
+    {
+        auto ptr = link_target();
+        if (ptr) return ptr->size();
+        else return 0;
+    }
+
+    return inode_struct.size_lower;
+}
+
+bool ext2_node::is_dir() const
+{
+    if (is_link())
+    {
+        auto ptr = link_target();
+        if (ptr) return ptr->is_dir();
+        else return false;
+    }
+
+    return (inode_struct.type & 0xF000) == (uint16_t)ext2::InodeType::Directory;
+}
+
+bool ext2_node::is_link() const
+{
+    return (inode_struct.type & 0xF000) == (uint16_t)ext2::InodeType::Symlink;
 }
 
 vfs::node::Stat ext2_node::stat() const
@@ -383,22 +429,31 @@ vfs::node::Stat ext2_node::stat() const
 
 std::string ext2_node::name() const
 {
-#if 0
-    if (!parent() || !dynamic_cast<ext2_node*>(parent())) return vfs::node::name();
-
-    for (const auto& entry : fs.read_directory_entries(((ext2_node*)parent())->inode))
-    {
-        if (entry.inode == inode)
-        {
-            return std::string(entry.name, entry.name_len);
-        }
-    }
-
-    assert(false); // should'nt reach this point
-    return "<no_parent>";
-#else
     return filename;
-#endif
+}
+
+std::string ext2_node::link_name() const
+{
+    std::string str;
+
+    if (inode_struct.size_lower <= 60)
+    {
+        str = std::string((const char*)inode_struct.block_ptr, 60);
+    }
+    else
+    {
+        auto data = fs.read_data(inode_struct, 0, inode_struct.size_lower);
+        str = std::string((const char*)data.data(), inode_struct.size_lower);
+    }
+    str += '\0'; // just to be safe
+
+    return trim_zstr(str);
+}
+
+std::shared_ptr<vfs::node> ext2_node::link_target() const
+{
+    assert(is_link());
+    return vfs::find(m_parent->path() + link_name());
 }
 
 ADD_FS(Ext2FS)

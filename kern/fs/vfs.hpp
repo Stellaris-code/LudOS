@@ -101,6 +101,8 @@ struct node
     virtual size_t size() const { return 0; }
     virtual bool is_dir() const { return m_is_dir; }
 
+    virtual bool is_link() const { return false; }
+
     [[nodiscard]] MemBuffer read(size_t offset, size_t size) const;
     [[nodiscard]] MemBuffer read() const { return read(0, size()); }
     [[nodiscard]] bool write(size_t offset, gsl::span<const uint8_t> data);
@@ -177,6 +179,7 @@ struct symlink : public node
 
     virtual size_t size() const override { return m_target.size(); }
     virtual bool is_dir() const override { return m_target.is_dir(); }
+    virtual bool is_link() const override { return true; }
 
     node& target() const { return m_target; }
 

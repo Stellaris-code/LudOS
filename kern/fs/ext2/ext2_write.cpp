@@ -33,7 +33,7 @@ SOFTWARE.
 
 void Ext2FS::umount()
 {
-    m_superblock.fs_state = (int)ext2::FSState::Clean;
+    m_superblock.fs_state = m_previous_state;
 
     update_superblock();
 }

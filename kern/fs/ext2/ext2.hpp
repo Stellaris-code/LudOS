@@ -84,6 +84,7 @@ private:
 
 private:
     ext2::Superblock m_superblock;
+    uint16_t m_previous_state { true };
 };
 
 class ext2_node : public vfs::node
@@ -109,18 +110,20 @@ public:
     virtual std::vector<std::shared_ptr<node>> readdir_impl() override;
     [[nodiscard]] virtual std::shared_ptr<node> mkdir_impl(const std::string&) override { return nullptr; }
     [[nodiscard]] virtual std::shared_ptr<node> touch_impl(const std::string&) override { return nullptr; }
-    virtual size_t size() const override { return inode_struct.size_lower; }
-    virtual bool is_dir() const override { return inode_struct.type & (int)ext2::InodeType::Directory; }
+    virtual size_t size() const override;
+    virtual bool is_dir() const override;
+    virtual bool is_link() const override;
 
 public:
-
     Ext2FS& fs;
     const size_t inode;
-    const ext2::Inode inode_struct;
     std::string filename;
+    const ext2::Inode inode_struct;
 
 private:
     void update_dir_entry(size_t inode, const std::string& name, uint8_t type);
+    std::string link_name() const;
+    std::shared_ptr<vfs::node> link_target() const;
 };
 
 #endif // EXT2_HPP

@@ -36,6 +36,7 @@ SOFTWARE.
 #include "fs/pathutils.hpp"
 #include "fs/devfs/devfs.hpp"
 #include "time/time.hpp"
+#include "terminal/escape_code_macros.hpp"
 
 void install_fs_commands(Shell &sh)
 {
@@ -59,13 +60,17 @@ void install_fs_commands(Shell &sh)
 
          for (const auto& entry : vec)
          {
+             if (entry->is_link()) kprintf(ESC_FG(0, 118, 201));
+
              kprintf("\t%s", entry->name().c_str());
              if (entry->is_dir())
              {
                  kprintf("/");
+                 if (entry->is_link()) kprintf(ESC_POP_COLOR);
              }
              else
              {
+                 if (entry->is_link()) kprintf(ESC_POP_COLOR);
                  kprintf("\t: %s", human_readable_size(entry->size()).c_str());
              }
              kprintf("\n");
@@ -467,7 +472,7 @@ void install_fs_commands(Shell &sh)
          auto fs = FileSystem::get_disk_fs(disk_node->disk());
          if (!fs)
          {
-             sh.error("'%s' does'nt contain a valid file system\n", args[0].c_str());
+             sh.error("'%s' doesn't contain a valid file system\n", args[0].c_str());
              return -5;
          }
 

@@ -118,8 +118,11 @@ std::shared_ptr<tar_node> TarFS::read_header(const Header *hdr) const
             break;
         case LNKTYPE:
         case SYMTYPE:
-            // TODO : Do these
-            return nullptr;
+            node->m_is_dir = false;
+            node->m_link_target = std::string(hdr->linkname, 101);
+            node->m_link_target.back() = '\0';
+            node->m_link_target = trim_zstr(node->m_link_target);
+            break;
         case CHRTYPE:
         case BLKTYPE:
         case FIFOTYPE:
@@ -192,17 +195,60 @@ bool TarFS::check_sum(const TarFS::Header *hdr) const
 
 [[nodiscard]] MemBuffer tar_node::read_impl(size_t offset, size_t size) const
 {
+    if (!m_link_target.empty())
+    {
+        auto target = vfs::find(m_parent->path() + m_link_target);
+        if (!target) return {};
+        return target->read(offset, size);
+    }
+
     size_t amnt = std::min(size, this->size());
     return MemBuffer(m_data_addr + offset, m_data_addr + offset + amnt);
 }
 
 std::vector<std::shared_ptr<vfs::node> > tar_node::readdir_impl()
 {
+    if (!m_link_target.empty())
+    {
+        auto target = vfs::find(m_parent->path() + m_link_target);
+        if (!target) return {};
+        return target->readdir();
+    }
+
     auto nodes = m_fs.read_dir(m_data_addr, size());
     return map<std::shared_ptr<tar_node>, std::shared_ptr<node>>(nodes, [](const std::shared_ptr<tar_node>& file)->std::shared_ptr<node>
     {
         return std::static_pointer_cast<node>(file);
     });
+}
+
+size_t tar_node::size() const
+{
+    if (!m_link_target.empty())
+    {
+        auto target = vfs::find(m_parent->path() + m_link_target);
+        if (!target) return 0;
+        return target->size();
+    }
+
+    return m_size;
+}
+
+bool tar_node::is_dir() const
+{
+    if (!m_link_target.empty())
+    {
+        auto target = vfs::find(m_parent->path() + m_link_target);
+        if (!target) return false;
+        return target->is_dir();
+    }
+
+    return m_is_dir;
+}
+
+bool tar_node::is_link() const
+{
+    return !m_link_target.empty();
 }
 
 ADD_FS(TarFS)

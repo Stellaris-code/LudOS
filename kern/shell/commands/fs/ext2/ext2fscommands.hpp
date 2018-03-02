@@ -59,10 +59,28 @@ void install_ext2fs_commands(Shell& sh)
              return -3;
          }
 
+         auto type = (ext2::InodeType)(ext2->inode_struct.type & 0xF000);
+         std::string type_str = "other";
+         switch (type)
+         {
+             case ext2::InodeType::Regular:
+             type_str = "regular file";
+             break;
+
+             case ext2::InodeType::Directory:
+             type_str = "directory";
+             break;
+
+             case ext2::InodeType::Symlink:
+             type_str = "symlink";
+             break;
+
+             default:;
+         }
+
          kprintf("File '%s' :\n", args[0].c_str());
-         kprintf("\t Inode : %d\n", ext2->inode);
-         kprintf("\t Type : %s (0x%x)\n", (ext2->inode_struct.type & (int)ext2::InodeType::Regular) ? "regular file" :
-         (ext2->inode_struct.type & (int)ext2::InodeType::Directory) ? "directory" : "other", ext2->inode_struct.type);
+         kprintf("\t Inode : %zd\n", ext2->inode);
+         kprintf("\t Type : %s (0x%x)\n", type_str.c_str(), ext2->inode_struct.type);
          kprintf("\t Byte size : %d\n", ext2->inode_struct.size_lower);
          kprintf("\t 512-byte blocks : %d\n", ext2->inode_struct.blocks_512);
          kprintf("\t Links : %d\n", ext2->inode_struct.links_count);

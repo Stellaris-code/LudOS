@@ -40,7 +40,7 @@ struct disk_file : public vfs::node
     }
 
     virtual size_t size() const override;
-    virtual bool is_dir() const override { return false; }
+    virtual Type type() const override { return File; }
     Disk& disk() { return m_disk; }
 
 protected:

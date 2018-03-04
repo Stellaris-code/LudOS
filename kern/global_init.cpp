@@ -95,9 +95,9 @@ SOFTWARE.
 // TODO : VirtIO drivers
 // TODO : BASIC interpreter
 // TODO : cache bu sec/count pair ?
-// TODO : ext2 write !!
 // TODO : vfs sanitize names
 // TODO : fix cpp exceptions
+// TODO : shell catches command exceptions
 // TODO : vfs canonicalize
 
 /**********************************/

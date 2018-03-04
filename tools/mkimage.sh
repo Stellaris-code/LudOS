@@ -8,8 +8,8 @@ BOOT=../isodir/boot
 
 ./mkinitrd.sh
 
-# Create a 1GiB blank disk image.
-dd if=/dev/zero of=$DISK bs=4096 count=10000
+# Create a 15Mio blank disk image.
+dd if=/dev/zero of=$DISK bs=4096 count=15000
 
 echo "Partitioning..."
 # Partition it with fdisk.

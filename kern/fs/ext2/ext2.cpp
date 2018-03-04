@@ -44,7 +44,7 @@ Ext2FS::Ext2FS(Disk &disk) : FSImpl<Ext2FS>(disk)
 
     m_superblock.last_mount_time = Time::epoch();
     ++m_superblock.mounts_since_fsck;
-    m_previous_state = m_superblock.fs_state;
+    m_has_error = m_superblock.fs_state;
     m_superblock.fs_state = (uint16_t)ext2::FSState::HasErrors;
 
     update_superblock();
@@ -61,7 +61,7 @@ bool Ext2FS::accept(const Disk &disk)
 std::shared_ptr<vfs::node> Ext2FS::root() const
 {
     std::shared_ptr<ext2_node> ptr = std::make_shared<ext2_node>(*(Ext2FS*)this, nullptr, "", 2);
-    assert(ptr->is_dir());
+    assert(ptr->type() == vfs::node::Directory);
     return ptr;
 }
 
@@ -135,7 +135,7 @@ bool Ext2FS::check_superblock_backups() const
         if (m_superblock.version_major>=1)
         {
             if (i == 1) check = true;
-            if (i % 3 == 0 || i % 5 == 0 || i % 7 == 0) check = true;
+            if (is_power_of(i, 3ul) || is_power_of(i, 5ul) || is_power_of(i, 7ul)) check = true;
         }
 
         if (check)
@@ -162,16 +162,15 @@ size_t Ext2FS::block_group_table_block() const
     return m_superblock.block_size == 0 ? 2 : 1;
 }
 
-const ext2::BlockGroupDescriptor Ext2FS::get_block_group(size_t inode) const
+const ext2::BlockGroupDescriptor Ext2FS::get_block_group(size_t idx) const
 {
     const size_t group_desc_per_block = block_size()/sizeof(ext2::BlockGroupDescriptor);
 
-    const size_t block_group_idx = (inode - 1) / m_superblock.inodes_in_block_group;
-    const size_t block_to_read = block_group_table_block() + (block_group_idx / group_desc_per_block);
+    const size_t block_to_read = block_group_table_block() + (idx / group_desc_per_block);
 
     auto data = read_block(block_to_read);
 
-    return ((ext2::BlockGroupDescriptor*)data.data())[block_group_idx % group_desc_per_block];
+    return ((ext2::BlockGroupDescriptor*)data.data())[idx % group_desc_per_block];
 }
 
 MemBuffer Ext2FS::read_block(size_t number) const
@@ -182,13 +181,6 @@ MemBuffer Ext2FS::read_block(size_t number) const
     return vec;
 }
 
-void Ext2FS::write_block(size_t number, gsl::span<const uint8_t> data)
-{
-    assert(number < m_superblock.block_count);
-
-    m_disk.write(number * block_size(), data);
-}
-
 const ext2::Inode Ext2FS::read_inode(size_t inode) const
 {
     if (!check_inode_presence(inode))
@@ -196,7 +188,7 @@ const ext2::Inode Ext2FS::read_inode(size_t inode) const
         error("Inode " + std::to_string(inode) + " is marked as free\n");
     }
 
-    auto block_group = get_block_group(inode);
+    auto block_group = get_block_group((inode - 1) / m_superblock.inodes_in_block_group);
 
     size_t index = (inode - 1) % m_superblock.inodes_in_block_group;
     size_t block_idx = (index * inode_size()) / block_size();
@@ -207,15 +199,15 @@ const ext2::Inode Ext2FS::read_inode(size_t inode) const
     return ((ext2::Inode*)block.data())[offset];
 }
 
-std::vector<const ext2::DirectoryEntry> Ext2FS::read_directory_entries(size_t inode) const
+std::vector<ext2::DirectoryEntry> Ext2FS::read_directory_entries(size_t inode) const
 {
-    std::vector<const ext2::DirectoryEntry> vec;
+    std::vector<ext2::DirectoryEntry> vec;
 
     auto inode_struct = read_inode(inode);
 
-    size_t blocks = inode_struct.blocks_512 / (block_size()/512) + (inode_struct.blocks_512%(block_size()/512)?1:0);
+    size_t blocks = data_blocks(inode_struct);
 
-#if 1
+#if 0
     auto entries = read_directory(read_data(inode_struct, 0, blocks));
     ((Ext2FS*)this)->write_directory_entries(inode, entries);
 #endif
@@ -224,20 +216,86 @@ std::vector<const ext2::DirectoryEntry> Ext2FS::read_directory_entries(size_t in
 
 bool Ext2FS::check_inode_presence(size_t inode) const
 {
-    auto block_group = get_block_group(inode);
+    auto block_group = get_block_group((inode - 1) / m_superblock.inodes_in_block_group);
 
     size_t index = (inode - 1) % m_superblock.inodes_in_block_group;
-    size_t block_idx = index / block_size();
-    size_t offset = index % block_size();
 
-    auto block = read_block(block_group.inode_bitmap + block_idx);
+    auto block = read_block(block_group.inode_bitmap);
 
-    return bit_check(block[offset / 8], offset % 8);
+    return bit_check(block[index / 8], index % 8);
+}
+
+size_t Ext2FS::data_blocks(const ext2::Inode &inode) const
+{
+    return inode.size_lower / block_size() + (inode.size_lower%block_size()?1:0);
+}
+
+size_t Ext2FS::count_used_blocks(const ext2::Inode &inode) const
+{
+    const size_t entries_per_block = block_size()/sizeof(uint32_t);
+    size_t blk = data_blocks(inode); // start
+
+    // TODO
+
+    if (data_blocks(inode) >= 12)
+    {
+        blk += 1;
+    }
+
+    if ((data_blocks(inode) - 12) >= entries_per_block)
+    {
+        blk += (data_blocks(inode) - 12) / entries_per_block +
+                ((data_blocks(inode) - 12)%entries_per_block?1:0);
+    }
+
+    return blk;
+}
+
+size_t Ext2FS::get_data_block(const ext2::Inode &inode, size_t blk_id) const
+{
+    const size_t entries_per_block = block_size()/sizeof(uint32_t);
+
+    if (blk_id < 12)
+    {
+        return inode.block_ptr[blk_id];
+    }
+    blk_id -= 12;
+
+    if (blk_id < entries_per_block)
+    {
+        return get_data_block_indirected(inode.block_ptr[12], blk_id, 1);
+    }
+    blk_id -= entries_per_block;
+
+    if (blk_id < entries_per_block*entries_per_block)
+    {
+        return get_data_block_indirected(inode.block_ptr[13], blk_id, 2);
+    }
+    blk_id -= entries_per_block*entries_per_block;
+
+    return get_data_block_indirected(inode.block_ptr[14], blk_id, 3);
+}
+
+size_t Ext2FS::get_data_block_indirected(size_t indirected_block, size_t blk_id, size_t depth) const
+{
+    MemBuffer data;
+    size_t entries = ipow<size_t>(block_size()/sizeof(uint32_t), depth-1);
+    auto vec = read_block(indirected_block);
+    uint32_t* block = (uint32_t*)vec.data();
+
+    if (depth <= 1) return block[blk_id];
+    else
+    {
+        size_t tgt_block_idx = blk_id / entries;
+        size_t offset = blk_id % entries;
+
+        return get_data_block_indirected(block[tgt_block_idx], offset, depth - 1);
+    }
 }
 
 MemBuffer Ext2FS::read_data_block(const ext2::Inode &inode, size_t blk_id) const
 {
-    size_t entries_per_block = block_size()/sizeof(uint32_t);
+    const size_t entries_per_block = block_size()/sizeof(uint32_t);
 
     if (blk_id < 12)
     {
@@ -279,7 +337,7 @@ MemBuffer Ext2FS::read_indirected(size_t indirected_block, size_t blk_id, size_t
 
 MemBuffer Ext2FS::read_data(const ext2::Inode &inode, size_t offset, size_t size) const
 {
-    size_t blocks = inode.blocks_512 / (block_size()/512) + (inode.blocks_512%(block_size()/512)?1:0);
+    size_t blocks = data_blocks(inode);
 
     assert(offset + size <= blocks);
 
@@ -294,9 +352,9 @@ MemBuffer Ext2FS::read_data(const ext2::Inode &inode, size_t offset, size_t size
     return data;
 }
 
-std::vector<const ext2::DirectoryEntry> Ext2FS::read_directory(gsl::span<const uint8_t> data) const
+std::vector<ext2::DirectoryEntry> Ext2FS::read_directory(gsl::span<const uint8_t> data) const
 {
-    std::vector<const ext2::DirectoryEntry> entries;
+    std::vector<ext2::DirectoryEntry> entries;
     entries.reserve(255);
     const uint8_t* ptr = (const uint8_t*)data.data();
 
@@ -328,6 +386,7 @@ uint32_t Ext2FS::block_size() const
 
 void Ext2FS::error(const std::string &message) const
 {
+    m_has_error = (uint16_t)ext2::FSState::HasErrors;
     if (m_superblock.error_handling == (int)ext2::ErrorHandling::Panic)
     {
         panic("%s", message.c_str());
@@ -352,7 +411,7 @@ MemBuffer ext2_node::read_impl(size_t offset, size_t size) const
 
     size_t byte_off = offset % fs.block_size();
 
-    auto data = fs.read_data(inode_struct, block_off, block_size);
+    auto data = fs.read_data(fs.read_inode(inode), block_off, block_size);
 
     if (byte_off == 0) { data.resize(size); return data; }
     else { return MemBuffer(data.begin() + byte_off, data.begin() + offset + size); }
@@ -393,28 +452,72 @@ size_t ext2_node::size() const
         else return 0;
     }
 
-    return inode_struct.size_lower;
+    return fs.read_inode(inode).size_lower;
 }
 
-bool ext2_node::is_dir() const
+vfs::node::Type ext2_node::type() const
 {
     if (is_link())
     {
         auto ptr = link_target();
-        if (ptr) return ptr->is_dir();
-        else return false;
+        if (ptr) return ptr->type();
+        else return Unknown;
     }
 
-    return (inode_struct.type & 0xF000) == (uint16_t)ext2::InodeType::Directory;
+    ext2::Inode inode_struct = fs.read_inode(inode);
+
+    switch ((ext2::InodeType)(inode_struct.type & 0xF000))
+    {
+        case ext2::InodeType::Regular:
+            return File;
+        case ext2::InodeType::Directory:
+            return Directory;
+        case ext2::InodeType::Symlink:
+            return SymLink;
+        default:
+            return Unknown;
+    }
 }
 
 bool ext2_node::is_link() const
 {
+    ext2::Inode inode_struct = fs.read_inode(inode);
+
     return (inode_struct.type & 0xF000) == (uint16_t)ext2::InodeType::Symlink;
+}
+
+ext2::InodeType ext2_node::vfs_type_to_ext2_inode(vfs::node::Type type)
+{
+    switch (type)
+    {
+        case Directory:
+            return ext2::InodeType::Directory;
+        case SymLink:
+            return ext2::InodeType::Symlink;
+        case File:
+        default:
+            return ext2::InodeType::Regular;
+    }
+}
+
+ext2::DirectoryType ext2_node::vfs_type_to_ext2_dir(vfs::node::Type type)
+{
+    switch (type)
+    {
+        case Directory:
+            return ext2::DirectoryType::Directory;
+        case SymLink:
+            return ext2::DirectoryType::Symlink;
+        case File:
+        default:
+            return ext2::DirectoryType::Regular;
+    }
 }
 
 vfs::node::Stat ext2_node::stat() const
 {
+    ext2::Inode inode_struct = fs.read_inode(inode);
+
     Stat stat;
     stat.perms = inode_struct.type & 0x0FFF;
     stat.access_time = inode_struct.access_time;
@@ -434,6 +537,8 @@ std::string ext2_node::name() const
 
 std::string ext2_node::link_name() const
 {
+    ext2::Inode inode_struct = fs.read_inode(inode);
+
     std::string str;
 
     if (inode_struct.size_lower <= 60)

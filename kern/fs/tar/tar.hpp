@@ -55,7 +55,7 @@ struct tar_node : public vfs::node
     virtual std::vector<std::shared_ptr<vfs::node>> readdir_impl() override;
 
     virtual size_t size() const override;
-    virtual bool is_dir() const override;
+    virtual Type type() const override;
     virtual bool is_link() const override;
 
     const TarFS& m_fs;

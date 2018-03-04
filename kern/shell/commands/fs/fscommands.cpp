@@ -63,7 +63,7 @@ void install_fs_commands(Shell &sh)
              if (entry->is_link()) kprintf(ESC_FG(0, 118, 201));
 
              kprintf("\t%s", entry->name().c_str());
-             if (entry->is_dir())
+             if (entry->type() == vfs::node::Directory)
              {
                  kprintf("/");
                  if (entry->is_link()) kprintf(ESC_POP_COLOR);
@@ -93,7 +93,7 @@ void install_fs_commands(Shell &sh)
              sh.error("Directory '%s' doesn't exist !\n", target.c_str());
              return -2;
          }
-         if (!node->is_dir())
+         if (node->type() != vfs::node::Directory)
          {
              sh.error("'%s' is not a directory !\n", target.c_str());
              return -3;
@@ -375,14 +375,14 @@ void install_fs_commands(Shell &sh)
              return -1;
          }
 
-         auto node = vfs::find(sh.get_path(parent_path(args[0])));
+         std::shared_ptr<vfs::node> node = vfs::find(sh.get_path(parent_path(args[0])));
          if (!node)
          {
              sh.error("Could not find path '%s'\n", sh.get_path(parent_path(args[0])).c_str());
              return -3;
          }
 
-         if (!node->mkdir(filename(args[0])))
+         if (!node->create(filename(args[0]), vfs::node::Directory))
          {
              sh.error("Could not create directory '%s'\n", filename(args[0].c_str()));
              return -3;
@@ -402,7 +402,7 @@ void install_fs_commands(Shell &sh)
              return -1;
          }
 
-         if (!sh.pwd->touch(args[0]))
+         if (!sh.pwd->create(args[0], vfs::node::File))
          {
              sh.error("Could not create file '%s'\n", args[0].c_str());
              return -2;
@@ -410,6 +410,35 @@ void install_fs_commands(Shell &sh)
 
          return 0;
      }});
+
+    sh.register_command(
+    {"resize", "resizes a file",
+     "Usage : resize <name> <size>",
+     [&sh](const std::vector<std::string>& args)
+     {
+         if (args.size() != 2)
+         {
+             sh.error("resize needs two arguments !\n");
+             return -1;
+         }
+
+         auto node = vfs::find(sh.get_path(args[0]));
+         if (!node)
+         {
+             sh.error("Can't find '%s' !\n", args[0].c_str());
+             return -2;
+         }
+
+         if (!node->resize(std::stoul(args[1])))
+         {
+             sh.error("Could not resize file '%s' to length %d\n", args[0].c_str(), std::stoul(args[1]));
+             return -3;
+         }
+
+         return 0;
+     }});
+
+    // TODO : ln
 
     sh.register_command(
     {"rm", "removes a file",

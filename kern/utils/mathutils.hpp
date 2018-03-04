@@ -47,6 +47,13 @@ inline size_t intlog(double base, double x)
 }
 
 template <typename T>
+inline bool is_power_of(T value, T base)
+{
+    return log10(value) / log10(base) ==
+            floor(log10(value) / log10(base));
+}
+
+template <typename T>
 inline T ipow(T base, T exp)
 {
     static_assert(std::is_integral_v<T>);

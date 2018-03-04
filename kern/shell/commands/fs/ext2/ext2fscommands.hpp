@@ -30,6 +30,8 @@ SOFTWARE.
 #include "fs/vfs.hpp"
 #include "fs/ext2/ext2.hpp"
 
+#include "utils/memutils.hpp"
+
 void install_ext2fs_commands(Shell& sh)
 {
     sh.register_command(
@@ -59,7 +61,9 @@ void install_ext2fs_commands(Shell& sh)
              return -3;
          }
 
-         auto type = (ext2::InodeType)(ext2->inode_struct.type & 0xF000);
+         auto inode_struct = ext2->fs.read_inode(ext2->inode);
+
+         auto type = (ext2::InodeType)(inode_struct.type & 0xF000);
          std::string type_str = "other";
          switch (type)
          {
@@ -80,11 +84,17 @@ void install_ext2fs_commands(Shell& sh)
 
          kprintf("File '%s' :\n", args[0].c_str());
          kprintf("\t Inode : %zd\n", ext2->inode);
-         kprintf("\t Type : %s (0x%x)\n", type_str.c_str(), ext2->inode_struct.type);
-         kprintf("\t Byte size : %d\n", ext2->inode_struct.size_lower);
-         kprintf("\t 512-byte blocks : %d\n", ext2->inode_struct.blocks_512);
-         kprintf("\t Links : %d\n", ext2->inode_struct.links_count);
-         kprintf("\t Flags : 0x%x\n", ext2->inode_struct.flags);
+
+         kprintf("\t Type : %s (0x%x)\n", type_str.c_str(), inode_struct.type);
+         kprintf("\t Byte size : %d\n", inode_struct.size_lower);
+         kprintf("\t 512-byte blocks : %d\n", inode_struct.blocks_512);
+         kprintf("\t Links : %d\n", inode_struct.links_count);
+         kprintf("\t Flags : 0x%x\n", inode_struct.flags);
+
+         for (size_t i { 0 }; i < 15; ++i)
+         {
+             kprintf("\t Block %d : %d\n", i, inode_struct.block_ptr[i]);
+         }
 
          return 0;
      }});

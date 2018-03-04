@@ -69,6 +69,13 @@ struct node
     friend bool mount(std::shared_ptr<node> target, std::shared_ptr<node> mountpoint);
     friend bool umount(std::shared_ptr<node> target);
 
+    enum Type
+    {
+        Unknown = 0,
+        File = 1,
+        Directory = 2,
+        SymLink = 3
+    };
 
     struct Stat
     {
@@ -99,15 +106,14 @@ struct node
     virtual void set_stat(const Stat& stat) { m_stat = stat; }
 
     virtual size_t size() const { return 0; }
-    virtual bool is_dir() const { return m_is_dir; }
-
+    virtual Type type() const { return m_type; }
     virtual bool is_link() const { return false; }
 
     [[nodiscard]] MemBuffer read(size_t offset, size_t size) const;
     [[nodiscard]] MemBuffer read() const { return read(0, size()); }
     [[nodiscard]] bool write(size_t offset, gsl::span<const uint8_t> data);
-    [[nodiscard]] std::shared_ptr<node> mkdir(const std::string&);
-    [[nodiscard]] std::shared_ptr<node> touch(const std::string&);
+    [[nodiscard]] std::shared_ptr<node> create(const std::string&, Type);
+    bool resize(size_t);
     std::vector<std::shared_ptr<node>> readdir();
     std::vector<std::shared_ptr<const node>> readdir() const;
     bool remove(const vfs::node* child);
@@ -120,9 +126,9 @@ struct node
 protected:
     [[nodiscard]] virtual MemBuffer read_impl(size_t, size_t) const { return {}; }
     [[nodiscard]] virtual bool write_impl(size_t, gsl::span<const uint8_t>) { return false; }
+    virtual bool resize_impl(size_t) { return false; }
     virtual std::vector<std::shared_ptr<node>> readdir_impl() { return {}; }
-    [[nodiscard]] virtual std::shared_ptr<node> mkdir_impl(const std::string&) { return nullptr; }
-    [[nodiscard]] virtual std::shared_ptr<node> touch_impl(const std::string&) { return nullptr; }
+    [[nodiscard]] virtual std::shared_ptr<node> create_impl(const std::string&, Type) { return nullptr; }
     virtual void rename_impl(const std::string&) {}
     virtual bool remove_impl(const vfs::node*) { return false; }
 
@@ -140,7 +146,7 @@ protected:
 
     node* m_parent { nullptr };
 
-    bool m_is_dir { false };
+    Type m_type { File };
 
 private:
     std::shared_ptr<node> m_mounted_node {};
@@ -150,17 +156,17 @@ size_t new_descriptor(node &node);
 
 struct vfs_root : public node
 {
-    vfs_root() : node(nullptr) {m_is_dir = true;}
+    vfs_root() : node(nullptr) { m_type = Directory; }
 
     virtual std::string name() const override { return ""; }
-    virtual bool is_dir() const override { return true; }
+    virtual Type type() const override { return Directory; }
 
 private:
-    std::shared_ptr<node> add_node(const std::string& name, bool dir);
+    std::shared_ptr<node> add_node(const std::string& name, Type type);
 
 protected:
-    virtual std::shared_ptr<node> mkdir_impl(const std::string& str) override { return add_node(str, true); }
-    virtual std::shared_ptr<node> touch_impl(const std::string& str) override { return add_node(str, false); }
+    virtual std::shared_ptr<node> create_impl(const std::string& str, Type type) override
+    { return add_node(str, type); }
     virtual std::vector<std::shared_ptr<node>> readdir_impl() override { return m_children; }
     virtual bool remove_impl(const vfs::node* child) override;
 
@@ -178,18 +184,16 @@ struct symlink : public node
     }
 
     virtual size_t size() const override { return m_target.size(); }
-    virtual bool is_dir() const override { return m_target.is_dir(); }
+    virtual Type type() const override { return m_target.type(); }
     virtual bool is_link() const override { return true; }
 
     node& target() const { return m_target; }
 
 protected:
-
     [[nodiscard]] virtual MemBuffer read_impl(size_t offset, size_t size) const override { return m_target.read(offset, size); }
     [[nodiscard]] virtual bool write_impl(size_t offset, gsl::span<const uint8_t> data) override { return m_target.write(offset, data); }
     virtual std::vector<std::shared_ptr<node>> readdir_impl() override { return m_target.readdir_impl(); }
-    [[nodiscard]] virtual std::shared_ptr<node> mkdir_impl(const std::string& s) override { return m_target.mkdir(s); };
-    [[nodiscard]] virtual std::shared_ptr<node> touch_impl(const std::string& s) override { return m_target.touch(s); }
+    [[nodiscard]] virtual std::shared_ptr<node> create_impl(const std::string& s, Type type) override { return m_target.create(s, type); };
 
 private:
     node& m_target;

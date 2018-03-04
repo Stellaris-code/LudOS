@@ -75,7 +75,7 @@ TarFS::TarFS(Disk &disk)
 
     m_root_dir = std::make_shared<tar_node>(*this, nullptr);
 
-    m_root_dir->m_is_dir = true;
+    m_root_dir->m_type = vfs::node::Directory;
     m_root_dir->m_name = "";
     m_root_dir->m_data_addr = m_file.data() + sizeof(Header);
     m_root_dir->m_size = m_file.size();
@@ -111,14 +111,14 @@ std::shared_ptr<tar_node> TarFS::read_header(const Header *hdr) const
     {
         case REGTYPE:
         case AREGTYPE :
-            node->m_is_dir = false;
+            node->m_type = vfs::node::File;
             break;
         case DIRTYPE:
-            node->m_is_dir = true;
+            node->m_type = vfs::node::Directory;
             break;
         case LNKTYPE:
         case SYMTYPE:
-            node->m_is_dir = false;
+            node->m_type = vfs::node::SymLink;
             node->m_link_target = std::string(hdr->linkname, 101);
             node->m_link_target.back() = '\0';
             node->m_link_target = trim_zstr(node->m_link_target);
@@ -234,16 +234,16 @@ size_t tar_node::size() const
     return m_size;
 }
 
-bool tar_node::is_dir() const
+vfs::node::Type tar_node::type() const
 {
     if (!m_link_target.empty())
     {
         auto target = vfs::find(m_parent->path() + m_link_target);
-        if (!target) return false;
-        return target->is_dir();
+        if (!target) return vfs::node::Unknown;
+        return target->type();
     }
 
-    return m_is_dir;
+    return m_type;
 }
 
 bool tar_node::is_link() const

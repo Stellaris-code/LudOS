@@ -84,7 +84,7 @@ struct devfs_root : public vfs::node
 {
     using node::node;
 public:
-    virtual bool is_dir() const override { return true; }
+    virtual Type type() const override { return Directory; }
     virtual std::vector<std::shared_ptr<node>> readdir_impl() override { return children; }
 
     std::vector<std::shared_ptr<node>> children;
@@ -94,7 +94,7 @@ std::shared_ptr<devfs_root> root;
 
 void init()
 {
-    auto dir = vfs::root->mkdir("dev");
+    auto dir = vfs::root->create("dev", vfs::node::Directory);
 
     root = std::make_shared<devfs_root>(vfs::root.get());
     vfs::mount(root, dir);

@@ -95,7 +95,7 @@ contin:;
 
 bool mount(std::shared_ptr<vfs::node> target, std::shared_ptr<vfs::node> mountpoint)
 {
-    if (!target->is_dir())
+    if (target->type() != vfs::node::Directory)
     {
         return false;
     }
@@ -136,12 +136,12 @@ void traverse(const vfs::node &node, size_t indent)
             kprintf("└─");
         }
         kprintf("%s", node.name().c_str());
-        if (node.is_dir())
+        if (node.type() == vfs::node::Directory)
         {
             kprintf("/");
         };
         kprintf("\n");
-        if (node.is_dir())
+        if (node.type() == vfs::node::Directory)
         {
             for (const auto& entry : node.readdir())
             {
@@ -193,7 +193,7 @@ void node::rename(const std::string &name)
 
 MemBuffer node::read(size_t offset, size_t size) const
 {
-    assert(!is_dir());
+    assert(type() != Directory);
     if (this->size()) assert(offset + size <= this->size());
 
     auto data = read_impl(offset, size);
@@ -207,7 +207,7 @@ MemBuffer node::read(size_t offset, size_t size) const
 
 bool node::write(size_t offset, gsl::span<const uint8_t> data)
 {
-    assert(!is_dir());
+    assert(type() != Directory);
     if (size()) assert(offset + data.size() <= size());
 
     auto result = write_impl(offset, data);
@@ -215,24 +215,19 @@ bool node::write(size_t offset, gsl::span<const uint8_t> data)
     return result;
 }
 
-std::shared_ptr<node> node::mkdir(const std::string & str)
+bool node::resize(size_t size)
 {
-    assert(is_dir());
+    assert(type() != Directory);
 
-    auto node = mkdir_impl(str);
-    assert(node->parent() == this);
-
-    update_modification_time();
-
-    return node;
+    return resize_impl(size);
 }
 
-std::shared_ptr<node> node::touch(const std::string & str)
+std::shared_ptr<node> node::create(const std::string & str, Type type)
 {
-    assert(is_dir());
+    assert(this->type() == Directory);
 
-    auto node = touch_impl(str);
-    assert(node->parent() == this);
+    auto node = (m_mounted_node ? m_mounted_node->create(str, type) : create_impl(str, type));
+    if (!node) return nullptr;
 
     update_modification_time();
 
@@ -242,7 +237,7 @@ std::shared_ptr<node> node::touch(const std::string & str)
 std::string node::path() const
 {
     std::string suffix;
-    if (is_dir()) suffix = "/";
+    if (type() == Directory) suffix = "/";
 
     if (!m_parent)
     {
@@ -339,14 +334,14 @@ node &link_target(const node &link)
     return static_cast<const symlink&>(link).target();
 }
 
-std::shared_ptr<node> vfs_root::add_node(const std::string &name, bool dir)
+std::shared_ptr<node> vfs_root::add_node(const std::string &name, Type type)
 {
     m_children.emplace_back(std::make_shared<vfs::node>(this));
     auto node = m_children.back();
 
     node->m_name = name;
-    node->m_is_dir = dir;
-    // TODO : m_stat
+    node->m_type = type;
+    node->m_stat = mkstat();
 
     return node;
 }

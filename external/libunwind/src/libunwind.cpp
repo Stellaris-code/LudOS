@@ -68,6 +68,7 @@ _LIBUNWIND_EXPORT int unw_init_local(unw_cursor_t *cursor,
                                  context, LocalAddressSpace::sThisAddressSpace);
 #undef REGISTER_KIND
   AbstractUnwindCursor *co = (AbstractUnwindCursor *)cursor;
+
   co->setInfoBasedOnIPRegister();
 
   return UNW_ESUCCESS;

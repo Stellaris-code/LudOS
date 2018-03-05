@@ -1208,6 +1208,7 @@ bool UnwindCursor<A, R>::getInfoFromCompactEncodingSection(pint_t pc,
 
 template <typename A, typename R>
 void UnwindCursor<A, R>::setInfoBasedOnIPRegister(bool isReturnAddress) {
+
   pint_t pc = (pint_t)this->getReg(UNW_REG_IP);
 #if defined(_LIBUNWIND_ARM_EHABI)
   // Remove the thumb bit so the IP represents the actual instruction address.

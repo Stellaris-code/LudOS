@@ -37,6 +37,9 @@ SOFTWARE.
 #include "fs/vfs.hpp"
 #include "drivers/kbd/kbd_mappings.hpp"
 
+#include "cpp_runtime/exception_support.hpp"
+#include "utils/demangle.hpp"
+
 #include "halt.hpp"
 
 Shell::Shell()
@@ -155,7 +158,16 @@ int Shell::command(const std::string &command)
 
     if (m_commands.find(cmd) != m_commands.end())
     {
-        return m_commands[cmd].callback(args);
+        try
+        {
+            return m_commands[cmd].callback(args);
+        }
+        catch (const std::exception& e)
+        {
+            error("Command '%s' terminated with an exception of type '%s' :\n\t what : '%s'\n",
+                  cmd.c_str(), demangle(current_exception_type().name()), e.what());
+            return -2;
+        }
     }
 
     error("Unknown command '%s'\n", cmd.c_str());

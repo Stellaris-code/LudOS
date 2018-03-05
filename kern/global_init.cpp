@@ -96,7 +96,6 @@ SOFTWARE.
 // TODO : BASIC interpreter
 // TODO : cache bu sec/count pair ?
 // TODO : vfs sanitize names
-// TODO : fix cpp exceptions
 // TODO : shell catches command exceptions
 // TODO : vfs canonicalize
 

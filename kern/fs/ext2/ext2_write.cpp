@@ -678,6 +678,11 @@ std::shared_ptr<vfs::node> ext2_node::create_impl(const std::string & name, Type
 
 bool ext2_node::write_impl(size_t offset, gsl::span<const uint8_t> data)
 {
+    if (size() < 65536)
+    {
+        fs.error("Files more than 64MiB long aren't supported\n");
+    }
+
     fs.write_data(data, offset, fs.read_inode(inode));
 
     return true;

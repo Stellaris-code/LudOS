@@ -438,6 +438,7 @@ inline bool LocalAddressSpace::findUnwindSections(pint_t targetAddr,
     for (size_t i { 0 }; i < ehdr->e_phnum; ++i)
     {
         auto phdr = elf::program_header(ehdr, i);
+
         if (phdr->p_type == PT_LOAD)
         {
             uintptr_t begin = phdr->p_vaddr;
@@ -450,8 +451,6 @@ inline bool LocalAddressSpace::findUnwindSections(pint_t targetAddr,
         {
             EHHeaderParser<LocalAddressSpace>::EHHeaderInfo hdrInfo;
             uintptr_t eh_frame_hdr_start = phdr->p_vaddr;
-
-            log_serial("EHDR Version : %d", *(uint8_t*)eh_frame_hdr_start);
 
             info.dwarf_index_section = eh_frame_hdr_start;
             info.dwarf_index_section_length = phdr->p_memsz;

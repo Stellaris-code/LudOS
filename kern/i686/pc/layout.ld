@@ -4,6 +4,7 @@ PHDRS
 {
   mb_hdr PT_LOAD;
   text PT_LOAD;
+  eh_frame_phdr 0x6474e550;
 }
 
 SECTIONS
@@ -42,18 +43,18 @@ SECTIONS
     .eh_frame_hdr ALIGN(0x8): AT(ADDR(.eh_frame_hdr) - 0xC0000000)
     {
       KEEP(*(.eh_frame_hdr*))
-    }
+    } :eh_frame_phdr :text
     .eh_frame ALIGN(0x8): AT(ADDR(.eh_frame) - 0xC0000000)
     {
       PROVIDE (__eh_frame_start = .);
       KEEP(*(.eh_frame))
       LONG (0);
-    }
+    } :eh_frame_phdr :text
 
     .gcc_except_table : AT(ADDR(.gcc_except_table) - 0xC0000000)
     {
       *(.gcc_except_table)
-    }
+    } :text
 
     .data ALIGN(0x1000) : AT(ADDR(.data) - 0xC0000000)
     {

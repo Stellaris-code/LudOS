@@ -52,6 +52,7 @@ SymbolTable get_symbol_table(const Elf32_Shdr *base, size_t sh_num)
     }
 
     auto symtab = (Elf32_Shdr*)elf::section(base, sh_num, elf::SHT_SYMTAB);
+    if (!symtab) return {};
     symtab->sh_addr = (Elf32_Addr)Memory::mmap((void*)symtab->sh_addr, symtab->sh_size, Memory::Read);
 
     std::string current_symbol_file;
@@ -87,6 +88,11 @@ SymbolTable get_symbol_table_file(gsl::span<const uint8_t> file)
     elf::current_elf_file = file.data();
 
     return get_symbol_table(shdr, hdr->e_shnum);
+}
+
+bool has_symbol_table(const Elf32_Shdr *base, size_t sh_num)
+{
+    return elf::section(base, sh_num, elf::SHT_SYMTAB) != nullptr;
 }
 
 

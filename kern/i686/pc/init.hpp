@@ -178,7 +178,10 @@ inline void init(uint32_t magic, const multiboot_info_t* mbd_info)
     Timer::init();
 
     auto elf_info = multiboot::elf_info();
-    elf::kernel_symbol_table = elf::get_symbol_table(elf_info.first, elf_info.second);
+    if (elf::has_symbol_table(elf_info.first, elf_info.second))
+    {
+        elf::kernel_symbol_table = elf::get_symbol_table(elf_info.first, elf_info.second);
+    }
 
     init_exceptions();
 

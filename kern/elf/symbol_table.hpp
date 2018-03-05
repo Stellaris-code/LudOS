@@ -63,6 +63,8 @@ struct SymbolTable
     std::unordered_map<uintptr_t, SymbolInfo> table;
 };
 
+bool has_symbol_table(const Elf32_Shdr* base, size_t sh_num);
+
 SymbolTable get_symbol_table(const Elf32_Shdr* base, size_t sh_num);
 
 SymbolTable get_symbol_table_file(gsl::span<const uint8_t> file);

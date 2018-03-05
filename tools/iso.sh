@@ -19,7 +19,7 @@ cat > isodir/boot/grub/grub.cfg << EOF
 insmod fat
 insmod iso9660
 menuentry "LudOS" {
-	multiboot /boot/LudOS.kernel loglevel=debug
+	multiboot /boot/stripped.bin loglevel=debug
 	module    /boot/initrd.tar initrd
 	module    /boot/stripped.bin kernel_binary
 } 

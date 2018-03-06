@@ -72,6 +72,12 @@ static_assert(sizeof(PTEntry) == 4);
 
 using PageTable = std::array<PTEntry, 1024>;
 
+struct PagingInformation
+{
+    alignas(4096) PageDirectory                 page_directory;
+    alignas(4096) std::array<PageTable, 1024>   page_tables;
+};
+
 class Paging
 {
 public:
@@ -87,6 +93,8 @@ public:
 
     static uintptr_t physical_address(const void *v_addr);
 
+    static void create_paging_info(PagingInformation& info);
+
 public:
     static constexpr uint32_t page_size { 1 << 12 };
     static constexpr uint32_t ram_maxpage { 1024*1023 };
@@ -96,8 +104,7 @@ private:
 
 private:
     static PageDirectory *get_page_directory();
-    static void init_page_directory();
-    static void map_kernel();
+    static void map_kernel(PagingInformation& info);
     static PTEntry *page_entry(uintptr_t addr)
     {
         uint32_t pdindex = addr >> 22;

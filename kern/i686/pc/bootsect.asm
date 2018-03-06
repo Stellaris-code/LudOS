@@ -1,4 +1,6 @@
 global _start                           ; making entry point visible to linker
+global kernel_stack_bottom
+global kernel_stack_top
 
 extern kmain                            ; kmain is defined in kmain.cpp
 
@@ -43,6 +45,7 @@ BootPageDirectory:
     dd 0x02c00083
     times (1024 - KERNEL_PAGE_NUMBER - 12) dd 0  ; Pages after the kernel image.
 
+kernel_stack_top: dd kernel_stack_bottom + STACKSIZE
 
 section .text
 
@@ -83,7 +86,7 @@ higher_half_start:
     mov dword [BootPageDirectory], 0
     invlpg [0]
 
-    mov  esp, stack + STACKSIZE         ; set up the stack
+    mov  esp, kernel_stack_bottom + STACKSIZE         ; set up the stack
 
     mov [magic], eax
     add ebx, KERNEL_VIRTUAL_BASE
@@ -122,4 +125,4 @@ align 4
 magic:      resd 1
 mbd_info:   resd 1
 align 4
-stack:      resb STACKSIZE                   ; reserve 16k stack on a doubleword boundary
+kernel_stack_bottom:      resb STACKSIZE                   ; reserve 16k stack on a doubleword boundary

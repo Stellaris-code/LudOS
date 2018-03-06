@@ -40,6 +40,15 @@ namespace gdt
 entry entries[9];
 ptr gdt_ptr;
 
+extern "C" int kernel_stack_top;
+
+void load_tss(uint16_t selector)
+{
+    const uint16_t offset = selector * sizeof(entry);
+    asm volatile("movw %0, %%ax\n"
+                 "ltr %%ax"::"a"(offset));
+}
+
 void set_gate(size_t num, uint32_t base, uint32_t limit, uint8_t access, uint8_t gran)
 {
     if (num >= sizeof(entries))
@@ -63,21 +72,22 @@ void init()
     gdt_ptr.limit = (sizeof(entry) * std::extent_v<decltype(entries)>) - 1;
     gdt_ptr.base  = reinterpret_cast<uintptr_t>(&entries);
 
+    log_serial("Kernel stack is at %p\n", &kernel_stack_top);
+
+    set_gate(null_selector, 0, 0, 0, 0);                // Null segment
+    set_gate(kernel_code_selector, 0, 0xFFFFFFFF, 0x9A, 0xC0); // Code segment
+    set_gate(kernel_data_selector, 0, 0xFFFFFFFF, 0x92, 0xC0); // Data segment
+    set_gate(user_code_selector, 0, 0xFFFFFFFF, 0xFA, 0xC0); // User mode code segment
+    set_gate(user_data_selector, 0, 0xFFFFFFFF, 0xF2, 0xC0); // User mode data segment
+    set_gate(tss_selector, reinterpret_cast<uint32_t>(&tss), sizeof(tss), 0x89, 0x40);
     tss.trap = 0x00;
     tss.iomap = 0x00;
-    tss.esp0 = 0x20000;
-    tss.ss0 = 0x18;
-
-    set_gate(0, 0, 0, 0, 0);                // Null segment
-    set_gate(1, 0, 0xFFFFFFFF, 0x9A, 0xCF); // Code segment
-    set_gate(2, 0, 0xFFFFFFFF, 0x92, 0xCF); // Data segment
-    set_gate(3, 0, 0xFFFFFFFF, 0xFA, 0xCF); // User mode code segment
-    set_gate(4, 0, 0xFFFFFFFF, 0xF2, 0xCF); // User mode data segment
-    //set_gate(5, reinterpret_cast<uint32_t>(&tss), sizeof(tss), 0x89, 0xCF);
+    tss.esp0 = (uint32_t)&kernel_stack_top;
+    tss.ss0 = 2 * sizeof(entry);
 
     flush();
 
-    //log(Info, "GDT initialized.\n");
+    load_tss(tss_selector);
 }
 
 void flush()

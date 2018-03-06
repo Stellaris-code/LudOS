@@ -58,6 +58,13 @@ void flush();
 extern entry entries[9];
 extern ptr gdt_ptr;
 
+static constexpr uint16_t null_selector { 0 };
+static constexpr uint16_t kernel_code_selector { 1 };
+static constexpr uint16_t kernel_data_selector { 2 };
+static constexpr uint16_t user_code_selector { 3 };
+static constexpr uint16_t user_data_selector { 4 };
+static constexpr uint16_t tss_selector { 5 };
+
 }
 
 #endif // GDT_HPP

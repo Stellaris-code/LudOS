@@ -69,6 +69,7 @@ void liballoc_dump();
        
 
 extern void    *PREFIX(malloc)(size_t);				///< The standard function.
+extern void    *PREFIX(malloc_align)(size_t, size_t);				///< The standard function.
 extern void    *PREFIX(realloc)(void *, size_t);		///< The standard function.
 extern void    *PREFIX(calloc)(size_t, size_t);		///< The standard function.
 extern void     PREFIX(free)(void *);					///< The standard function.

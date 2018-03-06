@@ -85,7 +85,8 @@ inline uint32_t cr4()
     return out;
 }
 
-
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat"
 inline void dump(const registers* regs)
 {
     if (regs)
@@ -102,6 +103,7 @@ inline void dump(const registers* regs)
         kprintf("ss : 0x%x  esp : 0x%x\n", regs->ss, regs->esp);
     }
 }
+#pragma GCC diagnostic pop
 
 const registers *get_registers();
 

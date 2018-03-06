@@ -38,8 +38,7 @@ void Screen::resize(size_t width, size_t height, Color color)
     m_width = width;
     m_height = height;
 
-    //posix_memalign(reinterpret_cast<void**>(&m_data), 32, width*height*sizeof(Color));
-    m_data = reinterpret_cast<graphics::Color*>(kmalloc(width*height*sizeof(Color)));
+    m_data = reinterpret_cast<graphics::Color*>(kmalloc_align(width*height*sizeof(Color), 32));
 
     memset(data(), color.rgb(), width*height*4);
 }

@@ -78,6 +78,8 @@ SOFTWARE.
 #include "time/time.hpp"
 #include "time/timer.hpp"
 
+#include "tasking/process.hpp"
+
 #include "initrd/initrd.hpp"
 
 // TODO : system calls
@@ -96,7 +98,6 @@ SOFTWARE.
 // TODO : BASIC interpreter
 // TODO : cache bu sec/count pair ?
 // TODO : vfs sanitize names
-// TODO : shell catches command exceptions
 // TODO : vfs canonicalize
 
 /**********************************/
@@ -224,6 +225,9 @@ void global_init()
         Disk::disks()[1].get().enable_caching(false);
 
         sh.command("run /initrd/init.sh");
+
+        tasking::Process task("test", buf.data(), 10);
+        //task.execute();
 
         sh.run();
     }

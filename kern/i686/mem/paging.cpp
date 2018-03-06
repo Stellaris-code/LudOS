@@ -38,17 +38,16 @@ SOFTWARE.
 
 extern "C" int kernel_physical_end;
 
-alignas(4096) static PageDirectory                 page_directory;
-alignas(4096) static std::array<PageTable, 1024>   page_tables;
+static PagingInformation kernel_info;
 
 void Paging::init()
 {
     cli();
-    init_page_directory();
+    create_paging_info(kernel_info);
 
     isr::register_handler(isr::PageFault, page_fault_handler);
 
-    uint32_t pd_addr { reinterpret_cast<uint32_t>(page_directory.data()) - KERNEL_VIRTUAL_BASE };
+    uint32_t pd_addr { reinterpret_cast<uint32_t>(kernel_info.page_directory.data()) - KERNEL_VIRTUAL_BASE };
     uint32_t cr4_var = cr4();
     bit_clear(cr4_var, 4); // disable 4MB pages
 
@@ -66,8 +65,6 @@ void Paging::map_page(void *p_addr, void *v_addr, uint32_t flags)
     auto entry = page_entry(reinterpret_cast<uintptr_t>(v_addr));
 
     assert(!entry->present);
-
-    //log_serial("Mapping : %p->%p\n", p_addr, v_addr);
 
     entry->phys_addr = reinterpret_cast<uintptr_t>(p_addr) >> 12;
 
@@ -103,6 +100,25 @@ uintptr_t Paging::physical_address(const void *v_addr)
     if (!entry->present) return (uintptr_t)v_addr;
 
     return (entry->phys_addr << 12) + offset;
+}
+
+void Paging::create_paging_info(PagingInformation &info)
+{
+    memset(info.page_directory.data(), 0, info.page_directory.size()*sizeof(PDEntry));
+    for (size_t i { 0 }; i < info.page_tables.size(); ++i)
+    {
+        memset(info.page_tables[i].data(), 0, info.page_tables[i].size()*sizeof(PTEntry));
+        info.page_directory[i].pt_addr = (reinterpret_cast<uintptr_t>(info.page_tables[i].data()) - KERNEL_VIRTUAL_BASE) >> 12;
+        info.page_directory[i].present = true;
+        info.page_directory[i].write = true;
+    }
+
+    map_kernel(info);
+
+    // map last dir entry to itself
+    info.page_directory.back().pt_addr = (reinterpret_cast<uintptr_t>(info.page_directory.data()) - KERNEL_VIRTUAL_BASE) >> 12;
+    info.page_directory.back().write = true;
+    info.page_directory.back().present = true;
 }
 
 // TODO : last_pos
@@ -160,7 +176,7 @@ PageDirectory *Paging::get_page_directory()
 {
     if (!m_initialized)
     {
-        return &page_directory;
+        return &kernel_info.page_directory;
     }
     else
     {
@@ -168,28 +184,13 @@ PageDirectory *Paging::get_page_directory()
     }
 }
 
-void Paging::init_page_directory()
+void Paging::map_kernel(PagingInformation& info)
 {
-    memset(page_directory.data(), 0, page_directory.size()*sizeof(PDEntry));
-    for (size_t i { 0 }; i < page_tables.size(); ++i)
-    {
-        memset(page_tables[i].data(), 0, page_tables[i].size()*sizeof(PTEntry));
-        page_directory[i].pt_addr = (reinterpret_cast<uintptr_t>(page_tables[i].data()) - KERNEL_VIRTUAL_BASE) >> 12;
-        page_directory[i].present = true;
-        page_directory[i].write = true;
-    }
+    uint32_t pdindex = KERNEL_VIRTUAL_BASE >> 22;
+    uint32_t ptindex = KERNEL_VIRTUAL_BASE >> 12 & 0x03FF;
 
-    map_kernel();
-
-    // map last dir entry to itself
-    page_directory.back().pt_addr = (reinterpret_cast<uintptr_t>(page_directory.data()) - KERNEL_VIRTUAL_BASE) >> 12;
-    page_directory.back().write = true;
-    page_directory.back().present = true;
-}
-
-void Paging::map_kernel()
-{
-    PTEntry* entry = page_entry(KERNEL_VIRTUAL_BASE);
+    PageTable * pt = reinterpret_cast<PageTable*>((info.page_directory[pdindex].pt_addr << 12) + KERNEL_VIRTUAL_BASE);
+    PTEntry* entry = &(*pt)[ptindex];
 
     for (uint32_t addr { 0 }; addr <= reinterpret_cast<uint32_t>(&kernel_physical_end) + page_size; addr+=page_size, ++entry)
     {

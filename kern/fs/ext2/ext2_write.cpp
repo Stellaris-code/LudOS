@@ -114,7 +114,7 @@ void Ext2FS::write_data(gsl::span<const uint8_t> data, size_t byte_offset, const
 
 void Ext2FS::write_data_block(gsl::span<const uint8_t> data, const ext2::Inode &inode, size_t blk_id)
 {
-    assert(data.size() <= block_size());
+    assert(data.size() <= (int)block_size());
 
     size_t entries_per_block = block_size()/sizeof(uint32_t);
 
@@ -145,7 +145,7 @@ void Ext2FS::write_data_block(gsl::span<const uint8_t> data, const ext2::Inode &
 
 void Ext2FS::write_indirected(gsl::span<const uint8_t> data, size_t indirected_block, size_t blk_id, size_t depth)
 {
-    assert(data.size() <= block_size());
+    assert(data.size() <= (int)block_size());
 
     size_t entries = ipow<size_t>(block_size()/sizeof(uint32_t), depth-1);
     auto vec = read_block(indirected_block);

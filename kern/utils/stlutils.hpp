@@ -190,13 +190,13 @@ inline std::vector<gsl::span<T>> split(gsl::span<T> cont, size_t chunk_size)
 {
     std::vector<gsl::span<T>> chunks;
 
-    size_t base = 0;
+    typename gsl::span<T>::index_type base = 0;
 
-    while (base + chunk_size <= cont.size())
+    while (base + (int)chunk_size <= cont.size())
     {
-        chunks.emplace_back(cont.subspan(base, chunk_size));
+        chunks.emplace_back(cont.subspan(base, (int)chunk_size));
 
-        base += chunk_size;
+        base += (int)chunk_size;
     }
 
     if (base < cont.size())

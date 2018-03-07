@@ -111,22 +111,14 @@ void print_disassembly()
 
     const size_t dump_len = 3;
 
-    uint8_t* mmap_ip = (uint8_t*)Memory::mmap((void*)panic_regs->eip, dump_len * 17, Memory::Read);
-    uint8_t* ip = mmap_ip;
-
-#if 0
-    // Move back
-    for (size_t i { 0 }; i < dump_len/2; ++i)
-    {
-        ip -= get_disasm(ip).len;
-    }
-#endif
+    uint8_t* base_ip = (uint8_t*)panic_regs->eip;
+    uint8_t* ip = base_ip;
 
     for (size_t i { 0 }; i < dump_len; ++i)
     {
         DisasmInfo info = get_disasm(ip);
         std::string bytes = join(map<uint8_t, std::string>(info.bytes, [](uint8_t c){return std::to_hex_string(c);}), " ");
-        if (ip == mmap_ip)
+        if (ip == base_ip)
         {
             kprintf("->  ");
         }

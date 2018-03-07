@@ -33,7 +33,7 @@ SOFTWARE.
 
 #include "utils/membuffer.hpp"
 
-extern "C" void enter_ring3(uint32_t esp, uint32_t eip, uint32_t pd);
+extern "C" void enter_ring3(uint32_t esp, uint32_t eip);
 
 namespace tasking
 {
@@ -44,7 +44,6 @@ struct Process::ProcessData
     uint32_t id;
     MemBuffer stack;
     MemBuffer code;
-    PagingInformation paging_info;
 };
 
 Process::Process(const std::string &name, void *address, size_t size)
@@ -55,14 +54,14 @@ Process::Process(const std::string &name, void *address, size_t size)
     m_data->stack.resize(0x1000);
     m_data->code.resize(size);
     std::copy((uint8_t*)address, (uint8_t*)address + size, m_data->code.begin());
-
-    Paging::create_paging_info(m_data->paging_info);
 }
 
 void Process::execute()
 {
-    enter_ring3((uint32_t)m_data->stack.data(), (uint32_t)m_data->code.data(),
-                (uint32_t)m_data->paging_info.page_directory.data());
+    log_serial("0x%x/0x%x\n", (uint32_t)m_data->stack.data(),
+               (uint32_t)m_data->code.data());
+
+    enter_ring3((uint32_t)m_data->stack.data(), (uint32_t)m_data->code.data());
 }
 
 }

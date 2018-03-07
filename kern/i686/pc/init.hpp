@@ -57,6 +57,8 @@ SOFTWARE.
 #include "drivers/driver.hpp"
 #include "drivers/pci/pcidriver.hpp"
 
+#include "tasking/process.hpp"
+
 #include "cpp_runtime/exception_support.hpp"
 
 #include "graphics/vga.hpp"
@@ -236,6 +238,9 @@ inline void init(uint32_t magic, const multiboot_info_t* mbd_info)
         mtrr::set_mtrrs_enabled(true);
         mtrr::set_fixed_mtrrs_enabled(false);
     }
+
+    tasking::Process task("test", (void*)&tasking::test_task, 100);
+    task.execute();
 
     init_emu_mem();
 

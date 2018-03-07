@@ -104,11 +104,23 @@ uintptr_t Paging::physical_address(const void *v_addr)
 
 void Paging::create_paging_info(PagingInformation &info)
 {
+    auto get_addr = [](auto addr)->void*
+    {
+        if (!m_initialized)
+        {
+            return (void*)addr;
+        }
+        else
+        {
+            return (void*)Memory::physical_address((void*)addr);
+        }
+    };
+
     memset(info.page_directory.data(), 0, info.page_directory.size()*sizeof(PDEntry));
     for (size_t i { 0 }; i < info.page_tables.size(); ++i)
     {
         memset(info.page_tables[i].data(), 0, info.page_tables[i].size()*sizeof(PTEntry));
-        info.page_directory[i].pt_addr = (reinterpret_cast<uintptr_t>(info.page_tables[i].data()) - KERNEL_VIRTUAL_BASE) >> 12;
+        info.page_directory[i].pt_addr = (reinterpret_cast<uintptr_t>(get_addr(info.page_tables[i].data())) - KERNEL_VIRTUAL_BASE) >> 12;
         info.page_directory[i].present = true;
         info.page_directory[i].write = true;
     }
@@ -116,7 +128,7 @@ void Paging::create_paging_info(PagingInformation &info)
     map_kernel(info);
 
     // map last dir entry to itself
-    info.page_directory.back().pt_addr = (reinterpret_cast<uintptr_t>(info.page_directory.data()) - KERNEL_VIRTUAL_BASE) >> 12;
+    info.page_directory.back().pt_addr = (reinterpret_cast<uintptr_t>(get_addr(info.page_directory.data())) - KERNEL_VIRTUAL_BASE) >> 12;
     info.page_directory.back().write = true;
     info.page_directory.back().present = true;
 }
@@ -124,18 +136,20 @@ void Paging::create_paging_info(PagingInformation &info)
 // TODO : last_pos
 uintptr_t Paging::alloc_virtual_page(size_t number)
 {
-    assert(number);
+    assert(number != 0);
+
+    constexpr size_t margin = 2;
+    const size_t base = KERNEL_VIRTUAL_BASE >> 12; // TODO
+    static size_t last_pos = base;
 
     PTEntry* entries = page_entry(0);
-
     uintptr_t addr { 0 };
-
     size_t counter { 0 };
 
-    number += 2;
+    number += margin;
 
-    // keep first 4M free
-    for (size_t i { 0x100 }; i < ram_maxpage; ++i)
+    loop:
+    for (size_t i { last_pos }; i < ram_maxpage; ++i)
     {
         if (!entries[i].present)
         {
@@ -148,13 +162,21 @@ uintptr_t Paging::alloc_virtual_page(size_t number)
 
         if (counter == number)
         {
-            for (size_t j { 1 }; j < number-1; ++j)
-            {
-                //entries[addr + j].present = true;
-            }
-            return addr * page_size + page_size;
+            last_pos = i;
+
+            // ensure it stays in kernel space
+            assert(addr * page_size + (margin/2*page_size) >= KERNEL_VIRTUAL_BASE);
+            return addr * page_size + (margin/2*page_size);
         }
     }
+
+    // Reloop
+    if (last_pos != base)
+    {
+        last_pos = base;
+        goto loop;
+    }
+
     panic("no more virtual addresses available");
     return 0;
 }

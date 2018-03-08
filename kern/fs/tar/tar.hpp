@@ -57,12 +57,13 @@ struct tar_node : public vfs::node
     virtual size_t size() const override;
     virtual Type type() const override;
     virtual bool is_link() const override;
+    virtual std::string name() const override;
 
     const TarFS& m_fs;
     const uint8_t* m_data_addr { nullptr };
     size_t m_size { 0 };
     std::string m_link_target {};
-private:
+    std::vector<std::shared_ptr<tar_node>> m_children;
 };
 
 class TarFS : public FSImpl<TarFS>
@@ -109,8 +110,11 @@ private:
 
     std::vector<std::shared_ptr<tar_node>> read_dir(const uint8_t* addr, size_t size) const;
 private:
-
     bool check_sum(const Header* hdr) const;
+
+    std::vector<std::shared_ptr<tar_node>> list_nodes();
+    void prune_directories_names(std::vector<std::shared_ptr<tar_node>> dirs);
+    void attach_parents(std::vector<std::shared_ptr<tar_node>> dirs);
 
     template <typename T>
     size_t read_number(T&& str) const

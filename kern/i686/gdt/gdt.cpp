@@ -51,7 +51,7 @@ void load_tss(uint16_t selector)
 
 void set_gate(size_t num, uint32_t base, uint32_t limit, uint8_t access, uint8_t gran)
 {
-    if (num >= sizeof(entries))
+    if (num >= 9)
     {
         panic("Invalid GDT entry : num is larger than entries");
     }

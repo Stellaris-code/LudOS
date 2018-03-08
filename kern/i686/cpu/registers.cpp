@@ -44,3 +44,23 @@ const registers* handle_registers_request(const registers *regs)
     cur_regs = *regs;
     return regs;
 }
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat"
+void dump(const registers *regs)
+{
+    if (regs)
+    {
+        kprintf("eip : 0x%x int : 0x%x  err code : 0x%x\n", regs->eip, regs->int_no, regs->err_code);
+        kprintf("eax : 0x%x  ebx : 0x%x  ", regs->eax, regs->ebx);
+        kprintf("ecx : 0x%x  edx : 0x%x  \n", regs->ecx, regs->edx);
+        kprintf("ebx : 0x%x  esi : 0x%x  ", regs->ebp, regs->esi);
+        kprintf("edi : 0x%x  ebp : 0x%x\n", regs->edi, regs->ebp);
+        kprintf("cr0 : 0x%x  cr2 : 0x%x cr3 : 0x%x  cr4 : 0x%x\n", cr0(), cr2(), cr3(), cr4());
+        kprintf("gs : 0x%x  fs : 0x%x  ", regs->gs, regs->fs);
+        kprintf("es : 0x%x  ds : 0x%x\n", regs->es, regs->ds);
+        kprintf("cs : 0x%x  eflags : 0x%x  ", regs->cs, regs->eflags);
+        kprintf("ss : 0x%x  esp : 0x%x  CPL : %d\n", regs->ss, regs->esp, regs->cs & 0x3);
+    }
+}
+#pragma GCC diagnostic pop

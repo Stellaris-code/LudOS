@@ -69,16 +69,19 @@ namespace tar
 {
 
 TarFS::TarFS(Disk &disk)
- : FSImpl<tar::TarFS>(disk)
+    : FSImpl<tar::TarFS>(disk)
 {
     m_file = disk.read();
 
     m_root_dir = std::make_shared<tar_node>(*this, nullptr);
-
     m_root_dir->m_type = vfs::node::Directory;
     m_root_dir->m_name = "";
     m_root_dir->m_data_addr = m_file.data() + sizeof(Header);
     m_root_dir->m_size = m_file.size();
+
+    auto nodes = list_nodes();
+    prune_directories_names(nodes);
+    attach_parents(nodes);
 }
 
 bool TarFS::accept(const Disk &disk)
@@ -138,7 +141,7 @@ std::shared_ptr<tar_node> TarFS::read_header(const Header *hdr) const
     node->m_stat.creation_time = node->m_stat.modification_time = read_number(hdr->mtime);
     node->m_stat.access_time = 0;
     node->m_name = std::string(hdr->name, 101); node->m_name.back() = '\0';
-    node->m_name = filename(trim_zstr(node->m_name));
+    node->m_name = trim_zstr(node->m_name);
 
     return node;
 }
@@ -193,6 +196,63 @@ bool TarFS::check_sum(const TarFS::Header *hdr) const
     return read_number(hdr->chksum) == sum;
 }
 
+std::vector<std::shared_ptr<tar_node> > TarFS::list_nodes()
+{
+    return read_dir(m_file.data() + sizeof(Header), m_file.size());
+}
+
+void TarFS::prune_directories_names(std::vector<std::shared_ptr<tar_node>> dirs)
+{
+    for (auto node : dirs)
+    {
+        if (node->m_type == vfs::node::Directory)
+        {
+            auto list = path_list(node->m_name);
+            list.erase(list.begin()); // remove first directory which is archive name
+
+            node->m_name = join(list, "/");
+        }
+    }
+}
+
+void TarFS::attach_parents(std::vector<std::shared_ptr<tar_node>> nodes)
+{
+    for (auto node : nodes)
+    {
+        auto list = path_list(parent_path(node->m_name));
+        if (!list.empty())
+        {
+            auto parent_name = list.back();
+
+            auto parent = std::find_if(nodes.begin(), nodes.end(), [&parent_name](std::shared_ptr<tar_node> node)
+            {
+                    return node->m_type == vfs::node::Directory && path_list(node->m_name).back() == parent_name;
+            });
+
+            if (parent != nodes.end())
+            {
+                node->m_parent = parent->get();
+                (*parent)->m_children.emplace_back(node);
+            }
+            else
+            {
+                node->m_parent = m_root_dir.get();
+                m_root_dir->m_children.emplace_back(node);
+
+                if (node->m_type == vfs::node::Directory)
+                {
+                    warn("Tar Directory '%s' has no parent\n", node->name().c_str());
+                }
+            }
+        }
+        else
+        {
+            node->m_parent = m_root_dir.get();
+            m_root_dir->m_children.emplace_back(node);
+        }
+    }
+}
+
 [[nodiscard]] MemBuffer tar_node::read_impl(size_t offset, size_t size) const
 {
     if (!m_link_target.empty())
@@ -215,11 +275,10 @@ std::vector<std::shared_ptr<vfs::node> > tar_node::readdir_impl()
         return target->readdir();
     }
 
-    auto nodes = m_fs.read_dir(m_data_addr, size());
-    return map<std::shared_ptr<tar_node>, std::shared_ptr<node>>(nodes, [](const std::shared_ptr<tar_node>& file)->std::shared_ptr<node>
-    {
-        return std::static_pointer_cast<node>(file);
-    });
+    std::vector<std::shared_ptr<vfs::node> > vec;
+    for (auto tar_node : m_children) vec.emplace_back(tar_node);
+
+    return vec;
 }
 
 size_t tar_node::size() const
@@ -249,6 +308,11 @@ vfs::node::Type tar_node::type() const
 bool tar_node::is_link() const
 {
     return !m_link_target.empty();
+}
+
+std::string tar_node::name() const
+{
+    return filename(m_name);
 }
 
 ADD_FS(TarFS)

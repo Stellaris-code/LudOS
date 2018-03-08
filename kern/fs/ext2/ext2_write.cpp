@@ -793,7 +793,7 @@ void ext2_node::remove_child(const std::string& name)
     dir_entries.erase(std::remove_if(dir_entries.begin(), dir_entries.end(), [name](const ext2::DirectoryEntry& entry)
     {
         return std::string(entry.name, entry.name_len) == name;
-    }));
+    }), dir_entries.end());
 
     fs.write_directory_entries(inode, dir_entries);
 }

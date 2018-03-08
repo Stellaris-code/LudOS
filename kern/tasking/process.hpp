@@ -27,8 +27,7 @@ SOFTWARE.
 
 #include <string.hpp>
 #include "utils/gsl/pointers.hpp"
-
-// todo : faire une classe Process quoi
+#include "utils/gsl/gsl_span.hpp"
 
 namespace tasking
 {
@@ -36,17 +35,18 @@ namespace tasking
 class Process
 {
 public:
-    Process(const std::string& name, void* address, size_t size);
+    struct ProcessData;
+
+    Process(const std::string& name, gsl::span<const uint8_t> code);
 
 public:
     void execute();
 
 private:
-    struct ProcessData;
     gsl::not_null<ProcessData*> m_data;
 };
 
-void test_task();
+extern "C" void test_task();
 
 }
 

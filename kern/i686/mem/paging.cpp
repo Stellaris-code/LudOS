@@ -123,6 +123,7 @@ void Paging::create_paging_info(PagingInformation &info)
         info.page_directory[i].pt_addr = (reinterpret_cast<uintptr_t>(get_addr(info.page_tables[i].data())) - KERNEL_VIRTUAL_BASE) >> 12;
         info.page_directory[i].present = true;
         info.page_directory[i].write = true;
+        info.page_directory[i].user = true;
     }
 
     map_kernel(info);
@@ -131,6 +132,7 @@ void Paging::create_paging_info(PagingInformation &info)
     info.page_directory.back().pt_addr = (reinterpret_cast<uintptr_t>(get_addr(info.page_directory.data())) - KERNEL_VIRTUAL_BASE) >> 12;
     info.page_directory.back().write = true;
     info.page_directory.back().present = true;
+    info.page_directory.back().user = false;
 }
 
 // TODO : last_pos
@@ -219,6 +221,6 @@ void Paging::map_kernel(PagingInformation& info)
         entry->phys_addr = addr >> 12;
         entry->present = true;
         entry->write = true;
-        entry->user = false;
+        entry->user = true;
     }
 }

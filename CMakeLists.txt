@@ -143,6 +143,8 @@ target_link_libraries(acpica libk)
 
 include(ExternalProject)
 
+add_subdirectory(userland)
+
 target_link_libraries(${PROJECT_NAME} libk libcpp libcxxabi libx86emu libdisasm acpica)
 target_link_libraries(libx86emu libk)
 

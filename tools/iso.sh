@@ -2,6 +2,7 @@
 set -e
 
 ./mkinitrd.sh
+./strip-bin.sh
 
 cd ..
  

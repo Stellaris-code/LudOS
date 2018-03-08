@@ -1,7 +1,7 @@
 /*
-init.hpp
+main.cpp
 
-Copyright (c) 13 Yann BOUCHER (yann)
+Copyright (c) 07 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,19 +22,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef INIT_HPP
-#define INIT_HPP
 
-#include <stdint.h>
-
-#include "multiboot/multiboot.h"
-
-namespace i686
+int main()
 {
-namespace pc
-{
-void init(uint32_t magic, const multiboot_info_t* mbd_info);
+    asm volatile ("mov $0, %eax\n"
+                  "div %eax");
+    return 0;
 }
-}
-
-#endif // INIT_HPP

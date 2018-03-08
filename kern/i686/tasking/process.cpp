@@ -26,12 +26,14 @@ SOFTWARE.
 #include "tasking/process.hpp"
 
 #include <string.hpp>
+#include <vector.hpp>
 
 #include "i686/gdt/gdt.hpp"
 #include "i686/mem/paging.hpp"
 #include "i686/interrupts/interrupts.hpp"
 
 #include "utils/membuffer.hpp"
+#include "utils/aligned_vector.hpp"
 
 extern "C" void enter_ring3(uint32_t esp, uint32_t eip);
 
@@ -42,26 +44,58 @@ struct Process::ProcessData
 {
     std::string name;
     uint32_t id;
-    MemBuffer stack;
-    MemBuffer code;
+    aligned_vector<uint8_t, Paging::page_size> stack;
+    aligned_vector<uint8_t, Paging::page_size> code;
 };
 
-Process::Process(const std::string &name, void *address, size_t size)
+constexpr size_t user_stack_top = KERNEL_VIRTUAL_BASE - sizeof(uintptr_t);
+
+void map_code(const Process::ProcessData& data)
+{
+    size_t code_page_amnt = data.code.size() / Paging::page_size +
+            (data.code.size()%Paging::page_size?1:0);
+
+    for (size_t i { 0 }; i < code_page_amnt; ++i)
+    {
+        uint8_t* phys_addr = (uint8_t*)Paging::physical_address((uint8_t*)data.code.data() + i*Paging::page_size);
+        uint8_t* virt_addr = (uint8_t*)(i * Paging::page_size);
+
+        assert(phys_addr);
+        Paging::map_page(phys_addr, virt_addr, Memory::Read|Memory::User);
+    }
+}
+
+void map_stack(const Process::ProcessData& data)
+{
+    size_t code_page_amnt = data.stack.size() / Paging::page_size +
+            (data.stack.size()%Paging::page_size?1:0);
+
+    for (size_t i { 0 }; i < code_page_amnt; ++i)
+    {
+        uint8_t* phys_addr = (uint8_t*)Paging::physical_address((uint8_t*)data.stack.data() + i*Paging::page_size);
+        uint8_t* virt_addr = (uint8_t*)(user_stack_top - (i * Paging::page_size));
+
+        assert(phys_addr);
+        Paging::map_page(phys_addr, virt_addr, Memory::Read|Memory::Write|Memory::NoExec|Memory::User);
+    }
+}
+
+Process::Process(const std::string &name, gsl::span<const uint8_t> code)
     : m_data(new ProcessData)
 {
     m_data->name = name;
     m_data->id = 0;
-    m_data->stack.resize(0x1000);
-    m_data->code.resize(size);
-    std::copy((uint8_t*)address, (uint8_t*)address + size, m_data->code.begin());
+    m_data->stack.resize(Paging::page_size);
+    m_data->code.resize(code.size());
+    std::copy(code.begin(), code.end(), m_data->code.begin());
+
+    map_code(*m_data);
+    map_stack(*m_data);
 }
 
 void Process::execute()
 {
-    log_serial("0x%x/0x%x\n", (uint32_t)m_data->stack.data(),
-               (uint32_t)m_data->code.data());
-
-    enter_ring3((uint32_t)m_data->stack.data(), (uint32_t)m_data->code.data());
+    enter_ring3(user_stack_top, 0x0);
 }
 
 }

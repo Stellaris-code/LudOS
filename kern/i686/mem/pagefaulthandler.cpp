@@ -37,16 +37,16 @@ bool Paging::page_fault_handler(const registers *regs)
 
     std::string message;
 
-    if (regs->err_code & 2)
+    if (regs->err_code & (1<<2))
     {
         message += "unprivileged ";
     }
 
-    if (regs->err_code & 1)
+    if (regs->err_code & (1<<1))
     {
         message += "write ";
     }
-    else if (regs->err_code & 8)
+    else if (regs->err_code & (1<<4))
     {
         message += "instruction fetch ";
     }
@@ -55,7 +55,7 @@ bool Paging::page_fault_handler(const registers *regs)
         message += "read ";
     }
 
-    if (regs->err_code & 4)
+    if (regs->err_code & (1<<3))
     {
         message += "in a reserved bit ";
     }
@@ -65,7 +65,7 @@ bool Paging::page_fault_handler(const registers *regs)
     ksnprintf(buf, 16, "0x%x ", cr2());
     message += trim_zstr(buf);
 
-    if (regs->err_code & 0)
+    if (regs->err_code & (1<<0))
     {
         message += "(page exists)";
     }

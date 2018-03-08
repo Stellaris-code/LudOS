@@ -28,9 +28,4 @@ SOFTWARE.
 namespace tasking
 {
 
-void test_task()
-{
-    asm volatile ("xchgw %bx, %bx");
-}
-
 }

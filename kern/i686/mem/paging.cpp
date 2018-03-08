@@ -167,7 +167,7 @@ uintptr_t Paging::alloc_virtual_page(size_t number)
             last_pos = i;
 
             // ensure it stays in kernel space
-            assert(addr * page_size + (margin/2*page_size) >= KERNEL_VIRTUAL_BASE);
+            if (base) assert(addr * page_size + (margin/2*page_size) >= KERNEL_VIRTUAL_BASE);
             return addr * page_size + (margin/2*page_size);
         }
     }

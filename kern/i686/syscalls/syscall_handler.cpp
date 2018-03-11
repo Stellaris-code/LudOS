@@ -1,7 +1,7 @@
 /*
-process.cpp
+syscall_stub.cpp
 
-Copyright (c) 06 Yann BOUCHER (yann)
+Copyright (c) 11 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -23,21 +23,32 @@ SOFTWARE.
 
 */
 
-#include "process.hpp"
+#include "i686/syscalls/syscall.hpp"
 
-namespace tasking
+#include "panic.hpp"
+
+extern "C" uint32_t syscall_handler(const registers* const regs)
 {
+    if (regs->eax >= max_syscalls)
+    {
+        return syscall_error;
+    }
 
-Process::Process(gsl::span<const uint8_t> code_to_copy)
-    : id(0)
-{
-    arch_init(code_to_copy);
-}
+    switch (regs->int_no)
+    {
+        case ludos_syscall_int:
+            return ludos_syscall_table[regs->eax](regs);
+            break;
 
-Process::Process(const std::string& _name, gsl::span<const uint8_t> code_to_copy)
- : name(_name), id(0)
-{
-    arch_init(code_to_copy);
-}
+        case linux_syscall_int:
+            return linux_syscall_table[regs->eax](regs);
+            break;
 
+        default:
+            err("Invalid syscall number : 0x%x\n", regs->int_no);
+            return syscall_error;
+            break;
+    }
+
+    return syscall_error;
 }

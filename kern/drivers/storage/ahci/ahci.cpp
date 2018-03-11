@@ -332,7 +332,7 @@ bool detail::issue_write_command(size_t port, uint64_t sector, size_t count, con
         return false;
     }
 
-    CommandHeader *cmdheader = &(cmdlists[port].hdrs[slot]);;
+    CommandHeader *cmdheader = &(cmdlists[port].hdrs[slot]);
     cmdheader += slot;
 
     cmdheader->cfl = sizeof(FisRegH2D)/sizeof(uint32_t);	// Command FIS size

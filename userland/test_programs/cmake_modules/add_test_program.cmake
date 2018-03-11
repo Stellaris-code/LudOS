@@ -1,0 +1,8 @@
+FUNCTION(ADD_TEST_PROGRAM NAME DIR)
+
+    file(GLOB_RECURSE ${NAME}_SRCS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "${DIR}/*.cpp" "${DIR}/*.hpp")
+
+    add_executable(${NAME} ${COMMON_SRCS} ${${NAME}_SRCS})
+    set_target_properties(${NAME} PROPERTIES LINK_FLAGS
+      "-T ${CMAKE_CURRENT_SOURCE_DIR}/layout.ld  -Xlinker")
+ENDFUNCTION(ADD_TEST_PROGRAM)

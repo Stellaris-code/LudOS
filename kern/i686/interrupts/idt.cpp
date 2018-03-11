@@ -32,6 +32,8 @@ SOFTWARE.
 
 #include "interrupts.hpp"
 
+#include "syscalls/syscall.hpp"
+
 namespace idt
 {
 
@@ -108,6 +110,9 @@ void init()
     set_gate(45, reinterpret_cast<uint32_t>(irq13), 0x08, 0x8E);
     set_gate(46, reinterpret_cast<uint32_t>(irq14), 0x08, 0x8E);
     set_gate(47, reinterpret_cast<uint32_t>(irq15), 0x08, 0x8E);
+
+    set_gate(ludos_syscall_int, (uint32_t)(syscall_ludos), 0x08, 0xEE);
+    set_gate(linux_syscall_int, (uint32_t)(syscall_linux), 0x08, 0xEE);
 
     idt_flush(reinterpret_cast<uint32_t>(&idt_ptr));
 

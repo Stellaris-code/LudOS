@@ -1,7 +1,7 @@
 /*
-process.cpp
+ludos_raw_loader.hpp
 
-Copyright (c) 06 Yann BOUCHER (yann)
+Copyright (c) 10 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -23,21 +23,24 @@ SOFTWARE.
 
 */
 
-#include "process.hpp"
+#ifndef LUDOSRAW_HPP
+#define LUDOSRAW_HPP
+
+#include "process_loader.hpp"
 
 namespace tasking
 {
 
-Process::Process(gsl::span<const uint8_t> code_to_copy)
-    : id(0)
+class LudosRawLoader : public ProcessLoader
 {
-    arch_init(code_to_copy);
-}
+public:
+    static bool accept(gsl::span<const uint8_t> file);
 
-Process::Process(const std::string& _name, gsl::span<const uint8_t> code_to_copy)
- : name(_name), id(0)
-{
-    arch_init(code_to_copy);
-}
+public:
+    virtual std::unique_ptr<Process> load();
+    virtual std::string file_type() const;
+};
 
 }
+
+#endif // LUDOS_RAW

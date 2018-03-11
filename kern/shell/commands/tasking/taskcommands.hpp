@@ -1,7 +1,7 @@
 /*
-process.cpp
+taskcommands.hpp
 
-Copyright (c) 06 Yann BOUCHER (yann)
+Copyright (c) 10 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,22 +22,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
+#ifndef TASKCOMMANDS_HPP
+#define TASKCOMMANDS_HPP
 
-#include "process.hpp"
+class Shell;
 
-namespace tasking
-{
+void install_task_commands(Shell& sh);
 
-Process::Process(gsl::span<const uint8_t> code_to_copy)
-    : id(0)
-{
-    arch_init(code_to_copy);
-}
-
-Process::Process(const std::string& _name, gsl::span<const uint8_t> code_to_copy)
- : name(_name), id(0)
-{
-    arch_init(code_to_copy);
-}
-
-}
+#endif // TASKCOMMANDS_HPP

@@ -62,6 +62,11 @@ void Paging::init()
 
 void Paging::map_page(void *p_addr, void *v_addr, uint32_t flags)
 {
+//    if ((uint32_t)v_addr < KERNEL_VIRTUAL_BASE)
+//    {
+//        log_serial("Someone wants to reclaim addr %p\n", v_addr);
+//    }
+
     auto entry = page_entry(reinterpret_cast<uintptr_t>(v_addr));
 
     assert(!entry->present);
@@ -167,7 +172,7 @@ uintptr_t Paging::alloc_virtual_page(size_t number)
             last_pos = i;
 
             // ensure it stays in kernel space
-            if (base) assert(addr * page_size + (margin/2*page_size) >= KERNEL_VIRTUAL_BASE);
+            assert(addr * page_size + (margin/2*page_size) >= KERNEL_VIRTUAL_BASE);
             return addr * page_size + (margin/2*page_size);
         }
     }

@@ -1,7 +1,7 @@
 /*
-process.cpp
+main.cpp
 
-Copyright (c) 06 Yann BOUCHER (yann)
+Copyright (c) 11 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -23,21 +23,13 @@ SOFTWARE.
 
 */
 
-#include "process.hpp"
-
-namespace tasking
+int main()
 {
-
-Process::Process(gsl::span<const uint8_t> code_to_copy)
-    : id(0)
-{
-    arch_init(code_to_copy);
-}
-
-Process::Process(const std::string& _name, gsl::span<const uint8_t> code_to_copy)
- : name(_name), id(0)
-{
-    arch_init(code_to_copy);
-}
-
+    asm volatile ("mov $0, %eax\n"
+                  "mov $1234, %ebx\n"
+                  "int $0x70\n"
+                  "int $0x70\n"
+                  "hlt\n"
+                  "div %eax");
+    return 0;
 }

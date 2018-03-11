@@ -1,7 +1,7 @@
 /*
-process.cpp
+syscall.hpp
 
-Copyright (c) 06 Yann BOUCHER (yann)
+Copyright (c) 11 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,22 +22,17 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
+#ifndef SYSCALL_HPP
+#define SYSCALL_HPP
 
-#include "process.hpp"
+#include <stdint.h>
 
-namespace tasking
-{
+constexpr uint8_t linux_syscall_int = 0x80;
+constexpr uint8_t ludos_syscall_int = 0x70;
 
-Process::Process(gsl::span<const uint8_t> code_to_copy)
-    : id(0)
-{
-    arch_init(code_to_copy);
-}
+constexpr int syscall_ok = 0;
+constexpr int syscall_error = -1;
 
-Process::Process(const std::string& _name, gsl::span<const uint8_t> code_to_copy)
- : name(_name), id(0)
-{
-    arch_init(code_to_copy);
-}
+void init_syscalls();
 
-}
+#endif // SYSCALL_HPP

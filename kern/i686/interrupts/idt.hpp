@@ -105,6 +105,9 @@ extern void irq12();
 extern void irq13();
 extern void irq14();
 extern void irq15();
+
+extern void syscall_ludos();
+extern void syscall_linux();
 }
 
 #endif // IDT_HPP

@@ -34,23 +34,22 @@ SOFTWARE.
 
 #include "utils/membuffer.hpp"
 #include "utils/aligned_vector.hpp"
+#include "utils/memutils.hpp"
 
 extern "C" void enter_ring3(uint32_t esp, uint32_t eip);
 
 namespace tasking
 {
 
-struct Process::ProcessData
+struct Process::ProcessPrivateData
 {
-    std::string name;
-    uint32_t id;
     aligned_vector<uint8_t, Paging::page_size> stack;
     aligned_vector<uint8_t, Paging::page_size> code;
 };
 
 constexpr size_t user_stack_top = KERNEL_VIRTUAL_BASE - sizeof(uintptr_t);
 
-void map_code(const Process::ProcessData& data)
+void map_code(const Process::ProcessPrivateData& data)
 {
     size_t code_page_amnt = data.code.size() / Paging::page_size +
             (data.code.size()%Paging::page_size?1:0);
@@ -65,7 +64,7 @@ void map_code(const Process::ProcessData& data)
     }
 }
 
-void map_stack(const Process::ProcessData& data)
+void map_stack(const Process::ProcessPrivateData& data)
 {
     size_t code_page_amnt = data.stack.size() / Paging::page_size +
             (data.stack.size()%Paging::page_size?1:0);
@@ -80,22 +79,60 @@ void map_stack(const Process::ProcessData& data)
     }
 }
 
-Process::Process(const std::string &name, gsl::span<const uint8_t> code)
-    : m_data(new ProcessData)
+void unmap_code(const Process::ProcessPrivateData& data)
 {
-    m_data->name = name;
-    m_data->id = 0;
-    m_data->stack.resize(Paging::page_size);
-    m_data->code.resize(code.size());
-    std::copy(code.begin(), code.end(), m_data->code.begin());
+    size_t code_page_amnt = data.code.size() / Paging::page_size +
+            (data.code.size()%Paging::page_size?1:0);
 
-    map_code(*m_data);
-    map_stack(*m_data);
+    for (size_t i { 0 }; i < code_page_amnt; ++i)
+    {
+        uint8_t* virt_addr = (uint8_t*)(i * Paging::page_size);
+
+        Paging::unmap_page(virt_addr);
+    }
+}
+
+void unmap_stack(const Process::ProcessPrivateData& data)
+{
+    size_t code_page_amnt = data.stack.size() / Paging::page_size +
+            (data.stack.size()%Paging::page_size?1:0);
+
+    for (size_t i { 0 }; i < code_page_amnt; ++i)
+    {
+        uint8_t* virt_addr = (uint8_t*)(user_stack_top - (i * Paging::page_size));
+
+        Paging::unmap_page(virt_addr);
+    }
+}
+
+Process::~Process()
+{
+    stop();
+
+    delete m_data;
 }
 
 void Process::execute()
 {
+    map_code(*m_data);
+    map_stack(*m_data);
+
     enter_ring3(user_stack_top, 0x0);
+}
+
+void Process::stop()
+{
+    unmap_code(*m_data);
+    unmap_stack(*m_data);
+}
+
+void Process::arch_init(gsl::span<const uint8_t> code_to_copy)
+{
+    m_data = new ProcessPrivateData;
+
+    m_data->stack.resize(Paging::page_size);
+    m_data->code.resize(code_to_copy.size());
+    std::copy(code_to_copy.begin(), code_to_copy.end(), m_data->code.begin());
 }
 
 }

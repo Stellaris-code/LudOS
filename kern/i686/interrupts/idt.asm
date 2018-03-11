@@ -5,6 +5,7 @@ global idt_flush    ; Allows the C code to call idt_flush().
 
 global isr_common_stub
 global irq_common_stub
+global syscall_common_stub
 
 idt_flush:
    mov eax, [esp+4]  ; Get the pointer to the IDT, passed as a parameter.
@@ -28,6 +29,14 @@ idt_flush:
   isr%1:
     push %1                ; Push the interrupt number
     jmp isr_common_stub
+%endmacro
+
+%macro ISR_SYSCALL 2
+  global syscall_%1
+  syscall_%1:
+    push byte 0                 ; Push a dummy error code.
+    push %2                ; Push the interrupt number.
+    jmp syscall_common_stub         ; Go to our common handler code.
 %endmacro
 
 %macro IRQ 2
@@ -86,6 +95,73 @@ IRQ  12,    44
 IRQ  13,    45
 IRQ  14,    46
 IRQ  15,    47
+
+ISR_SYSCALL ludos, 0x70 ; ludos_syscall
+ISR_SYSCALL linux, 0x80 ; linux_syscall
+
+; In isr.c
+extern syscall_handler
+
+; This is our common ISR stub. It saves the processor state, sets
+; up for kernel mode segments, calls the C-level fault handler,
+; and finally restores the stack frame.
+syscall_common_stub:
+    ; Store general purpose
+    push edi
+    push esi
+    push ebp
+    push ebx
+    push edx
+    push ecx
+    push eax
+
+    ; Store segments
+    push ds
+    push es
+    push fs
+    push gs
+
+    ; Switch to kernel segments
+    mov ax, 0x10
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+
+
+    mov [esp_save], esp
+    ; Push stack pointer
+    push esp
+
+    ; Restore interrupts
+    sti
+
+    ; Call handler
+    call syscall_handler
+    ; Set stack pointer to returned value
+
+    mov esp, [esp_save]
+
+    ; Restore segments
+    pop gs
+    pop fs
+    pop es
+    pop ds
+
+    ; Restore general purpose
+    add esp, 4 ; skip stack's eax in order to keep the syscall return value
+    pop ecx
+    pop edx
+    pop ebx
+    pop ebp
+    pop esi
+    pop edi
+
+    ; Skip intr and error in Registers struct
+    add esp, 8
+
+    ; Restore rest
+    iret
 
 ; In isr.c
 extern isr_handler
@@ -175,6 +251,7 @@ irq_common_stub:
 
     ; Push stack pointer
     push esp
+
     ; Call handler
     call irq_handler
     ; Set stack pointer to returned value
@@ -201,3 +278,6 @@ irq_common_stub:
     ; Restore rest
     iret
 
+section .bss
+align 4
+esp_save: resd 1

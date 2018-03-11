@@ -26,24 +26,36 @@ SOFTWARE.
 #define PROCESS_HPP
 
 #include <string.hpp>
-#include "utils/gsl/pointers.hpp"
 #include "utils/gsl/gsl_span.hpp"
+#include "utils/noncopyable.hpp"
 
 namespace tasking
 {
 
-class Process
+class Process : NonCopyable
 {
 public:
-    struct ProcessData;
+    struct ProcessPrivateData;
 
-    Process(const std::string& name, gsl::span<const uint8_t> code);
+    Process(gsl::span<const uint8_t> code_to_copy);
+    Process(const std::string& name, gsl::span<const uint8_t> code_to_copy);
+    ~Process(); // = default;
 
 public:
     void execute();
 
+    void stop();
+
+public:
+    const std::string name { "<INVALID>" };
+    const uint32_t id { 0 };
+    std::string pwd = "/";
+
 private:
-    gsl::not_null<ProcessData*> m_data;
+    void arch_init(gsl::span<const uint8_t> code_to_copy);
+
+private:
+    ProcessPrivateData* m_data { nullptr };
 };
 
 extern "C" void test_task();

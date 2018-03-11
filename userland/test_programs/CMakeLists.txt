@@ -9,21 +9,21 @@ set(CMAKE_CXX_COMPILER_WORKS 1)
 
 project(TestPrograms)
 
-set(ARCH i686)
+set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules)
 
-set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
+include(add_test_program)
+
+set(ARCH i686)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin)
 set(CMAKE_ASM_NASM_OBJECT_FORMAT elf32)
 set(CMAKE_ASM_NASM_COMPILER "/usr/bin/nasm")
 enable_language(ASM_NASM)
 
-file(GLOB_RECURSE DIV0_SRCS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "div_zero/*.cpp" "div_zero/*.hpp")
 set(COMMON_SRCS "layout.ld" "start.asm")
 
-add_executable(DivZero ${COMMON_SRCS} ${DIV0_SRCS})
+ADD_TEST_PROGRAM(DivZero div_zero)
+ADD_TEST_PROGRAM(SyscallTest syscall_test)
 
-set_target_properties(DivZero PROPERTIES LINK_FLAGS
-  "-T ${CMAKE_CURRENT_SOURCE_DIR}/layout.ld  -Xlinker")
 set(CMAKE_ASM_NASM_LINK_EXECUTABLE "${ARCH}-elf-gcc -melf_i386 -nodefaultlibs -nostdlib -nostartfiles -T ${CMAKE_CURRENT_SOURCE_DIR}/layout.ld <OBJECTS> -o <TARGET>.bin")
 set(CMAKE_CXX_FLAGS "-nostdlib -nostdinc -fno-builtin -fno-stack-protector -nostartfiles -nodefaultlibs")

@@ -1,7 +1,7 @@
 /*
-process.cpp
+ludos_raw_loader.cpp
 
-Copyright (c) 06 Yann BOUCHER (yann)
+Copyright (c) 10 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -23,21 +23,35 @@ SOFTWARE.
 
 */
 
-#include "process.hpp"
+#include "ludos_raw_loader.hpp"
+
+#include "tasking/process.hpp"
 
 namespace tasking
 {
 
-Process::Process(gsl::span<const uint8_t> code_to_copy)
-    : id(0)
+constexpr char ludos_raw_magic[] = "LUDOSBIN";
+constexpr size_t ludos_raw_len = sizeof(ludos_raw_magic) - 1;
+
+bool LudosRawLoader::accept(gsl::span<const uint8_t> file)
 {
-    arch_init(code_to_copy);
+    if (file.size() < (int)ludos_raw_len) return false;
+
+    return memcmp(file.data(), ludos_raw_magic, 8) == 0;
 }
 
-Process::Process(const std::string& _name, gsl::span<const uint8_t> code_to_copy)
- : name(_name), id(0)
+std::unique_ptr<Process> LudosRawLoader::load()
 {
-    arch_init(code_to_copy);
+    auto actual_data = m_file.subspan(ludos_raw_len); // everything after the magic value
+
+    return std::make_unique<Process>(actual_data);
 }
+
+std::string LudosRawLoader::file_type() const
+{
+    return "LudOS Raw executable";
+}
+
+ADD_PROCESS_LOADER(LudosRawLoader);
 
 }

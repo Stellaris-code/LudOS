@@ -293,7 +293,7 @@
 #if defined(_LINUX) || defined(__linux__)
 #include "aclinux.h"
 
-#elif defined(LudOS)
+#elif defined(__LUDOS__)
 #include "acludos.h"
 
 #elif defined(_APPLE) || defined(__APPLE__)

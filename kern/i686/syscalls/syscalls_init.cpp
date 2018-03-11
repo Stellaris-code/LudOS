@@ -1,7 +1,7 @@
 /*
-process.cpp
+syscalls_init.cpp
 
-Copyright (c) 06 Yann BOUCHER (yann)
+Copyright (c) 11 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -23,21 +23,38 @@ SOFTWARE.
 
 */
 
-#include "process.hpp"
+#include "i686/syscalls/syscall.hpp"
 
-namespace tasking
-{
+#include <type_traits.hpp>
+#include <functional.hpp>
 
-Process::Process(gsl::span<const uint8_t> code_to_copy)
-    : id(0)
+#include <errno.h>
+
+#include "i686/cpu/registers.hpp"
+
+#include "syscalls_init.tpp"
+
+int invalid_syscall(const registers* const r)
 {
-    arch_init(code_to_copy);
+    warn("Invalid syscall number : %d\n", r->eax);
+    return syscall_error;
 }
 
-Process::Process(const std::string& _name, gsl::span<const uint8_t> code_to_copy)
- : name(_name), id(0)
+int test(int a)
 {
-    arch_init(code_to_copy);
+    log_serial("%d\n", a);
+    return syscall_ok;
 }
 
+void init_syscalls()
+{
+    using namespace SyscallType;
+
+    // init table with correct values
+    for (size_t i { 0 }; i < max_syscalls; ++i)
+    {
+        linux_syscall_table[i] = ludos_syscall_table[i] = invalid_syscall;
+    }
+
+    add_syscall<LudOS, 0>(test);
 }

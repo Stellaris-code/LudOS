@@ -1,7 +1,7 @@
 /*
-process.cpp
+process_loader.cpp
 
-Copyright (c) 06 Yann BOUCHER (yann)
+Copyright (c) 09 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -23,21 +23,34 @@ SOFTWARE.
 
 */
 
-#include "process.hpp"
+#include "process_loader.hpp"
+
+#include "tasking/process.hpp"
 
 namespace tasking
 {
 
-Process::Process(gsl::span<const uint8_t> code_to_copy)
-    : id(0)
+namespace detail
 {
-    arch_init(code_to_copy);
+LoaderEntry loaders[max_loaders];
+LoaderEntry* loaders_list_ptr = loaders;
 }
 
-Process::Process(const std::string& _name, gsl::span<const uint8_t> code_to_copy)
- : name(_name), id(0)
+std::unique_ptr<ProcessLoader> ProcessLoader::get(gsl::span<const uint8_t> file)
 {
-    arch_init(code_to_copy);
+    using namespace detail;
+    for (LoaderEntry* ptr = loaders; ptr < loaders_list_ptr; ++ptr)
+    {
+        auto ldr = (*ptr)(file);
+        if (ldr) return std::unique_ptr<ProcessLoader>(ldr);
+    }
+
+    return nullptr;
+}
+
+void ProcessLoader::set_file(gsl::span<const uint8_t> file)
+{
+    m_file = file;
 }
 
 }

@@ -94,10 +94,15 @@ void print_stack_symbols()
             auto symbol = *fun;
             kprintf("#%d   0x%x in %s", cnt, trace[i], demangle(symbol.name));
         }
+        else if (trace[i] < KERNEL_VIRTUAL_BASE)
+        {
+            kprintf("#%d    0x%x in <userspace>", cnt, trace[i]);
+        }
         else
         {
             kprintf("#%d    0x%x in ????", cnt, trace[i]);
         }
+
         if (i < trace.size()-1)
         {
             kprintf("\n");
@@ -109,7 +114,7 @@ void print_disassembly()
 {
     kprintf("Disassembly : \n");
 
-    const size_t dump_len = 3;
+    const size_t dump_len = 6;
 
     uint8_t* base_ip = (uint8_t*)panic_regs->eip;
     uint8_t* ip = base_ip;

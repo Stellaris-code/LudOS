@@ -1,7 +1,7 @@
 /*
-process.cpp
+syscall.hpp
 
-Copyright (c) 06 Yann BOUCHER (yann)
+Copyright (c) 11 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,22 +22,22 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
+#ifndef i686_SYSCALL_HPP
+#define i686_SYSCALL_HPP
 
-#include "process.hpp"
+#include "syscalls/syscall.hpp"
 
-namespace tasking
-{
+#include <functional.hpp>
 
-Process::Process(gsl::span<const uint8_t> code_to_copy)
-    : id(0)
-{
-    arch_init(code_to_copy);
-}
+#include "i686/cpu/registers.hpp"
 
-Process::Process(const std::string& _name, gsl::span<const uint8_t> code_to_copy)
- : name(_name), id(0)
-{
-    arch_init(code_to_copy);
-}
+extern "C" uint32_t syscall_handler(const registers* const regs);
 
-}
+using syscall_ptr = std::function<uint32_t(const registers* const)>;
+
+constexpr size_t max_syscalls { 1024 };
+
+extern syscall_ptr ludos_syscall_table[max_syscalls];
+extern syscall_ptr linux_syscall_table[max_syscalls];
+
+#endif // i686_SYSCALL_HPP

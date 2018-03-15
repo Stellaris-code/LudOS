@@ -79,7 +79,7 @@ SOFTWARE.
 #include "time/time.hpp"
 #include "time/timer.hpp"
 
-#include "syscalls/syscall.hpp"
+#include "syscalls/syscalls.hpp"
 #include "tasking/process.hpp"
 
 #include "initrd/initrd.hpp"
@@ -102,6 +102,7 @@ SOFTWARE.
 // TODO : vfs sanitize names
 // TODO : vfs canonicalize
 // TODO : process : free pages and alloc only at execute time
+// TODO : dissasemble from beggining of function
 
 /**********************************/
 // BUGS
@@ -234,7 +235,7 @@ void global_init()
 #endif
         init_syscalls();
 
-        tasking::Process task("test", {(uint8_t*)data.data(), (int)data.size()});
+        Process task("test", {(uint8_t*)data.data(), (int)data.size()});
         //task.execute();
 
         sh.command("run /initrd/init.sh");

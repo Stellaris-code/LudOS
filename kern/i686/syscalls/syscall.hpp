@@ -25,7 +25,7 @@ SOFTWARE.
 #ifndef i686_SYSCALL_HPP
 #define i686_SYSCALL_HPP
 
-#include "syscalls/syscall.hpp"
+#include "syscalls/syscalls.hpp"
 
 #include <functional.hpp>
 
@@ -37,7 +37,16 @@ using syscall_ptr = std::function<uint32_t(const registers* const)>;
 
 constexpr size_t max_syscalls { 1024 };
 
-extern syscall_ptr ludos_syscall_table[max_syscalls];
-extern syscall_ptr linux_syscall_table[max_syscalls];
+constexpr uint8_t invalid_syscall_magic { 0xFF };
+
+struct SyscallInfo
+{
+    syscall_ptr ptr;
+    uint8_t arg_cnt;
+    uint8_t arg_sizes[6];
+}; // 32 bytes
+
+extern SyscallInfo ludos_syscall_table[max_syscalls];
+extern SyscallInfo linux_syscall_table[max_syscalls];
 
 #endif // i686_SYSCALL_HPP

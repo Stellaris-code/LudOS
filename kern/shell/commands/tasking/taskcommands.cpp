@@ -53,7 +53,7 @@ void install_task_commands(Shell &sh)
          }
 
          auto buffer = node->read();
-         auto loader = tasking::ProcessLoader::get(buffer);
+         auto loader = ProcessLoader::get(buffer);
          if (!loader)
          {
              sh.error("File '%s' is not in an executable format\n", args[0].c_str());

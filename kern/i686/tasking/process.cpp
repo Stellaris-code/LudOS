@@ -24,32 +24,22 @@ SOFTWARE.
 */
 
 #include "tasking/process.hpp"
+#include "i686/tasking/process.hpp"
 
 #include <string.hpp>
 #include <vector.hpp>
 
 #include "i686/gdt/gdt.hpp"
-#include "i686/mem/paging.hpp"
 #include "i686/interrupts/interrupts.hpp"
 
 #include "utils/membuffer.hpp"
-#include "utils/aligned_vector.hpp"
 #include "utils/memutils.hpp"
 
 extern "C" void enter_ring3(uint32_t esp, uint32_t eip);
 
-namespace tasking
-{
-
-struct Process::ProcessPrivateData
-{
-    aligned_vector<uint8_t, Paging::page_size> stack;
-    aligned_vector<uint8_t, Paging::page_size> code;
-};
-
 constexpr size_t user_stack_top = KERNEL_VIRTUAL_BASE - sizeof(uintptr_t);
 
-void map_code(const Process::ProcessPrivateData& data)
+void map_code(const Process::ArchSpecificData& data)
 {
     size_t code_page_amnt = data.code.size() / Paging::page_size +
             (data.code.size()%Paging::page_size?1:0);
@@ -60,11 +50,11 @@ void map_code(const Process::ProcessPrivateData& data)
         uint8_t* virt_addr = (uint8_t*)(i * Paging::page_size);
 
         assert(phys_addr);
-        Paging::map_page(phys_addr, virt_addr, Memory::Read|Memory::User);
+        Paging::map_page(phys_addr, virt_addr, Memory::Read|Memory::Write|Memory::User);
     }
 }
 
-void map_stack(const Process::ProcessPrivateData& data)
+void map_stack(const Process::ArchSpecificData& data)
 {
     size_t code_page_amnt = data.stack.size() / Paging::page_size +
             (data.stack.size()%Paging::page_size?1:0);
@@ -79,7 +69,7 @@ void map_stack(const Process::ProcessPrivateData& data)
     }
 }
 
-void unmap_code(const Process::ProcessPrivateData& data)
+void unmap_code(const Process::ArchSpecificData& data)
 {
     size_t code_page_amnt = data.code.size() / Paging::page_size +
             (data.code.size()%Paging::page_size?1:0);
@@ -92,7 +82,7 @@ void unmap_code(const Process::ProcessPrivateData& data)
     }
 }
 
-void unmap_stack(const Process::ProcessPrivateData& data)
+void unmap_stack(const Process::ArchSpecificData& data)
 {
     size_t code_page_amnt = data.stack.size() / Paging::page_size +
             (data.stack.size()%Paging::page_size?1:0);
@@ -109,30 +99,37 @@ Process::~Process()
 {
     stop();
 
-    delete m_data;
+    delete arch_data;
+}
+
+Process &Process::current()
+{
+    assert(m_current_process);
+
+    return *m_current_process;
 }
 
 void Process::execute()
 {
-    map_code(*m_data);
-    map_stack(*m_data);
+    map_code(*arch_data);
+    map_stack(*arch_data);
+
+    m_current_process = this;
 
     enter_ring3(user_stack_top, 0x0);
 }
 
 void Process::stop()
 {
-    unmap_code(*m_data);
-    unmap_stack(*m_data);
+    unmap_code(*arch_data);
+    unmap_stack(*arch_data);
 }
 
 void Process::arch_init(gsl::span<const uint8_t> code_to_copy)
 {
-    m_data = new ProcessPrivateData;
+    arch_data = new ArchSpecificData;
 
-    m_data->stack.resize(Paging::page_size);
-    m_data->code.resize(code_to_copy.size());
-    std::copy(code_to_copy.begin(), code_to_copy.end(), m_data->code.begin());
-}
-
+    arch_data->stack.resize(Paging::page_size);
+    arch_data->code.resize(code_to_copy.size());
+    std::copy(code_to_copy.begin(), code_to_copy.end(), arch_data->code.begin());
 }

@@ -29,17 +29,16 @@ SOFTWARE.
 #include "utils/gsl/gsl_span.hpp"
 #include "utils/noncopyable.hpp"
 
-namespace tasking
-{
-
 class Process : NonCopyable
 {
 public:
-    struct ProcessPrivateData;
+    struct ArchSpecificData;
 
     Process(gsl::span<const uint8_t> code_to_copy);
     Process(const std::string& name, gsl::span<const uint8_t> code_to_copy);
     ~Process(); // = default;
+
+    static Process& current();
 
 public:
     void execute();
@@ -50,16 +49,15 @@ public:
     const std::string name { "<INVALID>" };
     const uint32_t id { 0 };
     std::string pwd = "/";
+    ArchSpecificData* arch_data { nullptr };
 
 private:
     void arch_init(gsl::span<const uint8_t> code_to_copy);
 
 private:
-    ProcessPrivateData* m_data { nullptr };
+    static inline Process* m_current_process { nullptr };
 };
 
 extern "C" void test_task();
-
-}
 
 #endif // PROCESS_HPP

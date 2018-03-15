@@ -5,8 +5,6 @@ extern main
 section .text
 global _start
 
-    db "LUDOSBIN" ; format magic string
-
 _start:
     ; push argv
     ; push argc

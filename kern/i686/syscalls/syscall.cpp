@@ -25,5 +25,5 @@ SOFTWARE.
 
 #include "syscall.hpp"
 
-syscall_ptr ludos_syscall_table[max_syscalls];
-syscall_ptr linux_syscall_table[max_syscalls];
+SyscallInfo ludos_syscall_table[max_syscalls];
+SyscallInfo linux_syscall_table[max_syscalls];

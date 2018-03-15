@@ -27,9 +27,6 @@ SOFTWARE.
 
 #include "tasking/process.hpp"
 
-namespace tasking
-{
-
 namespace detail
 {
 LoaderEntry loaders[max_loaders];
@@ -51,6 +48,4 @@ std::unique_ptr<ProcessLoader> ProcessLoader::get(gsl::span<const uint8_t> file)
 void ProcessLoader::set_file(gsl::span<const uint8_t> file)
 {
     m_file = file;
-}
-
 }

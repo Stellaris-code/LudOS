@@ -3,8 +3,6 @@ cmake_minimum_required(VERSION 2.8)
 set(ARCH i686)
 set(PLATFORM pc)
 
-add_definitions(-DARCH_${ARCH} -D__LUDOS__)
-
 set(CMAKE_SYSTEM_NAME Generic)
 set(CMAKE_SYSTEM_PROCESSOR ${ARCH})
 set(CMAKE_CROSSCOMPILING 1)
@@ -22,6 +20,8 @@ include(profile_detection)
 
 LOAD_PROFILE("${ARCH}" "${PLATFORM}")
 
+add_definitions("-DARCH_${ARCH}")
+
 set(CMAKE_ASM_NASM_OBJECT_FORMAT elf32)
 set(CMAKE_ASM_NASM_COMPILER "/usr/bin/nasm")
 enable_language(ASM_NASM)
@@ -30,8 +30,8 @@ file(GLOB_RECURSE KERN_BASE_SOURCES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "kern/*
 file(GLOB_RECURSE ACPICA_SOURCES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "external/acpica/*.c")
 file(GLOB_RECURSE ACPICA_HEADERS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "external/acpica/*.h")
 file(GLOB_RECURSE CPP_SOURCES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "kern/cpp_runtime/*.cpp")
-file(GLOB_RECURSE LIBK_SOURCES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "libk/*.c" "libk/*.cpp" "libk/*.asm")
-file(GLOB_RECURSE LIBK_HEADERS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "libk/*.h" "libk/*.hpp")
+file(GLOB_RECURSE LIBK_SOURCES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "libc/*.c" "libc/*.cpp" "libc/*.asm")
+file(GLOB_RECURSE LIBK_HEADERS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "libc/*.h" "libc/*.hpp")
 file(GLOB_RECURSE LIBCPP_SOURCES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "external/libc++/*.cpp" "external/libc++/*.c")
 file(GLOB_RECURSE LIBCPP_HEADERS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "external/libc++/*.hpp" "external/libc++/*.h")
 file(GLOB_RECURSE LIBCXXABI_SOURCES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "external/libcxxabi/*.cpp" "external/libcxxabi/*.c")
@@ -50,7 +50,7 @@ file(GLOB_RECURSE LD_SCRIPTS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "*.ld")
 
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/kern")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/kern/external")
-include_directories("${CMAKE_CURRENT_SOURCE_DIR}/libk")
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}/libc")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/external")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/external/libc++")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/external/acpica")
@@ -99,6 +99,8 @@ set(GENERIC_SRCS ${CPP_SOURCES} ${KERN_BASE_SOURCES} ${STB_SOURCES})
 
 add_executable(${PROJECT_NAME} ${PLATFORM_SRCS} ${ISA_SRCS} ${GENERIC_SRCS} ${HEADERS} ${STB_HEADERS} ${LD_SCRIPTS})
 
+target_compile_definitions(${PROJECT_NAME} PUBLIC "-D__LUDOS__")
+
 set(CMAKE_C_FLAGS "${ISA_C_FLAGS} ${PLATFORM_C_FLAGS} -O2 -g -fstack-protector -m32 ${SIMD_OPTIONS} ${ARCH_OPTIONS} -ffast-math ${SANITIZER_OPTIONS} -std=c11 -Wall -Wextra -Wcast-qual -Wmisleading-indentation -Wno-unused-parameter -Wno-implicit-int -Wnull-dereference -lgcc -static-libgcc -ffreestanding -fno-builtin -nostdlib -fno-omit-frame-pointer -Werror=implicit-function-declaration -lgcc")
 set(CMAKE_CXX_FLAGS "${ISA_CXX_FLAGS} ${PLATFORM_CXX_FLAGS} -O2 -g -m32 ${SIMD_OPTIONS} ${ARCH_OPTIONS} -fexceptions -ffast-math ${SANITIZER_OPTIONS} -fstack-protector -std=c++17 -Wall -Wextra -Wlogical-op -Wrestrict -Wnull-dereference -Wno-cast-qual -Wdouble-promotion -Wno-unused-parameter -Wno-format -Wno-switch -Wno-packed-bitfield-compat -Wno-reorder -Wno-trigraphs -Wmisleading-indentation -Wnull-dereference -lgcc -static-libgcc -ffreestanding -fno-builtin -nostdlib -fno-omit-frame-pointer -Werror=implicit-function-declaration -lgcc")
 set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS
@@ -109,22 +111,26 @@ set(CMAKE_ASM_NASM_LINK_EXECUTABLE "${ARCH}-elf-gcc -T ${PLATFORM_LAYOUT} ${ISA_
 add_library(libk ${LIBK_SOURCES} ${LIBK_HEADERS})
 target_compile_definitions(libk
     PUBLIC __is_libk)
-set_target_properties(libk PROPERTIES COMPILE_FLAGS "-w")
+#set_target_properties(libk PROPERTIES COMPILE_FLAGS "-w")
+target_compile_options(libk PUBLIC $<$<NOT:$<COMPILE_LANGUAGE:ASM_NASM>>:-w>)
 
 add_library(libunwind ${LIBUNWIND_SOURCES} ${LIBUNWIND_HEADERS} ${LIBUNWIND_ASM})
 set_target_properties(libunwind PROPERTIES LINKER_LANGUAGE CXX)
 set_target_properties(libunwind PROPERTIES COMPILE_FLAGS "-w")
+target_compile_definitions(libunwind PUBLIC "-D__LUDOS__")
 set_source_files_properties(${LIBUNWIND_ASM}
                             PROPERTIES LANGUAGE C)
 
 add_library(libcxxabi ${LIBCXXABI_SOURCES} ${LIBCXXABI_HEADERS})
 set_target_properties(libcxxabi PROPERTIES LINKER_LANGUAGE CXX)
 set_target_properties(libcxxabi PROPERTIES COMPILE_FLAGS "-w")
+target_compile_definitions(libcxxabi PUBLIC "-D__LUDOS__")
 target_link_libraries(libcxxabi libunwind)
 
 add_library(libcpp ${LIBCPP_SOURCES} ${LIBCPP_HEADERS})
 set_target_properties(libcpp PROPERTIES COMPILE_FLAGS "-w")
 target_link_libraries(libcpp libcxxabi)
+target_compile_definitions(libcpp PUBLIC "-D__LUDOS__")
 
 add_library(libx86emu ${LIBX86EMU_SOURCES} ${LIBX86EMU_HEADERS})
 set_target_properties(libx86emu PROPERTIES LINKER_LANGUAGE C)
@@ -135,11 +141,13 @@ add_library(libdisasm ${LIBDISASM_SOURCES} ${LIBDISASM_HEADERS})
 set_target_properties(libdisasm PROPERTIES LINKER_LANGUAGE C)
 set_target_properties(libdisasm PROPERTIES COMPILE_FLAGS "-w")
 target_link_libraries(libdisasm libk)
+target_compile_definitions(libdisasm PUBLIC "-D__LUDOS__")
 
 add_library(acpica ${ACPICA_SOURCES} ${ACPICA_HEADERS})
 set_target_properties(acpica PROPERTIES LINKER_LANGUAGE C)
 set_target_properties(acpica PROPERTIES COMPILE_FLAGS "-w")
 target_link_libraries(acpica libk)
+target_compile_definitions(acpica PUBLIC "-D__LUDOS__")
 
 include(ExternalProject)
 

@@ -24,6 +24,8 @@
 
 #include "config.h"
 
+#include "external/liballoc/liballoc.h"
+
 namespace libunwind {
 
 /// CFI_Parser does basic parsing of a CFI (Call Frame Information) records.

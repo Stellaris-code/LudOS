@@ -80,18 +80,18 @@ template <SyscallType::SyscallType type, size_t Number, typename ReturnType, typ
 void add_syscall(ReturnType(*target)(Args...))
 {
     static_assert(Number < max_syscalls);
-    static_assert(sizeof...(Args) <= 6, "x86 syscalls cannot be more than 6 parameters long");
+    static_assert(sizeof...(Args) <= 6, "x86 syscalls cannot take more than 6 parameters");
 
     auto& table = (type == SyscallType::LudOS) ? ludos_syscall_table : linux_syscall_table;
 
-    table[Number] = [target](const registers* const regs)
+    table[Number].ptr = [target](const registers* const regs)
     {
         std::tuple<Args...> elements;
         assign_values(regs, elements);
         if constexpr (std::is_same_v<ReturnType, void>)
         {
             std::apply(target, elements);
-            return syscall_ok;
+            return EOK;
         }
         else
         {
@@ -100,4 +100,9 @@ void add_syscall(ReturnType(*target)(Args...))
             return (syscall_ptr::result_type)std::apply(target, elements);
         }
     };
+
+    table[Number].arg_cnt = sizeof...(Args);
+
+    size_t i { 0 };
+    ((table[Number].arg_sizes[i++] = sizeof(Args)), ...);
 }

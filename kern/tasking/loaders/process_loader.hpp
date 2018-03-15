@@ -31,9 +31,6 @@ SOFTWARE.
 #include "utils/gsl/gsl_span.hpp"
 #include "utils/logging.hpp"
 
-namespace tasking
-{
-
 class Process;
 
 class ProcessLoader
@@ -68,7 +65,7 @@ extern LoaderEntry* loaders_list_ptr;
 __attribute__((constructor)) void _init_process_loader_##name() \
 { \
     static_assert(std::is_base_of_v<ProcessLoader, name>); \
-    *tasking::detail::loaders_list_ptr++ = [] (gsl::span<const uint8_t> file)->ProcessLoader* { \
+    *detail::loaders_list_ptr++ = [] (gsl::span<const uint8_t> file)->ProcessLoader* { \
         if (name::accept(file)) \
         { \
             auto ldr = new name; \
@@ -77,8 +74,6 @@ __attribute__((constructor)) void _init_process_loader_##name() \
         } \
         return nullptr; \
     }; \
-}
-
 }
 
 }

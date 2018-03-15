@@ -3,7 +3,7 @@ ENTRY(_start)
 
 SECTIONS
 {
-    . = 0;                 /* relocate to address 0 */
+    . = 0;
 
     .text ALIGN(4):
     {

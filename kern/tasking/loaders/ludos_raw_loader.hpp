@@ -28,9 +28,6 @@ SOFTWARE.
 
 #include "process_loader.hpp"
 
-namespace tasking
-{
-
 class LudosRawLoader : public ProcessLoader
 {
 public:
@@ -41,6 +38,5 @@ public:
     virtual std::string file_type() const;
 };
 
-}
 
 #endif // LUDOS_RAW

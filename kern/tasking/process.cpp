@@ -25,9 +25,6 @@ SOFTWARE.
 
 #include "process.hpp"
 
-namespace tasking
-{
-
 Process::Process(gsl::span<const uint8_t> code_to_copy)
     : id(0)
 {
@@ -38,6 +35,4 @@ Process::Process(const std::string& _name, gsl::span<const uint8_t> code_to_copy
  : name(_name), id(0)
 {
     arch_init(code_to_copy);
-}
-
 }

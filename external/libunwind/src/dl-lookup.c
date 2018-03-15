@@ -28,6 +28,8 @@
 #include "bits/libc-lock.h"
 #include "tls.h"
 
+#include "external/liballoc/liballoc.h"
+
 #include <assert.h>
 
 #define VERSTAG(tag)	(DT_NUM + DT_THISPROCNUM + DT_VERSIONTAGIDX (tag))

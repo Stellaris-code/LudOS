@@ -26,29 +26,34 @@ SOFTWARE.
 #include "i686/syscalls/syscall.hpp"
 
 #include "panic.hpp"
+#include "errno.h"
+
+#include "i686/tasking/process.hpp"
 
 extern "C" uint32_t syscall_handler(const registers* const regs)
 {
+    Process::current().arch_data->reg_frame = *regs;
+
     if (regs->eax >= max_syscalls)
     {
-        return syscall_error;
+        return ENOSYS;
     }
 
     switch (regs->int_no)
     {
         case ludos_syscall_int:
-            return ludos_syscall_table[regs->eax](regs);
+            return ludos_syscall_table[regs->eax].ptr(regs);
             break;
 
         case linux_syscall_int:
-            return linux_syscall_table[regs->eax](regs);
+            return linux_syscall_table[regs->eax].ptr(regs);
             break;
 
         default:
             err("Invalid syscall number : 0x%x\n", regs->int_no);
-            return syscall_error;
+            return ENOSYS;
             break;
     }
 
-    return syscall_error;
+    return ENOSYS;
 }

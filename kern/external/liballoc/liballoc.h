@@ -1,7 +1,7 @@
-#ifndef _LIBALLOC_H
-#define _LIBALLOC_H
+#ifndef L_LIBALLOC_H
+#define L_LIBALLOC_H
 
-#include <stdint.h>
+#include "../libc/stdint.h"
 
 /** \defgroup ALLOCHOOKS liballoc hooks 
  *
@@ -12,6 +12,7 @@
 
 /** @{ */
 
+#include <stddef.h>
 
 
 // If we are told to not define our own size_t, then we skip the define.

@@ -13,7 +13,7 @@
 
 
 #include "__config.hpp"
-#include "../libk/wchar.h"  // for mbstate_t
+#include "../libc/wchar.h"  // for mbstate_t
 
 #if !defined(_LIBCPP_HAS_NO_PRAGMA_SYSTEM_HEADER)
 #pragma GCC system_header

@@ -50,7 +50,7 @@
 
 #if defined NEED_DL_SYSINFO && !defined __ASSEMBLER__
 extern void _dl_sysinfo_int80 (void);
-# define DL_SYSINFO_DEFAULT (uintptr_t)_dl_sysinfo_int80
+# define DL_SYSINFO_DEFAULT (uintptr_t)0
 # define DL_SYSINFO_IMPLEMENTATION \
   __asm__ (".text\n\t"							      \
        ".type _dl_sysinfo_int80,@function\n\t"				      \

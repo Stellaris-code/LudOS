@@ -32,7 +32,7 @@ SOFTWARE.
 
 #include "interrupts.hpp"
 
-#include "syscalls/syscall.hpp"
+#include "syscalls/syscalls.hpp"
 
 namespace idt
 {

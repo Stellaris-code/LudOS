@@ -20,6 +20,16 @@ set(CMAKE_ASM_NASM_OBJECT_FORMAT elf32)
 set(CMAKE_ASM_NASM_COMPILER "/usr/bin/nasm")
 enable_language(ASM_NASM)
 
+file(GLOB_RECURSE LIBC_SOURCES "${CMAKE_SOURCE_DIR}/libc/*.c" "${CMAKE_SOURCE_DIR}/libc/*.cpp" "${CMAKE_SOURCE_DIR}/libc/*.asm")
+file(GLOB_RECURSE LIBC_HEADERS "${CMAKE_SOURCE_DIR}/libc/*.h" "${CMAKE_SOURCE_DIR}/libc/*.hpp")
+
+include_directories("${CMAKE_SOURCE_DIR}/libc")
+
+add_library(libc ${LIBC_SOURCES} ${LIBC_HEADERS})
+target_compile_definitions(libc
+    PUBLIC __is_libc)
+target_compile_options(libc PUBLIC $<$<NOT:$<COMPILE_LANGUAGE:ASM_NASM>>:-w>)
+
 set(COMMON_SRCS "layout.ld" "start.asm")
 
 ADD_TEST_PROGRAM(DivZero div_zero)

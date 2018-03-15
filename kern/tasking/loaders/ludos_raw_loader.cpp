@@ -27,9 +27,6 @@ SOFTWARE.
 
 #include "tasking/process.hpp"
 
-namespace tasking
-{
-
 constexpr char ludos_raw_magic[] = "LUDOSBIN";
 constexpr size_t ludos_raw_len = sizeof(ludos_raw_magic) - 1;
 
@@ -53,5 +50,3 @@ std::string LudosRawLoader::file_type() const
 }
 
 ADD_PROCESS_LOADER(LudosRawLoader);
-
-}

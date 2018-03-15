@@ -60,7 +60,7 @@ void dump(const registers *regs)
         kprintf("gs : 0x%x  fs : 0x%x  ", regs->gs, regs->fs);
         kprintf("es : 0x%x  ds : 0x%x\n", regs->es, regs->ds);
         kprintf("cs : 0x%x  eflags : 0x%x  ", regs->cs, regs->eflags);
-        kprintf("ss : 0x%x  esp : 0x%x  CPL : %d\n", regs->ss, regs->esp, regs->cs & 0x3);
+        kprintf("ss : 0x%x  esp : 0x%x  CPL : %d (%s)\n", regs->ss, regs->esp, regs->cs & 0x3, regs->cs & 0x3 ? "User" : "Kernel");
     }
 }
 #pragma GCC diagnostic pop

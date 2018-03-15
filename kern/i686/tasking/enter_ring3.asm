@@ -31,6 +31,12 @@ enter_ring3:
     push dword USER_CODE_SELECTOR | 0x3 ; user_cs
     push ecx ; user_eip
 
+    mov eax, USER_DATA_SELECTOR | 0x3
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+
     iret ;  to user land !
 
     leave

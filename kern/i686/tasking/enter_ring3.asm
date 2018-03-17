@@ -15,8 +15,10 @@ enter_ring3:
 
     cli ; disable instructions
 
-    mov ecx, [esp+12] ; user_eip
-    mov edx, [esp+8] ; user_esp
+    mov ecx, [esp+0xc] ; user_eip
+    mov edx, [esp+0x8] ; user_esp
+    mov esi, [esp+0x10] ; argc
+    mov edi, [esp+0x14] ; argv
 
     ;;;;;;;;;;;;
 
@@ -36,6 +38,9 @@ enter_ring3:
     mov es, ax
     mov fs, ax
     mov gs, ax
+
+    mov eax, esi ; argc
+    mov ebx, edi ; argv
 
     iret ;  to user land !
 

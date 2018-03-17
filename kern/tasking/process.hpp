@@ -34,14 +34,14 @@ class Process : NonCopyable
 public:
     struct ArchSpecificData;
 
-    Process(gsl::span<const uint8_t> code_to_copy);
-    Process(const std::string& name, gsl::span<const uint8_t> code_to_copy);
+    Process(gsl::span<const uint8_t> code_to_copy, size_t allocated_size = 0);
+    Process(const std::string& name, gsl::span<const uint8_t> code_to_copy, size_t allocated_size = 0);
     ~Process(); // = default;
 
     static Process& current();
 
 public:
-    void execute();
+    void execute(gsl::span<const std::string> args);
 
     void stop();
 
@@ -49,10 +49,11 @@ public:
     const std::string name { "<INVALID>" };
     const uint32_t id { 0 };
     std::string pwd = "/";
+    uintptr_t start_address { 0 };
     ArchSpecificData* arch_data { nullptr };
 
 private:
-    void arch_init(gsl::span<const uint8_t> code_to_copy);
+    void arch_init(gsl::span<const uint8_t> code_to_copy, size_t allocated_size);
 
 private:
     static inline Process* m_current_process { nullptr };

@@ -83,7 +83,7 @@ class Paging
 public:
     static void init();
 
-    static uintptr_t alloc_virtual_page(size_t number = 1);
+    static uintptr_t alloc_virtual_page(size_t number = 1, bool user = false);
     static bool release_virtual_page(uintptr_t v_addr, size_t number = 1);
 
     static void map_page(void* p_addr, void* v_addr, uint32_t flags = Memory::Read|Memory::Write);

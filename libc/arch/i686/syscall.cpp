@@ -29,19 +29,27 @@ SOFTWARE.
 #include "errno.h"
 
 #include "i686/syscalls/syscall.hpp"
-
-enum class SyscallType
-{
-    LudOS,
-    Linux
-};
+#include "syscalls/LudOS/syscalls.hpp"
 
 extern "C" int do_ludos_syscall(uint32_t no, uint32_t args, uint32_t* arg_table);
 extern "C" int do_linux_syscall(uint32_t no, uint32_t args, uint32_t* arg_table);
 
-int common_syscall(SyscallType type, size_t no, ...)
+static SyscallEntry libc_ludos_syscall_table[max_syscalls];
+static SyscallEntry libc_linux_syscall_table[max_syscalls];
+
+static bool is_ready = false;
+
+int common_syscall(size_t type, size_t no, ...)
 {
-    auto& table = (type == SyscallType::LudOS) ? ludos_syscall_table : linux_syscall_table;
+    if (!is_ready)
+    {
+        uint32_t arg_table[] = {(uint32_t)libc_ludos_syscall_table, (uint32_t)libc_linux_syscall_table};
+        do_ludos_syscall(0, 2, arg_table); // fetch the syscall tables
+
+        is_ready = true;
+    }
+
+    auto& table = (type == 0) ? libc_ludos_syscall_table : libc_linux_syscall_table;
 
     if (no > max_syscalls || table[no].arg_cnt == invalid_syscall_magic)
     {
@@ -72,7 +80,7 @@ int common_syscall(SyscallType type, size_t no, ...)
 
     int return_err = EOK;
 
-    if (type == SyscallType::LudOS)
+    if (type == 0)
     {
         return_err = do_ludos_syscall(no, table[no].arg_cnt, arg_table);
     }

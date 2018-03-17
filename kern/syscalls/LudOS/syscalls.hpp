@@ -25,8 +25,12 @@ SOFTWARE.
 #ifndef LUDOS_SYSCALLS_HPP
 #define LUDOS_SYSCALLS_HPP
 
-void sys_print_serial(const char* string);
-void sys_print_debug(const char* string);
-void sys_panic(const char* string);
+#include <stdint.h>
+
+struct SyscallEntry
+{
+    uint8_t arg_cnt;
+    uint8_t arg_sizes[6];
+};
 
 #endif // LUDOS_SYSCALLS_HPP

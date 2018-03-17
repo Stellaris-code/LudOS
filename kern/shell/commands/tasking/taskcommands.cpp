@@ -64,7 +64,7 @@ void install_task_commands(Shell &sh)
 
          auto process = loader->load();
          assert(process);
-         process->execute();
+         process->execute(args);
 
          return 0;
      }});

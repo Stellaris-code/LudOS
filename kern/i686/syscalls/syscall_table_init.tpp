@@ -27,8 +27,8 @@ namespace SyscallType
 {
 enum SyscallType
 {
-    LudOS,
-    Linux
+    LudOS = 0,
+    Linux = 1
 };
 }
 

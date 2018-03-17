@@ -1,7 +1,7 @@
 /*
-ludos_raw_loader.cpp
+get_tables.cpp
 
-Copyright (c) 10 Yann BOUCHER (yann)
+Copyright (c) 15 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -23,33 +23,19 @@ SOFTWARE.
 
 */
 
-#include "ludos_raw_loader.hpp"
+#include "i686/syscalls/syscall.hpp"
+#include "syscalls/LudOS/syscalls.hpp"
 
-#include "tasking/process.hpp"
+#include "utils/logging.hpp"
 
-constexpr char ludos_raw_magic[] = "LUDOSBIN";
-constexpr size_t ludos_raw_len = sizeof(ludos_raw_magic) - 1 + sizeof(uint32_t); // size to alloc
-
-bool LudosRawLoader::accept(gsl::span<const uint8_t> file)
+void sys_get_syscall_tables(SyscallEntry *ludos, SyscallEntry *linux)
 {
-    if (file.size() < (int)ludos_raw_len) return false;
+    for (size_t i { 0 }; i < max_syscalls; ++i)
+    {
+        ludos[i].arg_cnt = ludos_syscall_table[i].arg_cnt;
+        memcpy(ludos[i].arg_sizes, ludos_syscall_table[i].arg_sizes, 6);
 
-    return memcmp(file.data(), ludos_raw_magic, 8) == 0;
+        linux[i].arg_cnt = linux_syscall_table[i].arg_cnt;
+        memcpy(linux[i].arg_sizes, linux_syscall_table[i].arg_sizes, 6);
+    }
 }
-
-std::unique_ptr<Process> LudosRawLoader::load()
-{
-    uint32_t allocated_size = *(uint32_t*)(m_file.data() + 8);
-
-    auto ptr = std::make_unique<Process>(m_file, allocated_size);
-    ptr->start_address = ludos_raw_len;
-
-    return ptr;
-}
-
-std::string LudosRawLoader::file_type() const
-{
-    return "LudOS Raw executable";
-}
-
-ADD_PROCESS_LOADER(LudosRawLoader);

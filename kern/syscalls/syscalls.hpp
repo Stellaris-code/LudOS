@@ -32,4 +32,17 @@ constexpr uint8_t ludos_syscall_int = 0x70;
 
 void init_syscalls();
 
+#define LUDOS_SYSCALL_DEF(num, name, ret, ...) \
+    ret name(__VA_ARGS__); \
+    constexpr size_t NUMBER_##name = num;
+
+#define LINUX_SYSCALL_DEF(num, name, ret, ...) \
+    ret name(__VA_ARGS__); \
+    constexpr size_t NUMBER_##name = num;
+
+#include "syscall_list.def"
+
+#undef LUDOS_SYSCALL_DEF
+#undef LINUX_SYSCALL_DEF
+
 #endif // SYSCALL_HPP

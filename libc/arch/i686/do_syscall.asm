@@ -9,12 +9,14 @@ do_%1_syscall:
     mov [edi_save], edi
     mov [ebp_save], ebp
 
-    mov ebx, [esp+0xc]
-    mov ecx, [esp+0x10]
-    mov edx, [esp+0x14]
-    mov esi, [esp+0x18]
-    mov edi, [esp+0x1c]
-    mov ebp, [esp+0x20]
+    mov eax, [esp+0xc]
+
+    mov ebx, [eax]
+    mov ecx, [eax+0x4]
+    mov edx, [eax+0x8]
+    mov esi, [eax+0xc]
+    mov edi, [eax+0x10]
+    mov ebp, [eax+0x14]
 
     mov eax, [esp+0x4] ; syscall number
 
@@ -33,7 +35,7 @@ do_%1_syscall:
 ADD_SYSCALL_GATE ludos, 0x70
 ADD_SYSCALL_GATE linux, 0x80
 
-section .bss
+section .data
 align 4
 ebx_save: resd 1
 esi_save: resd 1

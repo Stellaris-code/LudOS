@@ -62,10 +62,10 @@ void Paging::init()
 
 void Paging::map_page(void *p_addr, void *v_addr, uint32_t flags)
 {
-//    if ((uint32_t)v_addr < KERNEL_VIRTUAL_BASE)
-//    {
-//        log_serial("Someone wants to reclaim addr %p\n", v_addr);
-//    }
+    //    if ((uint32_t)v_addr < KERNEL_VIRTUAL_BASE)
+    //    {
+    //        log_serial("Someone wants to reclaim addr %p\n", v_addr);
+    //    }
 
     auto entry = page_entry(reinterpret_cast<uintptr_t>(v_addr));
 
@@ -141,13 +141,18 @@ void Paging::create_paging_info(PagingInformation &info)
 }
 
 // TODO : last_pos
-uintptr_t Paging::alloc_virtual_page(size_t number)
+uintptr_t Paging::alloc_virtual_page(size_t number, bool user)
 {
     assert(number != 0);
 
     constexpr size_t margin = 2;
-    const size_t base = KERNEL_VIRTUAL_BASE >> 12; // TODO
-    static size_t last_pos = base;
+
+    static size_t user_last_pos = 0x0;
+    static size_t kernel_last_pos = KERNEL_VIRTUAL_BASE >> 12;
+
+    const size_t base = user ? 0x0 : (KERNEL_VIRTUAL_BASE >> 12);
+
+    size_t& last_pos = user ? user_last_pos : kernel_last_pos;
 
     PTEntry* entries = page_entry(0);
     uintptr_t addr { 0 };
@@ -155,8 +160,8 @@ uintptr_t Paging::alloc_virtual_page(size_t number)
 
     number += margin;
 
-    loop:
-    for (size_t i { last_pos }; i < ram_maxpage; ++i)
+loop:
+    for (size_t i { last_pos }; i < (user ? (KERNEL_VIRTUAL_BASE >> 12) : ram_maxpage); ++i)
     {
         if (!entries[i].present)
         {
@@ -172,7 +177,7 @@ uintptr_t Paging::alloc_virtual_page(size_t number)
             last_pos = i;
 
             // ensure it stays in kernel space
-            assert(addr * page_size + (margin/2*page_size) >= KERNEL_VIRTUAL_BASE);
+            if (!user) assert(addr * page_size + (margin/2*page_size) >= KERNEL_VIRTUAL_BASE);
             return addr * page_size + (margin/2*page_size);
         }
     }

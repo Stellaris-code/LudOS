@@ -1,7 +1,7 @@
 /*
-ludos_raw_loader.cpp
+syscall_list.def
 
-Copyright (c) 10 Yann BOUCHER (yann)
+Copyright (c) 16 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -23,33 +23,11 @@ SOFTWARE.
 
 */
 
-#include "ludos_raw_loader.hpp"
+struct SyscallEntry;
 
-#include "tasking/process.hpp"
+LINUX_SYSCALL_DEF(183, sys_getcwd, int, char* buf, unsigned long size)
 
-constexpr char ludos_raw_magic[] = "LUDOSBIN";
-constexpr size_t ludos_raw_len = sizeof(ludos_raw_magic) - 1 + sizeof(uint32_t); // size to alloc
-
-bool LudosRawLoader::accept(gsl::span<const uint8_t> file)
-{
-    if (file.size() < (int)ludos_raw_len) return false;
-
-    return memcmp(file.data(), ludos_raw_magic, 8) == 0;
-}
-
-std::unique_ptr<Process> LudosRawLoader::load()
-{
-    uint32_t allocated_size = *(uint32_t*)(m_file.data() + 8);
-
-    auto ptr = std::make_unique<Process>(m_file, allocated_size);
-    ptr->start_address = ludos_raw_len;
-
-    return ptr;
-}
-
-std::string LudosRawLoader::file_type() const
-{
-    return "LudOS Raw executable";
-}
-
-ADD_PROCESS_LOADER(LudosRawLoader);
+LUDOS_SYSCALL_DEF(0, sys_get_syscall_tables, void, SyscallEntry* ludos, SyscallEntry* linux)
+LUDOS_SYSCALL_DEF(1, sys_print_serial, void, const char* string)
+LUDOS_SYSCALL_DEF(2, sys_print_debug, void, const char* string)
+LUDOS_SYSCALL_DEF(3, sys_panic, void, const char* string)

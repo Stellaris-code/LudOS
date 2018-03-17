@@ -6,8 +6,11 @@ section .text
 global _start
 
 _start:
-    ; push argv
     ; push argc
+    ; push argv
+    push ebx
+    push eax
+
     call main
     ; main has returned, eax is return value
 
@@ -18,3 +21,8 @@ _start:
 _wait:
     hlt
     jmp  _wait    ; loop forever
+
+section .header
+extern last_allocated_page_sym
+magic: db "LUDOSBIN"
+last_allocated_page: dd last_allocated_page_sym

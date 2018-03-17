@@ -5,6 +5,11 @@ SECTIONS
 {
     . = 0;
 
+    .header ALIGN(4):
+    {
+        *(.header)
+    }
+
     .text ALIGN(4):
     {
         *(.text)           /* include all other .text sections */
@@ -19,4 +24,12 @@ SECTIONS
     {
         *(.rodata*)
     }
+
+    .bss ALIGN(4):
+    {
+        *(.bss*)
+    }
+
+    . = ALIGN(4K);
+    last_allocated_page_sym = .;
 }

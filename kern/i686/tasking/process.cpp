@@ -31,11 +31,12 @@ SOFTWARE.
 
 #include "i686/gdt/gdt.hpp"
 #include "i686/interrupts/interrupts.hpp"
+#include "i686/mem/physallocator.hpp"
 
 #include "utils/membuffer.hpp"
 #include "utils/memutils.hpp"
 
-extern "C" void enter_ring3(uint32_t esp, uint32_t eip);
+extern "C" void enter_ring3(uint32_t esp, uint32_t eip, uint32_t argc, uint32_t argv);
 
 constexpr size_t user_stack_top = KERNEL_VIRTUAL_BASE - sizeof(uintptr_t);
 
@@ -95,6 +96,30 @@ void unmap_stack(const Process::ArchSpecificData& data)
     }
 }
 
+void populate_argv(uintptr_t addr, gsl::span<const std::string> args)
+{
+    // Structure:
+    // 0..n*4 : ptr array
+    // n*4..end : actual strings
+
+    gsl::span<uint8_t> data {(uint8_t*)addr, Paging::page_size};
+
+    log_serial("Data : %p/%p\n", data.data(), data.data() + data.size());
+
+    size_t cursor = args.size() * sizeof(uintptr_t); // start after arg array;
+
+    for (size_t i { 0 }; i < args.size(); ++i)
+    {
+        assert(cursor + args[i].size() < Paging::page_size);
+
+        std::copy(args[i].c_str(), args[i].c_str() + args[i].size() + 1, data.data() + cursor); // include null terminator
+
+        ((uint32_t*)data.data())[i] = addr + cursor;
+
+        cursor += args[i].size() + 1; // again, null terminator
+    }
+}
+
 Process::~Process()
 {
     stop();
@@ -109,27 +134,35 @@ Process &Process::current()
     return *m_current_process;
 }
 
-void Process::execute()
+void Process::execute(gsl::span<const std::string> args)
 {
     map_code(*arch_data);
     map_stack(*arch_data);
 
+    arch_data->argv_page = Paging::alloc_virtual_page(1, true);
+    Paging::map_page((void*)PhysPageAllocator::alloc_physical_page(), (void*)arch_data->argv_page, Memory::Read|Memory::Write|Memory::User);
+
+    populate_argv(arch_data->argv_page, args);
+
     m_current_process = this;
 
-    enter_ring3(user_stack_top, 0x0);
+    enter_ring3(user_stack_top, start_address, args.size(), arch_data->argv_page);
 }
 
 void Process::stop()
 {
     unmap_code(*arch_data);
     unmap_stack(*arch_data);
+
+    PhysPageAllocator::release_physical_page(Paging::physical_address((void*)arch_data->argv_page));
+    Paging::unmap_page((void*)arch_data->argv_page);
 }
 
-void Process::arch_init(gsl::span<const uint8_t> code_to_copy)
+void Process::arch_init(gsl::span<const uint8_t> code_to_copy, size_t allocated_size)
 {
     arch_data = new ArchSpecificData;
 
     arch_data->stack.resize(Paging::page_size);
-    arch_data->code.resize(code_to_copy.size());
+    arch_data->code.resize(std::max<int>(code_to_copy.size(), allocated_size));
     std::copy(code_to_copy.begin(), code_to_copy.end(), arch_data->code.begin());
 }

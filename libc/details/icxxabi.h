@@ -1,7 +1,7 @@
 /*
-ludos_raw_loader.cpp
+icxxabi.h
 
-Copyright (c) 10 Yann BOUCHER (yann)
+Copyright (c) 23 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,34 +22,35 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
+#ifndef _ICXXABI_H
+        #define _ICXXABI_H
 
-#include "ludos_raw_loader.hpp"
+        #define ATEXIT_MAX_FUNCS	128
 
-#include "tasking/process.hpp"
+        #ifdef __cplusplus
+        extern "C" {
+        #endif
 
-constexpr char ludos_raw_magic[] = "LUDOSBIN";
-constexpr size_t ludos_raw_len = sizeof(ludos_raw_magic) - 1 + sizeof(uint32_t); // size to alloc
+typedef unsigned uarch_t;
 
-bool LudosRawLoader::accept(gsl::span<const uint8_t> file)
+struct atexit_func_entry_t
 {
-    if (file.size() < (int)ludos_raw_len) return false;
+        /*
+        * Each member is at least 4 bytes large. Such that each entry is 12bytes.
+        * 128 * 12 = 1.5KB exact.
+        **/
+        void (*destructor_func)(void *);
+        void *obj_ptr;
+        void *dso_handle;
+};
 
-    return memcmp(file.data(), ludos_raw_magic, 8) == 0;
-}
+void* __dso_handle;
 
-std::unique_ptr<Process> LudosRawLoader::load()
-{
-    uint32_t allocated_size = *(uint32_t*)(m_file.data() + 8);
+int __cxa_atexit(void (*f)(void *), void *objptr, void *dso);
+void __cxa_finalize(void *f);
 
-    auto ptr = std::make_unique<Process>(m_file, allocated_size);
-    ptr->start_address = ludos_raw_len;
+        #ifdef __cplusplus
+        };
+        #endif
 
-    return ptr;
-}
-
-std::string LudosRawLoader::file_type() const
-{
-    return "LudOS Raw executable";
-}
-
-ADD_PROCESS_LOADER(LudosRawLoader);
+#endif

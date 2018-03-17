@@ -27,27 +27,37 @@ char global_str[] = "Bonjour depuis le mode utilisateur !\n";
 
 char buffer[512];
 
-//#include "syscall.h"
+extern "C" int last_allocated_page;
+
+#include <stdint.h>
 
 void panic(char* buf, int dummy)
 {
     asm volatile ("leal (%1), %%ecx\n"
                   "mov %2, %%edx\n"
                   "mov %0, %%ebx\n"
-                  "mov $2, %%eax\n"
+                  "mov $3, %%eax\n"
                   "int $0x70\n" // sys_panic
                   :: "m"(buf), "g"((unsigned int)&buf + sizeof(buf)), "g"(dummy));
 }
 
-int main()
+extern int common_syscall(size_t type, size_t no, ...);
+
+int main(int a, char* argv[])
 {
+    char local_str[] = "Arguments :\n";
 
-    char local_str[] = "Bonjour depuis le mode utilisateur !\n";
+    for (size_t i { 0 }; i < a; ++i)
+    {
+        common_syscall(0, 2, argv[i]);
+        common_syscall(0, 2, "\n");
+    }
 
-    asm volatile ("leal %0, %%ebx\n"
-                  "mov $1, %%eax\n"
-                  "int $0x70\n" // sys_print_debug
-                  "\n" ::"m"(local_str));
+    while (true) {}
+
+    common_syscall(0, 2, global_str);
+
+    common_syscall(0, 1, local_str);
 
     asm volatile ("leal %0, %%ebx\n"
                   "mov $512, %%ecx\n"

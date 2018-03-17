@@ -25,6 +25,4 @@ SOFTWARE.
 #ifndef LINUX_SYSCALLS_HPP
 #define LINUX_SYSCALLS_HPP
 
-int sys_getcwd(char* buf, unsigned long size);
-
 #endif // LINUX_SYSCALLS_HPP

@@ -23,50 +23,64 @@ SOFTWARE.
 
 */
 
-char global_str[] = "Bonjour depuis le mode utilisateur !\n";
-
-char buffer[512];
-
-extern "C" int last_allocated_page;
-
 #include <stdint.h>
 
-void panic(char* buf, int dummy)
+#include <syscalls/syscall_list.hpp>
+
+#include <string.hpp>
+#include <liballoc/liballoc.h>
+
+void __attribute__((constructor)) init()
 {
-    asm volatile ("leal (%1), %%ecx\n"
-                  "mov %2, %%edx\n"
-                  "mov %0, %%ebx\n"
-                  "mov $3, %%eax\n"
-                  "int $0x70\n" // sys_panic
-                  :: "m"(buf), "g"((unsigned int)&buf + sizeof(buf)), "g"(dummy));
+    common_syscall(0, 2, "bouh!\n");
 }
 
-extern int common_syscall(size_t type, size_t no, ...);
+void __attribute__((constructor)) init2()
+{
+    common_syscall(0, 2, "bouh2!\n");
+}
+
+void __attribute__((destructor)) tini()
+{
+    common_syscall(0, 2, "goodbye!\n");
+}
 
 int main(int a, char* argv[])
 {
+    //std::string std_str = "Bonjour depuis std::string !\n";
+
+    char buffer[512];
+
     char local_str[] = "Arguments :\n";
+
+    char* allocated_str = (char*)malloc(60);
+    //char* allocated_str = (char*)alloc_pages(1);
+
+    strcpy(allocated_str, "Bonjour depuis malloc!\n");
 
     for (size_t i { 0 }; i < a; ++i)
     {
-        common_syscall(0, 2, argv[i]);
-        common_syscall(0, 2, "\n");
+        print_debug(argv[i]);
+        print_debug("\n");
     }
 
-    while (true) {}
+    print_debug(allocated_str);
 
-    common_syscall(0, 2, global_str);
+    print_serial(local_str);
 
-    common_syscall(0, 1, local_str);
+    getcwd(buffer, 512);
 
-    asm volatile ("leal %0, %%ebx\n"
-                  "mov $512, %%ecx\n"
-                  "mov $183, %%eax\n"
-                  "int $0x80\n" // linux, sys_getcwd
-                  "\n" ::"m"(buffer));
+    char msg[] = "Pwd :           \n";
+    msg[6] = buffer[0];
 
-    panic(buffer, 0xCAFEBABE);
+    print_debug(msg);
 
-    while (true){}
+    char pid_msg[] = "PID :  \n";
+    pid_msg[6] = '0' + getpid();
+
+    print_debug(pid_msg);
+
+    free(allocated_str);
+    //free_pages((uintptr_t)allocated_str, 1);
     return 0;
 }

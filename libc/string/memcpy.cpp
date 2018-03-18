@@ -26,8 +26,6 @@ SOFTWARE.
 #include "halt.hpp"
 #include "utils/align.hpp"
 
-#include "external/liballoc/liballoc.h"
-
 void* _naive_memcpy(void* __restrict dstptr, const void* __restrict srcptr, size_t size)
 {
     unsigned char* dst = reinterpret_cast<unsigned char*>(dstptr);

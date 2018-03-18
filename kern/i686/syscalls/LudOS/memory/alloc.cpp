@@ -1,7 +1,7 @@
 /*
-liballoc_stubs.cpp
+alloc.cpp
 
-Copyright (c) 31 Yann BOUCHER (yann)
+Copyright (c) 18 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -23,51 +23,28 @@ SOFTWARE.
 
 */
 
-#include "tasking/spinlock.hpp"
+#include <errno.h>
 
 #include "i686/mem/physallocator.hpp"
 
-#include <stdint.h>
-
-#include "utils/logging.hpp"
-#include "panic.hpp"
-
-// TODO : implement
-DECLARE_LOCK(liballoc_lock);
-
-extern "C"
+int sys_alloc_pages(int pages)
 {
-int liballoc_lock()
-{
-    //LOCK(liballoc_lock);
-    return 0;
-}
-
-int liballoc_unlock()
-{
-    //UNLOCK(liballoc_lock);
-    return 0;
-}
-
-void* liballoc_alloc(size_t pages)
-{
-    uint8_t* addr = reinterpret_cast<uint8_t*>(Paging::alloc_virtual_page(pages));
+    uint8_t* addr = reinterpret_cast<uint8_t*>(Paging::alloc_virtual_page(pages, true));
     for (size_t i { 0 }; i < pages; ++i)
     {
         Paging::map_page(reinterpret_cast<void*>(PhysPageAllocator::alloc_physical_page()),
-                         addr + i*Paging::page_size, Memory::Read|Memory::Write);
+                         addr + i*Paging::page_size, Memory::Read|Memory::Write|Memory::User);
     }
-    return addr;
+    return (int)addr;
 }
 
-int liballoc_free(void* ptr, size_t pages)
-{    
+int sys_free_pages(uintptr_t ptr, int pages)
+{
     for (size_t i { 0 }; i < pages; ++i)
     {
         PhysPageAllocator::release_physical_page(Memory::physical_address((uint8_t*)ptr + i*Paging::page_size));
     }
 
-    Memory::unmap(ptr, pages * Paging::page_size);
-    return 0;
-}
+    Memory::unmap((void*)ptr, pages * Paging::page_size);
+    return EOK;
 }

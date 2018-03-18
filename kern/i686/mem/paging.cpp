@@ -107,6 +107,11 @@ uintptr_t Paging::physical_address(const void *v_addr)
     return (entry->phys_addr << 12) + offset;
 }
 
+bool Paging::is_mapped(const void *v_addr)
+{
+    return page_entry(reinterpret_cast<uintptr_t>(v_addr))->present;
+}
+
 void Paging::create_paging_info(PagingInformation &info)
 {
     auto get_addr = [](auto addr)->void*

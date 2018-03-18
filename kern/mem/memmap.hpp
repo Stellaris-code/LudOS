@@ -43,6 +43,8 @@ public:
     static void* mmap(void* p_addr, size_t len, uint32_t flags = Read|Write);
     static void unmap(void* v_addr, size_t len);
 
+    static bool is_mapped(void* v_addr);
+
     static uintptr_t physical_address(const void* v_addr);
 
     static size_t page_size();

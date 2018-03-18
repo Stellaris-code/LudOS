@@ -112,27 +112,34 @@ void print_stack_symbols()
 
 void print_disassembly()
 {
-    kprintf("Disassembly : \n");
-
-    const size_t dump_len = 6;
-
-    uint8_t* base_ip = (uint8_t*)panic_regs->eip;
-    uint8_t* ip = base_ip;
-
-    for (size_t i { 0 }; i < dump_len; ++i)
+    if (Memory::is_mapped((void*)panic_regs->eip))
     {
-        DisasmInfo info = get_disasm(ip);
-        std::string bytes = join(map<uint8_t, std::string>(info.bytes, [](uint8_t c){return std::to_hex_string(c);}), " ");
-        if (ip == base_ip)
+        kprintf("Disassembly : \n");
+
+        const size_t dump_len = 6;
+
+        uint8_t* base_ip = (uint8_t*)panic_regs->eip;
+        uint8_t* ip = base_ip;
+
+        for (size_t i { 0 }; i < dump_len; ++i)
         {
-            kprintf("->  ");
+            DisasmInfo info = get_disasm(ip);
+            std::string bytes = join(map<uint8_t, std::string>(info.bytes, [](uint8_t c){return std::to_hex_string(c);}), " ");
+            if (ip == base_ip)
+            {
+                kprintf("->  ");
+            }
+            else
+            {
+                kprintf("    ");
+            }
+            kprintf("%s (%s)\n", info.str.c_str(), bytes.c_str());
+            ip += info.len;
         }
-        else
-        {
-            kprintf("    ");
-        }
-        kprintf("%s (%s)\n", info.str.c_str(), bytes.c_str());
-        ip += info.len;
+    }
+    else
+    {
+        kprintf("No disassembly available, eip is at an unmapped address : \n");
     }
 }
 
@@ -170,7 +177,7 @@ void panic(const char *fmt, ...)
 
     print_disassembly();
 
-    kprintf("\n");
+    kprintf("\nStack:\n");
 
     print_stack_symbols();
 

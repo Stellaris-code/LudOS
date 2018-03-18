@@ -7,6 +7,7 @@ FUNCTION(ADD_TEST_PROGRAM NAME DIR)
       "-T ${CMAKE_CURRENT_SOURCE_DIR}/layout.ld  -Xlinker")
 
   target_link_libraries(${NAME} libc)
+  target_compile_definitions(${NAME} PUBLIC "-DLUDOS_USER")
 
 #    add_custom_command(TARGET ${NAME} POST_BUILD
 #      COMMAND "sed" "-i" "'1s/^/LUDOSBIN/'" $<TARGET_FILE:${NAME}>

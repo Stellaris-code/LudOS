@@ -28,7 +28,7 @@
 #include "bits/libc-lock.h"
 #include "tls.h"
 
-#include "external/liballoc/liballoc.h"
+#include "liballoc/liballoc.h"
 
 #include <assert.h>
 

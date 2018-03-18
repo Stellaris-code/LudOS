@@ -33,7 +33,7 @@ SOFTWARE.
 
 #include "utils/builtins.hpp"
 
-#include "external/liballoc/liballoc.h"
+#include "liballoc/liballoc.h"
 
 __attribute__((__noreturn__))
 void abort_impl(const char* file, size_t line, const char* fun)

@@ -39,7 +39,7 @@ x86_op_t * x86_operand_new( x86_insn_t *insn ) {
 	if (! insn ) {	
 		return(NULL);
 	}
-	op = calloc( sizeof(x86_oplist_t), 1 );
+    op = kcalloc( sizeof(x86_oplist_t), 1 );
 	op->op.insn = insn;
 	x86_oplist_append( insn, op );
 	return( &(op->op) );
@@ -55,7 +55,7 @@ void x86_oplist_free( x86_insn_t *insn ) {
 	for ( list = insn->operands; list; ) {
 		op = list;
 		list = list->next;
-		free(op);
+        kfree(op);
 	}
 
 	insn->operands = NULL;

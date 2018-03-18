@@ -49,9 +49,10 @@ SOFTWARE.
 #include <stdint.h>
 #include <stdbool.h>
 
-#if !defined(NDEBUG) || true
+#if defined(LUDOS_USER)
+#define error_impl(...) abort() // TODO
+#elif !defined(NDEBUG) || true
 #define error_impl panic
-#else
 #define error_impl err
 #endif
 //"Reason : '" msg "'\n"

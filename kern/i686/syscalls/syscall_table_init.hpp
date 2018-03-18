@@ -38,9 +38,11 @@ SOFTWARE.
 
 #include "syscall_table_init.tpp"
 
+#include "tasking/process.hpp"
+
 int invalid_syscall(const registers* const r)
 {
-    warn("Invalid syscall number : %d\n", r->eax);
+    warn("Invalid int 0x%x syscall number : 0x%x, pid %d\n", r->int_no, r->eax, Process::current().id);
     return ENOSYS;
 }
 
@@ -67,10 +69,10 @@ inline void init_syscall_table()
 
 
 #define LUDOS_SYSCALL_DEF(num, name, ret, ...) \
-    add_syscall<LudOS, num>(name);
+    add_syscall<LudOS, num>(sys_##name);
 
 #define LINUX_SYSCALL_DEF(num, name, ret, ...) \
-    add_syscall<Linux, num>(name);
+    add_syscall<Linux, num>(sys_##name);
 
 #include "syscalls/syscall_list.def"
 

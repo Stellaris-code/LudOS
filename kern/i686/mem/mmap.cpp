@@ -60,6 +60,11 @@ void Memory::unmap(void *v_addr, size_t len)
     }
 }
 
+bool Memory::is_mapped(void *v_addr)
+{
+    return Paging::is_mapped(v_addr);
+}
+
 uintptr_t Memory::physical_address(const void *v_addr)
 {
     return Paging::physical_address(v_addr);

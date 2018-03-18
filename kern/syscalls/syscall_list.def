@@ -25,9 +25,12 @@ SOFTWARE.
 
 struct SyscallEntry;
 
-LINUX_SYSCALL_DEF(183, sys_getcwd, int, char* buf, unsigned long size)
+LINUX_SYSCALL_DEF(0x14, getpid, int)
+LINUX_SYSCALL_DEF(0xb7, getcwd, int, char* buf, unsigned long size)
 
-LUDOS_SYSCALL_DEF(0, sys_get_syscall_tables, void, SyscallEntry* ludos, SyscallEntry* linux)
-LUDOS_SYSCALL_DEF(1, sys_print_serial, void, const char* string)
-LUDOS_SYSCALL_DEF(2, sys_print_debug, void, const char* string)
-LUDOS_SYSCALL_DEF(3, sys_panic, void, const char* string)
+LUDOS_SYSCALL_DEF(0, get_syscall_tables, void, SyscallEntry* ludos, SyscallEntry* linux)
+LUDOS_SYSCALL_DEF(1, print_serial, void, const char* string)
+LUDOS_SYSCALL_DEF(2, print_debug, void, const char* string)
+LUDOS_SYSCALL_DEF(3, panic, void, const char* string)
+LUDOS_SYSCALL_DEF(4, alloc_pages, int, int number)
+LUDOS_SYSCALL_DEF(5, free_pages, int, uintptr_t addr, int number)

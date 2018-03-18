@@ -35,7 +35,7 @@ do_%1_syscall:
 ADD_SYSCALL_GATE ludos, 0x70
 ADD_SYSCALL_GATE linux, 0x80
 
-section .data
+section .bss
 align 4
 ebx_save: resd 1
 esi_save: resd 1

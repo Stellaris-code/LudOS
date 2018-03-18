@@ -50,7 +50,7 @@ extern "C" uint32_t syscall_handler(const registers* const regs)
             break;
 
         default:
-            err("Invalid syscall number : 0x%x\n", regs->int_no);
+            err("Invalid syscall interrupt number : 0x%x, pid %d\n", regs->int_no, Process::current().id);
             return ENOSYS;
             break;
     }

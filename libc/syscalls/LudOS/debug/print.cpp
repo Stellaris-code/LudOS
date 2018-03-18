@@ -1,7 +1,7 @@
 /*
-assert.cpp
+print.cpp
 
-Copyright (c) 11 Yann BOUCHER (yann)
+Copyright (c) 13 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -23,33 +23,50 @@ SOFTWARE.
 
 */
 
-#include <assert.h>
+#include "syscalls/syscalls.hpp"
 
-#include <stdarg.h>
+#include <errno.h>
 
-#include "utils/logging.hpp"
-#include "halt.hpp"
-#include "panic.hpp"
-#include "stdlib.h"
+extern int common_syscall(size_t type, size_t no, ...);
 
-void impl_assert(bool cond, const char* strcond, const char* file, size_t line, const char* fun)
+int print_serial(const char* string)
 {
-    if (!cond)
+    auto return_val = common_syscall(0, SYS_print_serial, string);
+    if (return_val != EOK)
     {
-        error_impl("Assert in file '%s', '%s', line %zd : cond '%s' is false\n", file, fun, line, strcond);
+        errno = return_val;
+        return -1;
+    }
+    else
+    {
+        return 0;
     }
 }
-void impl_assert_msg(bool cond, const char* strcond, const char* file, size_t line, const char* fun, const char* fmt, ...)
+
+int print_debug(const char* string)
 {
-    if (!cond)
+    auto return_val = common_syscall(0, SYS_print_debug, string);
+    if (return_val != EOK)
     {
-        char msg[512];
+        errno = return_val;
+        return -1;
+    }
+    else
+    {
+        return 0;
+    }
+}
 
-        va_list va;
-        va_start(va, fmt);
-        kvsnprintf(msg, sizeof(msg), fmt, va);
-        va_end(va);
-
-        error_impl("Assert in file '%s', '%s', line %zd : cond '%s' is false\nReason : '%s'\n", file, fun, line, strcond, msg);
+int panic(const char* string)
+{
+    auto return_val = common_syscall(0, SYS_panic, string);
+    if (return_val != EOK)
+    {
+        errno = return_val;
+        return -1;
+    }
+    else
+    {
+        return 0;
     }
 }

@@ -103,7 +103,6 @@ SOFTWARE.
 // TODO : vfs canonicalize
 // TODO : process : free pages and alloc only at execute time
 // TODO : dissasemble from beggining of function
-// TODO : user mode : _init
 
 /**********************************/
 // BUGS

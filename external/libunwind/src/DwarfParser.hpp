@@ -24,7 +24,7 @@
 
 #include "config.h"
 
-#include "external/liballoc/liballoc.h"
+#include "liballoc/liballoc.h"
 
 namespace libunwind {
 

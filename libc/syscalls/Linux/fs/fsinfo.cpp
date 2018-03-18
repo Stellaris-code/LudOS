@@ -1,7 +1,7 @@
 /*
-assert.cpp
+fsinfo.cpp
 
-Copyright (c) 11 Yann BOUCHER (yann)
+Copyright (c) 18 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -23,33 +23,23 @@ SOFTWARE.
 
 */
 
-#include <assert.h>
+#include "syscalls/syscalls.hpp"
 
-#include <stdarg.h>
+#include <errno.h>
 
-#include "utils/logging.hpp"
-#include "halt.hpp"
-#include "panic.hpp"
-#include "stdlib.h"
+extern int common_syscall(size_t type, size_t no, ...);
 
-void impl_assert(bool cond, const char* strcond, const char* file, size_t line, const char* fun)
+int getcwd(char* buf, unsigned long size)
 {
-    if (!cond)
+    auto return_value = common_syscall(1, SYS_getcwd, buf, size);
+
+    if (return_value != EOK)
     {
-        error_impl("Assert in file '%s', '%s', line %zd : cond '%s' is false\n", file, fun, line, strcond);
+        errno = return_value;
+        return -1;
     }
-}
-void impl_assert_msg(bool cond, const char* strcond, const char* file, size_t line, const char* fun, const char* fmt, ...)
-{
-    if (!cond)
+    else
     {
-        char msg[512];
-
-        va_list va;
-        va_start(va, fmt);
-        kvsnprintf(msg, sizeof(msg), fmt, va);
-        va_end(va);
-
-        error_impl("Assert in file '%s', '%s', line %zd : cond '%s' is false\nReason : '%s'\n", file, fun, line, strcond, msg);
+        return 0;
     }
 }

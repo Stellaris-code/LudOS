@@ -1,7 +1,7 @@
 /*
-assert.cpp
+syscalls.hpp
 
-Copyright (c) 11 Yann BOUCHER (yann)
+Copyright (c) 18 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,34 +22,34 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
+#ifndef LIBC_SYSCALLS_HPP
+#define LIBC_SYSCALLS_HPP
 
-#include <assert.h>
+#include <stdint.h>
 
-#include <stdarg.h>
+#ifndef LUDOS_USER
+//#error Reserved for userspace
+#endif
 
-#include "utils/logging.hpp"
-#include "halt.hpp"
-#include "panic.hpp"
-#include "stdlib.h"
+#define LUDOS_SYSCALL_DEF(num, name, ret, ...) \
+    long name(__VA_ARGS__);
 
-void impl_assert(bool cond, const char* strcond, const char* file, size_t line, const char* fun)
-{
-    if (!cond)
-    {
-        error_impl("Assert in file '%s', '%s', line %zd : cond '%s' is false\n", file, fun, line, strcond);
-    }
-}
-void impl_assert_msg(bool cond, const char* strcond, const char* file, size_t line, const char* fun, const char* fmt, ...)
-{
-    if (!cond)
-    {
-        char msg[512];
+#define LINUX_SYSCALL_DEF(num, name, ret, ...) \
+    long name(__VA_ARGS__);
 
-        va_list va;
-        va_start(va, fmt);
-        kvsnprintf(msg, sizeof(msg), fmt, va);
-        va_end(va);
+#include "syscalls/syscall_list.def"
 
-        error_impl("Assert in file '%s', '%s', line %zd : cond '%s' is false\nReason : '%s'\n", file, fun, line, strcond, msg);
-    }
-}
+#undef LUDOS_SYSCALL_DEF
+#undef LINUX_SYSCALL_DEF
+
+#include "syscalls/syscalls.hpp"
+
+#define DETAIL_LUDOS_ID 0
+#define DETAIL_LINUX_ID 1
+
+extern int common_syscall(size_t type, size_t no, ...);
+
+#define syscall(num, ...) common_syscall(1, num, __VA_ARGS__)
+#define ludos_syscall(num, ...) common_syscall(0, num, __VA_ARGS__)
+
+#endif // SYSCALLS_HPP

@@ -2,7 +2,7 @@
 
 #include "stdlib.h"
 #include "errno.h"
-#include "external/liballoc/liballoc.h"
+#include "liballoc/liballoc.h"
 
 int posix_memalign(void **res, size_t align, size_t len)
 {

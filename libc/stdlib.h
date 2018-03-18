@@ -29,7 +29,7 @@ SOFTWARE.
 
 #include <stdint.h>
 
-#include "external/liballoc/liballoc.h"
+#include "liballoc/liballoc.h"
 
 //#define malloc kmalloc
 //#define free kfree

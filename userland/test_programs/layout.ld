@@ -22,6 +22,14 @@ SECTIONS
 
     .rodata ALIGN(4):
     {
+        start_ctors = .;
+        KEEP (*(SORT(.ctors*)))
+        end_ctors = .;
+
+        start_dtors = .;
+        KEEP(*(SORT(.dtors*)))
+        end_dtors = .;
+
         *(.rodata*)
     }
 

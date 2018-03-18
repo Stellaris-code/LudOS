@@ -93,6 +93,8 @@ public:
 
     static uintptr_t physical_address(const void *v_addr);
 
+    static bool is_mapped(const void* v_addr);
+
     static void create_paging_info(PagingInformation& info);
 
 public:

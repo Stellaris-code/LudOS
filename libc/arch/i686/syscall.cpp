@@ -78,24 +78,12 @@ int common_syscall(size_t type, size_t no, ...)
         arg_ptr = (uint8_t*)arg_ptr + table[no].arg_sizes[i];
     }
 
-    int return_err = EOK;
-
     if (type == 0)
     {
-        return_err = do_ludos_syscall(no, table[no].arg_cnt, arg_table);
+        return do_ludos_syscall(no, table[no].arg_cnt, arg_table);
     }
     else
     {
-        return_err = do_linux_syscall(no, table[no].arg_cnt, arg_table);
-    }
-
-    if (return_err != EOK)
-    {
-        errno = return_err;
-        return -1;
-    }
-    else
-    {
-        return 0;
+        return do_linux_syscall(no, table[no].arg_cnt, arg_table);
     }
 }

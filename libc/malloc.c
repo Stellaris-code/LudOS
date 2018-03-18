@@ -23,29 +23,31 @@ SOFTWARE.
 
 */
 
-#include "external/liballoc/liballoc.h"
+#include "liballoc/liballoc.h"
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
 
-void    *malloc(size_t t)
-{
-    return kmalloc(t);
-}
-void    *realloc(void* ptr, size_t n)
-{
-    return krealloc(ptr, n);
-}
-void    *calloc(size_t a, size_t b)
-{
-    return kcalloc(a,b);
-}
-void free(void* ptr)
-{
-    kfree(ptr);
-}
+// TODO : remove
+
+//void    *malloc(size_t t)
+//{
+//    return kmalloc(t);
+//}
+//void    *realloc(void* ptr, size_t n)
+//{
+//    return krealloc(ptr, n);
+//}
+//void    *calloc(size_t a, size_t b)
+//{
+//    return kcalloc(a,b);
+//}
+//void free(void* ptr)
+//{
+//    kfree(ptr);
+//}
 
 #ifdef __cplusplus
 }

@@ -106,9 +106,15 @@ template <class T, class U>
 inline T narrow(U u)
 {
     T t = narrow_cast<T>(u);
+#ifdef __EXCEPTIONS
     if (static_cast<U>(t) != u) throw narrowing_error();
     if (!details::is_same_signedness<T, U>::value && ((t < T{}) != (u < U{})))
         throw narrowing_error();
+#else
+    if (static_cast<U>(t) != u) abort();
+    if (!details::is_same_signedness<T, U>::value && ((t < T{}) != (u < U{})))
+        abort();
+#endif
     return t;
 }
 

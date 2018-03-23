@@ -161,12 +161,21 @@ int tfp_sprintf(char *str, const char *fmt, ...) \
    PRINTF_FMT(2, 3);
 int tfp_swprintf(wchar_t *str, size_t len, const wchar_t *fmt, ...);
 # if TINYPRINTF_OVERRIDE_LIBC
+#ifndef LUDOS_USER
 #  define kvsnprintf tfp_vsnprintf
 #  define ksnprintf tfp_snprintf
 #  define kvsprintf tfp_vsprintf
 #  define ksprintf tfp_sprintf
 #  define kvprintf tfp_vprintf
 #  define kswprintf tfp_swprintf
+#else
+#  define vsnprintf tfp_vsnprintf
+#  define snprintf tfp_snprintf
+#  define vsprintf tfp_vsprintf
+#  define sprintf tfp_sprintf
+#  define vprintf tfp_vprintf
+#  define swprintf tfp_swprintf
+#endif
 # endif
 #endif
 
@@ -174,7 +183,11 @@ int tfp_swprintf(wchar_t *str, size_t len, const wchar_t *fmt, ...);
 void init_printf(void *putp, putcf putf);
 void tfp_printf(const char * __restrict fmt, ...) PRINTF_FMT(1, 2);
 # if TINYPRINTF_OVERRIDE_LIBC
+#ifndef LUDOS_USER
 #  define kprintf tfp_printf
+#else
+#  define printf tfp_printf
+#endif
 # endif
 #endif
 

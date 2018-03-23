@@ -1,7 +1,7 @@
 /*
-assert.cpp
+init.cpp
 
-Copyright (c) 11 Yann BOUCHER (yann)
+Copyright (c) 18 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -23,37 +23,14 @@ SOFTWARE.
 
 */
 
-#include <assert.h>
+#include <stdio.h>
 
-#include <stdarg.h>
+#include <syscalls/syscall_list.hpp>
 
-#include "utils/logging.hpp"
-#include "halt.hpp"
-#include "panic.hpp"
-#include "stdlib.h"
-
-void impl_assert(bool cond, const char* strcond, const char* file, size_t line, const char* fun)
+void __attribute__((constructor)) libc_init()
 {
-    if (!cond)
+    init_printf(nullptr, [](void*, char c)
     {
-        error_impl("Assert in file '%s', '%s', line %zd : cond '%s' is false\n", file, fun, line, strcond);
-    }
-}
-void impl_assert_msg(bool cond, const char* strcond, const char* file, size_t line, const char* fun, const char* fmt, ...)
-{
-    if (!cond)
-    {
-        char msg[512];
-
-        va_list va;
-        va_start(va, fmt);
-#ifndef LUDOS_USER
-        kvsnprintf(msg, sizeof(msg), fmt, va);
-#else
-        vsnprintf(msg, sizeof(msg), fmt, va);
-#endif
-        va_end(va);
-
-        error_impl("Assert in file '%s', '%s', line %zd : cond '%s' is false\nReason : '%s'\n", file, fun, line, strcond, msg);
-    }
+        write(1, &c, 1);
+    });
 }

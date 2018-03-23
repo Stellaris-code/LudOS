@@ -53,6 +53,7 @@ SOFTWARE.
 #define error_impl(...) abort() // TODO
 #elif !defined(NDEBUG) || true
 #define error_impl panic
+#else
 #define error_impl err
 #endif
 //"Reason : '" msg "'\n"

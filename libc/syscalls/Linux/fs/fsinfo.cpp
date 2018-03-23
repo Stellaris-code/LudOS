@@ -29,7 +29,7 @@ SOFTWARE.
 
 extern int common_syscall(size_t type, size_t no, ...);
 
-int getcwd(char* buf, unsigned long size)
+long getcwd(char* buf, unsigned long size)
 {
     auto return_value = common_syscall(1, SYS_getcwd, buf, size);
 

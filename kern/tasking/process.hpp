@@ -26,8 +26,14 @@ SOFTWARE.
 #define PROCESS_HPP
 
 #include <string.hpp>
+#include <vector.hpp>
 #include "utils/gsl/gsl_span.hpp"
 #include "utils/noncopyable.hpp"
+
+namespace vfs
+{
+class node;
+}
 
 class Process : NonCopyable
 {
@@ -38,17 +44,41 @@ public:
     Process(const std::string& name, gsl::span<const uint8_t> code_to_copy, size_t allocated_size = 0);
     ~Process(); // = default;
 
+    static bool enabled();
+
     static Process& current();
 
 public:
+    struct FDInfo
+    {
+        std::shared_ptr<vfs::node> node;
+        bool read { false };
+        bool write { false };
+        bool append { false };
+        size_t cursor { 0 };
+    };
+
+    static constexpr size_t root_uid = 0;
+
+public:
+    size_t add_fd(const FDInfo& info);
+    FDInfo *get_fd(size_t fd);
+    void close_fd(size_t fd);
+
     void execute(gsl::span<const std::string> args);
 
     void stop();
 
+private:
+    void init_default_fds();
+
 public:
     const std::string name { "<INVALID>" };
     const uint32_t id { 0 };
+    const uint32_t uid { root_uid };
+    const uint32_t gid { 0 };
     std::string pwd = "/";
+    std::vector<FDInfo> fd_table;
     uintptr_t start_address { 0 };
     ArchSpecificData* arch_data { nullptr };
 

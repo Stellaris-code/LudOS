@@ -29,6 +29,10 @@ SOFTWARE.
 
 #include <string.hpp>
 #include <liballoc/liballoc.h>
+#include <sys/fnctl.h>
+#include <errno.h>
+
+#include "utils/stlutils.hpp"
 
 void __attribute__((constructor)) init()
 {
@@ -49,12 +53,11 @@ int main(int a, char* argv[])
 {
     //std::string std_str = "Bonjour depuis std::string !\n";
 
-    char buffer[512];
-
     char local_str[] = "Arguments :\n";
 
+    std::string std_str = "From std::string;\n";
+
     char* allocated_str = (char*)malloc(60);
-    //char* allocated_str = (char*)alloc_pages(1);
 
     strcpy(allocated_str, "Bonjour depuis malloc!\n");
 
@@ -64,23 +67,35 @@ int main(int a, char* argv[])
         print_debug("\n");
     }
 
+    printf("From printf : %d %s accent : ééé\n", 66, "bonjour !");
+
     print_debug(allocated_str);
+    print_debug(std_str.c_str());
 
     print_serial(local_str);
 
-    getcwd(buffer, 512);
+    std::string process_info;
+    char buf[512];
+    getcwd(buf, 512);
+    process_info += "Pwd : " + trim_zstr(buf);
+    process_info += ", PID : " + std::to_string(getpid());
 
-    char msg[] = "Pwd :           \n";
-    msg[6] = buffer[0];
+    printf("%s\n", process_info.c_str());
 
-    print_debug(msg);
-
-    char pid_msg[] = "PID :  \n";
-    pid_msg[6] = '0' + getpid();
-
-    print_debug(pid_msg);
+    const char path[] = "/initrd/init.sh";
+    int fd = open(path, O_RDONLY, 0);
+    printf("Opening '%s', return : %d, error : %s\n", path, fd, strerror(errno));
+    std::vector<uint8_t> data(40);
+    if (read(fd, data.data(), data.size()) == -1)
+    {
+        printf("Error reading %s : %s\n", path, strerror(errno));
+    }
+    else
+    {
+        data.emplace_back('\0');
+        printf("Data : %s\n", data.data());
+    }
 
     free(allocated_str);
-    //free_pages((uintptr_t)allocated_str, 1);
     return 0;
 }

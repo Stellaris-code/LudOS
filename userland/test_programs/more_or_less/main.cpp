@@ -1,7 +1,7 @@
 /*
-putchar.c
+main.cpp
 
-Copyright (c) 23 Yann BOUCHER (yann)
+Copyright (c) 21 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -23,45 +23,61 @@ SOFTWARE.
 
 */
 
+#include <string.hpp>
 #include <stdio.h>
 
-#ifdef __is_libk
-#include <terminal/terminal.hpp>
-#include <i686/pc/serial/serialdebug.hpp>
-#else
+#include <sys/fnctl.h>
+#include <sys/fs.h>
 #include <syscalls/syscall_list.hpp>
-#endif
 
-#include "unicode/utf8decoder.hpp"
-
-bool putc_serial = false;
-
-UTF8Decoder decoder;
-
-void putchar(char c)
+std::string read_str()
 {
-#ifdef __is_libk
-    decoder.feed(c);
-    if (decoder.ready())
+    std::string str;
+    char c;
+    while ((c = getchar()) != '\n')
     {
-        putcharw(decoder.spit());
+        str += c;
     }
-#else
-    char buf[2] = { 0 };
-    buf[0] = c;
-    print_debug(buf);
-#endif
+
+    return str;
 }
 
-void putcharw(char32_t c)
+int get_int()
 {
-#ifdef __is_libk
-    term().put_char(c);
-    if (putc_serial) serial::debug::write("%c", c);
-#else
-    // TODO
-    char buf[2] = { 0 };
-    buf[0] = (char)c;
-    print_debug(buf);
-#endif
+    auto str = read_str();
+    return std::stoi(str);
+}
+
+uint64_t total_ticks()
+{
+    uint64_t ret;
+    asm volatile ( "rdtsc" : "=A"(ret) );
+    return ret;
+}
+
+int main(int argc, char* argv[])
+{
+    int number = 783; // TODO
+
+    while (true)
+    {
+        printf("Enter your guess : \n");
+        int value = get_int();
+        if (value > number) printf("Target is lower!\n");
+        if (value < number) printf("Target is higher!\n");
+        if (value == number)
+        {
+            printf("You found it ! Great job !\n");
+            break;
+        }
+
+//        int fd = open("/initrd/init.sh", O_RDONLY, 0);
+//        char buf[52] = { 0 };
+//        read(fd, buf, 20);
+//        printf("Data : '%s'\n", buf);
+
+//        lseek(fd, 10, SEEK_SET);
+//        read(fd, buf, 20);
+//        printf("Data : '%s'\n", buf);
+    }
 }

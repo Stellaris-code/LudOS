@@ -1,7 +1,7 @@
 /*
-assert.cpp
+fs.h
 
-Copyright (c) 11 Yann BOUCHER (yann)
+Copyright (c) 23 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,38 +22,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
+#ifndef SYS_FS_H
+#define SYS_FS_H
 
-#include <assert.h>
+#define SEEK_SET	0	/* seek relative to beginning of file */
+#define SEEK_CUR	1	/* seek relative to current file position */
+#define SEEK_END	2	/* seek relative to end of file */
+#define SEEK_DATA	3	/* seek to the next data */
+#define SEEK_HOLE	4	/* seek to the next hole */
+#define SEEK_MAX	SEEK_HOLE
 
-#include <stdarg.h>
-
-#include "utils/logging.hpp"
-#include "halt.hpp"
-#include "panic.hpp"
-#include "stdlib.h"
-
-void impl_assert(bool cond, const char* strcond, const char* file, size_t line, const char* fun)
-{
-    if (!cond)
-    {
-        error_impl("Assert in file '%s', '%s', line %zd : cond '%s' is false\n", file, fun, line, strcond);
-    }
-}
-void impl_assert_msg(bool cond, const char* strcond, const char* file, size_t line, const char* fun, const char* fmt, ...)
-{
-    if (!cond)
-    {
-        char msg[512];
-
-        va_list va;
-        va_start(va, fmt);
-#ifndef LUDOS_USER
-        kvsnprintf(msg, sizeof(msg), fmt, va);
-#else
-        vsnprintf(msg, sizeof(msg), fmt, va);
-#endif
-        va_end(va);
-
-        error_impl("Assert in file '%s', '%s', line %zd : cond '%s' is false\nReason : '%s'\n", file, fun, line, strcond, msg);
-    }
-}
+#endif // FS_H

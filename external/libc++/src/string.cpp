@@ -23,8 +23,8 @@ template class _LIBCPP_CLASS_TEMPLATE_INSTANTIATION_VIS basic_string<char>;
 template class _LIBCPP_CLASS_TEMPLATE_INSTANTIATION_VIS basic_string<wchar_t>;
 
 template
-    string
-    operator+<char, char_traits<char>, allocator<char> >(char const*, string const&);
+string
+operator+<char, char_traits<char>, allocator<char> >(char const*, string const&);
 
 namespace
 {
@@ -36,7 +36,11 @@ void throw_helper( const string& msg )
 #ifndef _LIBCPP_NO_EXCEPTIONS
     throw T( msg );
 #else
+#ifndef LUDOS_USER
     kprintf("%s\n", msg.c_str());
+#else
+    printf("%s\n", msg.c_str());
+#endif
     abort();
 #endif
 }
@@ -398,8 +402,8 @@ struct initial_string<wstring, V, false>
     operator()() const
     {
         const size_t n = (numeric_limits<unsigned long long>::digits / 3)
-          + ((numeric_limits<unsigned long long>::digits % 3) != 0)
-          + 1;
+                + ((numeric_limits<unsigned long long>::digits % 3) != 0)
+                + 1;
         wstring s(n, wchar_t());
         s.resize(s.capacity());
         return s;
@@ -425,7 +429,11 @@ wide_printf
 get_swprintf()
 {
 #ifndef _LIBCPP_MSVCRT
+#ifndef LUDOS_USER
     return kswprintf;
+#else
+    return swprintf;
+#endif
 #else
     return static_cast<int (__cdecl*)(wchar_t* __restrict, size_t, const wchar_t*__restrict, ...)>(_snwprintf);
 #endif
@@ -433,54 +441,60 @@ get_swprintf()
 
 }  // unnamed namespace
 
+#ifndef LUDOS_USER
+#define snprintf_fun ksnprintf
+#else
+#define snprintf_fun snprintf
+#endif
+
 string to_string(int val)
 {
-    return as_string(ksnprintf, initial_string<string, int>()(), "%d", val);
+    return as_string(snprintf_fun, initial_string<string, int>()(), "%d", val);
 }
 
 string to_string(unsigned val)
 {
-    return as_string(ksnprintf, initial_string<string, unsigned>()(), "%u", val);
+    return as_string(snprintf_fun, initial_string<string, unsigned>()(), "%u", val);
 }
 
 string to_hex_string(unsigned val)
 {
-    return as_string(ksnprintf, initial_string<string, unsigned>()(), "%02X", val);
+    return as_string(snprintf_fun, initial_string<string, unsigned>()(), "%02X", val);
 }
 
 string to_string(long val)
 {
-    return as_string(ksnprintf, initial_string<string, long>()(), "%ld", val);
+    return as_string(snprintf_fun, initial_string<string, long>()(), "%ld", val);
 }
 
 string to_string(unsigned long val)
 {
-    return as_string(ksnprintf, initial_string<string, unsigned long>()(), "%lu", val);
+    return as_string(snprintf_fun, initial_string<string, unsigned long>()(), "%lu", val);
 }
 
 string to_string(long long val)
 {
-    return as_string(ksnprintf, initial_string<string, long long>()(), "%lld", val);
+    return as_string(snprintf_fun, initial_string<string, long long>()(), "%lld", val);
 }
 
 string to_string(unsigned long long val)
 {
-    return as_string(ksnprintf, initial_string<string, unsigned long long>()(), "%llu", val);
+    return as_string(snprintf_fun, initial_string<string, unsigned long long>()(), "%llu", val);
 }
 
 string to_string(float val)
 {
-    return as_string(ksnprintf, initial_string<string, float>()(), "%f", val);
+    return as_string(snprintf_fun, initial_string<string, float>()(), "%f", val);
 }
 
 string to_string(double val)
 {
-    return as_string(ksnprintf, initial_string<string, double>()(), "%f", val);
+    return as_string(snprintf_fun, initial_string<string, double>()(), "%f", val);
 }
 
 string to_string(long double val)
 {
-    return as_string(ksnprintf, initial_string<string, long double>()(), "%Lf", val);
+    return as_string(snprintf_fun, initial_string<string, long double>()(), "%Lf", val);
 }
 
 wstring to_wstring(int val)

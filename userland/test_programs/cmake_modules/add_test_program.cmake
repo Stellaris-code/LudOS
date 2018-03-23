@@ -6,7 +6,7 @@ FUNCTION(ADD_TEST_PROGRAM NAME DIR)
     set_target_properties(${NAME} PROPERTIES LINK_FLAGS
       "-T ${CMAKE_CURRENT_SOURCE_DIR}/layout.ld  -Xlinker")
 
-  target_link_libraries(${NAME} libc)
+  target_link_libraries(${NAME} libc user_libcpp)
   target_compile_definitions(${NAME} PUBLIC "-DLUDOS_USER")
 
 #    add_custom_command(TARGET ${NAME} POST_BUILD

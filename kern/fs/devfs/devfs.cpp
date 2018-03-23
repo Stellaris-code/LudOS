@@ -27,10 +27,13 @@ SOFTWARE.
 
 #include "fs/vfs.hpp"
 
+#include <deque.hpp>
+
 #include "utils/messagebus.hpp"
 #include "drivers/kbd/keyboard.hpp"
 #include "utils/nop.hpp"
 #include "drivers/storage/disk.hpp"
+#include "tasking/process.hpp"
 
 namespace devfs
 {
@@ -62,22 +65,41 @@ protected:
 struct stdin_file : public vfs::node
 {
     using node::node;
+
+public:
+    stdin_file(node* parent = nullptr)
+        : node(parent)
+    {
+        m_handl = MessageBus::register_handler<kbd::TextEnteredEvent>([this](const kbd::TextEnteredEvent& e)
+        {
+            if (Process::enabled())
+            {
+                m_input_buffer.push_back(e.c);
+            }
+        });
+    }
+
 protected:
     [[nodiscard]] virtual MemBuffer read_impl(size_t offset, size_t size) const override
     {
         MemBuffer buf;
 
-        auto handl = MessageBus::register_handler<kbd::TextEnteredEvent>([&buf](const kbd::TextEnteredEvent& e)
+        while (m_input_buffer.size() < size) { wait_for_interrupts(); };
+
+        for (size_t i { 0 }; i < size; ++i)
         {
-            buf.push_back(e.c);
-        });
+            buf.emplace_back(m_input_buffer.front());
+            m_input_buffer.pop_front();
+        }
 
-        while (buf.size() < size) { wait_for_interrupts(); };
-
-        MessageBus::remove_handler(handl);
+        assert(buf.size() == size);
 
         return buf;
     }
+
+private:
+    MessageBus::RAIIHandle m_handl;
+    mutable std::deque<uint8_t> m_input_buffer;
 };
 
 struct devfs_root : public vfs::node

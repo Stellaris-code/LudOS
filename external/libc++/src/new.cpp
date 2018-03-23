@@ -69,7 +69,11 @@ operator new(size_t size) _THROW_BAD_ALLOC
     if (size == 0)
         size = 1;
     void* p;
+#ifndef LUDOS_USER
     while ((p = ::kmalloc(size)) == 0)
+#else
+    while ((p = ::malloc(size)) == 0)
+#endif
     {
         // If malloc fails and there is a new_handler,
         // call it to try free up memory.
@@ -135,8 +139,13 @@ _LIBCPP_WEAK
 void
 operator delete(void* ptr) _NOEXCEPT
 {
+#ifndef LUDOS_USER
     if (ptr)
         ::kfree(ptr);
+#else
+    if (ptr)
+        ::free(ptr);
+#endif
 }
 
 _LIBCPP_WEAK
@@ -183,7 +192,7 @@ operator new(size_t size, std::align_val_t alignment) _THROW_BAD_ALLOC
     if (size == 0)
         size = 1;
     if (static_cast<size_t>(alignment) < sizeof(void*))
-      alignment = std::align_val_t(sizeof(void*));
+        alignment = std::align_val_t(sizeof(void*));
     void* p;
 #if defined(_LIBCPP_MSVCRT_LIKE)
     while ((p = _aligned_malloc(size, static_cast<size_t>(alignment))) == nullptr)
@@ -261,7 +270,11 @@ operator delete(void* ptr, std::align_val_t) _NOEXCEPT
 #if defined(_LIBCPP_MSVCRT_LIKE)
         ::_aligned_free(ptr);
 #else
+#ifndef LUDOS_USER
         ::kfree(ptr);
+#else
+        ::free(ptr);
+#endif
 #endif
 }
 

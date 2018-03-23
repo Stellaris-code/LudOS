@@ -1,7 +1,7 @@
 /*
-assert.cpp
+lseek.cpp
 
-Copyright (c) 11 Yann BOUCHER (yann)
+Copyright (c) 23 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -23,37 +23,23 @@ SOFTWARE.
 
 */
 
-#include <assert.h>
+#include "syscalls/syscall_list.hpp"
 
-#include <stdarg.h>
+#include <errno.h>
 
-#include "utils/logging.hpp"
-#include "halt.hpp"
-#include "panic.hpp"
-#include "stdlib.h"
 
-void impl_assert(bool cond, const char* strcond, const char* file, size_t line, const char* fun)
+extern int common_syscall(size_t type, size_t no, ...);
+
+long lseek(unsigned int fd, int off, int whence)
 {
-    if (!cond)
+    auto ret = common_syscall(1, SYS_lseek, fd, off, whence);
+    if (ret > 0) // error set
     {
-        error_impl("Assert in file '%s', '%s', line %zd : cond '%s' is false\n", file, fun, line, strcond);
+        errno = ret;
+        return -1;
     }
-}
-void impl_assert_msg(bool cond, const char* strcond, const char* file, size_t line, const char* fun, const char* fmt, ...)
-{
-    if (!cond)
+    else
     {
-        char msg[512];
-
-        va_list va;
-        va_start(va, fmt);
-#ifndef LUDOS_USER
-        kvsnprintf(msg, sizeof(msg), fmt, va);
-#else
-        vsnprintf(msg, sizeof(msg), fmt, va);
-#endif
-        va_end(va);
-
-        error_impl("Assert in file '%s', '%s', line %zd : cond '%s' is false\nReason : '%s'\n", file, fun, line, strcond, msg);
+        return -ret;
     }
 }

@@ -38,12 +38,11 @@ SOFTWARE.
 __attribute__((__noreturn__))
 void abort_impl(const char* file, size_t line, const char* fun)
 {
-#if defined(__is_libk)
+#ifndef LUDOS_USER
     panic("Abort called at file '%s', line %d, function '%s'", file, line, fun);
 #else
     // TODO: Abnormally terminate the process as if by SIGABRT.
-    kprintf("abort()\n");
-    assert(false);
+    printf("abort()\n");
 #endif
     while (1) { }
     unreachable();
@@ -55,12 +54,11 @@ extern "C"
 __attribute__((__noreturn__))
 void abort(void)
 {
-#if defined(__is_libk)
+#ifndef LUDOS_USER
     panic("Abort called");
 #else
     // TODO: Abnormally terminate the process as if by SIGABRT.
-    kprintf("abort()\n");
-    assert(false);
+    printf("abort()\n");
 #endif
     while (1) { }
     unreachable();
@@ -70,12 +68,11 @@ extern "C"
 __attribute__((__noreturn__))
 void _abort(void)
 {
-#if defined(__is_libk)
+#ifndef LUDOS_USER
     panic("Abort called");
 #else
     // TODO: Abnormally terminate the process as if by SIGABRT.
-    kprintf("abort()\n");
-    assert(false);
+    printf("abort()\n");
 #endif
     while (1) { }
     unreachable();

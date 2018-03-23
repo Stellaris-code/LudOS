@@ -1,7 +1,7 @@
 /*
-assert.cpp
+lseek.cpp
 
-Copyright (c) 11 Yann BOUCHER (yann)
+Copyright (c) 23 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -23,37 +23,48 @@ SOFTWARE.
 
 */
 
-#include <assert.h>
+#include "syscalls/Linux/syscalls.hpp"
 
-#include <stdarg.h>
+#include "tasking/process.hpp"
 
-#include "utils/logging.hpp"
-#include "halt.hpp"
-#include "panic.hpp"
-#include "stdlib.h"
+#include "errno.h"
+#include "sys/fs.h"
+#include "fs/vfs.hpp"
 
-void impl_assert(bool cond, const char* strcond, const char* file, size_t line, const char* fun)
+int sys_lseek(unsigned int fd, int off, int whence)
 {
-    if (!cond)
+    auto entry = Process::current().get_fd(fd);
+    if (!entry)
     {
-        error_impl("Assert in file '%s', '%s', line %zd : cond '%s' is false\n", file, fun, line, strcond);
+        return EBADFD;
     }
-}
-void impl_assert_msg(bool cond, const char* strcond, const char* file, size_t line, const char* fun, const char* fmt, ...)
-{
-    if (!cond)
+
+    if (whence != SEEK_CUR && whence != SEEK_SET && whence != SEEK_END)
     {
-        char msg[512];
-
-        va_list va;
-        va_start(va, fmt);
-#ifndef LUDOS_USER
-        kvsnprintf(msg, sizeof(msg), fmt, va);
-#else
-        vsnprintf(msg, sizeof(msg), fmt, va);
-#endif
-        va_end(va);
-
-        error_impl("Assert in file '%s', '%s', line %zd : cond '%s' is false\nReason : '%s'\n", file, fun, line, strcond, msg);
+        return EINVAL;
     }
+
+    int new_cursor = entry->cursor;
+
+    if (whence == SEEK_CUR)
+    {
+        new_cursor += off;
+    }
+    else if (whence == SEEK_SET)
+    {
+        new_cursor = off;
+    }
+    else if (whence == SEEK_END)
+    {
+        new_cursor = entry->node->size() + off;
+    }
+
+    if (new_cursor < 0 || new_cursor >= (int)entry->node->size())
+    {
+        return EINVAL;
+    }
+
+    entry->cursor = new_cursor;
+
+    return -entry->cursor;
 }

@@ -23,11 +23,19 @@ SOFTWARE.
 
 */
 
-#include "stdio.h"
+#include <stdio.h>
+#include <string.h>
+#include <errno.h>
 
 #include "panic.hpp"
 
+#include "syscalls/syscall_list.hpp"
+
 int getchar()
 {
-    panic("getchar() unimplemented\n");
+    char buf[1];
+    read(0, buf, 1);
+    putchar(buf[0]);
+
+    return buf[0];
 }

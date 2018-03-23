@@ -183,8 +183,6 @@ void Ext2FS::resize_inode(size_t inode, size_t size)
         {
             free_data_block(inode, i - 1);
         }
-
-        // TODO : free indirected
     }
 
     info = read_inode(inode);

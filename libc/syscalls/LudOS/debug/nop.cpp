@@ -1,7 +1,7 @@
 /*
-assert.cpp
+nop.cpp
 
-Copyright (c) 11 Yann BOUCHER (yann)
+Copyright (c) 22 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -23,37 +23,13 @@ SOFTWARE.
 
 */
 
-#include <assert.h>
+#include "syscalls/syscalls.hpp"
 
-#include <stdarg.h>
+#include <errno.h>
 
-#include "utils/logging.hpp"
-#include "halt.hpp"
-#include "panic.hpp"
-#include "stdlib.h"
+extern int common_syscall(size_t type, size_t no, ...);
 
-void impl_assert(bool cond, const char* strcond, const char* file, size_t line, const char* fun)
+void syscall_nop()
 {
-    if (!cond)
-    {
-        error_impl("Assert in file '%s', '%s', line %zd : cond '%s' is false\n", file, fun, line, strcond);
-    }
-}
-void impl_assert_msg(bool cond, const char* strcond, const char* file, size_t line, const char* fun, const char* fmt, ...)
-{
-    if (!cond)
-    {
-        char msg[512];
-
-        va_list va;
-        va_start(va, fmt);
-#ifndef LUDOS_USER
-        kvsnprintf(msg, sizeof(msg), fmt, va);
-#else
-        vsnprintf(msg, sizeof(msg), fmt, va);
-#endif
-        va_end(va);
-
-        error_impl("Assert in file '%s', '%s', line %zd : cond '%s' is false\nReason : '%s'\n", file, fun, line, strcond, msg);
-    }
+    common_syscall(0, SYS_syscall_nop);
 }

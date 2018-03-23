@@ -28,5 +28,9 @@ SOFTWARE.
 
 void puts(const char* string)
 {
+#ifndef LUDOS_USER
     kprintf("%s\n", string);
+#else
+    printf("%s\n", string);
+#endif
 }

@@ -1,7 +1,7 @@
 /*
-assert.cpp
+openclose.cpp
 
-Copyright (c) 11 Yann BOUCHER (yann)
+Copyright (c) 20 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,38 +22,36 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
+#include "syscalls/syscalls.hpp"
 
-#include <assert.h>
+#include <errno.h>
 
-#include <stdarg.h>
+extern int common_syscall(size_t type, size_t no, ...);
 
-#include "utils/logging.hpp"
-#include "halt.hpp"
-#include "panic.hpp"
-#include "stdlib.h"
-
-void impl_assert(bool cond, const char* strcond, const char* file, size_t line, const char* fun)
+long open(const char* path, int flags, int mode)
 {
-    if (!cond)
+    auto ret = common_syscall(1, SYS_open, path, flags, mode);
+    if (ret > 0) // error set
     {
-        error_impl("Assert in file '%s', '%s', line %zd : cond '%s' is false\n", file, fun, line, strcond);
+        errno = ret;
+        return -1;
+    }
+    else
+    {
+        return -ret; // sys_open returns -fd so we have to negate the return value
     }
 }
-void impl_assert_msg(bool cond, const char* strcond, const char* file, size_t line, const char* fun, const char* fmt, ...)
+
+long close(unsigned int fd)
 {
-    if (!cond)
+    auto ret = common_syscall(1, SYS_close, fd);
+    if (ret > 0)
     {
-        char msg[512];
-
-        va_list va;
-        va_start(va, fmt);
-#ifndef LUDOS_USER
-        kvsnprintf(msg, sizeof(msg), fmt, va);
-#else
-        vsnprintf(msg, sizeof(msg), fmt, va);
-#endif
-        va_end(va);
-
-        error_impl("Assert in file '%s', '%s', line %zd : cond '%s' is false\nReason : '%s'\n", file, fun, line, strcond, msg);
+        errno = ret;
+        return -1;
+    }
+    else
+    {
+        return 0;
     }
 }

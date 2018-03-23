@@ -127,9 +127,14 @@ Process::~Process()
     delete arch_data;
 }
 
+bool Process::enabled()
+{
+    return m_current_process != nullptr;
+}
+
 Process &Process::current()
 {
-    assert(m_current_process);
+    assert(enabled());
 
     return *m_current_process;
 }

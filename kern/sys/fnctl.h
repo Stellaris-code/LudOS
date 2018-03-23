@@ -1,7 +1,7 @@
 /*
-assert.cpp
+fnctl.h
 
-Copyright (c) 11 Yann BOUCHER (yann)
+Copyright (c) 20 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,38 +22,18 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
+#ifndef L_FNCTL_H
+#define L_FNCTL_H
 
-#include <assert.h>
+#define	O_RDONLY	0x0000		/* open for reading only */
+#define	O_WRONLY	0x0001		/* open for writing only */
+#define	O_RDWR		0x0002		/* open for reading and writing */
+#define	O_ACCMODE	0x0003		/* mask for above modes */
 
-#include <stdarg.h>
+#define	O_NONBLOCK	0x0004		/* no delay */
+#define	O_APPEND	0x0008		/* set append mode */
+#define	O_CREAT		0x0200		/* create if nonexistant */
+#define	O_TRUNC		0x0400		/* truncate to zero length */
+#define	O_EXCL		0x0800		/* error if already exists */
 
-#include "utils/logging.hpp"
-#include "halt.hpp"
-#include "panic.hpp"
-#include "stdlib.h"
-
-void impl_assert(bool cond, const char* strcond, const char* file, size_t line, const char* fun)
-{
-    if (!cond)
-    {
-        error_impl("Assert in file '%s', '%s', line %zd : cond '%s' is false\n", file, fun, line, strcond);
-    }
-}
-void impl_assert_msg(bool cond, const char* strcond, const char* file, size_t line, const char* fun, const char* fmt, ...)
-{
-    if (!cond)
-    {
-        char msg[512];
-
-        va_list va;
-        va_start(va, fmt);
-#ifndef LUDOS_USER
-        kvsnprintf(msg, sizeof(msg), fmt, va);
-#else
-        vsnprintf(msg, sizeof(msg), fmt, va);
-#endif
-        va_end(va);
-
-        error_impl("Assert in file '%s', '%s', line %zd : cond '%s' is false\nReason : '%s'\n", file, fun, line, strcond, msg);
-    }
-}
+#endif // FNCTL_H

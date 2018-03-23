@@ -49,6 +49,7 @@ public:
     using vector::reserve;
     using vector::push_back;
     using vector::emplace_back;
+    using vector::pop_back;
 
     MemBuffer copy() const
     {

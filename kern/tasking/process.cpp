@@ -27,18 +27,32 @@ SOFTWARE.
 
 #include "fs/vfs.hpp"
 
+#include "syscalls/syscalls.hpp"
+
+Process::Process()
+{
+    init_default_fds();
+}
+
 Process::Process(gsl::span<const uint8_t> code_to_copy, size_t allocated_size)
     : id(0)
 {
     init_default_fds();
 
-    arch_init(code_to_copy, allocated_size);
+    reset(code_to_copy, allocated_size);
 }
 
 Process::Process(const std::string& _name, gsl::span<const uint8_t> code_to_copy, size_t allocated_size)
     : name(_name), id(0)
 {
     init_default_fds();
+
+    reset(code_to_copy, allocated_size, _name);
+}
+
+void Process::reset(gsl::span<const uint8_t> code_to_copy, size_t allocated_size, const std::string& name)
+{
+    if (!name.empty()) this->name = name;
 
     arch_init(code_to_copy, allocated_size);
 }
@@ -52,6 +66,16 @@ void Process::init_default_fds()
     assert(add_fd({vfs::find("/dev/stdin" ), .read = true,  .write = false}) == 0);
     assert(add_fd({vfs::find("/dev/stdout"), .read = false, .write = true }) == 1);
     assert(add_fd({vfs::find("/dev/stderr"), .read = false, .write = true }) == 2);
+}
+
+void Process::release_allocated_pages()
+{
+    for (const auto& pair : allocated_pages)
+    {
+        sys_free_pages(pair.first, pair.second);
+    }
+
+    allocated_pages.clear();
 }
 
 size_t Process::add_fd(const FDInfo &info)
@@ -90,4 +114,43 @@ void Process::close_fd(size_t fd)
     assert(get_fd(fd));
 
     fd_table[fd].node = nullptr;
+}
+
+bool Process::check_perms(uint16_t perms, uint16_t tgt_uid, uint16_t tgt_gid, AccessRequestPerm type)
+{
+    uint16_t user_flag  = (type == AccessRequestPerm::Read ? vfs::UserRead :
+                                                             type == AccessRequestPerm::Write? vfs::UserWrite:
+                                                                                               vfs::UserExec);
+    uint16_t group_flag = (type == AccessRequestPerm::Read ? vfs::GroupRead :
+                                                             type == AccessRequestPerm::Write? vfs::GroupWrite:
+                                                                                               vfs::GroupExec);
+    uint16_t other_flag = (type == AccessRequestPerm::Read ? vfs::OtherRead :
+                                                             type == AccessRequestPerm::Write? vfs::OtherWrite:
+                                                                                               vfs::OtherExec);
+
+    if (this->uid == Process::root_uid)
+    {
+        return true;
+    }
+
+    if ((tgt_uid == this->uid && perms & user_flag) ||
+            (tgt_gid == this->gid && perms & group_flag)||
+            perms & other_flag)
+    {
+        return true;
+    }
+
+    return false;
+}
+
+bool Process::enabled()
+{
+    return m_current_process != nullptr;
+}
+
+Process &Process::current()
+{
+    assert(enabled());
+
+    return *m_current_process;
 }

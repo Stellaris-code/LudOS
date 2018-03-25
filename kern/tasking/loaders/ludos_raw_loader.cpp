@@ -37,14 +37,14 @@ bool LudosRawLoader::accept(gsl::span<const uint8_t> file)
     return memcmp(file.data(), ludos_raw_magic, 8) == 0;
 }
 
-std::unique_ptr<Process> LudosRawLoader::load()
+bool LudosRawLoader::load(Process &p)
 {
     uint32_t allocated_size = *(uint32_t*)(m_file.data() + 8);
 
-    auto ptr = std::make_unique<Process>(m_file, allocated_size);
-    ptr->start_address = ludos_raw_len;
+    p.reset(m_file, allocated_size); // TODO : name
+    p.start_address = ludos_raw_len;
 
-    return ptr;
+    return true;
 }
 
 std::string LudosRawLoader::file_type() const

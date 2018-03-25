@@ -25,8 +25,8 @@ SOFTWARE.
 #ifndef PROCESS_LOADER_HPP
 #define PROCESS_LOADER_HPP
 
-#include <optional.hpp>
 #include <vector.hpp>
+#include <memory.hpp>
 
 #include "utils/gsl/gsl_span.hpp"
 #include "utils/logging.hpp"
@@ -41,7 +41,7 @@ public:
     static std::unique_ptr<ProcessLoader> get(gsl::span<const uint8_t> file);
 
 public:
-    virtual std::unique_ptr<Process> load() = 0;
+    virtual bool load(Process&) = 0;
     virtual std::string file_type() const = 0;
 
 public:

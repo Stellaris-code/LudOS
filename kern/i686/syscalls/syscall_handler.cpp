@@ -32,7 +32,7 @@ SOFTWARE.
 
 extern "C" uint32_t syscall_handler(const registers* const regs)
 {
-    Process::current().arch_data->reg_frame = *regs;
+    Process::current().arch_data->reg_frame = regs;
 
     if (regs->eax >= max_syscalls)
     {

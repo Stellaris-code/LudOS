@@ -30,6 +30,6 @@ SOFTWARE.
 
 void sys_panic(const char* string)
 {
-    panic_regs = &Process::current().arch_data->reg_frame;
+    panic_regs = Process::current().arch_data->reg_frame;
     panic("%s", string);
 }

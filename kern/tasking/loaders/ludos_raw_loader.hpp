@@ -34,7 +34,7 @@ public:
     static bool accept(gsl::span<const uint8_t> file);
 
 public:
-    virtual std::unique_ptr<Process> load();
+    virtual bool load(Process& p);
     virtual std::string file_type() const;
 };
 

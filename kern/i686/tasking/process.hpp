@@ -34,7 +34,7 @@ struct Process::ArchSpecificData
 {
     aligned_vector<uint8_t, Paging::page_size> stack;
     aligned_vector<uint8_t, Paging::page_size> code;
-    registers reg_frame;
+    const registers* reg_frame;
     uintptr_t argv_page;
 };
 

@@ -40,6 +40,7 @@ class Process : NonCopyable
 public:
     struct ArchSpecificData;
 
+    Process();
     Process(gsl::span<const uint8_t> code_to_copy, size_t allocated_size = 0);
     Process(const std::string& name, gsl::span<const uint8_t> code_to_copy, size_t allocated_size = 0);
     ~Process(); // = default;
@@ -58,27 +59,42 @@ public:
         size_t cursor { 0 };
     };
 
+    enum class AccessRequestPerm : uint16_t
+    {
+        Read,
+        Write,
+        Exec
+    };
+
     static constexpr size_t root_uid = 0;
 
 public:
+    void reset(gsl::span<const uint8_t> code_to_copy, size_t allocated_size = 0, const std::string& name = "");
+
     size_t add_fd(const FDInfo& info);
     FDInfo *get_fd(size_t fd);
     void close_fd(size_t fd);
 
     void execute(gsl::span<const std::string> args);
 
+    bool check_perms(uint16_t perms, uint16_t tgt_uid, uint16_t tgt_gid, AccessRequestPerm type);
+
+    static bool check_args_size(gsl::span<const std::string> args);
+
     void stop();
 
 private:
     void init_default_fds();
+    void release_allocated_pages();
 
 public:
-    const std::string name { "<INVALID>" };
+    std::string name { "<INVALID>" };
     const uint32_t id { 0 };
     const uint32_t uid { root_uid };
     const uint32_t gid { 0 };
     std::string pwd = "/";
     std::vector<FDInfo> fd_table;
+    std::vector<std::pair<uintptr_t, size_t>> allocated_pages;
     uintptr_t start_address { 0 };
     ArchSpecificData* arch_data { nullptr };
 

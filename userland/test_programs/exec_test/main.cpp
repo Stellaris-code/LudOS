@@ -1,7 +1,7 @@
 /*
-alloc.cpp
+main.cpp
 
-Copyright (c) 18 Yann BOUCHER (yann)
+Copyright (c) 25 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -23,37 +23,31 @@ SOFTWARE.
 
 */
 
-#include <errno.h>
+#include <syscalls/syscall_list.hpp>
 
-#include "i686/mem/physallocator.hpp"
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 
-#include "tasking/process.hpp"
-
-int sys_alloc_pages(int pages)
+int main(int argc, char* argv[])
 {
-    uint8_t* addr = reinterpret_cast<uint8_t*>(Paging::alloc_virtual_page(pages, true));
-    for (size_t i { 0 }; i < pages; ++i)
+    char file[] = "/initrd/test_programs/ExecTest";
+    printf("Going to execute file '%s'\n", file);
+
+    void* waste = malloc(8000000);
+
+    const char* empty_arr[] = {nullptr};
+    char* arg_arr[argc+1];
+    for (int i { 0 }; i < argc; ++i)
     {
-        void* physical_page = (void*)PhysPageAllocator::alloc_physical_page();
-        Paging::map_page(physical_page,
-                         addr + i*Paging::page_size, Memory::Read|Memory::Write|Memory::User);
+        arg_arr[i] = (char*)malloc(strlen(argv[i]));
+        strcpy(arg_arr[i], argv[i]);
+        printf("Arg %d : %s\n", i, arg_arr[i]);
     }
 
-    Process::current().allocated_pages.emplace_back((uintptr_t)addr, pages);
+    arg_arr[argc] = nullptr;
 
-    return (int)addr;
-}
+    execve(file, (const char**)arg_arr, empty_arr);
 
-int sys_free_pages(uintptr_t ptr, int pages)
-{
-    assert(ptr % Paging::page_size == 0);
-
-    for (size_t i { 0 }; i < pages; ++i)
-    {
-        void* physical_page = (void*)Memory::physical_address((uint8_t*)ptr + i*Paging::page_size);
-        PhysPageAllocator::release_physical_page((uintptr_t)physical_page);
-        Paging::unmap_page((uint8_t*)ptr + i*Paging::page_size);
-    }
-
-    return EOK;
+    return 0;
 }

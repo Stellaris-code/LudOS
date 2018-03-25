@@ -31,7 +31,7 @@ SOFTWARE.
 
 #include "i686/cpu/registers.hpp"
 
-extern "C" uint32_t syscall_handler(const registers* const regs);
+extern "C" uint32_t syscall_handler(const registers * const regs);
 
 using syscall_ptr = std::function<uint32_t(const registers* const)>;
 

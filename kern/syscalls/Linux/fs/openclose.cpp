@@ -51,25 +51,17 @@ int sys_open(const char* path, int flags, int mode)
     const auto perms = node->stat().perms;
     if ((flags & 0b11) == O_RDONLY || (flags & 0b11) == O_RDWR)
     {
-        if (Process::current().uid != Process::root_uid)
+        if (!Process::current().check_perms(perms, node->stat().uid, node->stat().gid, Process::AccessRequestPerm::Read))
         {
-            if (!((node->stat().uid == Process::current().uid && perms & vfs::UserRead) ||
-                  (node->stat().gid == Process::current().gid && perms & vfs::GroupRead)))
-            {
-                return EACCES;
-            }
+            return EACCES;
         }
         info.read = true;
     }
     if ((flags & 0b11) == O_WRONLY || (flags & 0b11) == O_RDWR)
     {
-        if (Process::current().uid != Process::root_uid)
+        if (!Process::current().check_perms(perms, node->stat().uid, node->stat().gid, Process::AccessRequestPerm::Write))
         {
-            if (!((node->stat().uid == Process::current().uid && perms & vfs::UserWrite) ||
-                  (node->stat().gid == Process::current().gid && perms & vfs::GroupWrite)))
-            {
-                return EACCES;
-            }
+            return EACCES;
         }
         info.write = true;
     }

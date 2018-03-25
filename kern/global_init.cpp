@@ -104,6 +104,7 @@ SOFTWARE.
 // TODO : process : free pages and alloc only at execute time
 // TODO : dissasemble from beggining of function
 // TODO : check usermode addresses
+// TODO : task switch : fpu state
 
 /**********************************/
 // BUGS

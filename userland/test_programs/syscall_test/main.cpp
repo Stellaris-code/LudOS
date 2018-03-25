@@ -49,7 +49,7 @@ void __attribute__((destructor)) tini()
     common_syscall(0, 2, "goodbye!\n");
 }
 
-int main(int a, char* argv[])
+int main(int argc, char* argv[])
 {
     //std::string std_str = "Bonjour depuis std::string !\n";
 
@@ -61,7 +61,7 @@ int main(int a, char* argv[])
 
     strcpy(allocated_str, "Bonjour depuis malloc!\n");
 
-    for (size_t i { 0 }; i < a; ++i)
+    for (size_t i { 0 }; i < argc; ++i)
     {
         print_debug(argv[i]);
         print_debug("\n");

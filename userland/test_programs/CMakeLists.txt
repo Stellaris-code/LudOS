@@ -44,6 +44,7 @@ set(COMMON_SRCS "layout.ld" "start.asm" "init.cpp")
 ADD_TEST_PROGRAM(DivZero div_zero)
 ADD_TEST_PROGRAM(SyscallTest syscall_test)
 ADD_TEST_PROGRAM(MoreOrLess more_or_less)
+ADD_TEST_PROGRAM(ExecTest exec_test)
 
 set(CMAKE_ASM_NASM_LINK_EXECUTABLE "${ARCH}-elf-gcc -melf_i386 -nodefaultlibs -nostdlib -nostartfiles -T ${CMAKE_CURRENT_SOURCE_DIR}/layout.ld <OBJECTS> -o <TARGET>.bin")
 set(CMAKE_CXX_FLAGS "-nostdlib -fno-pic -std=c++17 -fno-exceptions -nostdinc -fno-builtin -fno-stack-protector -nostartfiles -nodefaultlibs")

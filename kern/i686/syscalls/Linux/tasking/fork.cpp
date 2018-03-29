@@ -1,7 +1,7 @@
 /*
-syscall.hpp
+fork.cpp
 
-Copyright (c) 11 Yann BOUCHER (yann)
+Copyright (c) 28 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,29 +22,20 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef SYSCALL_HPP
-#define SYSCALL_HPP
 
-#include <stdint.h>
+#include "i686/syscalls/syscall.hpp"
 
-constexpr uint8_t linux_syscall_int = 0x80;
-constexpr uint8_t ludos_syscall_int = 0x70;
+#include "tasking/process.hpp"
+#include "i686/tasking/process.hpp"
 
-extern volatile bool processing_syscall;
+#include "errno.h"
 
-void init_syscalls();
+size_t sys_fork()
+{
+    auto child = Process::clone(Process::current());
+    if (!child) return ENOMEM;
 
-#define LUDOS_SYSCALL_DEF(num, name, ret, ...) \
-    ret sys_##name(__VA_ARGS__); \
-    constexpr size_t SYS_##name = num;
+    child->arch_data->reg_frame->eax = 0; // return zero in the child
 
-#define LINUX_SYSCALL_DEF(num, name, ret, ...) \
-    ret sys_##name(__VA_ARGS__); \
-    constexpr size_t SYS_##name = num;
-
-#include "syscall_list.def"
-
-#undef LUDOS_SYSCALL_DEF
-#undef LINUX_SYSCALL_DEF
-
-#endif // SYSCALL_HPP
+    return -child->pid;
+}

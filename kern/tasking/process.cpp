@@ -34,26 +34,8 @@ Process::Process()
     init_default_fds();
 }
 
-Process::Process(gsl::span<const uint8_t> code_to_copy, size_t allocated_size)
-    : id(0)
+void Process::reset(gsl::span<const uint8_t> code_to_copy, size_t allocated_size)
 {
-    init_default_fds();
-
-    reset(code_to_copy, allocated_size);
-}
-
-Process::Process(const std::string& _name, gsl::span<const uint8_t> code_to_copy, size_t allocated_size)
-    : name(_name), id(0)
-{
-    init_default_fds();
-
-    reset(code_to_copy, allocated_size, _name);
-}
-
-void Process::reset(gsl::span<const uint8_t> code_to_copy, size_t allocated_size, const std::string& name)
-{
-    if (!name.empty()) this->name = name;
-
     arch_init(code_to_copy, allocated_size);
 }
 
@@ -76,6 +58,19 @@ void Process::release_allocated_pages()
     }
 
     allocated_pages.clear();
+}
+
+uint32_t Process::find_free_pid()
+{
+    for (size_t i { 0 }; i < m_processes.size(); ++i)
+    {
+        if (!m_processes[i])
+        {
+            return i;
+        }
+    }
+
+    return m_processes.size();
 }
 
 size_t Process::add_fd(const FDInfo &info)
@@ -143,6 +138,13 @@ bool Process::check_perms(uint16_t perms, uint16_t tgt_uid, uint16_t tgt_gid, Ac
     return false;
 }
 
+Process::~Process()
+{
+    stop();
+
+    kfree(arch_data);
+}
+
 bool Process::enabled()
 {
     return m_current_process != nullptr;
@@ -153,4 +155,43 @@ Process &Process::current()
     assert(enabled());
 
     return *m_current_process;
+}
+
+void Process::kill(uint32_t pid)
+{
+    assert(by_pid(pid));
+
+    m_processes[pid].release();
+    assert(!by_pid(pid));
+}
+
+Process *Process::by_pid(uint32_t pid)
+{
+    if (pid >= m_processes.size())
+    {
+        return nullptr;
+    }
+
+    return m_processes[pid].get();
+}
+
+Process *Process::create(gsl::span<const std::string> args)
+{
+    uint32_t free_idx = find_free_pid();
+    if (free_idx == m_processes.size())
+    {
+        m_processes.emplace_back(new Process);
+    }
+    else
+    {
+        m_processes[free_idx].reset(new Process);
+    }
+
+    if (m_processes[free_idx])
+    {
+        m_processes[free_idx]->pid = free_idx;
+        m_processes[free_idx]->set_args(args);
+    }
+
+    return m_processes[free_idx].get();
 }

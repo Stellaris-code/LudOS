@@ -29,5 +29,5 @@ SOFTWARE.
 
 int sys_getpid()
 {
-    return Process::current().id;
+    return Process::current().pid;
 }

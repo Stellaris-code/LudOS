@@ -54,13 +54,13 @@ void dump(const registers *regs)
         kprintf("eip : 0x%x int : 0x%x  err code : 0x%x\n", regs->eip, regs->int_no, regs->err_code);
         kprintf("eax : 0x%x  ebx : 0x%x  ", regs->eax, regs->ebx);
         kprintf("ecx : 0x%x  edx : 0x%x  \n", regs->ecx, regs->edx);
-        kprintf("ebx : 0x%x  esi : 0x%x  ", regs->ebp, regs->esi);
-        kprintf("edi : 0x%x  ebp : 0x%x\n", regs->edi, regs->ebp);
+        kprintf("ebp : 0x%x  esi : 0x%x  ", regs->ebp, regs->esi);
+        kprintf("edi : 0x%x  esp : 0x%x\n", regs->edi, regs->esp);
         kprintf("cr0 : 0x%x  cr2 : 0x%x cr3 : 0x%x  cr4 : 0x%x\n", cr0(), cr2(), cr3(), cr4());
         kprintf("gs : 0x%x  fs : 0x%x  ", regs->gs, regs->fs);
         kprintf("es : 0x%x  ds : 0x%x\n", regs->es, regs->ds);
         kprintf("cs : 0x%x  eflags : 0x%x  ", regs->cs, regs->eflags);
-        kprintf("ss : 0x%x  esp : 0x%x  CPL : %d (%s)\n", regs->ss, regs->esp, regs->cs & 0x3, regs->cs & 0x3 ? "User" : "Kernel");
+        kprintf("ss : 0x%x CPL : %d (%s)\n", regs->ss, regs->cs & 0x3, regs->cs & 0x3 ? "User" : "Kernel");
     }
 }
 #pragma GCC diagnostic pop

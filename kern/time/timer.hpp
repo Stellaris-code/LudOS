@@ -160,9 +160,8 @@ private:
         // remove used callbacks
         m_callbacks.remove_if([](const Callback& c) { return c.to_be_deleted;});
     }
+
 private:
-
-
     static inline std::list<Callback> m_callbacks;
     static inline uint32_t m_ticks { 0 };
     static inline uint32_t m_freq { 0 };

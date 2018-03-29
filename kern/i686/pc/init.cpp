@@ -141,6 +141,12 @@ namespace pc
 {
 void init(uint32_t magic, const multiboot_info_t* mbd_info)
 {
+    int register esp asm("esp");
+    if ((esp & 0xF) != 0 && false)
+    {
+        early_abort("Stack is not aligned on a 16-byte boundary !");
+    }
+
     early_init();
 
     serial::debug::init(BDA::com1_port());

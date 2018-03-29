@@ -25,6 +25,8 @@ SOFTWARE.
 
 struct SyscallEntry;
 
+LINUX_SYSCALL_DEF(0x01, exit,   void,   int errcode)
+LINUX_SYSCALL_DEF(0x02, fork,   size_t)
 LINUX_SYSCALL_DEF(0x03, read,   size_t, unsigned int fd, void* buf, size_t count)
 LINUX_SYSCALL_DEF(0x04, write,  size_t, unsigned int fd, const void* buf, size_t count)
 LINUX_SYSCALL_DEF(0x05, open,   int, const char* path, int flags, int mode)

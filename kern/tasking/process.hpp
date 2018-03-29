@@ -40,16 +40,6 @@ class Process : NonCopyable
 public:
     struct ArchSpecificData;
 
-    Process();
-    Process(gsl::span<const uint8_t> code_to_copy, size_t allocated_size = 0);
-    Process(const std::string& name, gsl::span<const uint8_t> code_to_copy, size_t allocated_size = 0);
-    ~Process(); // = default;
-
-    static bool enabled();
-
-    static Process& current();
-
-public:
     struct FDInfo
     {
         std::shared_ptr<vfs::node> node;
@@ -69,32 +59,52 @@ public:
     static constexpr size_t root_uid = 0;
 
 public:
-    void reset(gsl::span<const uint8_t> code_to_copy, size_t allocated_size = 0, const std::string& name = "");
+    static bool enabled();
+
+    static Process* create(gsl::span<const std::string> args);
+    static Process* clone(Process& proc);
+    static Process& current();
+    static void     kill(uint32_t pid);
+    static Process* by_pid(uint32_t pid);
+
+    static bool check_args_size(gsl::span<const std::string> args);
+
+public:
+    Process& operator=(Process&&) noexcept = default;
+    Process(Process&& other) noexcept = default;
+
+    ~Process();
+
+    void reset(gsl::span<const uint8_t> code_to_copy, size_t allocated_size = 0);
+
+    void set_args(gsl::span<const std::string> args);
 
     size_t add_fd(const FDInfo& info);
     FDInfo *get_fd(size_t fd);
     void close_fd(size_t fd);
 
-    void execute(gsl::span<const std::string> args);
+    void execute();
+    void stop();
 
     bool check_perms(uint16_t perms, uint16_t tgt_uid, uint16_t tgt_gid, AccessRequestPerm type);
 
-    static bool check_args_size(gsl::span<const std::string> args);
-
-    void stop();
+private:
+    Process();
 
 private:
     void init_default_fds();
     void release_allocated_pages();
+    static uint32_t find_free_pid();
 
 public:
     std::string name { "<INVALID>" };
-    const uint32_t id { 0 };
-    const uint32_t uid { root_uid };
-    const uint32_t gid { 0 };
+    uint32_t pid { 0 };
+    uint32_t uid { root_uid };
+    uint32_t gid { 0 };
     std::string pwd = "/";
     std::vector<FDInfo> fd_table;
     std::vector<std::pair<uintptr_t, size_t>> allocated_pages;
+    std::vector<std::string> args;
     uintptr_t start_address { 0 };
     ArchSpecificData* arch_data { nullptr };
 
@@ -103,6 +113,7 @@ private:
 
 private:
     static inline Process* m_current_process { nullptr };
+    static inline std::vector<std::unique_ptr<Process>> m_processes;
 };
 
 extern "C" void test_task();

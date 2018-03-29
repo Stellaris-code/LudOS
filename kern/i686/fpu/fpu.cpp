@@ -29,7 +29,11 @@ SOFTWARE.
 #include "../cpu/cpuid.hpp"
 #include "utils/bitops.hpp"
 
+#include <assert.h>
+#include <string.h>
+
 #include "utils/logging.hpp"
+#include "utils/align.hpp"
 
 void FPU::init()
 {
@@ -42,17 +46,26 @@ void FPU::init()
     setup_fpu();
 }
 
+alignas(16) uint8_t data[512];
+
 FPUState FPU::save()
 {
+    assert(((uintptr_t)data & 0xF) == 0);
+
+    asm volatile ("fxsave %0"::"m"(data):"memory");
+
     FPUState state;
-    asm volatile ("fxsave (%0)"::"r"(state.data.data()):"memory");
+    memcpy(state.data, data, 512);
 
     return state;
 }
 
 void FPU::load(const FPUState &state)
 {
-    asm volatile ("fxrstor (%0)"::"r"(state.data.data()):"memory");
+    assert(((uintptr_t)data & 0xF) == 0);
+    memcpy(data, state.data, 512);
+
+    asm volatile ("fxrstor %0"::"m"(data):"memory");
 }
 
 bool FPU::check_cpuid()

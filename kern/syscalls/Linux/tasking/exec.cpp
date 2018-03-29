@@ -32,6 +32,7 @@ SOFTWARE.
 #include "drivers/storage/disk.hpp"
 #include "mem/meminfo.hpp"
 #include "utils/memutils.hpp"
+#include "utils/align.hpp"
 
 #include <errno.h>
 
@@ -43,9 +44,10 @@ Process* process { nullptr };
 // TODO : ETXTBSY
 // TODO : envp
 int sys_execve(const char* path, const char* argv[], const char* envp[])
-{
-
+{   
     {
+        ALIGN_STACK(16);
+
         auto node = vfs::find(path);
         if (!node)
         {
@@ -98,5 +100,6 @@ int sys_execve(const char* path, const char* argv[], const char* envp[])
     }
     // Force scope deletion, otherwise it will never be called
 
-    process->execute(args);
+    process->set_args(args);
+    process->execute();
 }

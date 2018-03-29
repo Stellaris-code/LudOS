@@ -1,9 +1,6 @@
 global enter_ring3
 global test_task
 
-USER_CODE_SELECTOR equ 0x18
-USER_DATA_SELECTOR equ 0x20
-
 test_task:
     xchg bx, bx
     xor eax, eax
@@ -15,10 +12,7 @@ enter_ring3:
 
     cli ; disable instructions
 
-    mov ecx, [esp+0xc] ; user_eip
-    mov edx, [esp+0x8] ; user_esp
-    mov esi, [esp+0x10] ; argc
-    mov edi, [esp+0x14] ; argv
+    mov esi, [esp+0x8] ; reg_frame
 
     ;;;;;;;;;;;;
 
@@ -26,21 +20,21 @@ enter_ring3:
     pop eax ; eflags
     or eax, 0011_0010_0000_0000b ; set IF and set IOPL to 3
 
-    push dword USER_DATA_SELECTOR | 0x3 ; ss
-    push edx ; esp
+    push dword [esi+0x44] ; ss
+    push dword [esi+0x40] ; esp
 
     push eax ; user_eflags
-    push dword USER_CODE_SELECTOR | 0x3 ; user_cs
-    push ecx ; user_eip
+    push dword [esi+0x38] ; user_cs
+    push dword [esi+0x34] ; eip
 
-    mov eax, USER_DATA_SELECTOR | 0x3
+    mov eax, [esi+0x44] ; ds
     mov ds, ax
     mov es, ax
     mov fs, ax
     mov gs, ax
 
-    mov eax, esi ; argc
-    mov ebx, edi ; argv
+    mov eax, [esi+0x10]
+    mov ebx, [esi+0x14]
 
     iret ;  to user land !
 

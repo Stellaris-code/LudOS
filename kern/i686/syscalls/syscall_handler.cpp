@@ -29,31 +29,41 @@ SOFTWARE.
 #include "errno.h"
 
 #include "i686/tasking/process.hpp"
+#include "utils/align.hpp"
 
-extern "C" uint32_t syscall_handler(const registers* const regs)
+extern "C" uint32_t __attribute__((force_align_arg_pointer)) syscall_handler(registers* const regs)
 {
+    processing_syscall = true;
+
     Process::current().arch_data->reg_frame = regs;
+    Process::current().arch_data->fpu_state = FPU::save();
+
+    uint32_t ret = ENOSYS;
 
     if (regs->eax >= max_syscalls)
     {
-        return ENOSYS;
+        ret = ENOSYS;
+        return ret;
     }
 
     switch (regs->int_no)
     {
         case ludos_syscall_int:
-            return ludos_syscall_table[regs->eax].ptr(regs);
+            ret = ludos_syscall_table[regs->eax].ptr(regs);
             break;
 
         case linux_syscall_int:
-            return linux_syscall_table[regs->eax].ptr(regs);
+            ret = linux_syscall_table[regs->eax].ptr(regs);
             break;
 
         default:
-            err("Invalid syscall interrupt number : 0x%x, pid %d\n", regs->int_no, Process::current().id);
-            return ENOSYS;
-            break;
+            err("Invalid syscall interrupt number : 0x%x, pid %d\n", regs->int_no, Process::current().pid);
+            ret = ENOSYS;
+            return ret;
     }
 
-    return ENOSYS;
+    FPU::load(Process::current().arch_data->fpu_state);
+    regs->eax = ret;
+    processing_syscall = false;
+    return ret;
 }

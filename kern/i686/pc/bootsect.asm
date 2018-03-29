@@ -92,6 +92,8 @@ higher_half_start:
     add ebx, KERNEL_VIRTUAL_BASE
     mov [mbd_info], ebx
 
+    add esp, 8 ; align stack to 16-byte boundary
+
     push dword [mbd_info]
     push dword [magic]
 
@@ -109,6 +111,7 @@ higher_half_start:
 
     sub esp, 4
     mov [esp], dword 0x0
+    sub esp, 8
 
     call __cxa_finalize
 
@@ -124,5 +127,5 @@ section .bss
 align 4
 magic:      resd 1
 mbd_info:   resd 1
-align 4
+align 16
 kernel_stack_bottom:      resb STACKSIZE                   ; reserve 16k stack on a doubleword boundary

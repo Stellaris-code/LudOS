@@ -42,7 +42,7 @@ SOFTWARE.
 
 int invalid_syscall(const registers* const r)
 {
-    warn("Invalid int 0x%x syscall number : 0x%x, pid %d\n", r->int_no, r->eax, Process::current().id);
+    warn("Invalid int 0x%x syscall number : 0x%x, pid %d\n", r->int_no, r->eax, Process::current().pid);
     return ENOSYS;
 }
 

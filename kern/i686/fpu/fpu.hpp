@@ -25,14 +25,14 @@ SOFTWARE.
 #ifndef FPU_HPP
 #define FPU_HPP
 
-#include <array.hpp>
+#include <stdint.h>
 
 extern "C" bool check_fpu_presence();
 extern "C" void setup_fpu();
 
 struct FPUState
 {
-    alignas(16) std::array<uint8_t, 512> data;
+    uint8_t data[512];
 };
 
 class FPU

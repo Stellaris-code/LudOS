@@ -149,7 +149,8 @@ syscall_common_stub:
     pop ds
 
     ; Restore general purpose
-    add esp, 4 ; skip stack's eax in order to keep the syscall return value
+    ;add esp, 4 ; skip stack's eax in order to keep the syscall return value
+    pop eax
     pop ecx
     pop edx
     pop ebx

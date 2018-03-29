@@ -1,7 +1,7 @@
 /*
-syscall.hpp
+exit.cpp
 
-Copyright (c) 11 Yann BOUCHER (yann)
+Copyright (c) 28 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,29 +22,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef SYSCALL_HPP
-#define SYSCALL_HPP
+#include "syscalls/syscalls.hpp"
 
-#include <stdint.h>
+#include "tasking/process.hpp"
 
-constexpr uint8_t linux_syscall_int = 0x80;
-constexpr uint8_t ludos_syscall_int = 0x70;
-
-extern volatile bool processing_syscall;
-
-void init_syscalls();
-
-#define LUDOS_SYSCALL_DEF(num, name, ret, ...) \
-    ret sys_##name(__VA_ARGS__); \
-    constexpr size_t SYS_##name = num;
-
-#define LINUX_SYSCALL_DEF(num, name, ret, ...) \
-    ret sys_##name(__VA_ARGS__); \
-    constexpr size_t SYS_##name = num;
-
-#include "syscall_list.def"
-
-#undef LUDOS_SYSCALL_DEF
-#undef LINUX_SYSCALL_DEF
-
-#endif // SYSCALL_HPP
+void sys_exit(int errcode)
+{
+    // TODO : errcode
+    Process::kill(Process::current().pid);
+}

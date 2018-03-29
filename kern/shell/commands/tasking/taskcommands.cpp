@@ -62,13 +62,6 @@ void install_task_commands(Shell &sh)
 
          kprintf("File type : %s\n", loader->file_type().c_str());
 
-         Process process;
-         if (!loader->load(process))
-         {
-             sh.error("Can't load '%s'\n", args[0].c_str());
-             return -4;
-         }
-
          std::vector<std::string> program_args(args.size()+1);
          program_args[0] = sh.get_path(path);
          for (size_t i { 1 }; i < args.size(); ++i)
@@ -76,7 +69,14 @@ void install_task_commands(Shell &sh)
              program_args[i] = args[i];
          }
 
-         process.execute(program_args);
+         auto process = Process::create(program_args);
+         if (!process || !loader->load(*process))
+         {
+             sh.error("Can't load '%s'\n", args[0].c_str());
+             return -4;
+         }
+
+         process->execute();
 
          return 0;
      }});

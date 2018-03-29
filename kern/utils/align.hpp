@@ -37,4 +37,9 @@ inline Ptr aligned(Ptr ptr, size_t alignement)
     return reinterpret_cast<Ptr>(result);
 }
 
+#define ALIGN_STACK(align) \
+    volatile void* __esp__; \
+    volatile uint8_t __align_buf__ [align - ((uintptr_t)&__esp__ & (align-1))]; \
+    (void)__align_buf__;
+
 #endif // ALIGN_HPP

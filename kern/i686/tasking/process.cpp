@@ -35,10 +35,13 @@ SOFTWARE.
 
 #include "utils/membuffer.hpp"
 #include "utils/memutils.hpp"
+#include "utils/align.hpp"
 
-extern "C" void enter_ring3(uint32_t esp, uint32_t eip, uint32_t argc, uint32_t argv);
+extern "C" void enter_ring3(const registers* regs);
 
 constexpr size_t user_stack_top = KERNEL_VIRTUAL_BASE - sizeof(uintptr_t);
+
+bool args_need_update { false };
 
 void map_code(const Process::ArchSpecificData& data)
 {
@@ -132,14 +135,15 @@ bool Process::check_args_size(gsl::span<const std::string> args)
     return tb_size < Paging::page_size;
 }
 
-Process::~Process()
+void Process::set_args(gsl::span<const std::string> args)
 {
-    stop();
+    this->args.resize(args.size());
+    std::copy(args.begin(), args.end(), this->args.begin());
 
-    delete arch_data;
+    args_need_update = true;
 }
 
-void Process::execute(gsl::span<const std::string> args)
+void Process::execute()
 {
     {
         map_code(*arch_data);
@@ -148,12 +152,47 @@ void Process::execute(gsl::span<const std::string> args)
         arch_data->argv_page = Paging::alloc_virtual_page(1, true);
         Paging::map_page((void*)PhysPageAllocator::alloc_physical_page(), (void*)arch_data->argv_page, Memory::Read|Memory::Write|Memory::User);
 
-        populate_argv(arch_data->argv_page, args);
+        if (args_need_update)
+        {
+            populate_argv(arch_data->argv_page, this->args);
+            args_need_update = false;
+        }
 
         m_current_process = this;
     }
 
-    enter_ring3(user_stack_top, start_address, args.size(), arch_data->argv_page);
+    ALIGN_STACK(16);
+
+    registers regs;
+    memset(&regs, 0, sizeof(registers));
+
+    regs.eax = args.size();
+    regs.ecx = arch_data->argv_page;
+    regs.eip = start_address;
+    regs.esp = user_stack_top;
+    regs.cs = gdt::user_code_selector*0x8 | 0x3;
+    regs.ds = regs.es = regs.fs = regs.gs = regs.ss = gdt::user_data_selector*0x8 | 0x3;
+
+    enter_ring3(&regs);
+}
+
+Process *Process::clone(Process &proc)
+{
+    auto new_proc = Process::create(proc.args);
+    if (!new_proc) return nullptr;
+
+    new_proc->name = proc.name;
+    new_proc->uid = proc.uid;
+    new_proc->gid = proc.gid;
+    new_proc->pwd = proc.pwd;
+    new_proc->fd_table = proc.fd_table;
+    new_proc->allocated_pages = proc.allocated_pages;
+    new_proc->start_address = proc.start_address;
+    new_proc->arch_data = new ArchSpecificData;
+    *new_proc->arch_data = *proc.arch_data;
+
+    assert(new_proc);
+    return new_proc;
 }
 
 void Process::stop()
@@ -178,4 +217,6 @@ void Process::arch_init(gsl::span<const uint8_t> code_to_copy, size_t allocated_
     arch_data->code.clear();
     arch_data->code.resize(std::max<int>(code_to_copy.size(), allocated_size));
     std::copy(code_to_copy.begin(), code_to_copy.end(), arch_data->code.begin());
+
+    set_args(args);
 }

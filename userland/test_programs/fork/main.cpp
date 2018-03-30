@@ -27,9 +27,36 @@ SOFTWARE.
 
 #include <syscalls/syscall_list.hpp>
 
+#include <errno.h>
+#include <stdio.h>
+#include <string.h>
+
 int main()
 {
     printf("Before fork : \n");
     int ret = fork();
-    printf("PID %d, Fork returned %d\n", (int)getpid(), ret);
+    if (ret < 0)
+    {
+        printf("Error : %s\n", strerror(errno));
+        return 0;
+    }
+    else if (ret == 0)
+    {
+        while (true)
+        {
+            printf("Child!\n");
+            sched_yield();
+            exit(0);
+        }
+        return 1;
+    }
+    else
+    {
+        while (true)
+        {
+            printf("Parent with child PID %d\n", ret);
+            sched_yield();
+        }
+        return 2;
+    }
 }

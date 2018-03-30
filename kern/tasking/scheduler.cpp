@@ -1,7 +1,7 @@
 /*
-print.cpp
+scheduler.cpp
 
-Copyright (c) 13 Yann BOUCHER (yann)
+Copyright (c) 29 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -23,13 +23,28 @@ SOFTWARE.
 
 */
 
-#include "syscalls/LudOS/syscalls.hpp"
+#include "scheduler.hpp"
 
-#include "i686/tasking/process.hpp"
-#include "panic.hpp"
+#include "tasking/process.hpp"
+#include "utils/logging.hpp"
 
-void sys_panic(const char* string)
+namespace tasking
 {
-    panic_regs = &Process::current().arch_data->regs;
-    panic("%s", string);
+void schedule()
+{
+    Process& current = Process::current();
+
+    size_t next_pid = current.pid + 1;
+    if (next_pid >= Process::count())
+    {
+        next_pid = 0;
+    }
+
+    log_serial("Switching from PID %d to PID %d\n", current.pid, next_pid);
+
+    current.stop();
+
+    assert(Process::by_pid(next_pid));
+    Process::by_pid(next_pid)->execute();
+}
 }

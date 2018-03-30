@@ -25,6 +25,7 @@ SOFTWARE.
 
 #include "i686/cpu/registers.hpp"
 #include "i686/pc/devices/pic.hpp"
+#include "i686/tasking/process.hpp"
 #include "halt.hpp"
 #include "panic.hpp"
 #include "isr.hpp"
@@ -32,6 +33,7 @@ SOFTWARE.
 #include "io.hpp"
 #include "terminal/terminal.hpp"
 #include "utils/logging.hpp"
+#include "tasking/process.hpp"
 
 #include <stdio.h>
 
@@ -78,6 +80,9 @@ constexpr const char *exception_messages[] = {
 extern "C"
 const registers* isr_handler(const registers* const regs)
 {
+    // If in user mode
+    if (regs->cs & 0x3) Process::current().arch_data->regs = *regs;
+
     if (auto handl = handlers[regs->int_no]; handl)
     {
         if (handl(regs)) return regs;
@@ -112,6 +117,9 @@ const registers* isr_handler(const registers* const regs)
 extern "C"
 const registers* irq_handler(const registers* const regs)
 {
+    // If in user mode
+    if (regs->cs & 0x3) Process::current().arch_data->regs = *regs;
+
     pic::send_eoi(regs->int_no-31);
     if (auto handl = handlers[regs->int_no]; handl)
     {

@@ -35,7 +35,7 @@ extern "C" uint32_t __attribute__((force_align_arg_pointer)) syscall_handler(reg
 {
     processing_syscall = true;
 
-    Process::current().arch_data->reg_frame = regs;
+    Process::current().arch_data->regs = *regs;
     Process::current().arch_data->fpu_state = FPU::save();
 
     uint32_t ret = ENOSYS;

@@ -35,7 +35,8 @@ size_t sys_fork()
     auto child = Process::clone(Process::current());
     if (!child) return ENOMEM;
 
-    child->arch_data->reg_frame->eax = 0; // return zero in the child
+    child->arch_data->regs.eax = 0; // return zero in the child
+    child->start_address = Process::current().arch_data->regs.eip;
 
     return -child->pid;
 }

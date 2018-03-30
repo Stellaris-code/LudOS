@@ -44,7 +44,7 @@ _start:
 .dtor_end:
 
     ; call exit syscall
-    xor eax, eax
+    mov eax, 1
     int 0x80
 
 _wait:

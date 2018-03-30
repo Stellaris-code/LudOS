@@ -1,7 +1,7 @@
 /*
-print.cpp
+sched.cpp
 
-Copyright (c) 13 Yann BOUCHER (yann)
+Copyright (c) 29 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,14 +22,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
+#include "syscalls/syscalls.hpp"
 
-#include "syscalls/LudOS/syscalls.hpp"
+#include "tasking/process.hpp"
 
-#include "i686/tasking/process.hpp"
-#include "panic.hpp"
+#include "tasking/scheduler.hpp"
 
-void sys_panic(const char* string)
+void sys_sched_yield()
 {
-    panic_regs = &Process::current().arch_data->regs;
-    panic("%s", string);
+    tasking::schedule();
 }

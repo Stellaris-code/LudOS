@@ -64,6 +64,7 @@ public:
     static Process* create(gsl::span<const std::string> args);
     static Process* clone(Process& proc);
     static Process& current();
+    static size_t   count();
     static void     kill(uint32_t pid);
     static Process* by_pid(uint32_t pid);
 
@@ -114,6 +115,7 @@ private:
 private:
     static inline Process* m_current_process { nullptr };
     static inline std::vector<std::unique_ptr<Process>> m_processes;
+    static inline size_t m_process_count { 0 };
 };
 
 extern "C" void test_task();

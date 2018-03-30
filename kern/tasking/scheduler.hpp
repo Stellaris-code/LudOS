@@ -1,7 +1,7 @@
 /*
-print.cpp
+scheduler.hpp
 
-Copyright (c) 13 Yann BOUCHER (yann)
+Copyright (c) 29 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,14 +22,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
+#ifndef SCHEDULER_HPP
+#define SCHEDULER_HPP
 
-#include "syscalls/LudOS/syscalls.hpp"
-
-#include "i686/tasking/process.hpp"
-#include "panic.hpp"
-
-void sys_panic(const char* string)
+namespace tasking
 {
-    panic_regs = &Process::current().arch_data->regs;
-    panic("%s", string);
+
+void schedule();
+
 }
+
+#endif // SCHEDULER_HPP

@@ -163,17 +163,9 @@ void Process::execute()
 
     ALIGN_STACK(16);
 
-    registers regs;
-    memset(&regs, 0, sizeof(registers));
+    arch_data->regs.eip = start_address;
 
-    regs.eax = args.size();
-    regs.ecx = arch_data->argv_page;
-    regs.eip = start_address;
-    regs.esp = user_stack_top;
-    regs.cs = gdt::user_code_selector*0x8 | 0x3;
-    regs.ds = regs.es = regs.fs = regs.gs = regs.ss = gdt::user_data_selector*0x8 | 0x3;
-
-    enter_ring3(&regs);
+    enter_ring3(&arch_data->regs);
 }
 
 Process *Process::clone(Process &proc)
@@ -187,7 +179,7 @@ Process *Process::clone(Process &proc)
     new_proc->pwd = proc.pwd;
     new_proc->fd_table = proc.fd_table;
     new_proc->allocated_pages = proc.allocated_pages;
-    new_proc->start_address = proc.start_address;
+    new_proc->start_address = proc.arch_data->regs.eip;
     new_proc->arch_data = new ArchSpecificData;
     *new_proc->arch_data = *proc.arch_data;
 
@@ -204,6 +196,8 @@ void Process::stop()
     Paging::unmap_page((void*)arch_data->argv_page);
 
     release_allocated_pages();
+
+    start_address = arch_data->regs.eip;
 }
 
 void Process::arch_init(gsl::span<const uint8_t> code_to_copy, size_t allocated_size)
@@ -219,4 +213,16 @@ void Process::arch_init(gsl::span<const uint8_t> code_to_copy, size_t allocated_
     std::copy(code_to_copy.begin(), code_to_copy.end(), arch_data->code.begin());
 
     set_args(args);
+
+    registers regs;
+    memset(&regs, 0, sizeof(registers));
+
+    regs.eax = args.size();
+    regs.ecx = arch_data->argv_page;
+    regs.eip = start_address;
+    regs.esp = user_stack_top;
+    regs.cs = gdt::user_code_selector*0x8 | 0x3;
+    regs.ds = regs.es = regs.fs = regs.gs = regs.ss = gdt::user_data_selector*0x8 | 0x3;
+
+    arch_data->regs = regs;
 }

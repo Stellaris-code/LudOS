@@ -157,11 +157,17 @@ Process &Process::current()
     return *m_current_process;
 }
 
+size_t Process::count()
+{
+    return m_process_count;
+}
+
 void Process::kill(uint32_t pid)
 {
     assert(by_pid(pid));
 
     m_processes[pid].release();
+    --m_process_count;
     assert(!by_pid(pid));
 }
 
@@ -191,6 +197,7 @@ Process *Process::create(gsl::span<const std::string> args)
     {
         m_processes[free_idx]->pid = free_idx;
         m_processes[free_idx]->set_args(args);
+        ++m_process_count;
     }
 
     return m_processes[free_idx].get();

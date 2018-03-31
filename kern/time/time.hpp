@@ -58,6 +58,7 @@ Date from_unix(size_t epoch);
 size_t to_unix(const Date& date);
 
 double uptime();
+uint64_t clock_speed();
 uint64_t total_ticks();
 
 size_t epoch();

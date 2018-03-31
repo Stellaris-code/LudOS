@@ -60,7 +60,7 @@ void Process::release_allocated_pages()
     allocated_pages.clear();
 }
 
-uint32_t Process::find_free_pid()
+pid_t Process::find_free_pid()
 {
     for (size_t i { 0 }; i < m_processes.size(); ++i)
     {
@@ -162,7 +162,7 @@ size_t Process::count()
     return m_process_count;
 }
 
-void Process::kill(uint32_t pid)
+void Process::kill(pid_t pid)
 {
     assert(by_pid(pid));
 
@@ -171,7 +171,7 @@ void Process::kill(uint32_t pid)
     assert(!by_pid(pid));
 }
 
-Process *Process::by_pid(uint32_t pid)
+Process *Process::by_pid(pid_t pid)
 {
     if (pid >= m_processes.size())
     {
@@ -183,7 +183,7 @@ Process *Process::by_pid(uint32_t pid)
 
 Process *Process::create(gsl::span<const std::string> args)
 {
-    uint32_t free_idx = find_free_pid();
+    pid_t free_idx = find_free_pid();
     if (free_idx == m_processes.size())
     {
         m_processes.emplace_back(new Process);

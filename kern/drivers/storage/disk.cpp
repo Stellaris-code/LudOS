@@ -33,8 +33,10 @@ SOFTWARE.
 
 #include "power/powermanagement.hpp"
 #include "time/timer.hpp"
+#include "tasking/spinlock.hpp"
 
-// TODO : Locks
+DECLARE_LOCK(read_lock);
+DECLARE_LOCK(write_lock);
 
 void Disk::system_init()
 {
@@ -74,6 +76,8 @@ void Disk::set_read_only(bool val)
 
 MemBuffer Disk::read(size_t offset, size_t size) const
 {
+    LOCK(read_lock);
+
     const size_t sect_size = sector_size();
 
     const size_t sector = offset / sect_size;
@@ -90,6 +94,8 @@ MemBuffer Disk::read(size_t offset, size_t size) const
 
     assert(data.size() >= offset + size);
 
+    UNLOCK(read_lock);
+
     return MemBuffer{data.begin() + offset, data.begin() + offset + size};
 }
 
@@ -100,6 +106,8 @@ MemBuffer Disk::read() const
 
 void Disk::write_offseted_sector(size_t base, size_t byte_off, gsl::span<const uint8_t> data)
 {
+    LOCK(write_lock);
+
     assert((size_t)data.size() <= sector_size());
     assert(data.size() + byte_off <= disk_size());
 
@@ -122,6 +130,8 @@ void Disk::write_offseted_sector(size_t base, size_t byte_off, gsl::span<const u
 
         byte_off = 0;
     }
+
+    UNLOCK(write_lock);
 }
 
 void Disk::write(size_t offset, gsl::span<const uint8_t> data)

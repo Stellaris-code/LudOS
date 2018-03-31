@@ -25,6 +25,8 @@ SOFTWARE.
 
 struct SyscallEntry;
 
+#include <sys/time.h>
+
 LINUX_SYSCALL_DEF(0x01, exit,   void,   int errcode)
 LINUX_SYSCALL_DEF(0x02, fork,   size_t)
 LINUX_SYSCALL_DEF(0x03, read,   size_t, unsigned int fd, void* buf, size_t count)
@@ -36,6 +38,7 @@ LINUX_SYSCALL_DEF(0x13, lseek,  int, unsigned int fd, int offset, int whence)
 LINUX_SYSCALL_DEF(0x14, getpid, int)
 LINUX_SYSCALL_DEF(0xb7, getcwd, int, char* buf, unsigned long size)
 LINUX_SYSCALL_DEF(0x9e, sched_yield, void)
+LINUX_SYSCALL_DEF(0xa2, nanosleep, int, const struct timespec *req, struct timespec *rem)
 
 LUDOS_SYSCALL_DEF(0, get_syscall_tables, void, SyscallEntry* ludos, SyscallEntry* linux)
 LUDOS_SYSCALL_DEF(1, print_serial, void, const char* string)

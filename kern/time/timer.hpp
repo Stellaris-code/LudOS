@@ -39,8 +39,6 @@ SOFTWARE.
 class Timer
 {
 
-    friend class PIT;
-
 private:
     struct Callback
     {
@@ -134,7 +132,7 @@ public:
 
     static inline std::function<void(uint32_t)> m_set_frequency_callback;
 
-private:
+protected:
     static inline void irq_callback()
     {
         ++m_ticks;
@@ -142,6 +140,7 @@ private:
         if ((m_ticks % 8) == 0) handle_callbacks();
     }
 
+private:
     static inline void handle_callbacks()
     {
         for (auto& callback : m_callbacks)

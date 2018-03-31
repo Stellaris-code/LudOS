@@ -27,7 +27,7 @@ SOFTWARE.
 
 typedef volatile int spinlock_t;
 
-#define DECLARE_LOCK(name) spinlock_t name ## Locked
+#define DECLARE_LOCK(name) spinlock_t name ## Locked = 0
 #define LOCK(name) \
         while (!__sync_bool_compare_and_swap(& name ## Locked, 0, 1)); \
         __sync_synchronize();

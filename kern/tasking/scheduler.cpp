@@ -25,20 +25,33 @@ SOFTWARE.
 
 #include "scheduler.hpp"
 
-#include "tasking/process.hpp"
 #include "utils/logging.hpp"
+#include "sys/time.h"
+#include "time/time.hpp"
 
 namespace tasking
 {
+DeltaQueue<pid_t> wait_queue;
+
+time_t elapsed_ticks { 0 };
+
 void schedule()
 {
     Process& current = Process::current();
 
-    size_t next_pid = current.pid + 1;
-    if (next_pid >= Process::count())
+    time_t current_ticks = Time::total_ticks();
+    time_t ms_duration = (current_ticks - elapsed_ticks) / (Time::clock_speed() * 1000);
+    elapsed_ticks = current_ticks;
+
+    wait_queue.decrease(ms_duration);
+
+    size_t next_pid = current.pid;
+    auto waiting_pids = wait_queue.elements();
+    // while next_pid is a waiting pid, set next_pid to the next process in the process list
+    do
     {
-        next_pid = 0;
-    }
+        next_pid = (next_pid + 1) % Process::count();
+    } while (std::find(waiting_pids.begin(), waiting_pids.end(), next_pid) != waiting_pids.end());
 
     log_serial("Switching from PID %d to PID %d\n", current.pid, next_pid);
 

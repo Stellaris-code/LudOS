@@ -1,7 +1,7 @@
 /*
-pit.hpp
+time.h
 
-Copyright (c) 26 Yann BOUCHER (yann)
+Copyright (c) 31 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,25 +22,15 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef PIT_HPP
-#define PIT_HPP
+#ifndef LUDOS_TIME_H
+#define LUDOS_TIME_H
 
-#include <stdint.h>
+typedef int time_t;
 
-#include "i686/cpu/registers.hpp"
-#include "time/timer.hpp"
-
-class PIT : public Timer
+struct timespec
 {
-public:
-
-    static bool irq_callback(const registers* const);
-
-    static void init(uint32_t freq);
-
-    static void set_frequency(uint32_t freq);
-
-    static void set_pcspeaker_frequency(uint16_t freq);
+    time_t tv_sec;        /* seconds */
+    long   tv_nsec;       /* nanoseconds */
 };
 
-#endif // PIT_HPP
+#endif // LUDOS_TIME_H

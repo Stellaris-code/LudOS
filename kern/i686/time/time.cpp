@@ -33,6 +33,11 @@ namespace Time
 
 bool timer_ready = false;
 
+uint64_t clock_speed()
+{
+    return ::clock_speed();
+}
+
 uint64_t total_ticks()
 {
     uint64_t ret;

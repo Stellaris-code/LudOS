@@ -1,7 +1,7 @@
 /*
-pit.hpp
+sleep.cpp
 
-Copyright (c) 26 Yann BOUCHER (yann)
+Copyright (c) 31 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,25 +22,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef PIT_HPP
-#define PIT_HPP
+#include "syscalls/syscall_list.hpp"
 
 #include <stdint.h>
 
-#include "i686/cpu/registers.hpp"
-#include "time/timer.hpp"
+extern int common_syscall(size_t type, size_t no, ...);
 
-class PIT : public Timer
+long nanosleep(const struct timespec *req, struct timespec *rem)
 {
-public:
-
-    static bool irq_callback(const registers* const);
-
-    static void init(uint32_t freq);
-
-    static void set_frequency(uint32_t freq);
-
-    static void set_pcspeaker_frequency(uint16_t freq);
-};
-
-#endif // PIT_HPP
+    return common_syscall(1, SYS_nanosleep, req, rem);
+}

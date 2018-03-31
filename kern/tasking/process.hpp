@@ -35,6 +35,8 @@ namespace vfs
 class node;
 }
 
+using pid_t = uint32_t;
+
 class Process : NonCopyable
 {
 public:
@@ -65,8 +67,8 @@ public:
     static Process* clone(Process& proc);
     static Process& current();
     static size_t   count();
-    static void     kill(uint32_t pid);
-    static Process* by_pid(uint32_t pid);
+    static void     kill(pid_t pid);
+    static Process* by_pid(pid_t pid);
 
     static bool check_args_size(gsl::span<const std::string> args);
 
@@ -95,11 +97,11 @@ private:
 private:
     void init_default_fds();
     void release_allocated_pages();
-    static uint32_t find_free_pid();
+    static pid_t find_free_pid();
 
 public:
     std::string name { "<INVALID>" };
-    uint32_t pid { 0 };
+    pid_t pid { 0 };
     uint32_t uid { root_uid };
     uint32_t gid { 0 };
     std::string pwd = "/";

@@ -1,7 +1,7 @@
 /*
-pit.hpp
+main.cpp
 
-Copyright (c) 26 Yann BOUCHER (yann)
+Copyright (c) 28 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,25 +22,48 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef PIT_HPP
-#define PIT_HPP
 
-#include <stdint.h>
+#include <stdio.h>
 
-#include "i686/cpu/registers.hpp"
-#include "time/timer.hpp"
+#include <syscalls/syscall_list.hpp>
 
-class PIT : public Timer
+#include <errno.h>
+#include <stdio.h>
+#include <string.h>
+
+timespec req =
 {
-public:
-
-    static bool irq_callback(const registers* const);
-
-    static void init(uint32_t freq);
-
-    static void set_frequency(uint32_t freq);
-
-    static void set_pcspeaker_frequency(uint16_t freq);
+    .tv_sec = 2,
+    .tv_nsec = 0
 };
 
-#endif // PIT_HPP
+int main()
+{
+
+    printf("Before fork : \n");
+    int ret = fork();
+    if (ret < 0)
+    {
+        printf("Error : %s\n", strerror(errno));
+        return 0;
+    }
+    else if (ret == 0)
+    {
+        while (true)
+        {
+            printf("Child!\n");
+            nanosleep(&req, nullptr);
+            sched_yield();
+        }
+        return 1;
+    }
+    else
+    {
+        while (true)
+        {
+            printf("Parent with child PID %d\n", ret);
+            sched_yield();
+        }
+        return 2;
+    }
+}

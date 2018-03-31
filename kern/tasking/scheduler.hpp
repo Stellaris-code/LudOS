@@ -25,10 +25,15 @@ SOFTWARE.
 #ifndef SCHEDULER_HPP
 #define SCHEDULER_HPP
 
+#include "process.hpp"
+#include "utils/deltaqueue.hpp"
+
 namespace tasking
 {
 
 void schedule();
+
+extern DeltaQueue<pid_t> wait_queue;
 
 }
 

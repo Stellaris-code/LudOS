@@ -1,7 +1,7 @@
 /*
-pit.hpp
+sleep.cpp
 
-Copyright (c) 26 Yann BOUCHER (yann)
+Copyright (c) 31 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,25 +22,20 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef PIT_HPP
-#define PIT_HPP
+#include "syscalls/syscalls.hpp"
 
-#include <stdint.h>
+#include "tasking/scheduler.hpp"
+#include "errno.h"
 
-#include "i686/cpu/registers.hpp"
-#include "time/timer.hpp"
-
-class PIT : public Timer
+int sys_nanosleep(const struct timespec *req, struct timespec *rem)
 {
-public:
+    if (req->tv_nsec < 0 || req->tv_nsec > 999999999 || req->tv_sec < 0)
+    {
+        return EINVAL;
+    }
 
-    static bool irq_callback(const registers* const);
+    tasking::wait_queue.insert(Process::current().pid, req->tv_nsec/1000 + req->tv_sec*1000);
+    tasking::schedule();
 
-    static void init(uint32_t freq);
-
-    static void set_frequency(uint32_t freq);
-
-    static void set_pcspeaker_frequency(uint16_t freq);
-};
-
-#endif // PIT_HPP
+    return EOK;
+}

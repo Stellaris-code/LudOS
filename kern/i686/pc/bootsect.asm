@@ -124,8 +124,8 @@ hang:
 
 section .bss
 
-align 4
+align 16
 magic:      resd 1
 mbd_info:   resd 1
-align 16
+            resd 6 ; padding in order to align to 16 byte boundary
 kernel_stack_bottom:      resb STACKSIZE                   ; reserve 16k stack on a doubleword boundary

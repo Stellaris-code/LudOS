@@ -1,7 +1,7 @@
 /*
-fprintf.cpp
+main.cpp
 
-Copyright (c) 04 Yann BOUCHER (yann)
+Copyright (c) 28 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -23,64 +23,70 @@ SOFTWARE.
 
 */
 
-#ifdef LUDOS_USER
-
 #include <stdio.h>
-#include <errno.h>
+
 #include <syscalls/syscall_list.hpp>
-#include <sys/fnctl.h>
 
-FILE stdin_real { 0 };
-FILE stdout_real { 1 };
-FILE stderr_real { 2 };
+#include <errno.h>
+#include <stdio.h>
+#include <string.h>
+#include <string.hpp>
 
-FILE* stdin { &stdin_real };
-FILE* stdout { &stdout_real };
-FILE* stderr { &stderr_real };
+#include <sys/wait.h>
 
-int fprintf(FILE * stream, const char * format, ...)
+int exec_cmd(const std::string& cmd)
 {
-    char buf[1024];
+    int cmd_ret;
 
-    va_list va;
-    va_start(va, format);
-    size_t size = vsnprintf(buf, sizeof(buf), format, va);
-    va_end(va);
-
-    auto ret = write(stream->fd, buf, size);
+    auto ret = fork();
     if (ret == -1)
     {
+        perror("fork");
         return -1;
     }
-
-    return size;
+    else if (ret == 0) // Child
+    {
+        const char* argv[] = {0};
+        const char* envp[] = {0};
+        if (execve(cmd.c_str(), argv, envp) == -1)
+        {
+            perror("execve");
+            exit(22);
+        }
+    }
+    else // Parent
+    {
+        if (waitpid(ret, &cmd_ret, 0) == -1)
+        {
+            perror("waitpid");
+            return -2;
+        }
+        return WEXITSTATUS(cmd_ret);
+    }
 }
 
-FILE * fopen(const char * filename, const char * mode)
+std::string read_str()
 {
-    // TODO : support modifiers
+    std::string str;
+    char c;
+    while ((c = getchar()) != '\n')
+    {
+        str += c;
+    }
 
-    auto ret = open(filename, O_RDWR, 0);
-    if (ret == -1)
-    {
-        return nullptr;
-    }
-    else
-    {
-        return new FILE { (size_t)ret };
-    }
+    return str;
 }
 
-int fclose( FILE * stream )
+int main()
 {
-    if (close(stream->fd) == -1)
+    const char* prompt = "lame_shell>";
+
+    while (true)
     {
-        return EOF;
+        printf("%s", prompt);
+        auto cmd = read_str();
+        if (cmd == "exit") exit(0);
+        auto ret = exec_cmd("/initrd/test_programs/" + cmd);
+        printf("Command '%s' returned code %d (0x%x)\n", cmd.c_str(), ret, ret);
     }
-
-    delete stream;
-
-    return 0;
 }
-
-#endif

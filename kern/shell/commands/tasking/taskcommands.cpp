@@ -75,8 +75,7 @@ void install_task_commands(Shell &sh)
              sh.error("Can't load '%s'\n", args[0].c_str());
              return -4;
          }
-
-         process->execute();
+         process->switch_to();
 
          return 0;
      }});

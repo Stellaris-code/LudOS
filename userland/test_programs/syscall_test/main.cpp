@@ -61,10 +61,12 @@ int main(int argc, char* argv[])
 
     strcpy(allocated_str, "Bonjour depuis malloc!\n");
 
+    print_debug("Am here\n");
+
     for (size_t i { 0 }; i < argc; ++i)
     {
-        print_debug(argv[i]);
-        print_debug("\n");
+        printf("%s", argv[i]);
+        printf("%s", "\n");
     }
 
     printf("From printf : %d %s accent : ééé\n", 66, "bonjour !");

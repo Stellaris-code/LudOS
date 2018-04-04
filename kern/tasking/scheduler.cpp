@@ -28,36 +28,61 @@ SOFTWARE.
 #include "utils/logging.hpp"
 #include "sys/time.h"
 #include "time/time.hpp"
+#include "tasking/process.hpp"
+
+#include "utils/messagebus.hpp"
 
 namespace tasking
 {
-DeltaQueue<pid_t> wait_queue;
+DeltaQueue<pid_t> sleep_queue;
 
 time_t elapsed_ticks { 0 };
 
-void schedule()
+void scheduler_init()
 {
-    Process& current = Process::current();
+}
 
+void update_sleep_queue()
+{
     time_t current_ticks = Time::total_ticks();
     time_t ms_duration = (current_ticks - elapsed_ticks) / (Time::clock_speed() * 1000);
     elapsed_ticks = current_ticks;
 
-    wait_queue.decrease(ms_duration);
+    sleep_queue.decrease(ms_duration);
+}
 
-    size_t next_pid = current.pid;
-    auto waiting_pids = wait_queue.elements();
+bool process_ready(pid_t pid)
+{
+    return !sleep_queue.find(pid) && !Process::by_pid(pid)->is_waiting();
+}
+
+pid_t find_next_pid()
+{
+    pid_t next_pid = Process::enabled() ? Process::current().pid : 0;
     // while next_pid is a waiting pid, set next_pid to the next process in the process list
     do
     {
         next_pid = (next_pid + 1) % Process::count();
-    } while (std::find(waiting_pids.begin(), waiting_pids.end(), next_pid) != waiting_pids.end());
-
-    log_serial("Switching from PID %d to PID %d\n", current.pid, next_pid);
-
-    current.stop();
+    } while (!process_ready(next_pid));
 
     assert(Process::by_pid(next_pid));
-    Process::by_pid(next_pid)->execute();
+    assert(process_ready(next_pid));
+
+    return next_pid;
 }
+
+void schedule()
+{
+    Process* current = (Process::enabled() ? &Process::current() : nullptr);
+
+    update_sleep_queue();
+
+    pid_t next_pid = find_next_pid();
+
+    if (current) log_serial("Switching from PID %d to PID %d (Process count : %d)\n", current->pid, next_pid, Process::count());
+
+    if (current) current->unswitch();
+    assert(Process::by_pid(next_pid)); Process::by_pid(next_pid)->switch_to();
+}
+
 }

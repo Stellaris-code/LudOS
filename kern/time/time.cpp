@@ -29,8 +29,6 @@ SOFTWARE.
 
 namespace Time
 {
-#pragma GCC push_options
-#pragma GCC target ("no-sse")
 Date to_local_time(Date utc_date)
 {
     // heure d'été
@@ -44,7 +42,6 @@ Date to_local_time(Date utc_date)
 
     return utc_date;
 }
-#pragma GCC pop_options
 
 bool leap_year(size_t year)
 {

@@ -38,6 +38,7 @@ public:
 
     void decrease(S duration);
     void insert(const T& el, S sleep_duration);
+    bool find(const T& el) const;
     std::vector<T> elements() const;
 
 private:
@@ -91,6 +92,20 @@ void DeltaQueue<T, S>::insert(const T &el, S sleep_duration)
     {
         std::next(it)->second -= it->second;
     }
+}
+
+template<typename T, typename S>
+bool DeltaQueue<T, S>::find(const T &el) const
+{
+    for (const auto& pair : m_list)
+    {
+        if (pair.first == el)
+        {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 template<typename T, typename S>

@@ -27,15 +27,28 @@ SOFTWARE.
 
 #include <string.hpp>
 #include <vector.hpp>
+#include <unordered_map.hpp>
+#include <optional.hpp>
 #include "utils/gsl/gsl_span.hpp"
 #include "utils/noncopyable.hpp"
+
+#include "sys/types.h"
 
 namespace vfs
 {
 class node;
 }
 
-using pid_t = uint32_t;
+struct ProcessCreatedEvent
+{
+    pid_t pid;
+};
+
+struct ProcessDestroyedEvent
+{
+    pid_t pid;
+    int err_code;
+};
 
 class Process : NonCopyable
 {
@@ -63,14 +76,14 @@ public:
 public:
     static bool enabled();
 
-    static Process* create(gsl::span<const std::string> args);
+    static Process* create(const std::vector<std::string> &args);
     static Process* clone(Process& proc);
     static Process& current();
     static size_t   count();
-    static void     kill(pid_t pid);
+    static void     kill(pid_t pid, int err_code);
     static Process* by_pid(pid_t pid);
 
-    static bool check_args_size(gsl::span<const std::string> args);
+    static bool check_args_size(const std::vector<std::string> &args);
 
 public:
     Process& operator=(Process&&) noexcept = default;
@@ -86,17 +99,26 @@ public:
     FDInfo *get_fd(size_t fd);
     void close_fd(size_t fd);
 
-    void execute();
-    void stop();
+    bool is_waiting() const;
+    void wait_for(pid_t pid, int* wstatus);
+
+    void switch_to();
+    void unswitch();
 
     bool check_perms(uint16_t perms, uint16_t tgt_uid, uint16_t tgt_gid, AccessRequestPerm type);
+
+    uintptr_t allocate_pages(size_t pages);
+    bool      release_pages(uintptr_t ptr, size_t pages);
 
 private:
     Process();
 
 private:
+    void cleanup();
     void init_default_fds();
-    void release_allocated_pages();
+    void release_all_pages();
+    void wake_up(pid_t child, int err_code);
+
     static pid_t find_free_pid();
 
 public:
@@ -104,11 +126,27 @@ public:
     pid_t pid { 0 };
     uint32_t uid { root_uid };
     uint32_t gid { 0 };
+
+    pid_t parent { 0 };
+    std::vector<pid_t> children;
+    std::optional<pid_t> waiting_pid;
+    int* wstatus { nullptr };
+
     std::string pwd = "/";
+
     std::vector<FDInfo> fd_table;
-    std::vector<std::pair<uintptr_t, size_t>> allocated_pages;
+
+    struct AllocatedPageEntry
+    {
+        uintptr_t paddr;
+        uint32_t flags;
+    };
+
+    std::unordered_map<uintptr_t, AllocatedPageEntry> allocated_pages;
+
     std::vector<std::string> args;
-    uintptr_t start_address { 0 };
+
+    uintptr_t current_pc { 0 };
     ArchSpecificData* arch_data { nullptr };
 
 private:

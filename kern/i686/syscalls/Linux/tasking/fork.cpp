@@ -36,7 +36,7 @@ size_t sys_fork()
     if (!child) return ENOMEM;
 
     child->arch_data->regs.eax = 0; // return zero in the child
-    child->start_address = Process::current().arch_data->regs.eip;
+    child->current_pc = Process::current().arch_data->regs.eip;
 
     return -child->pid;
 }

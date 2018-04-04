@@ -1,7 +1,7 @@
 /*
-stdio.h
+alloc.cpp
 
-Copyright (c) 23 Yann BOUCHER (yann)
+Copyright (c) 18 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,52 +22,35 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef L_STDIO_H
-#define L_STDIO_H 1
 
-#include <sys/cdefs.h>
-#include <stdbool.h>
-#include <stdint.h>
+#include <errno.h>
 
-#include "utils/defs.hpp"
+#include "i686/mem/physallocator.hpp"
 
-#define EOF (-1)
+#include "tasking/process.hpp"
 
-#ifdef __cplusplus
-void putcharw(char32_t c);
-#endif
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-extern bool putc_serial;
-
-typedef struct
+int sys_alloc_pages(int pages)
 {
-    size_t fd;
-} FILE;
-
-void putchar(char c);
-
-void puts(const char*);
-
-int fprintf(FILE * stream, const char * format, ...) PRINTF_FMT(2, 3);
-FILE * fopen(const char * filename, const char * mode);
-int fclose( FILE * stream );
-
-void perror(const char * str);
-
-int getchar();
-
-extern FILE* stdin;
-extern FILE* stdout;
-extern FILE* stderr;
-
-#include "stdio/tinyprintf.h"
-
-#ifdef __cplusplus
+    return Process::current().allocate_pages(pages);
 }
-#endif
 
-#endif
+int sys_free_pages(uintptr_t ptr, int pages)
+{
+    //    assert(ptr % Paging::page_size == 0);
+
+    //    for (size_t i { 0 }; i < pages; ++i)
+    //    {
+    //        void* virtual_page  = (uint8_t*)ptr + i*Paging::page_size;
+    //        void* physical_page = (void*)Memory::physical_address(virtual_page);
+    //        PhysPageAllocator::release_physical_page((uintptr_t)physical_page);
+    //        Paging::unmap_page((uint8_t*)ptr + i*Paging::page_size);
+
+    //        auto& p_pages = Process::current().allocated_pages;
+
+    //        assert(p_pages.count((uintptr_t)virtual_page));
+    //        p_pages.erase((uintptr_t)virtual_page);
+    //    }
+
+    //    return EOK;
+    return Process::current().release_pages(ptr, pages) ? EOK : ENOMEM;
+}

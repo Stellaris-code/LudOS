@@ -25,9 +25,16 @@ SOFTWARE.
 #include "syscalls/syscalls.hpp"
 
 #include "tasking/process.hpp"
+#include "tasking/scheduler.hpp"
 
-void sys_exit(int errcode)
+#include "utils/logging.hpp"
+
+#include <sys/wait.h>
+
+void sys_exit(uint8_t errcode)
 {
-    // TODO : errcode
-    Process::kill(Process::current().pid);
+    log_serial("PID : %d\n", Process::current().pid);
+    Process::kill(Process::current().pid, __W_EXITCODE(errcode, 0));
+
+    tasking::schedule();
 }

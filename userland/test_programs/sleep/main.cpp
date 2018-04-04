@@ -33,7 +33,7 @@ SOFTWARE.
 
 timespec req =
 {
-    .tv_sec = 2,
+    .tv_sec = 1,
     .tv_nsec = 0
 };
 
@@ -49,20 +49,20 @@ int main()
     }
     else if (ret == 0)
     {
-        while (true)
-        {
-            printf("Child!\n");
-            nanosleep(&req, nullptr);
-            sched_yield();
-        }
-        return 1;
+        printf("Child!\n");
+        nanosleep(&req, nullptr);
+        sched_yield();
+        printf("Child exit\n");
+        exit(0);
     }
     else
     {
+        printf("Parent with child PID %d\n", ret);
+        int s;
         while (true)
         {
-            printf("Parent with child PID %d\n", ret);
             sched_yield();
+            waitpid(ret, &s, 0);
         }
         return 2;
     }

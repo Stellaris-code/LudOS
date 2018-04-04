@@ -58,16 +58,19 @@ uint64_t total_ticks()
 int main(int argc, char* argv[])
 {
     int number = 783; // TODO
+    int tries = 0;
 
     while (true)
     {
         printf("Enter your guess : \n");
         int value = get_int();
+        ++tries;
         if (value > number) printf("Target is lower!\n");
         if (value < number) printf("Target is higher!\n");
         if (value == number)
         {
             printf("You found it ! Great job !\n");
+            exit(tries);
             break;
         }
 

@@ -26,12 +26,7 @@ SOFTWARE.
 #include <stdlib.h>
 #include <string.h>
 
-#pragma GCC push_options
-#pragma GCC target ("no-sse")
-
 #define STBIR_MALLOC(size, context) kmalloc(size)
 #define STBIR_FREE(ptr, context) kfree(ptr)
 #define STB_IMAGE_RESIZE_IMPLEMENTATION
 #include "stb/stb_image_resize.h"
-
-#pragma GCC pop_options

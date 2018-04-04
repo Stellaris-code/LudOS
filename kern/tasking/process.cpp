@@ -29,6 +29,10 @@ SOFTWARE.
 
 #include "syscalls/syscalls.hpp"
 
+#include "utils/messagebus.hpp"
+
+#include <sys/wait.h>
+
 Process::Process()
 {
     init_default_fds();
@@ -36,6 +40,7 @@ Process::Process()
 
 void Process::reset(gsl::span<const uint8_t> code_to_copy, size_t allocated_size)
 {
+    if (arch_data) cleanup(); // if arch_data == nullptr then the process isn't in a ready state yet, so don't clean it up
     arch_init(code_to_copy, allocated_size);
 }
 
@@ -50,24 +55,27 @@ void Process::init_default_fds()
     assert(add_fd({vfs::find("/dev/stderr"), .read = false, .write = true }) == 2);
 }
 
-void Process::release_allocated_pages()
+void Process::release_all_pages()
 {
+    std::vector<uintptr_t> addr_list;
+    // First copy the address list because release_pages will remove elements while iterating
     for (const auto& pair : allocated_pages)
     {
-        sys_free_pages(pair.first, pair.second);
+        addr_list.emplace_back(pair.first);
+    }
+    for (auto addr : addr_list)
+    {
+        release_pages(addr, 1);
     }
 
-    allocated_pages.clear();
+    assert(allocated_pages.empty());
 }
 
 pid_t Process::find_free_pid()
 {
     for (size_t i { 0 }; i < m_processes.size(); ++i)
     {
-        if (!m_processes[i])
-        {
-            return i;
-        }
+        if (!m_processes[i]) return i;
     }
 
     return m_processes.size();
@@ -92,11 +100,7 @@ size_t Process::add_fd(const FDInfo &info)
 
 Process::FDInfo *Process::get_fd(size_t fd)
 {
-    if (fd >= fd_table.size())
-    {
-        return nullptr;
-    }
-    if (fd_table[fd].node == nullptr)
+    if (fd >= fd_table.size() || fd_table[fd].node == nullptr)
     {
         return nullptr;
     }
@@ -109,6 +113,18 @@ void Process::close_fd(size_t fd)
     assert(get_fd(fd));
 
     fd_table[fd].node = nullptr;
+}
+
+bool Process::is_waiting() const
+{
+    return waiting_pid.has_value();
+}
+
+void Process::wait_for(pid_t pid, int *wstatus)
+{
+    waiting_pid = pid;
+    this->wstatus = wstatus;
+    assert(this->wstatus);
 }
 
 bool Process::check_perms(uint16_t perms, uint16_t tgt_uid, uint16_t tgt_gid, AccessRequestPerm type)
@@ -140,8 +156,9 @@ bool Process::check_perms(uint16_t perms, uint16_t tgt_uid, uint16_t tgt_gid, Ac
 
 Process::~Process()
 {
-    stop();
-
+    unswitch();
+    cleanup();
+    log_serial("PID destroyed : %d\n", pid);
     kfree(arch_data);
 }
 
@@ -162,18 +179,44 @@ size_t Process::count()
     return m_process_count;
 }
 
-void Process::kill(pid_t pid)
+void Process::kill(pid_t pid, int err_code)
 {
-    assert(by_pid(pid));
+    if (pid == 0)
+    {
+        panic("Tried to kill the master process !\n");
+    }
 
-    m_processes[pid].release();
+    assert(by_pid(pid));
+    assert(by_pid(by_pid(pid)->parent));
+    auto& parent = *by_pid(by_pid(pid)->parent);
+    // erase pid from parent children list
+
+    assert(std::find(parent.children.begin(), parent.children.end(), pid) != parent.children.end());
+    parent.children.erase(std::remove(parent.children.begin(), parent.children.end(), pid), parent.children.end());
+
+    log_serial("Waiting : %d, pid: %d\n", *parent.waiting_pid, pid);
+
+    if (parent.is_waiting() && (parent.waiting_pid.value() == -1 || parent.waiting_pid.value() == pid))
+    {
+        log_serial("Waking up PID %d with PID %d\n", parent.pid, pid);
+        parent.wake_up(pid, err_code);
+    }
+
+    if (Process::current().pid == pid)
+    {
+        m_current_process = nullptr;
+    }
+
+    m_processes[pid].reset();
     --m_process_count;
     assert(!by_pid(pid));
+
+    MessageBus::send(ProcessDestroyedEvent{pid, err_code});
 }
 
 Process *Process::by_pid(pid_t pid)
 {
-    if (pid >= m_processes.size())
+    if (pid >= (int)m_processes.size())
     {
         return nullptr;
     }
@@ -181,24 +224,27 @@ Process *Process::by_pid(pid_t pid)
     return m_processes[pid].get();
 }
 
-Process *Process::create(gsl::span<const std::string> args)
+Process *Process::create(const std::vector<std::string>& args)
 {
     pid_t free_idx = find_free_pid();
-    if (free_idx == m_processes.size())
-    {
+    if (free_idx == (int)m_processes.size())
+    { // expand the process list
         m_processes.emplace_back(new Process);
     }
     else
-    {
+    { // reuse a hole in the list
         m_processes[free_idx].reset(new Process);
     }
 
-    if (m_processes[free_idx])
-    {
-        m_processes[free_idx]->pid = free_idx;
-        m_processes[free_idx]->set_args(args);
-        ++m_process_count;
-    }
+    if (m_processes[free_idx] == nullptr) return nullptr;
+
+    m_processes[free_idx]->pid = free_idx;
+    m_processes[free_idx]->waiting_pid.reset();
+    m_processes[free_idx]->args = args;
+
+    ++m_process_count;
+
+    MessageBus::send(ProcessCreatedEvent{free_idx});
 
     return m_processes[free_idx].get();
 }

@@ -26,6 +26,7 @@ SOFTWARE.
 
 #include "tasking/scheduler.hpp"
 #include "errno.h"
+#include "utils/logging.hpp"
 
 int sys_nanosleep(const struct timespec *req, struct timespec *rem)
 {
@@ -34,7 +35,7 @@ int sys_nanosleep(const struct timespec *req, struct timespec *rem)
         return EINVAL;
     }
 
-    tasking::wait_queue.insert(Process::current().pid, req->tv_nsec/1000 + req->tv_sec*1000);
+    tasking::sleep_queue.insert(Process::current().pid, req->tv_nsec/1'000'000 + req->tv_sec*1000);
     tasking::schedule();
 
     return EOK;

@@ -31,9 +31,11 @@ SOFTWARE.
 namespace tasking
 {
 
+void scheduler_init();
+
 void schedule();
 
-extern DeltaQueue<pid_t> wait_queue;
+extern DeltaQueue<pid_t> sleep_queue;
 
 }
 

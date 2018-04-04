@@ -1,7 +1,7 @@
 /*
-stdio.h
+waitpid.cpp
 
-Copyright (c) 23 Yann BOUCHER (yann)
+Copyright (c) 01 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,52 +22,20 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef L_STDIO_H
-#define L_STDIO_H 1
+#include "syscalls/syscall_list.hpp"
 
-#include <sys/cdefs.h>
-#include <stdbool.h>
-#include <stdint.h>
+#include <errno.h>
 
-#include "utils/defs.hpp"
+extern int common_syscall(size_t type, size_t no, ...);
 
-#define EOF (-1)
-
-#ifdef __cplusplus
-void putcharw(char32_t c);
-#endif
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-extern bool putc_serial;
-
-typedef struct
+long waitpid(pid_t pid, int *wstatus, int options)
 {
-    size_t fd;
-} FILE;
+    long ret = common_syscall(1, SYS_waitpid, pid, wstatus, options);
+    if (ret < 0)
+    {
+        errno = -ret;
+        return -1;
+    }
 
-void putchar(char c);
-
-void puts(const char*);
-
-int fprintf(FILE * stream, const char * format, ...) PRINTF_FMT(2, 3);
-FILE * fopen(const char * filename, const char * mode);
-int fclose( FILE * stream );
-
-void perror(const char * str);
-
-int getchar();
-
-extern FILE* stdin;
-extern FILE* stdout;
-extern FILE* stderr;
-
-#include "stdio/tinyprintf.h"
-
-#ifdef __cplusplus
+    return ret;
 }
-#endif
-
-#endif

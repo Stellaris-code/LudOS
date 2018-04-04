@@ -47,7 +47,8 @@ struct [[gnu::packed]] PDEntry
     uint8_t  zero    : 1;
     uint8_t  size    : 1;
     uint8_t  ignored : 1;
-    uint8_t  data    : 3;
+    uint8_t  os_claimed : 1;
+    uint8_t  data    : 2;
     uint32_t pt_addr : 20;
 };
 static_assert(sizeof(PDEntry) == 4);
@@ -65,7 +66,8 @@ struct [[gnu::packed]] PTEntry
     uint8_t  dirty    : 1;
     uint8_t  zero     : 1;
     uint8_t  global   : 1;
-    uint8_t  data     : 3;
+    uint8_t  os_claimed : 1;
+    uint8_t  data    : 2;
     uint32_t phys_addr: 20;
 };
 static_assert(sizeof(PTEntry) == 4);
@@ -81,10 +83,17 @@ struct PagingInformation
 class Paging
 {
 public:
+    enum ReleaseFlags
+    {
+        FreePage,
+        KeepClaimed
+    };
+
+public:
     static void init();
 
     static uintptr_t alloc_virtual_page(size_t number = 1, bool user = false);
-    static bool release_virtual_page(uintptr_t v_addr, size_t number = 1);
+    static bool release_virtual_page(uintptr_t v_addr, size_t number = 1, ReleaseFlags flags = FreePage);
 
     static void map_page(void* p_addr, void* v_addr, uint32_t flags = Memory::Read|Memory::Write);
     static void unmap_page(void* v_addr);

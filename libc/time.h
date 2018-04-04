@@ -23,12 +23,12 @@
 #include <sys/types.h>
 
 #ifndef __clock_t_defined
-typedef _CLOCK_T_ clock_t;
+typedef size_t clock_t;
 #define __clock_t_defined
 #endif
 
 #ifndef __time_t_defined
-typedef _TIME_T_ time_t;
+typedef size_t time_t;
 #define __time_t_defined
 #endif
 

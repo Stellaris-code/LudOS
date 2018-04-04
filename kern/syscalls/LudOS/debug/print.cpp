@@ -35,5 +35,5 @@ void sys_print_serial(const char* string)
 
 void sys_print_debug(const char* string)
 {
-    puts(string);
+    kprintf("%s", string);
 }

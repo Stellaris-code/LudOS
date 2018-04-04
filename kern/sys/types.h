@@ -1,7 +1,7 @@
 /*
-stdio.h
+types.h
 
-Copyright (c) 23 Yann BOUCHER (yann)
+Copyright (c) 01 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,52 +22,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef L_STDIO_H
-#define L_STDIO_H 1
+#ifndef LUDOS_TYPES_H
+#define LUDOS_TYPES_H
 
-#include <sys/cdefs.h>
-#include <stdbool.h>
-#include <stdint.h>
+typedef int pid_t;
 
-#include "utils/defs.hpp"
-
-#define EOF (-1)
-
-#ifdef __cplusplus
-void putcharw(char32_t c);
-#endif
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-extern bool putc_serial;
-
-typedef struct
-{
-    size_t fd;
-} FILE;
-
-void putchar(char c);
-
-void puts(const char*);
-
-int fprintf(FILE * stream, const char * format, ...) PRINTF_FMT(2, 3);
-FILE * fopen(const char * filename, const char * mode);
-int fclose( FILE * stream );
-
-void perror(const char * str);
-
-int getchar();
-
-extern FILE* stdin;
-extern FILE* stdout;
-extern FILE* stderr;
-
-#include "stdio/tinyprintf.h"
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif
+#endif // TYPES_H

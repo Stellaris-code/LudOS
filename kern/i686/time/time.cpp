@@ -55,12 +55,9 @@ double uptime()
     return ticks / (double(clock_speed()) * 1'000'000.0); // MHz -> Hz
 }
 
-#pragma GCC push_options
-#pragma GCC target ("no-sse")
 Date get_time_of_day()
 {
     return rtc::get_time();
 }
-#pragma GCC pop_options
 
 }

@@ -68,9 +68,8 @@ void Paging::map_page(void *p_addr, void *v_addr, uint32_t flags)
     //    }
 
     auto entry = page_entry(reinterpret_cast<uintptr_t>(v_addr));
-
     assert(!entry->present);
-
+    //assert(entry->os_claimed);
     entry->phys_addr = reinterpret_cast<uintptr_t>(p_addr) >> 12;
 
     entry->write = !!(flags & Memory::Write);
@@ -79,6 +78,7 @@ void Paging::map_page(void *p_addr, void *v_addr, uint32_t flags)
     entry->user = !!(flags & Memory::User);
 
     entry->present = true;
+    entry->os_claimed = true;
 }
 
 void Paging::unmap_page(void *v_addr)
@@ -92,6 +92,7 @@ void Paging::identity_map(void *p_addr, size_t size, uint32_t flags)
 
     for (size_t i { 0 }; i < page_num; ++i)
     {
+        page_entry((uintptr_t)p_addr + i * page_size)->os_claimed = true;
         map_page((uint8_t*)p_addr + i * page_size, (uint8_t*)p_addr + i * page_size, flags);
     }
 }
@@ -132,6 +133,7 @@ void Paging::create_paging_info(PagingInformation &info)
         memset(info.page_tables[i].data(), 0, info.page_tables[i].size()*sizeof(PTEntry));
         info.page_directory[i].pt_addr = (reinterpret_cast<uintptr_t>(get_addr(info.page_tables[i].data())) - KERNEL_VIRTUAL_BASE) >> 12;
         info.page_directory[i].present = true;
+        info.page_directory[i].os_claimed = true;
         info.page_directory[i].write = true;
         info.page_directory[i].user = true;
     }
@@ -142,15 +144,15 @@ void Paging::create_paging_info(PagingInformation &info)
     info.page_directory.back().pt_addr = (reinterpret_cast<uintptr_t>(get_addr(info.page_directory.data())) - KERNEL_VIRTUAL_BASE) >> 12;
     info.page_directory.back().write = true;
     info.page_directory.back().present = true;
+    info.page_directory.back().os_claimed = true;
     info.page_directory.back().user = false;
 }
 
-// TODO : last_pos
 uintptr_t Paging::alloc_virtual_page(size_t number, bool user)
 {
     assert(number != 0);
 
-    constexpr size_t margin = 2;
+    constexpr size_t margin = 0;
 
     static size_t user_last_pos = 0x0;
     static size_t kernel_last_pos = KERNEL_VIRTUAL_BASE >> 12;
@@ -168,8 +170,9 @@ uintptr_t Paging::alloc_virtual_page(size_t number, bool user)
 loop:
     for (size_t i { last_pos }; i < (user ? (KERNEL_VIRTUAL_BASE >> 12) : ram_maxpage); ++i)
     {
-        if (!entries[i].present)
+        if (!entries[i].os_claimed)
         {
+            assert(!entries[i].present);
             if (counter++ == 0) addr = i;
         }
         else
@@ -183,6 +186,12 @@ loop:
 
             // ensure it stays in kernel space
             if (!user) assert(addr * page_size + (margin/2*page_size) >= KERNEL_VIRTUAL_BASE);
+
+            for (size_t j { addr }; j < addr + number + margin; ++j)
+            {
+                entries[j].os_claimed = true; // mark these entries as reclaimed so they cannot be claimed again while still not mapped
+            }
+
             return addr * page_size + (margin/2*page_size);
         }
     }
@@ -190,6 +199,7 @@ loop:
     // Reloop
     if (last_pos != base)
     {
+        log_serial("virtual reloop, size %d\n", number);
         last_pos = base;
         goto loop;
     }
@@ -198,13 +208,16 @@ loop:
     return 0;
 }
 
-bool Paging::release_virtual_page(uintptr_t v_addr, size_t number)
+bool Paging::release_virtual_page(uintptr_t v_addr, size_t number, ReleaseFlags flags)
 {
     auto entry = page_entry(v_addr);
     for (size_t i { 0 }; i < number; ++i)
     {
         assert(entry[i].present);
+        assert(entry[i].os_claimed);
+        assert(flags == FreePage);
         entry[i].present = false;
+        entry[i].os_claimed = false;
         asm volatile ("invlpg (%0)"::"r"(reinterpret_cast<uint8_t*>(v_addr) + i*page_size) : "memory");
     }
 
@@ -235,6 +248,7 @@ void Paging::map_kernel(PagingInformation& info)
     {
         entry->phys_addr = addr >> 12;
         entry->present = true;
+        entry->os_claimed = true;
         entry->write = true;
         entry->user = true;
     }

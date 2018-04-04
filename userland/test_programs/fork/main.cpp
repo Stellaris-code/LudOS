@@ -42,20 +42,33 @@ int main()
     }
     else if (ret == 0)
     {
-        while (true)
-        {
-            printf("Child!\n");
-            sched_yield();
-            exit(0);
-        }
-        return 1;
+                while (true)
+                {
+                    printf("Child!\n");
+                    sched_yield();
+                    exit(0);
+                }
+                return 1;
+//        const char* argv[] = {0};
+//        const char* envp[] = {0};
+//        execve("/initrd/test_programs/MoreOrLess", argv, envp);
     }
     else
     {
         while (true)
         {
+            int status;
             printf("Parent with child PID %d\n", ret);
-            sched_yield();
+            if (waitpid(ret, &status, 0) < 0)
+            {
+                perror("waitpid");
+            }
+
+            printf("Back to parent\n");
+            while (true)
+            {
+                sched_yield();
+            }
         }
         return 2;
     }

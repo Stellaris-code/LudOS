@@ -65,6 +65,11 @@ void init()
 
 std::shared_ptr<vfs::node> find(const std::string& path)
 {
+    if (path.empty())
+    {
+        return nullptr;
+    }
+
     if (path == "/")
     {
         return root;

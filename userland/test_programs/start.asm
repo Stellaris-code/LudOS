@@ -30,6 +30,7 @@ _start:
 
     call main
     ; main has returned, eax is return value
+    mov [main_return_value], eax
 
     ; Call dtors
     mov ebx, start_dtors
@@ -45,6 +46,7 @@ _start:
 
     ; call exit syscall
     mov eax, 1
+    mov ebx, [main_return_value]
     int 0x80
 
 _wait:
@@ -53,6 +55,10 @@ _wait:
 ;section .data
 ;global _GLOBAL_OFFSET_TABLE_
 ;_GLOBAL_OFFSET_TABLE_: dd 0
+
+section .bss
+align 4
+main_return_value: resd 1
 
 section .header
 extern last_allocated_page_sym

@@ -71,9 +71,14 @@ void VM::unmap_page(void *v_addr)
     Paging::unmap_page(v_addr);
 }
 
-bool VM::is_mapped(void *v_addr)
+bool VM::is_mapped(const void *v_addr)
 {
     return Paging::is_mapped(v_addr);
+}
+
+bool VM::check_user_ptr(const void *v_addr, size_t size)
+{
+    return Paging::check_user_ptr(v_addr, size);
 }
 
 uintptr_t VM::physical_address(const void *v_addr)

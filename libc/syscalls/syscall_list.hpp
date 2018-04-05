@@ -37,10 +37,13 @@ SOFTWARE.
 #define LINUX_SYSCALL_DEF(num, name, ret, ...) \
     long name(__VA_ARGS__);
 
+#define USER_PTR(type) type*
+
 #include "syscalls/syscall_list.def"
 
 #undef LUDOS_SYSCALL_DEF
 #undef LINUX_SYSCALL_DEF
+#undef USER_PTR
 
 #include "syscalls/syscalls.hpp"
 

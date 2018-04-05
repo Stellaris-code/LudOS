@@ -27,8 +27,9 @@ SOFTWARE.
 
 #include "i686/tasking/process.hpp"
 #include "panic.hpp"
+#include "utils/user_ptr.hpp"
 
-void sys_panic(const char* string)
+void sys_panic(user_ptr<const char> string)
 {
     panic_regs = &Process::current().arch_data->regs;
     panic("%s", string);

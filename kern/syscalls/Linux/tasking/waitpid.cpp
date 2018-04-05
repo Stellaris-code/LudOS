@@ -30,8 +30,10 @@ SOFTWARE.
 
 #include <errno.h>
 
-pid_t sys_waitpid(pid_t pid, int *wstatus, int options)
+pid_t sys_waitpid(pid_t pid, user_ptr<int> wstatus, int options)
 {
+    if (!wstatus.check()) return -EFAULT;
+
     // pid doesn't exist or isn't a child
     if (Process::by_pid(pid) == nullptr || Process::by_pid(pid)->parent != Process::current().pid)
     {
@@ -40,11 +42,11 @@ pid_t sys_waitpid(pid_t pid, int *wstatus, int options)
 
     if (pid == -1)
     {
-        Process::current().wait_for(pid, wstatus);
+        Process::current().wait_for(pid, wstatus.get());
     }
     else if (pid > 0)
     {
-        Process::current().wait_for(pid, wstatus);
+        Process::current().wait_for(pid, wstatus.get());
     }
     else
     {

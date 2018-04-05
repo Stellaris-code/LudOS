@@ -26,12 +26,12 @@ SOFTWARE.
 #include "syscalls/Linux/syscalls.hpp"
 
 #include "tasking/process.hpp"
-
+#include "utils/user_ptr.hpp"
 #include "errno.h"
 
-int sys_getcwd(char* buf, unsigned long size)
+int sys_getcwd(user_ptr<char> buf, unsigned long size)
 {
-    if (buf == 0)
+    if (!buf.check())
     {
         return EFAULT;
     }
@@ -48,8 +48,8 @@ int sys_getcwd(char* buf, unsigned long size)
         return ERANGE;
     }
 
-    std::copy(pwd.begin(), pwd.end(), buf);
-    buf[pwd.size()] = '\0';
+    std::copy(pwd.begin(), pwd.end(), buf.get());
+    buf.get()[pwd.size()] = '\0';
 
     return EOK;
 }

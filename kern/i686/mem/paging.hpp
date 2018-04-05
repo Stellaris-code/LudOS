@@ -104,6 +104,8 @@ public:
 
     static bool is_mapped(const void* v_addr);
 
+    static bool check_user_ptr(const void* v_addr, size_t size);
+
     static void unmap_user_space();
 
     static void create_paging_info(PagingInformation& info);

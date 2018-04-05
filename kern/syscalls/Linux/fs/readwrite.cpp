@@ -29,11 +29,17 @@ SOFTWARE.
 #include "sys/fnctl.h"
 #include "errno.h"
 #include "drivers/storage/disk.hpp"
+#include "utils/user_ptr.hpp"
 
 #include "fs/vfs.hpp"
 
-size_t sys_read(unsigned int fd, void* buf, size_t count)
+size_t sys_read(unsigned int fd, user_ptr<void> buf, size_t count)
 {
+    if (!buf.check())
+    {
+        return EFAULT;
+    }
+
     auto fd_entry = Process::current().get_fd(fd);
     if (!fd_entry || !fd_entry->read)
     {
@@ -67,13 +73,18 @@ size_t sys_read(unsigned int fd, void* buf, size_t count)
         return EIO;
     }
 
-    std::copy(data.begin(), data.end(), (uint8_t*)buf);
+    std::copy(data.begin(), data.end(), (uint8_t*)buf.get());
 
     return -data.size(); // again, to allow errno numbers
 }
 
-size_t sys_write(unsigned int fd, const void* buf, size_t count)
+size_t sys_write(unsigned int fd, user_ptr<const void> buf, size_t count)
 {
+    if (!buf.check())
+    {
+        return EFAULT;
+    }
+
     auto fd_entry = Process::current().get_fd(fd);
     if (!fd_entry || !fd_entry->write)
     {
@@ -94,7 +105,7 @@ size_t sys_write(unsigned int fd, const void* buf, size_t count)
     bool okay { false };
     try
     {
-        okay = node->write(fd_entry->cursor, {(uint8_t*)buf, (gsl::span<uint8_t>::index_type)(count)});
+        okay = node->write(fd_entry->cursor, {(uint8_t*)buf.get(), (gsl::span<uint8_t>::index_type)(count)});
     }
     catch (const DiskException& e)
     {

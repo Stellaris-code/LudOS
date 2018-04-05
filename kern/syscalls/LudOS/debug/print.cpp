@@ -27,13 +27,18 @@ SOFTWARE.
 
 #include "utils/logging.hpp"
 #include "panic.hpp"
+#include "utils/user_ptr.hpp"
 
-void sys_print_serial(const char* string)
+void sys_print_serial(user_ptr<const char> string)
 {
+    if (!string.check()) return;
+
     log_serial("%s", string);
 }
 
-void sys_print_debug(const char* string)
+void sys_print_debug(user_ptr<const char> string)
 {
+    if (!string.check()) return;
+
     kprintf("%s", string);
 }

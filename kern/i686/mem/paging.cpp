@@ -108,6 +108,23 @@ bool Paging::is_mapped(const void *v_addr)
     return page_entry(reinterpret_cast<uintptr_t>(v_addr))->present;
 }
 
+bool Paging::check_user_ptr(const void *v_addr, size_t size)
+{
+    size_t page_num = size/page_size + (size%page_size?1:0);
+
+    auto entry = page_entry((uintptr_t)v_addr);
+
+    for (size_t i { 0 }; i < page_num; ++i)
+    {
+        if (!entry[i].present || !entry[i].user)
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 void Paging::unmap_user_space()
 {
     aligned_memsetl(page_entry(0), 0, (KERNEL_VIRTUAL_BASE >> 12)*sizeof(PTEntry));

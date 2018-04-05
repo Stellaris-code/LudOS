@@ -28,12 +28,18 @@ SOFTWARE.
 #include "tasking/process.hpp"
 #include "sys/fnctl.h"
 #include "errno.h"
+#include "utils/user_ptr.hpp"
 
 #include "fs/vfs.hpp"
 
-int sys_open(const char* path, int flags, int mode)
+int sys_open(user_ptr<const char> path, int flags, int mode)
 {
-    auto node = vfs::find(path); // TODO : pwd
+    if (!path.check())
+    {
+        return EFAULT;
+    }
+
+    auto node = vfs::find(path.get()); // TODO : pwd
     if (!node)
     {
         return ENOENT;

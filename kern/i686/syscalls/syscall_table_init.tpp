@@ -61,7 +61,7 @@ void get_argument(const registers* const regs, Tuple& tuple)
         value = regs->ebp;
     }
 
-    std::get<Idx>(tuple) = (std::tuple_element_t<Idx, std::remove_reference_t<decltype(tuple)>>)value;
+    std::get<Idx>(tuple) = *((std::tuple_element_t<Idx, std::remove_reference_t<decltype(tuple)>>*)&value);
 }
 
 template <size_t... I, typename Tuple>

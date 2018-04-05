@@ -48,7 +48,9 @@ public:
     static void map_page(uintptr_t p_addr, void* v_addr, uint32_t flags = VM::Read|VM::Write);
     static void unmap_page(void* v_addr);
 
-    static bool is_mapped(void* v_addr);
+    static bool is_mapped(const void* v_addr);
+
+    static bool check_user_ptr(const void *v_addr, size_t size);
 
     static uintptr_t physical_address(const void* v_addr);
 

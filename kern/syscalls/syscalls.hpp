@@ -27,6 +27,8 @@ SOFTWARE.
 
 #include <stdint.h>
 
+#include "utils/user_ptr.hpp"
+
 constexpr uint8_t linux_syscall_int = 0x80;
 constexpr uint8_t ludos_syscall_int = 0x70;
 
@@ -42,9 +44,12 @@ void init_syscalls();
     ret sys_##name(__VA_ARGS__); \
     constexpr size_t SYS_##name = num;
 
+#define USER_PTR(type) user_ptr<type>
+
 #include "syscall_list.def"
 
 #undef LUDOS_SYSCALL_DEF
 #undef LINUX_SYSCALL_DEF
+#undef USER_PTR
 
 #endif // SYSCALL_HPP

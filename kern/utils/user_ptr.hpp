@@ -1,7 +1,7 @@
 /*
-get_tables.cpp
+user_ptr.hpp
 
-Copyright (c) 15 Yann BOUCHER (yann)
+Copyright (c) 05 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,20 +22,31 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
+#ifndef USER_PTR_HPP
+#define USER_PTR_HPP
 
-#include "i686/syscalls/syscall.hpp"
-#include "syscalls/LudOS/syscalls.hpp"
+#include <stdint.h>
+#include <assert.h>
 
-#include "utils/logging.hpp"
+#include "mem/memmap.hpp"
 
-void sys_get_syscall_tables(user_ptr<SyscallEntry> ludos, user_ptr<SyscallEntry> linux)
+template <typename T>
+struct user_ptr
 {
-    for (size_t i { 0 }; i < max_syscalls; ++i)
+    bool check(size_t size = sizeof(T))
     {
-        ludos.get()[i].arg_cnt = ludos_syscall_table[i].arg_cnt;
-        memcpy(ludos.get()[i].arg_sizes, ludos_syscall_table[i].arg_sizes, 6);
-
-        linux.get()[i].arg_cnt = linux_syscall_table[i].arg_cnt;
-        memcpy(linux.get()[i].arg_sizes, linux_syscall_table[i].arg_sizes, 6);
+        return VM::check_user_ptr(ptr, size);
     }
-}
+
+    T* get()
+    {
+        assert(check());
+        return ptr;
+    }
+
+private:
+    T* ptr;
+};
+static_assert(sizeof(user_ptr<void>) == sizeof(uintptr_t));
+
+#endif // USER_PTR_HPP

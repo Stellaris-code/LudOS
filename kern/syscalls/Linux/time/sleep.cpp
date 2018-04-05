@@ -28,14 +28,19 @@ SOFTWARE.
 #include "errno.h"
 #include "utils/logging.hpp"
 
-int sys_nanosleep(const struct timespec *req, struct timespec *rem)
+int sys_nanosleep(user_ptr<const struct timespec> req, user_ptr<struct timespec> rem)
 {
-    if (req->tv_nsec < 0 || req->tv_nsec > 999999999 || req->tv_sec < 0)
+    if (!req.check() || !rem.check())
+    {
+        return EFAULT;
+    }
+
+    if (req.get()->tv_nsec < 0 || req.get()->tv_nsec > 999999999 || req.get()->tv_sec < 0)
     {
         return EINVAL;
     }
 
-    tasking::sleep_queue.insert(Process::current().pid, req->tv_nsec/1'000'000 + req->tv_sec*1000);
+    tasking::sleep_queue.insert(Process::current().pid, req.get()->tv_nsec/1'000'000 + req.get()->tv_sec*1000);
     tasking::schedule();
 
     return EOK;

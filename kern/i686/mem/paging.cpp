@@ -60,17 +60,12 @@ void Paging::init()
     sti();
 }
 
-void Paging::map_page(void *p_addr, void *v_addr, uint32_t flags)
+void Paging::map_page(uintptr_t p_addr, void *v_addr, uint32_t flags)
 {
-    //    if ((uint32_t)v_addr < KERNEL_VIRTUAL_BASE)
-    //    {
-    //        log_serial("Someone wants to reclaim addr %p\n", v_addr);
-    //    }
-
-    auto entry = page_entry(reinterpret_cast<uintptr_t>(v_addr));
+    auto entry = page_entry((uintptr_t)(v_addr));
     assert(!entry->present);
     //assert(entry->os_claimed);
-    entry->phys_addr = reinterpret_cast<uintptr_t>(p_addr) >> 12;
+    entry->phys_addr = p_addr >> 12;
 
     entry->write = !!(flags & Memory::Write);
     entry->cd = !!(flags & Memory::Uncached);
@@ -86,14 +81,14 @@ void Paging::unmap_page(void *v_addr)
     release_virtual_page(reinterpret_cast<uintptr_t>(v_addr));
 }
 
-void Paging::identity_map(void *p_addr, size_t size, uint32_t flags)
+void Paging::identity_map(uintptr_t p_addr, size_t size, uint32_t flags)
 {
     size_t page_num = size/page_size + (size%page_size?1:0);
 
     for (size_t i { 0 }; i < page_num; ++i)
     {
-        page_entry((uintptr_t)p_addr + i * page_size)->os_claimed = true;
-        map_page((uint8_t*)p_addr + i * page_size, (uint8_t*)p_addr + i * page_size, flags);
+        page_entry(p_addr + i * page_size)->os_claimed = true;
+        map_page(p_addr + i * page_size, (uint8_t*)p_addr + i * page_size, flags);
     }
 }
 

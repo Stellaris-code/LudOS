@@ -191,7 +191,7 @@ detail::HBAMem *detail::get_hbamem_ptr()
 
     auto bar = pci::get_bar_val(ahci_con, 5);
 
-    return reinterpret_cast<HBAMem*>(Memory::mmap((void*)bar, 0x1100, Memory::Read|Memory::Write|Memory::Uncached|Memory::WriteThrough));
+    return reinterpret_cast<HBAMem*>(Memory::mmap(bar, 0x1100, Memory::Read|Memory::Write|Memory::Uncached|Memory::WriteThrough));
 }
 
 void detail::get_ahci_ownership()

@@ -93,7 +93,7 @@ public:
 
     void reset(gsl::span<const uint8_t> code_to_copy, size_t allocated_size = 0);
 
-    void set_args(gsl::span<const std::string> args);
+    void set_args(const std::vector<std::string> &args);
 
     size_t add_fd(const FDInfo& info);
     FDInfo *get_fd(size_t fd);
@@ -113,14 +113,6 @@ public:
 private:
     Process();
 
-private:
-    void cleanup();
-    void init_default_fds();
-    void release_all_pages();
-    void wake_up(pid_t child, int err_code);
-
-    static pid_t find_free_pid();
-
 public:
     std::string name { "<INVALID>" };
     pid_t pid { 0 };
@@ -131,6 +123,7 @@ public:
     std::vector<pid_t> children;
     std::optional<pid_t> waiting_pid;
     int* wstatus { nullptr };
+    uintptr_t waitstatus_phys { 0 };
 
     std::string pwd = "/";
 
@@ -145,12 +138,21 @@ public:
     std::unordered_map<uintptr_t, AllocatedPageEntry> allocated_pages;
 
     std::vector<std::string> args;
+    uintptr_t argv_phys_page;
 
     uintptr_t current_pc { 0 };
     ArchSpecificData* arch_data { nullptr };
 
 private:
     void arch_init(gsl::span<const uint8_t> code_to_copy, size_t allocated_size);
+    void cleanup();
+    void init_default_fds();
+    void release_all_pages();
+    void wake_up(pid_t child, int err_code);
+    uintptr_t copy_argv_page();
+    std::unordered_map<uintptr_t, AllocatedPageEntry> copy_allocated_pages();
+
+    static pid_t find_free_pid();
 
 private:
     static inline Process* m_current_process { nullptr };

@@ -56,7 +56,7 @@ void* liballoc_alloc(size_t pages)
     uint8_t* addr = reinterpret_cast<uint8_t*>(Paging::alloc_virtual_page(pages));
     for (size_t i { 0 }; i < pages; ++i)
     {
-        Paging::map_page(reinterpret_cast<void*>(PhysPageAllocator::alloc_physical_page()),
+        Paging::map_page(PhysPageAllocator::alloc_physical_page(),
                          addr + i*Paging::page_size, Memory::Read|Memory::Write);
     }
     return addr;

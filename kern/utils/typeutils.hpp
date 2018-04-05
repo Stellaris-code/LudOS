@@ -1,5 +1,5 @@
 /*
-get_initrd.cpp
+typeutils.hpp
 
 Copyright (c) 04 Yann BOUCHER (yann)
 
@@ -22,28 +22,43 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
+#ifndef TYPEUTILS_HPP
+#define TYPEUTILS_HPP
 
-#include "initrd/initrd.hpp"
+#include <stdint.h>
 
-#include <string.hpp>
-
-#include "i686/pc/multiboot/multiboot_kern.hpp"
-#include "drivers/storage/disk.hpp"
-#include "fs/vfs.hpp"
-#include "utils/stlutils.hpp"
-
-Disk* get_initrd_disk()
+template <size_t size>
+struct uintn
 {
-    for (auto module : multiboot::get_modules())
-    {
-        auto str = std::string(reinterpret_cast<const char*>(module.cmdline));
-        auto tokens = tokenize(str, " ", true);
-        if (tokens.back() == "initrd")
-        {
-            return &MemoryDisk::create_disk(reinterpret_cast<const uint8_t*>(module.mod_start),
-                                                 module.mod_end - module.mod_start, "initramdisk");
-        }
-    }
+    static_assert("Invalid uintn_t size !");
+    using type = void;
+};
 
-    return {};
-}
+template <>
+struct uintn<8>
+{
+    using type = uint8_t;
+};
+
+template <>
+struct uintn<16>
+{
+    using type = uint16_t;
+};
+
+template <>
+struct uintn<32>
+{
+    using type = uint32_t;
+};
+
+template <>
+struct uintn<64>
+{
+    using type = uint64_t;
+};
+
+template <size_t size>
+using uintn_t = typename uintn<size>::type;
+
+#endif // TYPEUTILS_HPP

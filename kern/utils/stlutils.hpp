@@ -287,4 +287,31 @@ inline std::string format(const std::string& format, const std::vector<std::pair
     return result;
 }
 
+template <typename T, typename Cont>
+T* find(Cont& cont, const T& val)
+{
+    auto it = std::find(std::begin(cont), std::end(cont), val);
+    if (it == std::end(cont)) return nullptr;
+    else return &(*it);
+}
+template <typename T, typename Cont>
+const T* find(const Cont& cont, const T& val)
+{
+    auto it = std::find(std::begin(cont), std::end(cont), val);
+    if (it == std::end(cont)) return nullptr;
+    else return &(*it);
+}
+
+template <typename T, typename Cont>
+void erase(Cont& cont, const T& val)
+{
+    cont.erase(std::remove(std::begin(cont), std::end(cont), val), std::end(cont));
+}
+
+template <typename T, typename Cont, typename Predicate>
+void erase_if(Cont& cont, Predicate p)
+{
+    cont.erase(std::remove_if(std::begin(cont), std::end(cont), p), std::end(cont));
+}
+
 #endif // STLUTILS_HPP

@@ -66,7 +66,7 @@ void parse_mem()
 {
     if (CHECK_FLAG (info->flags, 6))
     {
-        MultibootMeminfo::mmap_addr = (multiboot_mmap_entry*)Memory::mmap((void*)info->mmap_addr, info->mmap_length);
+        MultibootMeminfo::mmap_addr = (multiboot_mmap_entry*)Memory::mmap(info->mmap_addr, info->mmap_length);
         MultibootMeminfo::mmap_length = info->mmap_length;
     }
     asm volatile ("xchgw %bx, %bx\n");
@@ -85,7 +85,7 @@ void parse_info()
 
     if (CHECK_FLAG (info->flags, 3))
     {
-        auto mmap_addr = (multiboot_module_t*)Memory::mmap((void*)info->mods_addr,
+        auto mmap_addr = (multiboot_module_t*)Memory::mmap(info->mods_addr,
                                                      info->mods_count*sizeof(multiboot_module_t), Memory::Read);
         auto mod = mmap_addr;
 
@@ -151,7 +151,7 @@ std::pair<const elf::Elf32_Shdr *, size_t> elf_info()
 
     multiboot_elf_section_header_table_t elf_info = info->u.elf_sec;
 
-    static auto shdr = (elf::Elf32_Shdr*)Memory::mmap((void*)elf_info.addr, elf_info.num*sizeof(elf::Elf32_Shdr), Memory::Read|Memory::Write);
+    static auto shdr = (elf::Elf32_Shdr*)Memory::mmap(elf_info.addr, elf_info.num*sizeof(elf::Elf32_Shdr), Memory::Read|Memory::Write);
 
     return {shdr, elf_info.num};
 }
@@ -172,7 +172,7 @@ std::vector<multiboot_module_t> get_modules()
     {
         std::vector<multiboot_module_t> modules;
 
-        auto mod = (multiboot_module_t*)Memory::mmap((void*)info->mods_addr,
+        auto mod = (multiboot_module_t*)Memory::mmap(info->mods_addr,
                                                      info->mods_count*sizeof(multiboot_module_t), Memory::Read);
 
         for (size_t i = 0; i < info->mods_count; i++, mod++)
@@ -180,9 +180,9 @@ std::vector<multiboot_module_t> get_modules()
             size_t len = mod->mod_end - mod->mod_start;
 
             modules.emplace_back(*mod);
-            modules.back().mod_start = (uintptr_t)Memory::mmap((void*)mod->mod_start, len, Memory::Read);
+            modules.back().mod_start = (uintptr_t)Memory::mmap(mod->mod_start, len, Memory::Read);
             modules.back().mod_end = modules.back().mod_start + len;
-            modules.back().cmdline = (uintptr_t)Memory::mmap((void*)mod->cmdline, 512, Memory::Read);
+            modules.back().cmdline = (uintptr_t)Memory::mmap(mod->cmdline, 512, Memory::Read);
         }
 
         return modules;
@@ -195,7 +195,7 @@ std::vector<multiboot_module_t> get_modules()
 
 std::string get_str(uintptr_t addr, size_t size)
 {
-    return (char*)Memory::mmap((void*)addr, size, Memory::Read);
+    return (char*)Memory::mmap(addr, size, Memory::Read);
 }
 
 }

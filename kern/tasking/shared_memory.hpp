@@ -1,7 +1,7 @@
 /*
-get_initrd.cpp
+shared_memory.hpp
 
-Copyright (c) 04 Yann BOUCHER (yann)
+Copyright (c) 05 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,28 +22,33 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
+#ifndef SHARED_MEMORY_HPP
+#define SHARED_MEMORY_HPP
 
-#include "initrd/initrd.hpp"
+#include <stdint.h>
+#include <vector.hpp>
 
-#include <string.hpp>
+#include "utils/gsl/gsl_span.hpp"
 
-#include "i686/pc/multiboot/multiboot_kern.hpp"
-#include "drivers/storage/disk.hpp"
-#include "fs/vfs.hpp"
-#include "utils/stlutils.hpp"
+#include "sys/types.h"
 
-Disk* get_initrd_disk()
+class SharedMemorySegment
 {
-    for (auto module : multiboot::get_modules())
-    {
-        auto str = std::string(reinterpret_cast<const char*>(module.cmdline));
-        auto tokens = tokenize(str, " ", true);
-        if (tokens.back() == "initrd")
-        {
-            return &MemoryDisk::create_disk(reinterpret_cast<const uint8_t*>(module.mod_start),
-                                                 module.mod_end - module.mod_start, "initramdisk");
-        }
-    }
+public:
+    SharedMemorySegment(pid_t initial_pid, size_t size_in_pages);
 
-    return {};
-}
+public:
+    void attach(pid_t proc);
+    void detach(pid_t proc);
+
+    uintptr_t physical_address() const;
+
+    gsl::span<const pid_t> attached_pids() const;
+
+private:
+    uintptr_t m_phys_addr { 0 };
+    size_t m_size { 0 };
+    std::vector<pid_t> m_attached_pids;
+};
+
+#endif // SHARED_MEMORY_HPP

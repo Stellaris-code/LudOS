@@ -1,7 +1,7 @@
 /*
-get_initrd.cpp
+shared_memory.cpp
 
-Copyright (c) 04 Yann BOUCHER (yann)
+Copyright (c) 05 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -23,27 +23,21 @@ SOFTWARE.
 
 */
 
-#include "initrd/initrd.hpp"
+#include "shared_memory.hpp"
 
-#include <string.hpp>
+#include "mem/memmap.hpp"
 
-#include "i686/pc/multiboot/multiboot_kern.hpp"
-#include "drivers/storage/disk.hpp"
-#include "fs/vfs.hpp"
-#include "utils/stlutils.hpp"
-
-Disk* get_initrd_disk()
+SharedMemorySegment::SharedMemorySegment(pid_t initial_pid, size_t size_in_pages)
 {
-    for (auto module : multiboot::get_modules())
-    {
-        auto str = std::string(reinterpret_cast<const char*>(module.cmdline));
-        auto tokens = tokenize(str, " ", true);
-        if (tokens.back() == "initrd")
-        {
-            return &MemoryDisk::create_disk(reinterpret_cast<const uint8_t*>(module.mod_start),
-                                                 module.mod_end - module.mod_start, "initramdisk");
-        }
-    }
 
-    return {};
+}
+
+uintptr_t SharedMemorySegment::physical_address() const
+{
+    return m_phys_addr;
+}
+
+gsl::span<const pid_t> SharedMemorySegment::attached_pids() const
+{
+    return m_attached_pids;
 }

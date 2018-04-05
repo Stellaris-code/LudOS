@@ -30,6 +30,8 @@ SOFTWARE.
 #include "syscalls/syscalls.hpp"
 
 #include "utils/messagebus.hpp"
+#include "mem/memmap.hpp"
+#include "utils/stlutils.hpp"
 
 #include <sys/wait.h>
 
@@ -40,7 +42,11 @@ Process::Process()
 
 void Process::reset(gsl::span<const uint8_t> code_to_copy, size_t allocated_size)
 {
-    if (arch_data) cleanup(); // if arch_data == nullptr then the process isn't in a ready state yet, so don't clean it up
+    if (arch_data)
+    {
+        cleanup(); // if arch_data == nullptr then the process isn't in a ready state yet, so don't clean it up
+        kfree(arch_data); arch_data = nullptr;
+    }
     arch_init(code_to_copy, allocated_size);
 }
 
@@ -53,6 +59,13 @@ void Process::init_default_fds()
     assert(add_fd({vfs::find("/dev/stdin" ), .read = true,  .write = false}) == 0);
     assert(add_fd({vfs::find("/dev/stdout"), .read = false, .write = true }) == 1);
     assert(add_fd({vfs::find("/dev/stderr"), .read = false, .write = true }) == 2);
+}
+
+void Process::cleanup()
+{
+    Memory::release_physical_page(argv_phys_page);
+
+    release_all_pages();
 }
 
 void Process::release_all_pages()
@@ -124,6 +137,7 @@ void Process::wait_for(pid_t pid, int *wstatus)
 {
     waiting_pid = pid;
     this->wstatus = wstatus;
+    waitstatus_phys = Memory::physical_address(wstatus);
     assert(this->wstatus);
 }
 
@@ -189,12 +203,10 @@ void Process::kill(pid_t pid, int err_code)
     assert(by_pid(pid));
     assert(by_pid(by_pid(pid)->parent));
     auto& parent = *by_pid(by_pid(pid)->parent);
+
     // erase pid from parent children list
-
-    assert(std::find(parent.children.begin(), parent.children.end(), pid) != parent.children.end());
-    parent.children.erase(std::remove(parent.children.begin(), parent.children.end(), pid), parent.children.end());
-
-    log_serial("Waiting : %d, pid: %d\n", *parent.waiting_pid, pid);
+    assert(find(parent.children, pid));
+    erase(parent.children, pid);
 
     if (parent.is_waiting() && (parent.waiting_pid.value() == -1 || parent.waiting_pid.value() == pid))
     {
@@ -239,7 +251,6 @@ Process *Process::create(const std::vector<std::string>& args)
     if (m_processes[free_idx] == nullptr) return nullptr;
 
     m_processes[free_idx]->pid = free_idx;
-    m_processes[free_idx]->waiting_pid.reset();
     m_processes[free_idx]->args = args;
 
     ++m_process_count;
@@ -247,4 +258,40 @@ Process *Process::create(const std::vector<std::string>& args)
     MessageBus::send(ProcessCreatedEvent{free_idx});
 
     return m_processes[free_idx].get();
+}
+
+uintptr_t Process::copy_argv_page()
+{
+    uintptr_t new_page = Memory::allocate_physical_page();
+
+    auto src_ptr = Memory::mmap(argv_phys_page, Memory::page_size());
+    auto dest_ptr = Memory::mmap(new_page, Memory::page_size());
+
+    memcpy(dest_ptr, src_ptr, Memory::page_size());
+
+    Memory::unmap(src_ptr, Memory::page_size());
+    Memory::unmap(dest_ptr, Memory::page_size());
+
+    return new_page;
+}
+
+std::unordered_map<uintptr_t, Process::AllocatedPageEntry> Process::copy_allocated_pages()
+{
+    std::unordered_map<uintptr_t, Process::AllocatedPageEntry> new_map;
+    for (const auto& pair : allocated_pages)
+    {
+        new_map[pair.first].paddr = Memory::allocate_physical_page();
+        new_map[pair.first].flags = pair.second.flags;
+
+        auto src_ptr = Memory::mmap(pair.second.paddr, Memory::page_size());
+        auto dest_ptr = Memory::mmap(new_map[pair.first].paddr, Memory::page_size());
+
+        memcpy(dest_ptr, src_ptr, Memory::page_size());
+
+        Memory::unmap(src_ptr, Memory::page_size());
+        Memory::unmap(dest_ptr, Memory::page_size());
+    }
+
+    assert(new_map.size() == allocated_pages.size());
+    return new_map;
 }

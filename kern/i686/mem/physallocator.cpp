@@ -117,7 +117,7 @@ loop:
 void PhysPageAllocator::clear_page(uintptr_t p_addr)
 {
     auto ptr = (void*)Paging::alloc_virtual_page();
-    Paging::map_page((void*)p_addr, ptr, Memory::Read|Memory::Write);
+    Paging::map_page(p_addr, ptr, Memory::Read|Memory::Write);
 
     memsetl(ptr, fill_pattern, Paging::page_size);
 

@@ -38,10 +38,6 @@ struct Process::ArchSpecificData
     aligned_vector<uint8_t, Paging::page_size> code;
     registers regs;
     FPUState fpu_state;
-    uintptr_t argv_phys_page;
-    bool args_need_update { false };
-    bool waitpid_return_update { false };
-    int waitpid_return { 0 };
 };
 
 #endif // i686_PROCESS_HPP

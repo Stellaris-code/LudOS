@@ -37,7 +37,6 @@ SOFTWARE.
 #include <unordered_set.hpp>
 #include <utils/gsl/gsl_span.hpp>
 
-#include "utils/stlutils.hpp"
 #include "utils/logging.hpp"
 #include "utils/membuffer.hpp"
 #include "panic.hpp"

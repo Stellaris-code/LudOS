@@ -30,6 +30,7 @@ SOFTWARE.
 #include "utils/vecutils.hpp"
 #include "utils/mathutils.hpp"
 #include "utils/memutils.hpp"
+#include "utils/stlutils.hpp"
 
 void Ext2FS::umount()
 {

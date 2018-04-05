@@ -49,9 +49,12 @@ int main()
     }
     else if (ret == 0)
     {
-        printf("Child!\n");
-        nanosleep(&req, nullptr);
-        sched_yield();
+        while (true)
+        {
+            printf("Child!\n");
+            nanosleep(&req, nullptr);
+            sched_yield();
+        }
         printf("Child exit\n");
         exit(0);
     }

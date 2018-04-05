@@ -30,6 +30,7 @@ SOFTWARE.
 #include "utils/bitops.hpp"
 #include "utils/vecutils.hpp"
 #include "utils/mathutils.hpp"
+#include "utils/stlutils.hpp"
 
 Ext2FS::Ext2FS(Disk &disk) : FSImpl<Ext2FS>(disk)
 {

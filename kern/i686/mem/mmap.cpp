@@ -28,10 +28,11 @@ SOFTWARE.
 #include "utils/logging.hpp"
 
 #include "paging.hpp"
+#include "physallocator.hpp"
 
-void *Memory::mmap(void *p_addr, size_t len, uint32_t flags)
+void *Memory::mmap(uintptr_t p_addr, size_t len, uint32_t flags)
 {
-    size_t offset = (uintptr_t)p_addr & 0xFFF;
+    size_t offset = p_addr & 0xFFF;
 
     len += offset;
 
@@ -42,7 +43,7 @@ void *Memory::mmap(void *p_addr, size_t len, uint32_t flags)
     uintptr_t pages = Paging::alloc_virtual_page(page_num);
     for (size_t i { 0 }; i < page_num; ++i)
     {
-        Paging::map_page(reinterpret_cast<uint8_t*>(p_addr) + i*Paging::page_size,
+        Paging::map_page(p_addr + i*Paging::page_size,
                          reinterpret_cast<void*>(pages + i*Paging::page_size),
                          flags);
     }
@@ -68,6 +69,16 @@ bool Memory::is_mapped(void *v_addr)
 uintptr_t Memory::physical_address(const void *v_addr)
 {
     return Paging::physical_address(v_addr);
+}
+
+uintptr_t Memory::allocate_physical_page()
+{
+    return PhysPageAllocator::alloc_physical_page();
+}
+
+void Memory::release_physical_page(uintptr_t page)
+{
+    PhysPageAllocator::release_physical_page(page);
 }
 
 size_t Memory::page_size()

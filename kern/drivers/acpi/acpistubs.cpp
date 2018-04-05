@@ -76,7 +76,7 @@ ACPI_STATUS AcpiOsTableOverride(ACPI_TABLE_HEADER *ExistingTable, ACPI_TABLE_HEA
 
 void *AcpiOsMapMemory(ACPI_PHYSICAL_ADDRESS PhysicalAddress, ACPI_SIZE Length)
 {
-    return Memory::mmap(reinterpret_cast<void*>(PhysicalAddress), Length);
+    return Memory::mmap(PhysicalAddress, Length);
 }
 
 void AcpiOsUnmapMemory(void *LogicalAddress, ACPI_SIZE Length)

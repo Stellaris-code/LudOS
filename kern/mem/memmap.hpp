@@ -26,6 +26,7 @@ SOFTWARE.
 #define MEMMAP_HPP
 
 #include <stdint.h>
+#include <string.h>
 
 class Memory
 {
@@ -40,12 +41,15 @@ public:
         NoExec       = 1<<5
     };
 
-    static void* mmap(void* p_addr, size_t len, uint32_t flags = Read|Write);
+    static void* mmap(uintptr_t p_addr, size_t len, uint32_t flags = Read|Write);
     static void unmap(void* v_addr, size_t len);
 
     static bool is_mapped(void* v_addr);
 
     static uintptr_t physical_address(const void* v_addr);
+
+    static uintptr_t allocate_physical_page();
+    static void release_physical_page(uintptr_t page);
 
     static size_t page_size();
 
@@ -57,6 +61,20 @@ public:
     static inline uintptr_t offset(uintptr_t addr)
     {
         return addr & (page_size()-1);
+    }
+
+    static void phys_read(uintptr_t addr, void* buf, size_t size)
+    {
+        auto ptr = Memory::mmap(addr, size, Memory::Read);
+        memcpy(buf, ptr, size);
+        Memory::unmap(ptr, size);
+    }
+
+    static void phys_write(uintptr_t addr, const void* buf, size_t size)
+    {
+        auto ptr = Memory::mmap(addr, size, Memory::Write);
+        memcpy(ptr, buf, size);
+        Memory::unmap(ptr, size);
     }
 };
 

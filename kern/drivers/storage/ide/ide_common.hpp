@@ -30,7 +30,7 @@ SOFTWARE.
 #include <string.hpp>
 #include <optional.hpp>
 
-#include "utils/stlutils.hpp"
+#include <ctype.h>
 
 #include "drivers/storage/disk.hpp"
 
@@ -105,7 +105,12 @@ std::string ata_string(T&& arr)
         str += arr[i];
     }
 
-    return trim_right(str);
+    // trim_right
+    while (isspace(str.back()))
+    {
+        str.pop_back();
+    }
+    return str;
 }
 
 uint8_t error_register(uint16_t port);

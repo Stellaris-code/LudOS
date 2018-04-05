@@ -50,6 +50,8 @@ struct ProcessDestroyedEvent
     int err_code;
 };
 
+class SharedMemorySegment;
+
 class Process : NonCopyable
 {
 public:
@@ -114,6 +116,17 @@ private:
     Process();
 
 public:
+    struct AllocatedPageEntry
+    {
+        uintptr_t paddr;
+        uint32_t flags;
+    };
+    struct ShmEntry
+    {
+        std::shared_ptr<SharedMemorySegment> shm;
+        void* v_addr;
+    };
+
     std::string name { "<INVALID>" };
     pid_t pid { 0 };
     uint32_t uid { root_uid };
@@ -129,22 +142,21 @@ public:
 
     std::vector<FDInfo> fd_table;
 
-    struct AllocatedPageEntry
-    {
-        uintptr_t paddr;
-        uint32_t flags;
-    };
-
     std::unordered_map<uintptr_t, AllocatedPageEntry> allocated_pages;
 
     std::vector<std::string> args;
     uintptr_t argv_phys_page;
+
+    std::unordered_map<unsigned int, ShmEntry> m_shm_list;
 
     uintptr_t current_pc { 0 };
     ArchSpecificData* arch_data { nullptr };
 
 private:
     void arch_init(gsl::span<const uint8_t> code_to_copy, size_t allocated_size);
+    void map_shm();
+    void unmap_shm();
+    void unmap_user_space();
     void cleanup();
     void init_default_fds();
     void release_all_pages();

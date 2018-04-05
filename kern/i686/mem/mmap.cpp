@@ -30,7 +30,7 @@ SOFTWARE.
 #include "paging.hpp"
 #include "physallocator.hpp"
 
-void *Memory::mmap(uintptr_t p_addr, size_t len, uint32_t flags)
+void *VM::mmap(uintptr_t p_addr, size_t len, uint32_t flags)
 {
     size_t offset = p_addr & 0xFFF;
 
@@ -51,7 +51,7 @@ void *Memory::mmap(uintptr_t p_addr, size_t len, uint32_t flags)
     return reinterpret_cast<void*>(pages + offset);
 }
 
-void Memory::unmap(void *v_addr, size_t len)
+void VM::unmap(void *v_addr, size_t len)
 {
     size_t page_num = len/Paging::page_size + (len%Paging::page_size?1:0);
 
@@ -61,27 +61,37 @@ void Memory::unmap(void *v_addr, size_t len)
     }
 }
 
-bool Memory::is_mapped(void *v_addr)
+void VM::map_page(uintptr_t p_addr, void *v_addr, uint32_t flags)
+{
+    Paging::map_page(p_addr, v_addr, flags);
+}
+
+void VM::unmap_page(void *v_addr)
+{
+    Paging::unmap_page(v_addr);
+}
+
+bool VM::is_mapped(void *v_addr)
 {
     return Paging::is_mapped(v_addr);
 }
 
-uintptr_t Memory::physical_address(const void *v_addr)
+uintptr_t VM::physical_address(const void *v_addr)
 {
     return Paging::physical_address(v_addr);
 }
 
-uintptr_t Memory::allocate_physical_page()
+uintptr_t VM::allocate_physical_page()
 {
     return PhysPageAllocator::alloc_physical_page();
 }
 
-void Memory::release_physical_page(uintptr_t page)
+void VM::release_physical_page(uintptr_t page)
 {
     PhysPageAllocator::release_physical_page(page);
 }
 
-size_t Memory::page_size()
+size_t VM::page_size()
 {
     return Paging::page_size;
 }

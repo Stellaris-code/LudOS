@@ -67,10 +67,10 @@ void Paging::map_page(uintptr_t p_addr, void *v_addr, uint32_t flags)
     //assert(entry->os_claimed);
     entry->phys_addr = p_addr >> 12;
 
-    entry->write = !!(flags & Memory::Write);
-    entry->cd = !!(flags & Memory::Uncached);
-    entry->wt = !!(flags & Memory::WriteThrough);
-    entry->user = !!(flags & Memory::User);
+    entry->write = !!(flags & VM::Write);
+    entry->cd = !!(flags & VM::Uncached);
+    entry->wt = !!(flags & VM::WriteThrough);
+    entry->user = !!(flags & VM::User);
 
     entry->present = true;
     entry->os_claimed = true;
@@ -108,6 +108,14 @@ bool Paging::is_mapped(const void *v_addr)
     return page_entry(reinterpret_cast<uintptr_t>(v_addr))->present;
 }
 
+void Paging::unmap_user_space()
+{
+    aligned_memsetl(page_entry(0), 0, (KERNEL_VIRTUAL_BASE >> 12)*sizeof(PTEntry));
+    // Reload the page tables
+    asm volatile ("mov %cr3, %eax\n"
+                  "mov %eax, %cr3\n");
+}
+
 void Paging::create_paging_info(PagingInformation &info)
 {
     auto get_addr = [](auto addr)->void*
@@ -118,7 +126,7 @@ void Paging::create_paging_info(PagingInformation &info)
         }
         else
         {
-            return (void*)Memory::physical_address((void*)addr);
+            return (void*)VM::physical_address((void*)addr);
         }
     };
 

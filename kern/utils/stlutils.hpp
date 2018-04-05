@@ -288,14 +288,15 @@ inline std::string format(const std::string& format, const std::vector<std::pair
 }
 
 template <typename T, typename Cont>
-T* find(Cont& cont, const T& val)
+typename Cont::value_type* find(Cont& cont, const T& val)
 {
     auto it = std::find(std::begin(cont), std::end(cont), val);
     if (it == std::end(cont)) return nullptr;
     else return &(*it);
 }
+
 template <typename T, typename Cont>
-const T* find(const Cont& cont, const T& val)
+const typename Cont::value_type* find(const Cont& cont, const T& val)
 {
     auto it = std::find(std::begin(cont), std::end(cont), val);
     if (it == std::end(cont)) return nullptr;

@@ -33,6 +33,8 @@ SOFTWARE.
 #include "mem/memmap.hpp"
 #include "utils/stlutils.hpp"
 
+#include "shared_memory.hpp"
+
 #include <sys/wait.h>
 
 Process::Process()
@@ -63,7 +65,7 @@ void Process::init_default_fds()
 
 void Process::cleanup()
 {
-    Memory::release_physical_page(argv_phys_page);
+    VM::release_physical_page(argv_phys_page);
 
     release_all_pages();
 }
@@ -137,7 +139,7 @@ void Process::wait_for(pid_t pid, int *wstatus)
 {
     waiting_pid = pid;
     this->wstatus = wstatus;
-    waitstatus_phys = Memory::physical_address(wstatus);
+    waitstatus_phys = VM::physical_address(wstatus);
     assert(this->wstatus);
 }
 
@@ -260,17 +262,25 @@ Process *Process::create(const std::vector<std::string>& args)
     return m_processes[free_idx].get();
 }
 
+void Process::map_shm()
+{
+    for (auto pair : m_shm_list)
+    {
+        pair.second.shm->map(pair.second.v_addr);
+    }
+}
+
 uintptr_t Process::copy_argv_page()
 {
-    uintptr_t new_page = Memory::allocate_physical_page();
+    uintptr_t new_page = VM::allocate_physical_page();
 
-    auto src_ptr = Memory::mmap(argv_phys_page, Memory::page_size());
-    auto dest_ptr = Memory::mmap(new_page, Memory::page_size());
+    auto src_ptr = VM::mmap(argv_phys_page, VM::page_size());
+    auto dest_ptr = VM::mmap(new_page, VM::page_size());
 
-    memcpy(dest_ptr, src_ptr, Memory::page_size());
+    memcpy(dest_ptr, src_ptr, VM::page_size());
 
-    Memory::unmap(src_ptr, Memory::page_size());
-    Memory::unmap(dest_ptr, Memory::page_size());
+    VM::unmap(src_ptr, VM::page_size());
+    VM::unmap(dest_ptr, VM::page_size());
 
     return new_page;
 }
@@ -280,16 +290,16 @@ std::unordered_map<uintptr_t, Process::AllocatedPageEntry> Process::copy_allocat
     std::unordered_map<uintptr_t, Process::AllocatedPageEntry> new_map;
     for (const auto& pair : allocated_pages)
     {
-        new_map[pair.first].paddr = Memory::allocate_physical_page();
+        new_map[pair.first].paddr = VM::allocate_physical_page();
         new_map[pair.first].flags = pair.second.flags;
 
-        auto src_ptr = Memory::mmap(pair.second.paddr, Memory::page_size());
-        auto dest_ptr = Memory::mmap(new_map[pair.first].paddr, Memory::page_size());
+        auto src_ptr = VM::mmap(pair.second.paddr, VM::page_size());
+        auto dest_ptr = VM::mmap(new_map[pair.first].paddr, VM::page_size());
 
-        memcpy(dest_ptr, src_ptr, Memory::page_size());
+        memcpy(dest_ptr, src_ptr, VM::page_size());
 
-        Memory::unmap(src_ptr, Memory::page_size());
-        Memory::unmap(dest_ptr, Memory::page_size());
+        VM::unmap(src_ptr, VM::page_size());
+        VM::unmap(dest_ptr, VM::page_size());
     }
 
     assert(new_map.size() == allocated_pages.size());

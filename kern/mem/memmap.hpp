@@ -27,8 +27,9 @@ SOFTWARE.
 
 #include <stdint.h>
 #include <string.h>
+#include <limits.h>
 
-class Memory
+class VM
 {
 public:
     enum MmapFlags : uint32_t
@@ -44,6 +45,9 @@ public:
     static void* mmap(uintptr_t p_addr, size_t len, uint32_t flags = Read|Write);
     static void unmap(void* v_addr, size_t len);
 
+    static void map_page(uintptr_t p_addr, void* v_addr, uint32_t flags = VM::Read|VM::Write);
+    static void unmap_page(void* v_addr);
+
     static bool is_mapped(void* v_addr);
 
     static uintptr_t physical_address(const void* v_addr);
@@ -55,7 +59,7 @@ public:
 
     static inline uintptr_t page(uintptr_t addr)
     {
-        return addr & ~(page_size()-1);
+        return (addr & ~(page_size()-1));
     }
 
     static inline uintptr_t offset(uintptr_t addr)
@@ -65,16 +69,16 @@ public:
 
     static void phys_read(uintptr_t addr, void* buf, size_t size)
     {
-        auto ptr = Memory::mmap(addr, size, Memory::Read);
+        auto ptr = VM::mmap(addr, size, VM::Read);
         memcpy(buf, ptr, size);
-        Memory::unmap(ptr, size);
+        VM::unmap(ptr, size);
     }
 
     static void phys_write(uintptr_t addr, const void* buf, size_t size)
     {
-        auto ptr = Memory::mmap(addr, size, Memory::Write);
+        auto ptr = VM::mmap(addr, size, VM::Write);
         memcpy(ptr, buf, size);
-        Memory::unmap(ptr, size);
+        VM::unmap(ptr, size);
     }
 };
 

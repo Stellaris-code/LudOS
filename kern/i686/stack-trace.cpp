@@ -40,7 +40,7 @@ std::vector<uintptr_t> trace_stack(void *addr, size_t frames)
 
     stack_frame* fp = (stack_frame*)(addr ?: __builtin_frame_address(0));
 
-    for(size_t i = 0; (frames != 0 ? i < frames : true) && fp && Memory::is_mapped(fp) && fp->return_addr; i++)
+    for(size_t i = 0; (frames != 0 ? i < frames : true) && fp && VM::is_mapped(fp) && fp->return_addr; i++)
     {
         trace.emplace_back(reinterpret_cast<uintptr_t>(fp->return_addr));
         fp = fp->previous;

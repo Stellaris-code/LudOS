@@ -25,19 +25,63 @@ SOFTWARE.
 
 #include "shared_memory.hpp"
 
+#include <unordered_map.hpp>
+
 #include "mem/memmap.hpp"
+#include "utils/stlutils.hpp"
 
-SharedMemorySegment::SharedMemorySegment(pid_t initial_pid, size_t size_in_pages)
+SharedMemorySegment::SharedMemorySegment(size_t size_in_pages)
 {
-
+    for (size_t i { 0 }; i < size_in_pages; ++i)
+    {
+        m_phys_addrs.emplace_back(VM::allocate_physical_page());
+    }
 }
 
-uintptr_t SharedMemorySegment::physical_address() const
+SharedMemorySegment::~SharedMemorySegment()
 {
-    return m_phys_addr;
+    for (auto addr : m_phys_addrs)
+    {
+        VM::release_physical_page(addr);
+    }
+
+    m_phys_addrs.clear();
 }
 
-gsl::span<const pid_t> SharedMemorySegment::attached_pids() const
+void SharedMemorySegment::map(void *v_addr, uint32_t flags)
 {
-    return m_attached_pids;
+    for (size_t i { 0 }; i < m_phys_addrs.size(); ++i)
+    {
+        VM::map_page(m_phys_addrs[i], (uint8_t*)v_addr + VM::page_size(), flags);
+    }
+}
+
+void SharedMemorySegment::unmap(void *v_addr)
+{
+    for (size_t i { 0 }; i < m_phys_addrs.size(); ++i)
+    {
+        VM::unmap_page((uint8_t*)v_addr + VM::page_size());
+    }
+}
+
+static std::unordered_map<unsigned int, std::weak_ptr<SharedMemorySegment>> shmlist;
+
+std::shared_ptr<SharedMemorySegment> create_shared_mem(unsigned int id, size_t size)
+{
+    assert(!shmlist.count(id));
+
+    auto ptr = std::make_shared<SharedMemorySegment>(size);
+    shmlist[id] = ptr;
+    return ptr;
+}
+
+std::shared_ptr<SharedMemorySegment> get_shared_mem(unsigned int id)
+{
+    if (shmlist.find(id) == shmlist.end())
+    {
+        return nullptr;
+    }
+
+    assert(!shmlist[id].expired());
+    return shmlist[id].lock();
 }

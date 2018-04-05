@@ -39,7 +39,7 @@ const char *str_table(const Elf32_Shdr *hdr, size_t strtableidx)
     const char* str_table;
     if (hdr[strtableidx].sh_addr)
     {
-        str_table = (const char*)Memory::mmap(hdr[strtableidx].sh_addr, hdr[strtableidx].sh_entsize);
+        str_table = (const char*)VM::mmap(hdr[strtableidx].sh_addr, hdr[strtableidx].sh_entsize);
     }
     else
     {

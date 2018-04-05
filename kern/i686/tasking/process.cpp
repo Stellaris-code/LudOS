@@ -56,7 +56,7 @@ void map_code(const Process::ArchSpecificData& data)
         uint8_t* virt_addr = (uint8_t*)(i * Paging::page_size);
 
         assert(phys_addr);
-        Paging::map_page(phys_addr, virt_addr, Memory::Read|Memory::Write|Memory::User);
+        Paging::map_page(phys_addr, virt_addr, VM::Read|VM::Write|VM::User);
     }
 }
 
@@ -71,7 +71,7 @@ void map_stack(const Process::ArchSpecificData& data)
         uint8_t* virt_addr = (uint8_t*)(user_stack_top - (i * Paging::page_size));
 
         assert(phys_addr);
-        Paging::map_page(phys_addr, virt_addr, Memory::Read|Memory::Write|Memory::NoExec|Memory::User);
+        Paging::map_page(phys_addr, virt_addr, VM::Read|VM::Write|VM::NoExec|VM::User);
     }
 }
 
@@ -80,40 +80,6 @@ void map_allocated_pages(Process& p)
     for (const auto& pair : p.allocated_pages)
     {
         Paging::map_page(pair.second.paddr, (void*)pair.first, pair.second.flags);
-    }
-}
-
-void unmap_allocated_pages(Process& p)
-{
-    for (const auto& pair : p.allocated_pages)
-    {
-        Paging::unmap_page((void*)pair.first);
-    }
-}
-
-void unmap_code(const Process::ArchSpecificData& data)
-{
-    size_t code_page_amnt = data.code.size() / Paging::page_size +
-            (data.code.size()%Paging::page_size?1:0);
-
-    for (size_t i { 0 }; i < code_page_amnt; ++i)
-    {
-        uint8_t* virt_addr = (uint8_t*)(i * Paging::page_size);
-
-        Paging::unmap_page(virt_addr);
-    }
-}
-
-void unmap_stack(const Process::ArchSpecificData& data)
-{
-    size_t code_page_amnt = data.stack.size() / Paging::page_size +
-            (data.stack.size()%Paging::page_size?1:0);
-
-    for (size_t i { 0 }; i < code_page_amnt; ++i)
-    {
-        uint8_t* virt_addr = (uint8_t*)(user_stack_top - (i * Paging::page_size));
-
-        Paging::unmap_page(virt_addr);
     }
 }
 
@@ -157,16 +123,16 @@ void Process::set_args(const std::vector<std::string>& args)
 {
     this->args = args;
 
-    auto ptr = Memory::mmap(argv_phys_page, Paging::page_size);
+    auto ptr = VM::mmap(argv_phys_page, Paging::page_size);
     populate_argv((uintptr_t)ptr, args);
-    Memory::unmap(ptr, Paging::page_size);
+    VM::unmap(ptr, Paging::page_size);
 
     arch_data->regs.eax = args.size();
 }
 
 void Process::wake_up(pid_t child, int err_code)
 {
-    Memory::phys_write(waitstatus_phys, &err_code, sizeof(err_code));
+    VM::phys_write(waitstatus_phys, &err_code, sizeof(err_code));
 
     waiting_pid.reset();
 
@@ -207,9 +173,11 @@ void Process::switch_to()
         map_code(*arch_data);
         map_stack(*arch_data);
 
-        Paging::map_page(argv_phys_page, (void*)argv_virt_page, Memory::Read|Memory::Write|Memory::User);
+        Paging::map_page(argv_phys_page, (void*)argv_virt_page, VM::Read|VM::Write|VM::User);
 
         map_allocated_pages(*this);
+
+        map_shm();
 
         m_current_process = this;
     }
@@ -220,12 +188,7 @@ void Process::switch_to()
 
 void Process::unswitch()
 {
-    unmap_code(*arch_data);
-    unmap_stack(*arch_data);
-
-    Paging::unmap_page((void*)argv_virt_page);
-
-    unmap_allocated_pages(*this);
+    unmap_user_space();
 
     current_pc = arch_data->regs.eip;
 }
@@ -261,10 +224,10 @@ uintptr_t Process::allocate_pages(size_t pages)
     {
         void* virtual_page  = (uint8_t*)addr + i*Paging::page_size;
         uintptr_t physical_page = PhysPageAllocator::alloc_physical_page();
-        Paging::map_page(physical_page, virtual_page, Memory::Read|Memory::Write|Memory::User);
+        Paging::map_page(physical_page, virtual_page, VM::Read|VM::Write|VM::User);
 
         assert(!allocated_pages.count((uintptr_t)virtual_page));
-        allocated_pages[(uintptr_t)virtual_page] = {(uintptr_t)physical_page, Memory::Read|Memory::Write|Memory::User};
+        allocated_pages[(uintptr_t)virtual_page] = {(uintptr_t)physical_page, VM::Read|VM::Write|VM::User};
     }
 
     return (uintptr_t)addr;
@@ -282,10 +245,15 @@ bool Process::release_pages(uintptr_t ptr, size_t pages)
         void* physical_page = (void*)allocated_pages.at((uintptr_t)virtual_page).paddr;
 
         PhysPageAllocator::release_physical_page((uintptr_t)physical_page);
-        if (Memory::is_mapped(virtual_page)) Paging::unmap_page(virtual_page);
+        if (VM::is_mapped(virtual_page)) Paging::unmap_page(virtual_page);
 
         allocated_pages.erase((uintptr_t)virtual_page);
     }
 
     return true;
+}
+
+void Process::unmap_user_space()
+{
+    Paging::unmap_user_space();
 }

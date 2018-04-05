@@ -174,7 +174,7 @@ void init(uint32_t magic, const multiboot_info_t* mbd_info)
 
     init_printf(nullptr, [](void*, char c){putchar(c);});
 
-    auto lfb = (uint8_t*)Memory::mmap(framebuffer_addr, 80*25*sizeof(uint16_t));
+    auto lfb = (uint8_t*)VM::mmap(framebuffer_addr, 80*25*sizeof(uint16_t));
 
     create_term<TextTerminal>((uintptr_t)lfb, 80, 25, term_data());
 

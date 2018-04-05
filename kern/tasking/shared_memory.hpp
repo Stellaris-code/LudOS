@@ -27,28 +27,27 @@ SOFTWARE.
 
 #include <stdint.h>
 #include <vector.hpp>
+#include <memory.hpp>
 
 #include "utils/gsl/gsl_span.hpp"
-
+#include "mem/memmap.hpp"
 #include "sys/types.h"
 
 class SharedMemorySegment
 {
 public:
-    SharedMemorySegment(pid_t initial_pid, size_t size_in_pages);
+    SharedMemorySegment(size_t size_in_pages);
+    ~SharedMemorySegment();
 
 public:
-    void attach(pid_t proc);
-    void detach(pid_t proc);
-
-    uintptr_t physical_address() const;
-
-    gsl::span<const pid_t> attached_pids() const;
+    void map(void* v_addr, uint32_t flags = VM::Read|VM::Write|VM::User);
+    void unmap(void* v_addr);
 
 private:
-    uintptr_t m_phys_addr { 0 };
-    size_t m_size { 0 };
-    std::vector<pid_t> m_attached_pids;
+    std::vector<uintptr_t> m_phys_addrs;
 };
+
+std::shared_ptr<SharedMemorySegment> create_shared_mem(unsigned int id, size_t size);
+std::shared_ptr<SharedMemorySegment> get_shared_mem(unsigned int id);
 
 #endif // SHARED_MEMORY_HPP

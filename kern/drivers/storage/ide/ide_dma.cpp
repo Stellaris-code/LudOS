@@ -178,20 +178,20 @@ void Controller::prepare_prdt(BusPort bus, gsl::span<const uint8_t> data)
 
     //log_serial("From : 0x%x, to 0x%x\n", begin, end);
 
-    for (size_t pg = begin; pg < end; pg += Memory::page_size())
+    for (size_t pg = begin; pg < end; pg += VM::page_size())
     {
-        size_t addr = Memory::physical_address((void*)pg);
-        size_t size = Memory::page(pg) == Memory::page(end) ? Memory::offset(end) - Memory::offset(pg) : Memory::page_size() - Memory::offset(addr);
+        size_t addr = VM::physical_address((void*)pg);
+        size_t size = VM::page(pg) == VM::page(end) ? VM::offset(end) - VM::offset(pg) : VM::page_size() - VM::offset(addr);
 
         //log_serial("Addr : 0x%x, Size : 0x%x\n", addr, size);
 
-        pg = Memory::page(pg);
+        pg = VM::page(pg);
 
         assert(size < 4*1024*1024);
 
         prd_ptr->byte_count = size;
         prd_ptr->phys_buf_addr = addr;
-        prd_ptr->end_of_prdt = (pg == Memory::page(end));
+        prd_ptr->end_of_prdt = (pg == VM::page(end));
 
         ++prd_ptr;
     }
@@ -224,7 +224,7 @@ void Controller::send_prdt(BusPort bus)
 {
     uint16_t port = pci::get_bar_val(m_dev, 4) + (bus==BusPort::Primary?0x4:0xC);
 
-    outl(port, Memory::physical_address(PRDT));
+    outl(port, VM::physical_address(PRDT));
 }
 
 Disk::Disk(Controller& controller, BusPort port, DriveType type)

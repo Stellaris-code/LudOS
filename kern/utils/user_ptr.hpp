@@ -44,6 +44,11 @@ struct user_ptr
         return ptr;
     }
 
+    T* bypass()
+    {
+        return ptr;
+    }
+
 private:
     T* ptr;
 };

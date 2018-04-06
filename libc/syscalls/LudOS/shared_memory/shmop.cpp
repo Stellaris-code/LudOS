@@ -1,7 +1,7 @@
 /*
-shared_memory.hpp
+shmop.cpp
 
-Copyright (c) 05 Yann BOUCHER (yann)
+Copyright (c) 06 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,33 +22,33 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef SHARED_MEMORY_HPP
-#define SHARED_MEMORY_HPP
+#include <errno.h>
+#include <sys/types.h>
 
-#include <stdint.h>
-#include <vector.hpp>
-#include <memory.hpp>
+#include "syscalls/syscall_list.hpp"
 
-#include "utils/gsl/gsl_span.hpp"
-#include "mem/memmap.hpp"
-#include "sys/types.h"
+extern int common_syscall(size_t type, size_t no, ...);
 
-class SharedMemorySegment
+long shmat(int shmid, const void* shmaddr, int shmflg)
 {
-public:
-    SharedMemorySegment(size_t size_in_pages);
-    ~SharedMemorySegment();
+    auto ret = common_syscall(0, SYS_shmat, shmid, shmaddr, shmflg);
+    if (ret < 0)
+    {
+        errno = -ret;
+        ret = -1;
+    }
 
-public:
-    void map(void* v_addr, uint32_t flags = VM::Read|VM::Write|VM::User);
-    void unmap(void* v_addr);
+    return ret;
+}
 
-private:
-    std::vector<uintptr_t> m_phys_addrs;
-};
+long shmdt(const void* shmaddr)
+{
+    auto ret = common_syscall(0, SYS_shmdt, shmaddr);
+    if (ret < 0)
+    {
+        errno = -ret;
+        ret = -1;
+    }
 
-unsigned int create_shared_memory_id();
-std::shared_ptr<SharedMemorySegment> create_shared_mem(unsigned int id, size_t size);
-std::shared_ptr<SharedMemorySegment> get_shared_mem(unsigned int id);
-
-#endif // SHARED_MEMORY_HPP
+    return ret;
+}

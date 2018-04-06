@@ -309,10 +309,12 @@ void erase(Cont& cont, const T& val)
     cont.erase(std::remove(std::begin(cont), std::end(cont), val), std::end(cont));
 }
 
-template <typename T, typename Cont, typename Predicate>
-void erase_if(Cont& cont, Predicate p)
-{
-    cont.erase(std::remove_if(std::begin(cont), std::end(cont), p), std::end(cont));
-}
+template< typename ContainerT, typename PredicateT >
+void erase_if( ContainerT& items, const PredicateT& predicate ) {
+  for( auto it = items.begin(); it != items.end(); ) {
+    if( predicate(*it) ) it = items.erase(it);
+    else ++it;
+  }
+};
 
 #endif // STLUTILS_HPP

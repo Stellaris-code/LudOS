@@ -57,6 +57,9 @@ public:
     static uintptr_t allocate_physical_page();
     static void release_physical_page(uintptr_t page);
 
+    static uintptr_t allocate_virtual_page(size_t number, bool user);
+    static void release_virtual_page(uintptr_t page);
+
     static size_t page_size();
 
     static inline uintptr_t page(uintptr_t addr)

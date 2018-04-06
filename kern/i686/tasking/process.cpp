@@ -208,6 +208,7 @@ Process *Process::clone(Process &proc)
     new_proc->args = proc.args;
     new_proc->current_pc = proc.arch_data->regs.eip;
     new_proc->argv_phys_page = proc.copy_argv_page();
+    new_proc->shm_list = proc.shm_list;
     new_proc->arch_data = new ArchSpecificData;
     *new_proc->arch_data = *proc.arch_data;
 

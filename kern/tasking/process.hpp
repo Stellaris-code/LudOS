@@ -147,7 +147,7 @@ public:
     std::vector<std::string> args;
     uintptr_t argv_phys_page;
 
-    std::unordered_map<unsigned int, ShmEntry> m_shm_list;
+    std::unordered_map<unsigned int, ShmEntry> shm_list;
 
     uintptr_t current_pc { 0 };
     ArchSpecificData* arch_data { nullptr };

@@ -1,7 +1,7 @@
 /*
-shared_memory.hpp
+shm.h
 
-Copyright (c) 05 Yann BOUCHER (yann)
+Copyright (c) 06 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,33 +22,31 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef SHARED_MEMORY_HPP
-#define SHARED_MEMORY_HPP
+#ifndef __SHM_H
+#define __SHM_H
 
-#include <stdint.h>
-#include <vector.hpp>
-#include <memory.hpp>
 
-#include "utils/gsl/gsl_span.hpp"
-#include "mem/memmap.hpp"
-#include "sys/types.h"
+#define SHM_R		IPC_R
+#define SHM_W		IPC_W
 
-class SharedMemorySegment
-{
-public:
-    SharedMemorySegment(size_t size_in_pages);
-    ~SharedMemorySegment();
+/*
+ * Shared memory operation flags for shmat(2).
+ */
+#define	SHM_RDONLY	010000	/* Attach read-only (else read-write) */
+#define	SHM_RND		020000	/* Round attach address to SHMLBA */
 
-public:
-    void map(void* v_addr, uint32_t flags = VM::Read|VM::Write|VM::User);
-    void unmap(void* v_addr);
+/*
+ * Shared memory specific control commands for shmctl().
+ * We accept but ignore these (XXX).
+ */
+#define	SHM_LOCK	3	/* Lock segment in memory. */
+#define	SHM_UNLOCK	4	/* Unlock a segment locked by SHM_LOCK. */
 
-private:
-    std::vector<uintptr_t> m_phys_addrs;
-};
+/*
+ * Segment low boundry address multiple
+ */
+#define	SHMLBA		(1U << _MAX_PAGE_SHIFT)
 
-unsigned int create_shared_memory_id();
-std::shared_ptr<SharedMemorySegment> create_shared_mem(unsigned int id, size_t size);
-std::shared_ptr<SharedMemorySegment> get_shared_mem(unsigned int id);
+typedef short	shmatt_t;
 
-#endif // SHARED_MEMORY_HPP
+#endif // SHM_H

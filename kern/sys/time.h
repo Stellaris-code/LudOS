@@ -25,7 +25,7 @@ SOFTWARE.
 #ifndef LUDOS_TIME_H
 #define LUDOS_TIME_H
 
-typedef int time_t;
+#include <sys/types.h>
 
 struct timespec
 {

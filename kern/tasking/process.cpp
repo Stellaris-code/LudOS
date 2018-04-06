@@ -264,9 +264,9 @@ Process *Process::create(const std::vector<std::string>& args)
 
 void Process::map_shm()
 {
-    for (auto pair : m_shm_list)
+    for (auto pair : shm_list)
     {
-        pair.second.shm->map(pair.second.v_addr);
+        if (pair.second.v_addr) pair.second.shm->map(pair.second.v_addr);
     }
 }
 

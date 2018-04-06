@@ -1,7 +1,7 @@
 /*
-shared_memory.hpp
+ipc.h
 
-Copyright (c) 05 Yann BOUCHER (yann)
+Copyright (c) 06 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,33 +22,36 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef SHARED_MEMORY_HPP
-#define SHARED_MEMORY_HPP
+#ifndef LUDOS_IPC_H
+#define LUDOS_IPC_H
 
-#include <stdint.h>
-#include <vector.hpp>
-#include <memory.hpp>
+#include <sys/types.h>
 
-#include "utils/gsl/gsl_span.hpp"
-#include "mem/memmap.hpp"
-#include "sys/types.h"
-
-class SharedMemorySegment
+struct ipc_perm
 {
-public:
-    SharedMemorySegment(size_t size_in_pages);
-    ~SharedMemorySegment();
-
-public:
-    void map(void* v_addr, uint32_t flags = VM::Read|VM::Write|VM::User);
-    void unmap(void* v_addr);
-
-private:
-    std::vector<uintptr_t> m_phys_addrs;
+    uid_t		cuid;	/* creator user id */
+    gid_t		cgid;	/* creator group id */
+    uid_t		uid;	/* user id */
+    gid_t		gid;	/* group id */
+    mode_t		mode;	/* r/w permission */
+    unsigned short	seq;	/* sequence # (to generate unique msg/sem/shm id) */
+    key_t		key;	/* user specified msg/sem/shm key */
 };
 
-unsigned int create_shared_memory_id();
-std::shared_ptr<SharedMemorySegment> create_shared_mem(unsigned int id, size_t size);
-std::shared_ptr<SharedMemorySegment> get_shared_mem(unsigned int id);
+/* common mode bits */
+#define	IPC_R		000400	/* read permission */
+#define	IPC_W		000200	/* write/alter permission */
+#define	IPC_M		010000	/* permission to change control info */
 
-#endif // SHARED_MEMORY_HPP
+/* SVID required constants (same values as system 5) */
+#define	IPC_CREAT	001000	/* create entry if key does not exist */
+#define	IPC_EXCL	002000	/* fail if key exists */
+#define	IPC_NOWAIT	004000	/* error if request must wait */
+
+#define	IPC_PRIVATE	(key_t)0 /* private key */
+
+#define	IPC_RMID	0	/* remove identifier */
+#define	IPC_SET		1	/* set options */
+#define	IPC_STAT	2	/* get options */
+
+#endif // IPC_H

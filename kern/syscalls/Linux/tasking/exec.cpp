@@ -43,12 +43,17 @@ Process* process { nullptr };
 
 // TODO : ETXTBSY
 // TODO : envp
-int sys_execve(const char* path, const char* argv[], const char* envp[])
+int sys_execve(user_ptr<const char> path, user_ptr<user_ptr<const char>> argv, user_ptr<user_ptr<const char>> envp)
 {
+    if (!path.check() || !argv.check() || !envp.check())
+    {
+        return EFAULT;
+    }
+
     {
         ALIGN_STACK(16);
 
-        auto node = vfs::find(path);
+        auto node = vfs::find(path.get());
         if (!node || node->type() != vfs::node::File)
         {
             return ENOENT;
@@ -60,11 +65,13 @@ int sys_execve(const char* path, const char* argv[], const char* envp[])
         }
 
         args.clear();
-        const char** str = &argv[0];
-        while (*str)
+        user_ptr<const char>* str = argv.get();
+        if (!str->check()) return EFAULT;
+        while (str->get())
         {
-            args.emplace_back(*str);
+            args.emplace_back(str->get());
             str++;
+            if (!str->check()) return EFAULT;
         }
 
         if (!Process::check_args_size(args))

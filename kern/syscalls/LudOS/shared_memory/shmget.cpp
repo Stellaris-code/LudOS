@@ -1,7 +1,7 @@
 /*
-shared_memory.hpp
+shmget.cpp
 
-Copyright (c) 05 Yann BOUCHER (yann)
+Copyright (c) 06 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,33 +22,43 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef SHARED_MEMORY_HPP
-#define SHARED_MEMORY_HPP
 
-#include <stdint.h>
-#include <vector.hpp>
-#include <memory.hpp>
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <errno.h>
 
-#include "utils/gsl/gsl_span.hpp"
-#include "mem/memmap.hpp"
-#include "sys/types.h"
+#include "tasking/process.hpp"
+#include "tasking/shared_memory.hpp"
 
-class SharedMemorySegment
+#include "utils/logging.hpp"
+
+int sys_shmget(key_t key, size_t size, int shmflags)
 {
-public:
-    SharedMemorySegment(size_t size_in_pages);
-    ~SharedMemorySegment();
+    if (get_shared_mem(key))
+    {
+        if (shmflags & IPC_CREAT && shmflags & IPC_EXCL)
+        {
+            return -EEXIST;
+        }
 
-public:
-    void map(void* v_addr, uint32_t flags = VM::Read|VM::Write|VM::User);
-    void unmap(void* v_addr);
+        return key;
+    }
+    else
+    {
+        if (!(shmflags & IPC_CREAT))
+        {
+            return -ENOENT;
+        }
 
-private:
-    std::vector<uintptr_t> m_phys_addrs;
-};
+        if (key == IPC_PRIVATE) key = create_shared_memory_id();
 
-unsigned int create_shared_memory_id();
-std::shared_ptr<SharedMemorySegment> create_shared_mem(unsigned int id, size_t size);
-std::shared_ptr<SharedMemorySegment> get_shared_mem(unsigned int id);
+        auto shm = create_shared_mem(key, size);
+        if (!shm) return -ENOMEM;
 
-#endif // SHARED_MEMORY_HPP
+        assert(!Process::current().shm_list.count(key));
+        Process::current().shm_list[key].shm = shm;
+        Process::current().shm_list[key].v_addr = 0; // not yet mapped
+
+        return key;
+    }
+}

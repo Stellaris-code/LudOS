@@ -61,6 +61,7 @@ void get_argument(const registers* const regs, Tuple& tuple)
         value = regs->ebp;
     }
 
+    static_assert(!std::is_pointer_v<std::tuple_element_t<Idx, std::remove_reference_t<decltype(tuple)>>>, "Use user_ptr<>");
     std::get<Idx>(tuple) = *((std::tuple_element_t<Idx, std::remove_reference_t<decltype(tuple)>>*)&value);
 }
 

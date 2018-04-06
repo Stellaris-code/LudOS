@@ -172,9 +172,14 @@ int main(int argc, char* argv[])
 
     fork_test();
 
-    for (size_t i { 0 }; i < 50; ++i)
+    for (size_t i { 0 }; i < 10; ++i)
     {
         ensure(execute_program("/initrd/test_programs/SyscallTest") == 0);
+    }
+
+    for (size_t i { 0 }; i < 5; ++i)
+    {
+        ensure(execute_program("/initrd/test_programs/ShmTest") == 0);
     }
 
     int ret = execute_program("/initrd/test_programs/MoreOrLess");

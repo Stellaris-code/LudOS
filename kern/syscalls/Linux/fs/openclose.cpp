@@ -36,21 +36,21 @@ int sys_open(user_ptr<const char> path, int flags, int mode)
 {
     if (!path.check())
     {
-        return EFAULT;
+        return -EFAULT;
     }
 
     auto node = vfs::find(path.get()); // TODO : pwd
     if (!node)
     {
-        return ENOENT;
+        return -ENOENT;
     }
 
     if (flags & O_EXCL)
     {
-        return EEXIST;
+        return -EEXIST;
     }
 
-    Process::FDInfo info;
+    tasking::FDInfo info;
     info.node = node;
     info.cursor = 0;
 
@@ -59,7 +59,7 @@ int sys_open(user_ptr<const char> path, int flags, int mode)
     {
         if (!Process::current().check_perms(perms, node->stat().uid, node->stat().gid, Process::AccessRequestPerm::Read))
         {
-            return EACCES;
+            return -EACCES;
         }
         info.read = true;
     }
@@ -67,7 +67,7 @@ int sys_open(user_ptr<const char> path, int flags, int mode)
     {
         if (!Process::current().check_perms(perms, node->stat().uid, node->stat().gid, Process::AccessRequestPerm::Write))
         {
-            return EACCES;
+            return -EACCES;
         }
         info.write = true;
     }
@@ -76,13 +76,13 @@ int sys_open(user_ptr<const char> path, int flags, int mode)
     {
         // TODO :
         warn("O_TRUNC unsupported\n");
-        return ENOSYS;
+        return -ENOSYS;
     }
     if (flags & O_CREAT)
     {
         // TODO :
         warn("O_CREAT unsupported\n");
-        return ENOSYS;
+        return -ENOSYS;
     }
     if (flags & O_APPEND)
     {
@@ -91,14 +91,14 @@ int sys_open(user_ptr<const char> path, int flags, int mode)
 
     int fd = Process::current().add_fd(info);
 
-    return -fd; // negative means everything is okay (yeah it's weird but it is for errno)
+    return fd; // negative means everything is okay (yeah it's weird but it is for errno)
 }
 
 int sys_close(unsigned int fd)
 {
     if (!Process::current().get_fd(fd))
     {
-        return EBADFD;
+        return -EBADFD;
     }
 
     Process::current().close_fd(fd);

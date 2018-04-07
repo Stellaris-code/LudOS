@@ -33,10 +33,10 @@ SOFTWARE.
 size_t sys_fork()
 {
     auto child = Process::clone(Process::current());
-    if (!child) return ENOMEM;
+    if (!child) return -ENOMEM;
 
     child->arch_data->regs.eax = 0; // return zero in the child
-    child->current_pc = Process::current().arch_data->regs.eip;
+    child->data.current_pc = Process::current().arch_data->regs.eip;
 
-    return -child->pid;
+    return child->pid;
 }

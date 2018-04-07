@@ -29,8 +29,8 @@ SOFTWARE.
 
 #include "syscalls/syscalls.hpp"
 
-#include "utils/messagebus.hpp"
 #include "mem/memmap.hpp"
+#include "utils/messagebus.hpp"
 #include "utils/stlutils.hpp"
 
 #include "shared_memory.hpp"
@@ -47,7 +47,7 @@ void Process::reset(gsl::span<const uint8_t> code_to_copy, size_t allocated_size
     if (arch_data)
     {
         cleanup(); // if arch_data == nullptr then the process isn't in a ready state yet, so don't clean it up
-        kfree(arch_data); arch_data = nullptr;
+        assert(arch_data == nullptr);
     }
     arch_init(code_to_copy, allocated_size);
 }
@@ -63,18 +63,11 @@ void Process::init_default_fds()
     assert(add_fd({vfs::find("/dev/stderr"), .read = false, .write = true }) == 2);
 }
 
-void Process::cleanup()
-{
-    VM::release_physical_page(argv_phys_page);
-
-    release_all_pages();
-}
-
 void Process::release_all_pages()
 {
     std::vector<uintptr_t> addr_list;
     // First copy the address list because release_pages will remove elements while iterating
-    for (const auto& pair : allocated_pages)
+    for (const auto& pair : data.allocated_pages)
     {
         addr_list.emplace_back(pair.first);
     }
@@ -83,7 +76,7 @@ void Process::release_all_pages()
         release_pages(addr, 1);
     }
 
-    assert(allocated_pages.empty());
+    assert(data.allocated_pages.empty());
 }
 
 pid_t Process::find_free_pid()
@@ -96,51 +89,51 @@ pid_t Process::find_free_pid()
     return m_processes.size();
 }
 
-size_t Process::add_fd(const FDInfo &info)
+size_t Process::add_fd(const tasking::FDInfo &info)
 {
     // Search for an empty entry in the table
-    for (size_t i { 0 }; i < fd_table.size(); ++i)
+    for (size_t i { 0 }; i < data.fd_table.size(); ++i)
     {
-        if (fd_table[i].node == nullptr)
+        if (data.fd_table[i].node == nullptr)
         {
-            fd_table[i] = info;
+            data.fd_table[i] = info;
             return i;
         }
     }
 
     // If nothing is found, we append an entry to the table
-    fd_table.emplace_back(info);
-    return fd_table.size() - 1;
+    data.fd_table.emplace_back(info);
+    return data.fd_table.size() - 1;
 }
 
-Process::FDInfo *Process::get_fd(size_t fd)
+tasking::FDInfo *Process::get_fd(size_t fd)
 {
-    if (fd >= fd_table.size() || fd_table[fd].node == nullptr)
+    if (fd >= data.fd_table.size() || data.fd_table[fd].node == nullptr)
     {
         return nullptr;
     }
 
-    return &fd_table[fd];
+    return &data.fd_table[fd];
 }
 
 void Process::close_fd(size_t fd)
 {
     assert(get_fd(fd));
 
-    fd_table[fd].node = nullptr;
+    data.fd_table[fd].node = nullptr;
 }
 
 bool Process::is_waiting() const
 {
-    return waiting_pid.has_value();
+    return data.waiting_pid.has_value();
 }
 
 void Process::wait_for(pid_t pid, int *wstatus)
 {
-    waiting_pid = pid;
-    this->wstatus = wstatus;
-    waitstatus_phys = VM::physical_address(wstatus);
-    assert(this->wstatus);
+    data.waiting_pid = pid;
+    data.wstatus = wstatus;
+    data.waitstatus_phys = VM::physical_address(wstatus);
+    assert(data.wstatus);
 }
 
 bool Process::check_perms(uint16_t perms, uint16_t tgt_uid, uint16_t tgt_gid, AccessRequestPerm type)
@@ -155,27 +148,19 @@ bool Process::check_perms(uint16_t perms, uint16_t tgt_uid, uint16_t tgt_gid, Ac
                                                              type == AccessRequestPerm::Write? vfs::OtherWrite:
                                                                                                vfs::OtherExec);
 
-    if (this->uid == Process::root_uid)
+    if (data.uid == Process::root_uid)
     {
         return true;
     }
 
-    if ((tgt_uid == this->uid && perms & user_flag) ||
-            (tgt_gid == this->gid && perms & group_flag)||
+    if ((tgt_uid == data.uid && perms & user_flag) ||
+            (tgt_gid == data.gid && perms & group_flag)||
             perms & other_flag)
     {
         return true;
     }
 
     return false;
-}
-
-Process::~Process()
-{
-    unswitch();
-    cleanup();
-    log_serial("PID destroyed : %d\n", pid);
-    kfree(arch_data);
 }
 
 bool Process::enabled()
@@ -207,10 +192,10 @@ void Process::kill(pid_t pid, int err_code)
     auto& parent = *by_pid(by_pid(pid)->parent);
 
     // erase pid from parent children list
-    assert(find(parent.children, pid));
-    erase(parent.children, pid);
+    assert(find(parent.data.children, pid));
+    erase(parent.data.children, pid);
 
-    if (parent.is_waiting() && (parent.waiting_pid.value() == -1 || parent.waiting_pid.value() == pid))
+    if (parent.is_waiting() && (parent.data.waiting_pid.value() == -1 || parent.data.waiting_pid.value() == pid))
     {
         log_serial("Waking up PID %d with PID %d\n", parent.pid, pid);
         parent.wake_up(pid, err_code);
@@ -253,7 +238,7 @@ Process *Process::create(const std::vector<std::string>& args)
     if (m_processes[free_idx] == nullptr) return nullptr;
 
     m_processes[free_idx]->pid = free_idx;
-    m_processes[free_idx]->args = args;
+    m_processes[free_idx]->data.args = args;
 
     ++m_process_count;
 
@@ -264,9 +249,17 @@ Process *Process::create(const std::vector<std::string>& args)
 
 void Process::map_shm()
 {
-    for (auto pair : shm_list)
+    for (auto pair : data.shm_list)
     {
         if (pair.second.v_addr) pair.second.shm->map(pair.second.v_addr);
+    }
+}
+
+void Process::map_address_space()
+{
+    for (const auto& mapping : data.mappings)
+    {
+        VM::map_page(mapping.paddr, mapping.vaddr, mapping.flags);
     }
 }
 
@@ -274,7 +267,7 @@ uintptr_t Process::copy_argv_page()
 {
     uintptr_t new_page = VM::allocate_physical_page();
 
-    auto src_ptr = VM::mmap(argv_phys_page, VM::page_size());
+    auto src_ptr = VM::mmap(data.argv_phys_page, VM::page_size());
     auto dest_ptr = VM::mmap(new_page, VM::page_size());
 
     memcpy(dest_ptr, src_ptr, VM::page_size());
@@ -285,10 +278,10 @@ uintptr_t Process::copy_argv_page()
     return new_page;
 }
 
-std::unordered_map<uintptr_t, Process::AllocatedPageEntry> Process::copy_allocated_pages()
+std::unordered_map<uintptr_t, tasking::AllocatedPageEntry> Process::copy_allocated_pages()
 {
-    std::unordered_map<uintptr_t, Process::AllocatedPageEntry> new_map;
-    for (const auto& pair : allocated_pages)
+    std::unordered_map<uintptr_t, tasking::AllocatedPageEntry> new_map;
+    for (const auto& pair : data.allocated_pages)
     {
         new_map[pair.first].paddr = VM::allocate_physical_page();
         new_map[pair.first].flags = pair.second.flags;
@@ -302,6 +295,6 @@ std::unordered_map<uintptr_t, Process::AllocatedPageEntry> Process::copy_allocat
         VM::unmap(dest_ptr, VM::page_size());
     }
 
-    assert(new_map.size() == allocated_pages.size());
+    assert(new_map.size() == data.allocated_pages.size());
     return new_map;
 }

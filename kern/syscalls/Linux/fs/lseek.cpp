@@ -36,12 +36,12 @@ int sys_lseek(unsigned int fd, int off, int whence)
     auto entry = Process::current().get_fd(fd);
     if (!entry)
     {
-        return EBADFD;
+        return -EBADFD;
     }
 
     if (whence != SEEK_CUR && whence != SEEK_SET && whence != SEEK_END)
     {
-        return EINVAL;
+        return -EINVAL;
     }
 
     int new_cursor = entry->cursor;
@@ -61,10 +61,10 @@ int sys_lseek(unsigned int fd, int off, int whence)
 
     if (new_cursor < 0 || new_cursor >= (int)entry->node->size())
     {
-        return EINVAL;
+        return -EINVAL;
     }
 
     entry->cursor = new_cursor;
 
-    return -entry->cursor;
+    return entry->cursor;
 }

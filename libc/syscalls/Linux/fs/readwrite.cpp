@@ -33,14 +33,14 @@ size_t read(unsigned int fd, void* buf, size_t count)
 {
     auto ret = common_syscall(1, SYS_read, fd, buf, count);
 
-    if (ret > 0)
+    if (ret < 0)
     {
-        errno = ret;
+        errno = -ret;
         return -1;
     }
     else
     {
-        return -ret; // number of bytes read
+        return ret; // number of bytes read
     }
 }
 
@@ -49,13 +49,13 @@ size_t write(unsigned int fd, const void* buf, size_t count)
 {
     auto ret = common_syscall(1, SYS_write, fd, buf, count);
 
-    if (ret > 0)
+    if (ret < 0)
     {
-        errno = ret;
+        errno = -ret;
         return -1;
     }
     else
     {
-        return -ret; // number of bytes read
+        return ret; // number of bytes read
     }
 }

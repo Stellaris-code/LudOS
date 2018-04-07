@@ -30,13 +30,13 @@ SOFTWARE.
 long fork()
 {
     auto ret = common_syscall(1, SYS_fork);
-    if (ret > 0) // error set
+    if (ret < 0) // error set
     {
-        errno = ret;
+        errno = -ret;
         return -1;
     }
     else
     {
-        return -ret;
+        return ret;
     }
 }

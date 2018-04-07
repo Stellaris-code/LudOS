@@ -37,24 +37,24 @@ size_t sys_read(unsigned int fd, user_ptr<void> buf, size_t count)
 {
     if (!buf.check())
     {
-        return EFAULT;
+        return -EFAULT;
     }
 
     auto fd_entry = Process::current().get_fd(fd);
     if (!fd_entry || !fd_entry->read)
     {
-        return EBADFD;
+        return -EBADFD;
     }
 
     auto node = fd_entry->node;
     if (node->type() == vfs::node::Directory)
     {
-        return EISDIR;
+        return -EISDIR;
     }
 
     if (node->size() && fd_entry->cursor + count >= node->size())
     {
-        return EIO;
+        return -EIO;
     }
 
     MemBuffer data;
@@ -65,41 +65,41 @@ size_t sys_read(unsigned int fd, user_ptr<void> buf, size_t count)
     }
     catch (const DiskException& e)
     {
-        return EIO;
+        return -EIO;
     }
 
     if (data.empty() && count != 0)
     {
-        return EIO;
+        return -EIO;
     }
 
     std::copy(data.begin(), data.end(), (uint8_t*)buf.get());
 
-    return -data.size(); // again, to allow errno numbers
+    return data.size(); // again, to allow errno numbers
 }
 
 size_t sys_write(unsigned int fd, user_ptr<const void> buf, size_t count)
 {
     if (!buf.check())
     {
-        return EFAULT;
+        return -EFAULT;
     }
 
     auto fd_entry = Process::current().get_fd(fd);
     if (!fd_entry || !fd_entry->write)
     {
-        return EBADFD;
+        return -EBADFD;
     }
 
     auto node = fd_entry->node;
     if (node->type() == vfs::node::Directory)
     {
-        return EINVAL;
+        return -EINVAL;
     }
 
     if (node->size() && fd_entry->cursor + count >= node->size())
     {
-        return EIO;
+        return -EIO;
     }
 
     bool okay { false };
@@ -109,14 +109,14 @@ size_t sys_write(unsigned int fd, user_ptr<const void> buf, size_t count)
     }
     catch (const DiskException& e)
     {
-        return EIO;
+        return -EIO;
     }
 
     if (!okay)
     {
-        return EIO;
+        return -EIO;
     }
 
-    return -count; // again, to allow errno numbers
+    return count; // again, to allow errno numbers
 }
 

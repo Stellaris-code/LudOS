@@ -39,48 +39,58 @@ SOFTWARE.
 #include "utils/memutils.hpp"
 #include "utils/align.hpp"
 
+#include "mem/meminfo.hpp"
+
 extern "C" void enter_ring3(const registers* regs);
 
 // Let the upper page free for argv/argc
 constexpr size_t user_stack_top = KERNEL_VIRTUAL_BASE - (1*Paging::page_size) - sizeof(uintptr_t);
 constexpr uintptr_t argv_virt_page = KERNEL_VIRTUAL_BASE - (1*Paging::page_size);
 
-void map_code(const Process::ArchSpecificData& data)
+void map_code(Process& p)
 {
-    size_t code_page_amnt = data.code.size() / Paging::page_size +
-            (data.code.size()%Paging::page_size?1:0);
+    size_t code_page_amnt = p.arch_data->code.size() / Paging::page_size +
+            (p.arch_data->code.size()%Paging::page_size?1:0);
 
     for (size_t i { 0 }; i < code_page_amnt; ++i)
     {
-        uintptr_t phys_addr = Paging::physical_address((uint8_t*)data.code.data() + i*Paging::page_size);
+        uintptr_t phys_addr = Paging::physical_address((uint8_t*)p.arch_data->code.data() + i*Paging::page_size);
         uint8_t* virt_addr = (uint8_t*)(i * Paging::page_size);
 
         assert(phys_addr);
-        Paging::map_page(phys_addr, virt_addr, VM::Read|VM::Write|VM::User);
+        p.data.mappings.push_back({virt_addr, phys_addr, VM::Read|VM::Write|VM::User});
     }
 }
 
-void map_stack(const Process::ArchSpecificData& data)
+void map_stack(Process& p)
 {
-    size_t code_page_amnt = data.stack.size() / Paging::page_size +
-            (data.stack.size()%Paging::page_size?1:0);
+    size_t code_page_amnt = p.arch_data->stack.size() / Paging::page_size +
+            (p.arch_data->stack.size()%Paging::page_size?1:0);
 
     for (size_t i { 0 }; i < code_page_amnt; ++i)
     {
-        uintptr_t phys_addr = Paging::physical_address((uint8_t*)data.stack.data() + i*Paging::page_size);
+        uintptr_t phys_addr = Paging::physical_address((uint8_t*)p.arch_data->stack.data() + i*Paging::page_size);
         uint8_t* virt_addr = (uint8_t*)(user_stack_top - (i * Paging::page_size));
 
         assert(phys_addr);
-        Paging::map_page(phys_addr, virt_addr, VM::Read|VM::Write|VM::NoExec|VM::User);
+        p.data.mappings.push_back({virt_addr, phys_addr, VM::Read|VM::Write|VM::User});
     }
 }
 
 void map_allocated_pages(Process& p)
 {
-    for (const auto& pair : p.allocated_pages)
+    for (const auto& pair : p.data.allocated_pages)
     {
         Paging::map_page(pair.second.paddr, (void*)pair.first, pair.second.flags);
     }
+}
+
+void Process::create_mappings()
+{
+    map_code(*this);
+    map_stack(*this);
+    //map_allocated_pages(*this);
+    data.mappings.push_back({(void*)argv_virt_page, data.argv_phys_page, VM::Read|VM::Write|VM::User});
 }
 
 void populate_argv(uintptr_t addr, gsl::span<const std::string> args)
@@ -121,9 +131,9 @@ bool Process::check_args_size(const std::vector<std::string> &args)
 
 void Process::set_args(const std::vector<std::string>& args)
 {
-    this->args = args;
+    data.args = args;
 
-    auto ptr = VM::mmap(argv_phys_page, Paging::page_size);
+    auto ptr = VM::mmap(data.argv_phys_page, Paging::page_size);
     populate_argv((uintptr_t)ptr, args);
     VM::unmap(ptr, Paging::page_size);
 
@@ -132,9 +142,9 @@ void Process::set_args(const std::vector<std::string>& args)
 
 void Process::wake_up(pid_t child, int err_code)
 {
-    VM::phys_write(waitstatus_phys, &err_code, sizeof(err_code));
+    VM::phys_write(data.waitstatus_phys, &err_code, sizeof(err_code));
 
-    waiting_pid.reset();
+    data.waiting_pid.reset();
 
     arch_data->regs.eax = child; // set waitpid return value
 }
@@ -148,21 +158,23 @@ void Process::arch_init(gsl::span<const uint8_t> code_to_copy, size_t allocated_
     arch_data->code.resize(std::max<int>(code_to_copy.size(), allocated_size));
     std::copy(code_to_copy.begin(), code_to_copy.end(), arch_data->code.begin());
 
-    argv_phys_page = PhysPageAllocator::alloc_physical_page();
+    data.argv_phys_page = PhysPageAllocator::alloc_physical_page();
 
-    set_args(args);
+    set_args(data.args);
 
     registers regs;
     memset(&regs, 0, sizeof(registers));
 
-    regs.eax = args.size();
+    regs.eax = data.args.size();
     regs.ecx = argv_virt_page;
-    regs.eip = current_pc;
+    regs.eip = data.current_pc;
     regs.esp = user_stack_top;
     regs.cs = gdt::user_code_selector*0x8 | 0x3;
     regs.ds = regs.es = regs.fs = regs.gs = regs.ss = gdt::user_data_selector*0x8 | 0x3;
 
     arch_data->regs = regs;
+
+    create_mappings();
 }
 
 void Process::switch_to()
@@ -170,49 +182,48 @@ void Process::switch_to()
     {
         assert(!is_waiting());
 
-        map_code(*arch_data);
-        map_stack(*arch_data);
-
-        Paging::map_page(argv_phys_page, (void*)argv_virt_page, VM::Read|VM::Write|VM::User);
-
+        map_address_space();
         map_allocated_pages(*this);
-
         map_shm();
+
+        arch_data->regs.eip = data.current_pc;
 
         m_current_process = this;
     }
-
-    arch_data->regs.eip = current_pc;
     enter_ring3(&arch_data->regs);
 }
 
 void Process::unswitch()
 {
-    unmap_user_space();
+    unmap_address_space();
 
-    current_pc = arch_data->regs.eip;
+    data.current_pc = arch_data->regs.eip;
 }
 
 Process *Process::clone(Process &proc)
 {
-    auto new_proc = Process::create(proc.args);
+    auto new_proc = Process::create(proc.data.args);
     if (!new_proc) return nullptr;
 
-    new_proc->name = proc.name;
-    new_proc->uid = proc.uid;
-    new_proc->gid = proc.gid;
+    // TODO : move the copy constructor
+
+    new_proc->data.name = proc.data.name;
+    new_proc->data.uid = proc.data.uid;
+    new_proc->data.gid = proc.data.gid;
     new_proc->parent = proc.pid;
-    new_proc->pwd = proc.pwd;
-    new_proc->fd_table = proc.fd_table;
-    new_proc->allocated_pages = proc.copy_allocated_pages();
-    new_proc->args = proc.args;
-    new_proc->current_pc = proc.arch_data->regs.eip;
-    new_proc->argv_phys_page = proc.copy_argv_page();
-    new_proc->shm_list = proc.shm_list;
+    new_proc->data.pwd = proc.data.pwd;
+    new_proc->data.fd_table = proc.data.fd_table;
+    new_proc->data.allocated_pages = proc.copy_allocated_pages();
+    new_proc->data.args = proc.data.args;
+    new_proc->data.current_pc = proc.arch_data->regs.eip;
+    new_proc->data.argv_phys_page = proc.copy_argv_page();
+    new_proc->data.shm_list = proc.data.shm_list;
     new_proc->arch_data = new ArchSpecificData;
     *new_proc->arch_data = *proc.arch_data;
 
-    proc.children.emplace_back(new_proc->pid);
+    proc.data.children.emplace_back(new_proc->pid);
+
+    new_proc->create_mappings();
 
     assert(new_proc);
     return new_proc;
@@ -223,12 +234,13 @@ uintptr_t Process::allocate_pages(size_t pages)
     uint8_t* addr = reinterpret_cast<uint8_t*>(Paging::alloc_virtual_page(pages, true));
     for (size_t i { 0 }; i < pages; ++i)
     {
+        // TODO : delete allocated_pages
         void* virtual_page  = (uint8_t*)addr + i*Paging::page_size;
         uintptr_t physical_page = PhysPageAllocator::alloc_physical_page();
         Paging::map_page(physical_page, virtual_page, VM::Read|VM::Write|VM::User);
 
-        assert(!allocated_pages.count((uintptr_t)virtual_page));
-        allocated_pages[(uintptr_t)virtual_page] = {(uintptr_t)physical_page, VM::Read|VM::Write|VM::User};
+        assert(!data.allocated_pages.count((uintptr_t)virtual_page));
+        data.allocated_pages[(uintptr_t)virtual_page] = {(uintptr_t)physical_page, VM::Read|VM::Write|VM::User};
     }
 
     return (uintptr_t)addr;
@@ -241,20 +253,39 @@ bool Process::release_pages(uintptr_t ptr, size_t pages)
     for (size_t i { 0 }; i < pages; ++i)
     {
         void* virtual_page  = (uint8_t*)ptr + i*Paging::page_size;
-        assert(allocated_pages.count((uintptr_t)virtual_page));
+        assert(data.allocated_pages.count((uintptr_t)virtual_page));
 
-        void* physical_page = (void*)allocated_pages.at((uintptr_t)virtual_page).paddr;
+        void* physical_page = (void*)data.allocated_pages.at((uintptr_t)virtual_page).paddr;
 
         PhysPageAllocator::release_physical_page((uintptr_t)physical_page);
         if (VM::is_mapped(virtual_page)) Paging::unmap_page(virtual_page);
 
-        allocated_pages.erase((uintptr_t)virtual_page);
+        data.allocated_pages.erase((uintptr_t)virtual_page);
     }
 
     return true;
 }
 
-void Process::unmap_user_space()
+void Process::unmap_address_space()
 {
     Paging::unmap_user_space();
+}
+
+void Process::cleanup()
+{
+    VM::release_physical_page(data.argv_phys_page);
+
+    release_all_pages();
+
+    data.mappings.clear();
+
+    delete arch_data;
+    arch_data = nullptr;
+}
+
+Process::~Process()
+{
+    unswitch();
+    cleanup();
+    log_serial("PID destroyed : %d Rem %s\n", pid, human_readable_size(MemoryInfo::free()).c_str());
 }

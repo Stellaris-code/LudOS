@@ -33,19 +33,19 @@ int sys_getcwd(user_ptr<char> buf, unsigned long size)
 {
     if (!buf.check())
     {
-        return EFAULT;
+        return -EFAULT;
     }
 
     if (size == 0)
     {
-        return EINVAL;
+        return -EINVAL;
     }
 
-    std::string pwd = Process::current().pwd;
+    std::string pwd = Process::current().data.pwd;
 
     if (pwd.size() + 1 > size)
     {
-        return ERANGE;
+        return -ERANGE;
     }
 
     std::copy(pwd.begin(), pwd.end(), buf.get());

@@ -42,7 +42,7 @@ bool LudosRawLoader::load(Process &p)
     uint32_t allocated_size = *(uint32_t*)(m_file.data() + 8);
 
     p.reset(m_file, allocated_size); // TODO : name
-    p.current_pc = ludos_raw_len;
+    p.data.current_pc = ludos_raw_len;
 
     return true;
 }

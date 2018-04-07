@@ -52,5 +52,5 @@ int sys_free_pages(uintptr_t ptr, int pages)
     //    }
 
     //    return EOK;
-    return Process::current().release_pages(ptr, pages) ? EOK : ENOMEM;
+    return Process::current().release_pages(ptr, pages) ? EOK : -ENOMEM;
 }

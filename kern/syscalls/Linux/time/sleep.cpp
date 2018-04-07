@@ -32,12 +32,12 @@ int sys_nanosleep(user_ptr<const struct timespec> req, user_ptr<struct timespec>
 {
     if (!req.check() || !rem.check())
     {
-        return EFAULT;
+        return -EFAULT;
     }
 
     if (req.get()->tv_nsec < 0 || req.get()->tv_nsec > 999999999 || req.get()->tv_sec < 0)
     {
-        return EINVAL;
+        return -EINVAL;
     }
 
     tasking::sleep_queue.insert(Process::current().pid, req.get()->tv_nsec/1'000'000 + req.get()->tv_sec*1000);

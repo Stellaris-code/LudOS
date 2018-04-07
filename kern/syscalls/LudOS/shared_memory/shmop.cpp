@@ -60,8 +60,8 @@ long sys_shmat(int shmid, user_ptr<const void> shmaddr, int shmflg)
         assert(!VM::is_mapped((void*)v_addr));
     }
 
-    Process::current().shm_list.at(shmid).v_addr = (void*)v_addr;
-    Process::current().shm_list.at(shmid).shm->map((void*)v_addr);
+    Process::current().data.shm_list.at(shmid).v_addr = (void*)v_addr;
+    Process::current().data.shm_list.at(shmid).shm->map((void*)v_addr);
 
     return v_addr;
 }
@@ -74,7 +74,7 @@ long sys_shmdt(user_ptr<const void> shmaddr)
     }
     uintptr_t v_addr = (uintptr_t)shmaddr.get();
 
-    erase_if(Process::current().shm_list, [v_addr](const std::pair<unsigned int, Process::ShmEntry>& pair)
+    erase_if(Process::current().data.shm_list, [v_addr](const std::pair<unsigned int, tasking::ShmEntry>& pair)
     {
         return (uintptr_t)pair.second.v_addr == v_addr;
     });

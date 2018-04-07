@@ -28,16 +28,12 @@ SOFTWARE.
 #include <string.hpp>
 #include <vector.hpp>
 #include <unordered_map.hpp>
-#include <optional.hpp>
 #include "utils/gsl/gsl_span.hpp"
 #include "utils/noncopyable.hpp"
 
-#include "sys/types.h"
+#include "process_data.hpp"
 
-namespace vfs
-{
-class node;
-}
+#include "sys/types.h"
 
 struct ProcessCreatedEvent
 {
@@ -56,15 +52,6 @@ class Process : NonCopyable
 {
 public:
     struct ArchSpecificData;
-
-    struct FDInfo
-    {
-        std::shared_ptr<vfs::node> node;
-        bool read { false };
-        bool write { false };
-        bool append { false };
-        size_t cursor { 0 };
-    };
 
     enum class AccessRequestPerm : uint16_t
     {
@@ -97,8 +84,8 @@ public:
 
     void set_args(const std::vector<std::string> &args);
 
-    size_t add_fd(const FDInfo& info);
-    FDInfo *get_fd(size_t fd);
+    size_t add_fd(const tasking::FDInfo& info);
+    tasking::FDInfo *get_fd(size_t fd);
     void close_fd(size_t fd);
 
     bool is_waiting() const;
@@ -116,53 +103,23 @@ private:
     Process();
 
 public:
-    struct AllocatedPageEntry
-    {
-        uintptr_t paddr;
-        uint32_t flags;
-    };
-    struct ShmEntry
-    {
-        std::shared_ptr<SharedMemorySegment> shm;
-        void* v_addr;
-    };
-
-    std::string name { "<INVALID>" };
     pid_t pid { 0 };
-    uint32_t uid { root_uid };
-    uint32_t gid { 0 };
-
     pid_t parent { 0 };
-    std::vector<pid_t> children;
-    std::optional<pid_t> waiting_pid;
-    int* wstatus { nullptr };
-    uintptr_t waitstatus_phys { 0 };
-
-    std::string pwd = "/";
-
-    std::vector<FDInfo> fd_table;
-
-    std::unordered_map<uintptr_t, AllocatedPageEntry> allocated_pages;
-
-    std::vector<std::string> args;
-    uintptr_t argv_phys_page;
-
-    std::unordered_map<unsigned int, ShmEntry> shm_list;
-
-    uintptr_t current_pc { 0 };
+    ProcessData data;
     ArchSpecificData* arch_data { nullptr };
 
 private:
     void arch_init(gsl::span<const uint8_t> code_to_copy, size_t allocated_size);
     void map_shm();
-    void unmap_shm();
-    void unmap_user_space();
+    void create_mappings();
+    void map_address_space();
+    void unmap_address_space();
     void cleanup();
     void init_default_fds();
     void release_all_pages();
     void wake_up(pid_t child, int err_code);
     uintptr_t copy_argv_page();
-    std::unordered_map<uintptr_t, AllocatedPageEntry> copy_allocated_pages();
+    std::unordered_map<uintptr_t, tasking::AllocatedPageEntry> copy_allocated_pages();
 
     static pid_t find_free_pid();
 

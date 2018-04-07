@@ -33,11 +33,13 @@ extern int common_syscall(size_t type, size_t no, ...);
 long execve(const char* path, const char* argv[], const char* envp[])
 {
     auto ret = common_syscall(1, SYS_execve, path, argv, envp);
-    if (ret != 0)
+    if (ret < 0)
     {
-        errno = ret;
+        errno = -ret;
         return -1;
     }
+
+    __builtin_unreachable();
 
     return 0;
 }

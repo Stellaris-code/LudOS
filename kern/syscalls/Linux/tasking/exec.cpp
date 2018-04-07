@@ -47,7 +47,7 @@ int sys_execve(user_ptr<const char> path, user_ptr<user_ptr<const char>> argv, u
 {
     if (!path.check() || !argv.check() || !envp.check())
     {
-        return EFAULT;
+        return -EFAULT;
     }
 
     {
@@ -56,27 +56,27 @@ int sys_execve(user_ptr<const char> path, user_ptr<user_ptr<const char>> argv, u
         auto node = vfs::find(path.get());
         if (!node || node->type() != vfs::node::File)
         {
-            return ENOENT;
+            return -ENOENT;
         }
 
         if (!Process::current().check_perms(node->stat().perms, node->stat().uid, node->stat().gid, Process::AccessRequestPerm::Exec))
         {
-            return EACCES;
+            return -EACCES;
         }
 
         args.clear();
         user_ptr<const char>* str = argv.get();
-        if (!str->check()) return EFAULT;
+        if (!str->check()) return -EFAULT;
         while (str->get())
         {
             args.emplace_back(str->get());
             str++;
-            if (!str->check()) return EFAULT;
+            if (!str->check()) return -EFAULT;
         }
 
         if (!Process::check_args_size(args))
         {
-            return E2BIG;
+            return -E2BIG;
         }
 
         MemBuffer data;
@@ -86,18 +86,18 @@ int sys_execve(user_ptr<const char> path, user_ptr<user_ptr<const char>> argv, u
         }
         catch (const DiskException& e)
         {
-            return EIO;
+            return -EIO;
         }
 
         if (data.empty())
         {
-            return EIO;
+            return -EIO;
         }
 
         auto loader = ProcessLoader::get(data);
         if (!loader)
         {
-            return ENOEXEC;
+            return -ENOEXEC;
         }
 
         process = &Process::current();

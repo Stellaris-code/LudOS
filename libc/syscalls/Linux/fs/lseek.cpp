@@ -33,13 +33,13 @@ extern int common_syscall(size_t type, size_t no, ...);
 long lseek(unsigned int fd, int off, int whence)
 {
     auto ret = common_syscall(1, SYS_lseek, fd, off, whence);
-    if (ret > 0) // error set
+    if (ret < 0) // error set
     {
-        errno = ret;
+        errno = -ret;
         return -1;
     }
     else
     {
-        return -ret;
+        return ret;
     }
 }

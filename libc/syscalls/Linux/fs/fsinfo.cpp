@@ -31,15 +31,15 @@ extern int common_syscall(size_t type, size_t no, ...);
 
 long getcwd(char* buf, unsigned long size)
 {
-    auto return_value = common_syscall(1, SYS_getcwd, buf, size);
+    auto ret = common_syscall(1, SYS_getcwd, buf, size);
 
-    if (return_value != EOK)
+    if (ret < 0)
     {
-        errno = return_value;
+        errno = -ret;
         return -1;
     }
     else
     {
-        return 0;
+        return ret;
     }
 }

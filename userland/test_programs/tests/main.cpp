@@ -172,7 +172,7 @@ int main(int argc, char* argv[])
 
     fork_test();
 
-    for (size_t i { 0 }; i < 10; ++i)
+    for (size_t i { 0 }; i < 100; ++i)
     {
         ensure(execute_program("/initrd/test_programs/SyscallTest") == 0);
     }

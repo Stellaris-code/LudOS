@@ -44,9 +44,9 @@ void init_emu_mem()
 
     emu_mem = reinterpret_cast<uint8_t*>(kmalloc(len));
 
-    auto addr = VM::mmap(0x0, len, VM::Read);
+    auto addr = Memory::mmap(0x0, len, Memory::Read);
     memcpy(emu_mem, addr, len);
-    VM::unmap(addr, len);
+    Memory::unmap(addr, len);
 
     log(Info, "Initialized x86 emulator memory\n");
 }

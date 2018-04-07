@@ -43,17 +43,11 @@ class node;
 
 namespace tasking
 {
-// TODO : merge the two
-struct AllocatedPageEntry
-{
-    uintptr_t paddr;
-    uint32_t  flags;
-};
 struct MemoryMapping
 {
-    void*     vaddr;
     uintptr_t paddr;
-    uint32_t  flags;
+    uint32_t  flags : 31;
+    bool      owned : 1;
 };
 
 struct ShmEntry
@@ -87,11 +81,9 @@ struct ProcessData
 
     std::vector<tasking::FDInfo> fd_table;
 
-    std::vector<tasking::MemoryMapping> mappings;
-    std::unordered_map<uintptr_t, tasking::AllocatedPageEntry> allocated_pages;
+    std::unordered_map<uintptr_t, tasking::MemoryMapping> mappings;
 
     std::vector<std::string> args;
-    uintptr_t argv_phys_page;
 
     std::unordered_map<unsigned int, tasking::ShmEntry> shm_list;
 

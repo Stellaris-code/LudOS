@@ -112,14 +112,13 @@ private:
     void arch_init(gsl::span<const uint8_t> code_to_copy, size_t allocated_size);
     void map_shm();
     void create_mappings();
+    void release_mappings();
     void map_address_space();
     void unmap_address_space();
     void cleanup();
     void init_default_fds();
-    void release_all_pages();
     void wake_up(pid_t child, int err_code);
-    uintptr_t copy_argv_page();
-    std::unordered_map<uintptr_t, tasking::AllocatedPageEntry> copy_allocated_pages();
+    void copy_allocated_pages(Process& target);
 
     static pid_t find_free_pid();
 

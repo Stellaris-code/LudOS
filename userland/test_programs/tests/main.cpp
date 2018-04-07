@@ -123,6 +123,13 @@ void fork_test()
     }
 }
 
+uint64_t total_ticks()
+{
+    uint64_t ret;
+    asm volatile ( "rdtsc" : "=A"(ret) );
+    return ret;
+}
+
 int main(int argc, char* argv[])
 {
     void* heap_alloc = malloc(2566525);
@@ -172,9 +179,13 @@ int main(int argc, char* argv[])
 
     fork_test();
 
+    uint64_t total_test_ticks = 0;
+
     for (size_t i { 0 }; i < 100; ++i)
     {
+        uint64_t begin = total_ticks();
         ensure(execute_program("/initrd/test_programs/SyscallTest") == 0);
+        total_test_ticks += (total_ticks() - begin) / 100000;
     }
 
     for (size_t i { 0 }; i < 5; ++i)
@@ -182,7 +193,9 @@ int main(int argc, char* argv[])
         ensure(execute_program("/initrd/test_programs/ShmTest") == 0);
     }
 
-    int ret = execute_program("/initrd/test_programs/MoreOrLess");
-    printf("Return : %d (0x%x)\n", ret, ret);
-    execute_program("/initrd/test_programs/Sleep");
+    printf("Mean ticks : %zd\n", total_test_ticks / 100);
+
+//    int ret = execute_program("/initrd/test_programs/MoreOrLess");
+//    printf("Return : %d (0x%x)\n", ret, ret);
+//    execute_program("/initrd/test_programs/Sleep");
 }

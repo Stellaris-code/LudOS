@@ -67,10 +67,10 @@ void Paging::map_page(uintptr_t p_addr, void *v_addr, uint32_t flags)
     //assert(entry->os_claimed);
     entry->phys_addr = p_addr >> 12;
 
-    entry->write = !!(flags & VM::Write);
-    entry->cd = !!(flags & VM::Uncached);
-    entry->wt = !!(flags & VM::WriteThrough);
-    entry->user = !!(flags & VM::User);
+    entry->write = !!(flags & Memory::Write);
+    entry->cd = !!(flags & Memory::Uncached);
+    entry->wt = !!(flags & Memory::WriteThrough);
+    entry->user = !!(flags & Memory::User);
 
     entry->present = true;
     entry->os_claimed = true;
@@ -143,7 +143,7 @@ void Paging::create_paging_info(PagingInformation &info)
         }
         else
         {
-            return (void*)VM::physical_address((void*)addr);
+            return (void*)Memory::physical_address((void*)addr);
         }
     };
 

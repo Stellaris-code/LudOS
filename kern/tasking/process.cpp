@@ -32,6 +32,9 @@ SOFTWARE.
 #include "mem/memmap.hpp"
 #include "utils/messagebus.hpp"
 #include "utils/stlutils.hpp"
+#include "utils/memutils.hpp"
+
+#include "mem/meminfo.hpp"
 
 #include "shared_memory.hpp"
 
@@ -63,20 +66,20 @@ void Process::init_default_fds()
     assert(add_fd({vfs::find("/dev/stderr"), .read = false, .write = true }) == 2);
 }
 
-void Process::release_all_pages()
+void Process::release_mappings()
 {
     std::vector<uintptr_t> addr_list;
     // First copy the address list because release_pages will remove elements while iterating
-    for (const auto& pair : data.allocated_pages)
+    for (const auto& pair : data.mappings)
     {
-        addr_list.emplace_back(pair.first);
+        if (pair.second.owned) addr_list.emplace_back(pair.first);
     }
     for (auto addr : addr_list)
     {
         release_pages(addr, 1);
     }
 
-    assert(data.allocated_pages.empty());
+    data.mappings.clear();
 }
 
 pid_t Process::find_free_pid()
@@ -132,7 +135,7 @@ void Process::wait_for(pid_t pid, int *wstatus)
 {
     data.waiting_pid = pid;
     data.wstatus = wstatus;
-    data.waitstatus_phys = VM::physical_address(wstatus);
+    data.waitstatus_phys = Memory::physical_address(wstatus);
     assert(data.wstatus);
 }
 
@@ -257,44 +260,72 @@ void Process::map_shm()
 
 void Process::map_address_space()
 {
-    for (const auto& mapping : data.mappings)
+    for (const auto& pair : data.mappings)
     {
-        VM::map_page(mapping.paddr, mapping.vaddr, mapping.flags);
+        Memory::map_page(pair.second.paddr, (void*)pair.first, pair.second.flags);
     }
 }
 
-uintptr_t Process::copy_argv_page()
+uintptr_t Process::allocate_pages(size_t pages)
 {
-    uintptr_t new_page = VM::allocate_physical_page();
-
-    auto src_ptr = VM::mmap(data.argv_phys_page, VM::page_size());
-    auto dest_ptr = VM::mmap(new_page, VM::page_size());
-
-    memcpy(dest_ptr, src_ptr, VM::page_size());
-
-    VM::unmap(src_ptr, VM::page_size());
-    VM::unmap(dest_ptr, VM::page_size());
-
-    return new_page;
-}
-
-std::unordered_map<uintptr_t, tasking::AllocatedPageEntry> Process::copy_allocated_pages()
-{
-    std::unordered_map<uintptr_t, tasking::AllocatedPageEntry> new_map;
-    for (const auto& pair : data.allocated_pages)
+    uint8_t* addr = reinterpret_cast<uint8_t*>(Memory::allocate_virtual_page(pages, true));
+    for (size_t i { 0 }; i < pages; ++i)
     {
-        new_map[pair.first].paddr = VM::allocate_physical_page();
-        new_map[pair.first].flags = pair.second.flags;
+        void* virtual_page  = (uint8_t*)addr + i*Memory::page_size();
+        uintptr_t physical_page = Memory::allocate_physical_page();
+        Memory::map_page(physical_page, virtual_page, Memory::Read|Memory::Write|Memory::User);
 
-        auto src_ptr = VM::mmap(pair.second.paddr, VM::page_size());
-        auto dest_ptr = VM::mmap(new_map[pair.first].paddr, VM::page_size());
-
-        memcpy(dest_ptr, src_ptr, VM::page_size());
-
-        VM::unmap(src_ptr, VM::page_size());
-        VM::unmap(dest_ptr, VM::page_size());
+        assert(!data.mappings.count((uintptr_t)virtual_page));
+        data.mappings[(uintptr_t)virtual_page] = {(uintptr_t)physical_page, Memory::Read|Memory::Write|Memory::User, true};
     }
 
-    assert(new_map.size() == data.allocated_pages.size());
-    return new_map;
+    return (uintptr_t)addr;
+}
+
+bool Process::release_pages(uintptr_t ptr, size_t pages)
+{
+    assert(ptr % Memory::page_size() == 0);
+
+    for (size_t i { 0 }; i < pages; ++i)
+    {
+        void* virtual_page  = (uint8_t*)ptr + i*Memory::page_size();
+        assert(data.mappings.count((uintptr_t)virtual_page));
+
+        uintptr_t physical_page = data.mappings.at((uintptr_t)virtual_page).paddr;
+
+        Memory::release_physical_page(physical_page);
+        if (Memory::is_mapped(virtual_page)) Memory::unmap_page(virtual_page);
+
+        assert(data.mappings.at((uintptr_t)virtual_page).owned);
+        data.mappings.erase((uintptr_t)virtual_page);
+    }
+
+    return true;
+}
+
+void Process::copy_allocated_pages(Process &target)
+{
+    for (const auto& pair : data.mappings)
+    {
+        if (pair.second.owned)
+        {
+            target.data.mappings[pair.first] = pair.second;
+            target.data.mappings[pair.first].paddr = Memory::allocate_physical_page();
+
+            auto src_ptr = Memory::mmap(pair.second.paddr, Memory::page_size());
+            auto dest_ptr = Memory::mmap(target.data.mappings[pair.first].paddr, Memory::page_size());
+
+            memcpy(dest_ptr, src_ptr, Memory::page_size());
+
+            Memory::unmap(src_ptr, Memory::page_size());
+            Memory::unmap(dest_ptr, Memory::page_size());
+        }
+    }
+}
+
+Process::~Process()
+{
+    unswitch();
+    cleanup();
+    log_serial("PID destroyed : %d Rem %s\n", pid, human_readable_size(MemoryInfo::free()).c_str());
 }

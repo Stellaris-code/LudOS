@@ -35,7 +35,7 @@ struct user_ptr
 {
     bool check(size_t size = sizeof(T))
     {
-        return VM::check_user_ptr(ptr, size);
+        return Memory::check_user_ptr(ptr, size);
     }
 
     T* get()

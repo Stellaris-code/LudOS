@@ -92,7 +92,7 @@ void RTL8139::soft_reset()
 
 void RTL8139::set_rcv_buf(uint8_t *ptr)
 {
-    outl(m_iobase + RBSTART, VM::physical_address(ptr));
+    outl(m_iobase + RBSTART, Memory::physical_address(ptr));
 }
 
 ADD_PCI_DRIVER(RTL8139)

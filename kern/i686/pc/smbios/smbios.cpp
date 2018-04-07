@@ -40,7 +40,7 @@ SOFTWARE.
 SMBIOSEntryPoint *SMBIOS::locate()
 {
     const size_t len = 0x10000;
-    uint8_t *addr = (uint8_t*)VM::mmap(0x0F0000, len, VM::Read);
+    uint8_t *addr = (uint8_t*)Memory::mmap(0x0F0000, len, Memory::Read);
     uint8_t* mem = addr;
     int length, i;
     uint8_t checksum;
@@ -62,7 +62,7 @@ SMBIOSEntryPoint *SMBIOS::locate()
     {
         log(Debug, "no SMBIOS found\n");
 
-        VM::unmap(addr, len);
+        Memory::unmap(addr, len);
         return nullptr;
     }
     else
@@ -80,7 +80,7 @@ SMBIOSBIOSInfo* SMBIOS::bios_info()
 {
     if (entry_point)
     {
-        uintptr_t addr = (uintptr_t)VM::mmap(entry_point->TableAddress, entry_point->TableLength, VM::Read);
+        uintptr_t addr = (uintptr_t)Memory::mmap(entry_point->TableAddress, entry_point->TableLength, Memory::Read);
         uintptr_t mem = addr;
         while (mem < entry_point->TableAddress + entry_point->TableLength)
         {
@@ -119,7 +119,7 @@ SMBIOSCPUInfo *SMBIOS::cpu_info()
 {
     if (entry_point)
     {
-        uintptr_t addr = (uintptr_t)VM::mmap(entry_point->TableAddress, entry_point->TableLength, VM::Read);
+        uintptr_t addr = (uintptr_t)Memory::mmap(entry_point->TableAddress, entry_point->TableLength, Memory::Read);
         uintptr_t mem = addr;
         while (mem < entry_point->TableAddress + entry_point->TableLength)
         {

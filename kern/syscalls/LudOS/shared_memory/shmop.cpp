@@ -44,20 +44,20 @@ long sys_shmat(int shmid, user_ptr<const void> shmaddr, int shmflg)
 
     if (v_addr != 0)
     {
-        if (VM::offset(v_addr) != 0 && !(shmflg & SHM_RND))
+        if (Memory::offset(v_addr) != 0 && !(shmflg & SHM_RND))
         {   // not rounded
             return -EINVAL;
         }
-        v_addr += (VM::page_size() - VM::offset(v_addr));
-        if (VM::is_mapped((void*)v_addr))
+        v_addr += (Memory::page_size() - Memory::offset(v_addr));
+        if (Memory::is_mapped((void*)v_addr))
         {
             return -EINVAL;
         }
     }
     else
     {
-        v_addr = VM::allocate_virtual_page(1, true);
-        assert(!VM::is_mapped((void*)v_addr));
+        v_addr = Memory::allocate_virtual_page(1, true);
+        assert(!Memory::is_mapped((void*)v_addr));
     }
 
     Process::current().data.shm_list.at(shmid).v_addr = (void*)v_addr;
@@ -68,7 +68,7 @@ long sys_shmat(int shmid, user_ptr<const void> shmaddr, int shmflg)
 
 long sys_shmdt(user_ptr<const void> shmaddr)
 {
-    if (!shmaddr.check() || VM::offset((uintptr_t)shmaddr.get()) != 0)
+    if (!shmaddr.check() || Memory::offset((uintptr_t)shmaddr.get()) != 0)
     {
         return -EINVAL;
     }

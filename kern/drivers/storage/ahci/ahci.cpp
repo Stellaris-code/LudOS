@@ -191,7 +191,7 @@ detail::HBAMem *detail::get_hbamem_ptr()
 
     auto bar = pci::get_bar_val(ahci_con, 5);
 
-    return reinterpret_cast<HBAMem*>(VM::mmap(bar, 0x1100, VM::Read|VM::Write|VM::Uncached|VM::WriteThrough));
+    return reinterpret_cast<HBAMem*>(Memory::mmap(bar, 0x1100, Memory::Read|Memory::Write|Memory::Uncached|Memory::WriteThrough));
 }
 
 void detail::get_ahci_ownership()
@@ -262,11 +262,11 @@ bool detail::issue_read_command(size_t port, uint64_t sector, size_t count, uint
     int i;
     for (i=0; i<cmdheader->prdtl-1; i++)
     {
-        mkprd(cmdtbl->entries[i], VM::physical_address(buf), 4*1024*1024);
+        mkprd(cmdtbl->entries[i], Memory::physical_address(buf), 4*1024*1024);
         buf += 4*1024*1024;
         count -= 8;	// 16 sectors
     }
-    mkprd(cmdtbl->entries[i], VM::physical_address(buf), count*512);
+    mkprd(cmdtbl->entries[i], Memory::physical_address(buf), count*512);
 
     // Setup command
     FisRegH2D *cmdfis = reinterpret_cast<FisRegH2D*>(&cmdtbl->command_fis);
@@ -348,12 +348,12 @@ bool detail::issue_write_command(size_t port, uint64_t sector, size_t count, con
     int i;
     for (i=0; i<cmdheader->prdtl-1; i++)
     {
-        mkprd(cmdtbl->entries[i], VM::physical_address(buf), 4*1024*1024);
+        mkprd(cmdtbl->entries[i], Memory::physical_address(buf), 4*1024*1024);
         buf += 4*1024*1024;
         count -= 8;	// 16 sectors
     }
 
-    mkprd(cmdtbl->entries[i], VM::physical_address(buf), count*512);
+    mkprd(cmdtbl->entries[i], Memory::physical_address(buf), count*512);
 
     // Setup command
     FisRegH2D *cmdfis = reinterpret_cast<FisRegH2D*>(&cmdtbl->command_fis);
@@ -429,7 +429,7 @@ bool detail::issue_identify_command(size_t port, ide::identify_data* buf)
            (cmdheader->prdtl-1)*sizeof(PrdtEntry));
     // 8K bytes (16 sectors) per PRDT
 
-    mkprd(cmdtbl->entries[0], VM::physical_address(buf), 512);
+    mkprd(cmdtbl->entries[0], Memory::physical_address(buf), 512);
 
     // Setup command
     FisRegH2D *cmdfis = reinterpret_cast<FisRegH2D*>(&cmdtbl->command_fis);

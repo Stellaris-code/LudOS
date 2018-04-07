@@ -51,7 +51,7 @@ int sys_execve(user_ptr<const char> path, user_ptr<user_ptr<const char>> argv, u
     }
 
     {
-        ALIGN_STACK(16);
+        //ALIGN_STACK(16);
 
         auto node = vfs::find(path.get());
         if (!node || node->type() != vfs::node::File)
@@ -104,9 +104,9 @@ int sys_execve(user_ptr<const char> path, user_ptr<user_ptr<const char>> argv, u
 
         process->unswitch();
         loader->load(*process);
+
+        process->set_args(args);
     }
     // Force scope deletion, otherwise it will never be called
-
-    process->set_args(args);
     process->switch_to();
 }

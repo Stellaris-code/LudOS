@@ -57,7 +57,7 @@ void* liballoc_alloc(size_t pages)
     for (size_t i { 0 }; i < pages; ++i)
     {
         Paging::map_page(PhysPageAllocator::alloc_physical_page(),
-                         addr + i*Paging::page_size, VM::Read|VM::Write);
+                         addr + i*Paging::page_size, Memory::Read|Memory::Write);
     }
     return addr;
 }
@@ -66,10 +66,10 @@ int liballoc_free(void* ptr, size_t pages)
 {    
     for (size_t i { 0 }; i < pages; ++i)
     {
-        PhysPageAllocator::release_physical_page(VM::physical_address((uint8_t*)ptr + i*Paging::page_size));
+        PhysPageAllocator::release_physical_page(Memory::physical_address((uint8_t*)ptr + i*Paging::page_size));
     }
 
-    VM::unmap(ptr, pages * Paging::page_size);
+    Memory::unmap(ptr, pages * Paging::page_size);
     return 0;
 }
 }

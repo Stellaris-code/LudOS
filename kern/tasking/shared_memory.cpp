@@ -37,7 +37,7 @@ SharedMemorySegment::SharedMemorySegment(size_t size_in_pages)
 {
     for (size_t i { 0 }; i < size_in_pages; ++i)
     {
-        m_phys_addrs.emplace_back(VM::allocate_physical_page());
+        m_phys_addrs.emplace_back(Memory::allocate_physical_page());
     }
 
     log_serial("SHM creation : 0x%x\n", m_phys_addrs[0]);
@@ -49,7 +49,7 @@ SharedMemorySegment::~SharedMemorySegment()
 
     for (auto addr : m_phys_addrs)
     {
-        VM::release_physical_page(addr);
+        Memory::release_physical_page(addr);
     }
 
     m_phys_addrs.clear();
@@ -59,7 +59,7 @@ void SharedMemorySegment::map(void *v_addr, uint32_t flags)
 {
     for (size_t i { 0 }; i < m_phys_addrs.size(); ++i)
     {
-        VM::map_page(m_phys_addrs[i], (uint8_t*)v_addr + i*VM::page_size(), flags);
+        Memory::map_page(m_phys_addrs[i], (uint8_t*)v_addr + i*Memory::page_size(), flags);
     }
 }
 
@@ -67,8 +67,13 @@ void SharedMemorySegment::unmap(void *v_addr)
 {
     for (size_t i { 0 }; i < m_phys_addrs.size(); ++i)
     {
-        VM::unmap_page((uint8_t*)v_addr + i*VM::page_size());
+        Memory::unmap_page((uint8_t*)v_addr + i*Memory::page_size());
     }
+}
+
+size_t SharedMemorySegment::size() const
+{
+    return m_phys_addrs.size() * Memory::page_size();
 }
 
 static std::unordered_map<unsigned int, std::weak_ptr<SharedMemorySegment>> shmlist;

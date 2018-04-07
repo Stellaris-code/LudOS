@@ -95,10 +95,10 @@ public:
     static uintptr_t alloc_virtual_page(size_t number = 1, bool user = false);
     static bool release_virtual_page(uintptr_t v_addr, size_t number = 1, ReleaseFlags flags = FreePage);
 
-    static void map_page(uintptr_t p_addr, void* v_addr, uint32_t flags = VM::Read|VM::Write);
+    static void map_page(uintptr_t p_addr, void* v_addr, uint32_t flags = Memory::Read|Memory::Write);
     static void unmap_page(void* v_addr);
 
-    static void identity_map(uintptr_t p_addr, size_t size, uint32_t flags = VM::Read|VM::Write);
+    static void identity_map(uintptr_t p_addr, size_t size, uint32_t flags = Memory::Read|Memory::Write);
 
     static uintptr_t physical_address(const void *v_addr);
 

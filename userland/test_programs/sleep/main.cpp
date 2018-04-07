@@ -65,7 +65,7 @@ int main()
         while (true)
         {
             sched_yield();
-            waitpid(ret, &s, 0);
+            //waitpid(ret, &s, 0);
         }
         return 2;
     }

@@ -40,8 +40,10 @@ public:
     ~SharedMemorySegment();
 
 public:
-    void map(void* v_addr, uint32_t flags = VM::Read|VM::Write|VM::User);
+    void map(void* v_addr, uint32_t flags = Memory::Read|Memory::Write|Memory::User);
     void unmap(void* v_addr);
+
+    size_t size() const;
 
 private:
     std::vector<uintptr_t> m_phys_addrs;

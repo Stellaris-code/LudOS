@@ -29,7 +29,7 @@ SOFTWARE.
 #include <string.h>
 #include <limits.h>
 
-class VM
+class Memory
 {
 public:
     enum MmapFlags : uint32_t
@@ -45,7 +45,7 @@ public:
     static void* mmap(uintptr_t p_addr, size_t len, uint32_t flags = Read|Write);
     static void unmap(void* v_addr, size_t len);
 
-    static void map_page(uintptr_t p_addr, void* v_addr, uint32_t flags = VM::Read|VM::Write);
+    static void map_page(uintptr_t p_addr, void* v_addr, uint32_t flags = Memory::Read|Memory::Write);
     static void unmap_page(void* v_addr);
 
     static bool is_mapped(const void* v_addr);
@@ -74,16 +74,16 @@ public:
 
     static void phys_read(uintptr_t addr, void* buf, size_t size)
     {
-        auto ptr = VM::mmap(addr, size, VM::Read);
+        auto ptr = Memory::mmap(addr, size, Memory::Read);
         memcpy(buf, ptr, size);
-        VM::unmap(ptr, size);
+        Memory::unmap(ptr, size);
     }
 
     static void phys_write(uintptr_t addr, const void* buf, size_t size)
     {
-        auto ptr = VM::mmap(addr, size, VM::Write);
+        auto ptr = Memory::mmap(addr, size, Memory::Write);
         memcpy(ptr, buf, size);
-        VM::unmap(ptr, size);
+        Memory::unmap(ptr, size);
     }
 };
 

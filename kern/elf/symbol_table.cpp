@@ -43,7 +43,7 @@ SymbolTable get_symbol_table(const Elf32_Shdr *base, size_t sh_num)
     const char* strtable;
     if (elf::section(base, sh_num, elf::SHT_STRTAB)->sh_addr)
     {
-        strtable = (const char*)VM::mmap(elf::section(base, sh_num, elf::SHT_STRTAB)->sh_addr,
+        strtable = (const char*)Memory::mmap(elf::section(base, sh_num, elf::SHT_STRTAB)->sh_addr,
                                              elf::section(base, sh_num, elf::SHT_STRTAB)->sh_size);
     }
     else
@@ -53,7 +53,7 @@ SymbolTable get_symbol_table(const Elf32_Shdr *base, size_t sh_num)
 
     auto symtab = (Elf32_Shdr*)elf::section(base, sh_num, elf::SHT_SYMTAB);
     if (!symtab) return {};
-    symtab->sh_addr = (Elf32_Addr)VM::mmap(symtab->sh_addr, symtab->sh_size, VM::Read);
+    symtab->sh_addr = (Elf32_Addr)Memory::mmap(symtab->sh_addr, symtab->sh_size, Memory::Read);
 
     std::string current_symbol_file;
 
@@ -73,7 +73,7 @@ SymbolTable get_symbol_table(const Elf32_Shdr *base, size_t sh_num)
         }
     }
 
-    VM::unmap((void*)symtab->sh_addr, symtab->sh_size);
+    Memory::unmap((void*)symtab->sh_addr, symtab->sh_size);
 
     return symbol_table;
 }

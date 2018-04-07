@@ -112,7 +112,7 @@ void print_stack_symbols()
 
 void print_disassembly()
 {
-    if (VM::is_mapped((void*)panic_regs->eip))
+    if (Memory::is_mapped((void*)panic_regs->eip))
     {
         kprintf("Disassembly : \n");
 

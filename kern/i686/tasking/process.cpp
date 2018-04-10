@@ -34,52 +34,17 @@ SOFTWARE.
 #include "i686/gdt/gdt.hpp"
 #include "i686/interrupts/interrupts.hpp"
 #include "i686/mem/physallocator.hpp"
+#include "utils/aligned_vector.hpp"
+
+#include "syscalls/syscall_list.hpp"
 
 #include "utils/membuffer.hpp"
 #include "utils/align.hpp"
 
-extern "C" void enter_ring3(const registers* regs);
+extern "C" [[noreturn]] void enter_ring3(const registers* regs);
 
 // Let the upper page free for argv/argc
-constexpr size_t user_stack_top = KERNEL_VIRTUAL_BASE - (1*Paging::page_size) - sizeof(uintptr_t);
 constexpr uintptr_t argv_virt_page = KERNEL_VIRTUAL_BASE - (1*Paging::page_size);
-
-void map_code(Process& p)
-{
-    size_t code_page_amnt = p.arch_data->code.size() / Paging::page_size +
-            (p.arch_data->code.size()%Paging::page_size?1:0);
-
-    for (size_t i { 0 }; i < code_page_amnt; ++i)
-    {
-        uintptr_t phys_addr = Memory::physical_address((uint8_t*)p.arch_data->code.data() + i*Paging::page_size);
-        uint8_t* virt_addr = (uint8_t*)(i * Paging::page_size);
-
-        assert(phys_addr);
-        p.data.mappings[(uintptr_t)virt_addr] = {phys_addr, Memory::Read|Memory::Write|Memory::User, false};
-    }
-}
-
-void map_stack(Process& p)
-{
-    size_t code_page_amnt = p.arch_data->stack.size() / Paging::page_size +
-            (p.arch_data->stack.size()%Paging::page_size?1:0);
-
-    for (size_t i { 0 }; i < code_page_amnt; ++i)
-    {
-        uintptr_t phys_addr = Memory::physical_address((uint8_t*)p.arch_data->stack.data() + i*Paging::page_size);
-        uint8_t* virt_addr = (uint8_t*)(user_stack_top - (i * Paging::page_size));
-
-        assert(phys_addr);
-        p.data.mappings[(uintptr_t)virt_addr] = {phys_addr, Memory::Read|Memory::Write|Memory::User, false};
-    }
-}
-
-void Process::create_mappings()
-{
-    map_code(*this);
-    map_stack(*this);
-    data.mappings[argv_virt_page] = {PhysPageAllocator::alloc_physical_page(), Memory::Read|Memory::Write|Memory::User, false};
-}
 
 void populate_argv(uintptr_t addr, gsl::span<const std::string> args)
 {
@@ -125,7 +90,7 @@ void Process::set_args(const std::vector<std::string>& args)
     populate_argv((uintptr_t)ptr, args);
     Memory::unmap(ptr, Paging::page_size);
 
-    arch_data->regs.eax = args.size();
+    arch_context->regs.eax = args.size();
 }
 
 void Process::wake_up(pid_t child, int err_code)
@@ -134,17 +99,20 @@ void Process::wake_up(pid_t child, int err_code)
 
     data.waiting_pid.reset();
 
-    arch_data->regs.eax = child; // set waitpid return value
+    arch_context->regs.eax = child; // set waitpid return value
 }
 
 void Process::arch_init(gsl::span<const uint8_t> code_to_copy, size_t allocated_size)
 {
-    arch_data = new ArchSpecificData;
+    assert(!arch_context);
+    arch_context = new ArchContext;
 
-    arch_data->stack.resize(Paging::page_size);
+    data.stack.resize(Paging::page_size);
 
-    arch_data->code.resize(std::max<int>(code_to_copy.size(), allocated_size));
-    std::copy(code_to_copy.begin(), code_to_copy.end(), arch_data->code.begin());
+    data.code = std::make_shared<aligned_vector<uint8_t, Memory::page_size()>>();
+    data.code->resize(std::max<int>(code_to_copy.size(), allocated_size));
+    std::copy(code_to_copy.begin(), code_to_copy.end(), data.code->begin());
+    std::fill(data.code->begin() + code_to_copy.size(), data.code->end(), 0); // clear the allocated part
 
     registers regs;
     memset(&regs, 0, sizeof(registers));
@@ -156,7 +124,7 @@ void Process::arch_init(gsl::span<const uint8_t> code_to_copy, size_t allocated_
     regs.cs = gdt::user_code_selector*0x8 | 0x3;
     regs.ds = regs.es = regs.fs = regs.gs = regs.ss = gdt::user_data_selector*0x8 | 0x3;
 
-    arch_data->regs = regs;
+    arch_context->regs = regs;
 
     create_mappings();
 
@@ -169,41 +137,46 @@ void Process::switch_to()
         assert(!is_waiting());
 
         map_address_space();
+#ifdef LUDOS_HAS_SHM
         map_shm();
+#endif
 
-        arch_data->regs.eip = data.current_pc;
+        arch_context->regs.eip = data.current_pc;
 
         m_current_process = this;
     }
-    enter_ring3(&arch_data->regs);
+    enter_ring3(&arch_context->regs);
 }
 
 void Process::unswitch()
 {
     unmap_address_space();
 
-    data.current_pc = arch_data->regs.eip;
+    data.current_pc = arch_context->regs.eip;
 }
 
-Process *Process::clone(Process &proc)
+Process *Process::clone(Process &proc, uint32_t flags)
 {
     auto new_proc = Process::create(proc.data.args);
     if (!new_proc) return nullptr;
 
-    // TODO : move to the copy constructor
-
-    new_proc->data.name = proc.data.name;
+    new_proc->data.code = std::make_shared<aligned_vector<uint8_t, Memory::page_size()>>(*proc.data.code); // noleak ? :(
+    new_proc->data.stack = proc.data.stack; // noleak
+    new_proc->data.name = proc.data.name; // noleak
     new_proc->data.uid = proc.data.uid;
     new_proc->data.gid = proc.data.gid;
     new_proc->parent = proc.pid;
-    new_proc->data.pwd = proc.data.pwd;
-    new_proc->data.fd_table = proc.data.fd_table;
-    proc.copy_allocated_pages(*new_proc);
-    new_proc->data.args = proc.data.args;
-    new_proc->data.current_pc = proc.arch_data->regs.eip;
+
+    new_proc->data.pwd = std::make_shared<std::string>(*proc.data.pwd); // noleak
+    new_proc->data.fd_table = std::make_shared<std::vector<tasking::FDInfo>>(*proc.data.fd_table); // noleak
+    proc.copy_allocated_pages(*new_proc); // noleak
+    new_proc->data.args = proc.data.args; // noleak
+    new_proc->data.current_pc = proc.arch_context->regs.eip;
+#ifdef LUDOS_HAS_SHM
     new_proc->data.shm_list = proc.data.shm_list;
-    new_proc->arch_data = new ArchSpecificData;
-    *new_proc->arch_data = *proc.arch_data;
+#endif
+    new_proc->arch_context = new ArchContext;
+    *new_proc->arch_context = *proc.arch_context;
 
     proc.data.children.emplace_back(new_proc->pid);
 
@@ -233,6 +206,6 @@ void Process::cleanup()
 {
     release_mappings();
 
-    delete arch_data;
-    arch_data = nullptr;
+    delete arch_context;
+    arch_context = nullptr;
 }

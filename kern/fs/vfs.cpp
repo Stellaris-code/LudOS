@@ -282,7 +282,7 @@ std::vector<std::shared_ptr<node> > node::readdir()
 {
     //assert(is_dir());
 
-    static std::vector<std::shared_ptr<const node>> fkcghugelist;
+    //static std::vector<std::shared_ptr<const node>> fkcghugelist;
 
     auto list = (m_mounted_node ? m_mounted_node->readdir_impl() : readdir_impl());
 
@@ -301,7 +301,7 @@ std::vector<std::shared_ptr<node> > node::readdir()
 
     for (auto el : list)
     {
-        fkcghugelist.emplace_back(el);
+        //fkcghugelist.emplace_back(el);
     }
 
     update_access_time();
@@ -311,13 +311,11 @@ std::vector<std::shared_ptr<node> > node::readdir()
 
 std::vector<std::shared_ptr<const node> > node::readdir() const
 {
-    static std::vector<std::shared_ptr<const node>> fkcghugelist;
     std::vector<std::shared_ptr<const node>> vec;
 
     for (auto el : const_cast<node*>(this)->readdir())
     {
         vec.emplace_back(el);
-        fkcghugelist.emplace_back(el);
     }
 
     return vec;

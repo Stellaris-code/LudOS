@@ -27,15 +27,11 @@ SOFTWARE.
 
 #include "tasking/process.hpp"
 
-#include "utils/aligned_vector.hpp"
-#include "i686/mem/paging.hpp"
 #include "i686/fpu/fpu.hpp"
 #include "i686/cpu/registers.hpp"
 
-struct Process::ArchSpecificData
+struct Process::ArchContext
 {
-    aligned_vector<uint8_t, Paging::page_size> stack;
-    aligned_vector<uint8_t, Paging::page_size> code;
     registers regs;
     FPUState fpu_state;
 };

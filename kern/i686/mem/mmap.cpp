@@ -96,6 +96,11 @@ void Memory::release_physical_page(uintptr_t page)
     PhysPageAllocator::release_physical_page(page);
 }
 
+size_t Memory::allocated_physical_pages()
+{
+    return PhysPageAllocator::allocated_pages;
+}
+
 uintptr_t Memory::allocate_virtual_page(size_t number, bool user)
 {
     return Paging::alloc_virtual_page(number, user);
@@ -104,9 +109,4 @@ uintptr_t Memory::allocate_virtual_page(size_t number, bool user)
 void Memory::release_virtual_page(uintptr_t page)
 {
     Paging::release_virtual_page(page);
-}
-
-size_t Memory::page_size()
-{
-    return Paging::page_size;
 }

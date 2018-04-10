@@ -31,3 +31,8 @@ int getpid()
 {
     return common_syscall(1, SYS_getpid);
 }
+
+int gettid()
+{
+    return common_syscall(1, SYS_gettid);
+}

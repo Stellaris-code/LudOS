@@ -36,27 +36,37 @@ SOFTWARE.
 
 #include "mem/meminfo.hpp"
 
+#ifdef LUDOS_HAS_SHM
 #include "shared_memory.hpp"
+#endif
+
+#include "i686/tasking/process.hpp"
 
 #include <sys/wait.h>
 
+// Let the upper page free for argv/argc
+constexpr uintptr_t argv_virt_page = KERNEL_VIRTUAL_BASE - (1*Memory::page_size());
+
 Process::Process()
 {
+    data.pwd = std::make_shared<std::string>("/");
     init_default_fds();
 }
 
 void Process::reset(gsl::span<const uint8_t> code_to_copy, size_t allocated_size)
 {
-    if (arch_data)
+    if (arch_context)
     {
         cleanup(); // if arch_data == nullptr then the process isn't in a ready state yet, so don't clean it up
-        assert(arch_data == nullptr);
+        assert(arch_context == nullptr);
     }
     arch_init(code_to_copy, allocated_size);
 }
 
 void Process::init_default_fds()
 {
+    assert(data.fd_table = std::make_shared<std::vector<tasking::FDInfo>>());
+
     assert(vfs::find("/dev/stdout"));
     assert(vfs::find("/dev/stdin"));
     assert(vfs::find("/dev/stderr"));
@@ -64,22 +74,6 @@ void Process::init_default_fds()
     assert(add_fd({vfs::find("/dev/stdin" ), .read = true,  .write = false}) == 0);
     assert(add_fd({vfs::find("/dev/stdout"), .read = false, .write = true }) == 1);
     assert(add_fd({vfs::find("/dev/stderr"), .read = false, .write = true }) == 2);
-}
-
-void Process::release_mappings()
-{
-    std::vector<uintptr_t> addr_list;
-    // First copy the address list because release_pages will remove elements while iterating
-    for (const auto& pair : data.mappings)
-    {
-        if (pair.second.owned) addr_list.emplace_back(pair.first);
-    }
-    for (auto addr : addr_list)
-    {
-        release_pages(addr, 1);
-    }
-
-    data.mappings.clear();
 }
 
 pid_t Process::find_free_pid()
@@ -95,35 +89,35 @@ pid_t Process::find_free_pid()
 size_t Process::add_fd(const tasking::FDInfo &info)
 {
     // Search for an empty entry in the table
-    for (size_t i { 0 }; i < data.fd_table.size(); ++i)
+    for (size_t i { 0 }; i < data.fd_table->size(); ++i)
     {
-        if (data.fd_table[i].node == nullptr)
+        if ((*data.fd_table)[i].node == nullptr)
         {
-            data.fd_table[i] = info;
+            (*data.fd_table)[i] = info;
             return i;
         }
     }
 
     // If nothing is found, we append an entry to the table
-    data.fd_table.emplace_back(info);
-    return data.fd_table.size() - 1;
+    data.fd_table->emplace_back(info);
+    return data.fd_table->size() - 1;
 }
 
 tasking::FDInfo *Process::get_fd(size_t fd)
 {
-    if (fd >= data.fd_table.size() || data.fd_table[fd].node == nullptr)
+    if (fd >= data.fd_table->size() || (*data.fd_table)[fd].node == nullptr)
     {
         return nullptr;
     }
 
-    return &data.fd_table[fd];
+    return &(*data.fd_table)[fd];
 }
 
 void Process::close_fd(size_t fd)
 {
     assert(get_fd(fd));
 
-    data.fd_table[fd].node = nullptr;
+    (*data.fd_table)[fd].node = nullptr;
 }
 
 bool Process::is_waiting() const
@@ -213,6 +207,14 @@ void Process::kill(pid_t pid, int err_code)
     --m_process_count;
     assert(!by_pid(pid));
 
+    static size_t last_size = 0;
+    size_t curr = MemoryInfo::free();
+    size_t diff = last_size - curr;
+
+    //log_serial("PID destroyed : %d delta : %d (0x%x) total %d, allocated pages : %zd\n", pid, diff, diff, curr, Memory::allocated_physical_pages());
+
+    last_size = curr;
+
     MessageBus::send(ProcessDestroyedEvent{pid, err_code});
 }
 
@@ -240,7 +242,8 @@ Process *Process::create(const std::vector<std::string>& args)
 
     if (m_processes[free_idx] == nullptr) return nullptr;
 
-    m_processes[free_idx]->pid = free_idx;
+    m_processes[free_idx]->tgid = free_idx;
+    m_processes[free_idx]->pid  = free_idx;
     m_processes[free_idx]->data.args = args;
 
     ++m_process_count;
@@ -250,12 +253,67 @@ Process *Process::create(const std::vector<std::string>& args)
     return m_processes[free_idx].get();
 }
 
+#ifdef LUDOS_HAS_SHM
 void Process::map_shm()
 {
     for (auto pair : data.shm_list)
     {
         if (pair.second.v_addr) pair.second.shm->map(pair.second.v_addr);
     }
+}
+#endif
+
+void Process::map_code()
+{
+    size_t code_page_amnt = data.code->size() / Memory::page_size() +
+            (data.code->size()%Memory::page_size()?1:0);
+
+    for (size_t i { 0 }; i < code_page_amnt; ++i)
+    {
+        uintptr_t phys_addr = Memory::physical_address((uint8_t*)data.code->data() + i*Memory::page_size());
+        uint8_t* virt_addr = (uint8_t*)(i * Memory::page_size());
+
+        assert(phys_addr);
+        data.mappings[(uintptr_t)virt_addr] = {phys_addr, Memory::Read|Memory::Write|Memory::User, false};
+    }
+}
+
+void Process::map_stack()
+{
+    size_t code_page_amnt = data.stack.size() / Memory::page_size() +
+            (data.stack.size()%Memory::page_size()?1:0);
+
+    for (size_t i { 0 }; i < code_page_amnt; ++i)
+    {
+        uintptr_t phys_addr = Memory::physical_address((uint8_t*)data.stack.data() + i*Memory::page_size());
+        uint8_t* virt_addr = (uint8_t*)(user_stack_top - (i * Memory::page_size()));
+
+        assert(phys_addr);
+        data.mappings[(uintptr_t)virt_addr] = {phys_addr, Memory::Read|Memory::Write|Memory::User, false};
+    }
+}
+
+void Process::create_mappings()
+{
+    map_code();
+    map_stack();
+    if (!data.mappings.count(argv_virt_page))
+    {
+        data.mappings[argv_virt_page] = {Memory::allocate_physical_page(), Memory::Read|Memory::Write|Memory::User, true};
+    }
+}
+
+void Process::release_mappings()
+{
+    for (const auto& pair : data.mappings)
+    {
+        if (pair.second.owned)
+        {
+            Memory::release_physical_page(pair.second.paddr);
+        }
+    }
+
+    data.mappings.clear();
 }
 
 void Process::map_address_space()
@@ -310,6 +368,7 @@ void Process::copy_allocated_pages(Process &target)
         if (pair.second.owned)
         {
             target.data.mappings[pair.first] = pair.second;
+            assert(target.data.mappings[pair.first].owned);
             target.data.mappings[pair.first].paddr = Memory::allocate_physical_page();
 
             auto src_ptr = Memory::mmap(pair.second.paddr, Memory::page_size());
@@ -327,5 +386,4 @@ Process::~Process()
 {
     unswitch();
     cleanup();
-    log_serial("PID destroyed : %d Rem %s\n", pid, human_readable_size(MemoryInfo::free()).c_str());
 }

@@ -34,6 +34,10 @@ SOFTWARE.
 
 int sys_shmget(key_t key, size_t size, int shmflags)
 {
+#ifndef LUDOS_HAS_SHM
+    return -ENOSYS;
+#else
+
     if (get_shared_mem(key))
     {
         if (shmflags & IPC_CREAT && shmflags & IPC_EXCL)
@@ -61,4 +65,5 @@ int sys_shmget(key_t key, size_t size, int shmflags)
 
         return key;
     }
+#endif
 }

@@ -28,8 +28,14 @@ SOFTWARE.
 #include "panic.hpp"
 
 #include "mem/memmap.hpp"
+#include "tasking/process.hpp"
 
 static constexpr uint32_t fill_pattern = 0xDEADBEEF;
+
+uintptr_t PhysPageAllocator::allocated_list[50000];
+bool recording { false };
+
+int PhysPageAllocator::allocated_pages = 0;
 
 void PhysPageAllocator::init()
 {
@@ -43,6 +49,9 @@ uintptr_t PhysPageAllocator::alloc_physical_page()
 {
     auto page = find_free_page();
     clear_page(page);
+
+    ++allocated_pages;
+
     return page;
 }
 
@@ -54,6 +63,8 @@ bool PhysPageAllocator::release_physical_page(uintptr_t p_addr)
     mem_bitmap[base_page] = false;
 
     assert(released);
+
+    --allocated_pages;
 
     return released;
 }
@@ -80,6 +91,17 @@ void PhysPageAllocator::mark_as_free(uintptr_t addr, size_t size)
     {
         mem_bitmap[i] = false;
     }
+}
+
+void PhysPageAllocator::start_recording_allocs()
+{
+    for (auto& i : allocated_list) i = 0;
+    recording = true;
+}
+
+void PhysPageAllocator::stop_recording_allocs()
+{
+    recording = false;
 }
 
 uintptr_t PhysPageAllocator::find_free_page()

@@ -29,8 +29,8 @@ long exit(uint8_t code);
 
 int main()
 {
-    asm volatile ("mov $0, %eax\n"
-                  "div %eax");
+//    asm volatile ("mov $0, %eax\n"
+//                  "div %eax");
 
     exit(0);
     return 0;

@@ -29,5 +29,10 @@ SOFTWARE.
 
 int sys_getpid()
 {
+    return Process::current().tgid;
+}
+
+int sys_gettid()
+{
     return Process::current().pid;
 }

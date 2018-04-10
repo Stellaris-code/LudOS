@@ -42,6 +42,7 @@ LINUX_SYSCALL_DEF(0x14, getpid, int)
 LINUX_SYSCALL_DEF(0xb7, getcwd, int, USER_PTR(char) buf, unsigned long size)
 LINUX_SYSCALL_DEF(0x9e, sched_yield, void)
 LINUX_SYSCALL_DEF(0xa2, nanosleep, int, USER_PTR(const struct timespec) req, USER_PTR(struct timespec) rem)
+LINUX_SYSCALL_DEF(0xe0, gettid, int)
 
 LUDOS_SYSCALL_DEF(0, get_syscall_tables, void, USER_PTR(SyscallEntry) ludos, USER_PTR(SyscallEntry) linux)
 LUDOS_SYSCALL_DEF(1, print_serial, void, USER_PTR(const char) string)

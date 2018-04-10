@@ -41,7 +41,7 @@ int sys_getcwd(user_ptr<char> buf, unsigned long size)
         return -EINVAL;
     }
 
-    std::string pwd = Process::current().data.pwd;
+    std::string pwd = *Process::current().data.pwd;
 
     if (pwd.size() + 1 > size)
     {

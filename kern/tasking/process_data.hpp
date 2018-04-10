@@ -25,6 +25,8 @@ SOFTWARE.
 #ifndef PROCESS_DATA_HPP
 #define PROCESS_DATA_HPP
 
+#include "config.hpp"
+
 #include <stdint.h>
 #include <string.hpp>
 #include <memory.hpp>
@@ -34,7 +36,13 @@ SOFTWARE.
 
 #include <sys/types.h>
 
+#include "mem/memmap.hpp"
+
+#ifdef LUDOS_HAS_SHM
 #include "shared_memory.hpp"
+#endif
+
+#include "utils/aligned_vector.hpp"
 
 namespace vfs
 {
@@ -50,11 +58,13 @@ struct MemoryMapping
     bool      owned : 1;
 };
 
+#ifdef LUDOS_HAS_SHM
 struct ShmEntry
 {
     std::shared_ptr<SharedMemorySegment> shm;
     void* v_addr;
 };
+#endif
 struct FDInfo
 {
     std::shared_ptr<vfs::node> node;
@@ -67,6 +77,9 @@ struct FDInfo
 
 struct ProcessData
 {
+    aligned_vector<uint8_t, Memory::page_size()> stack; // stack is never shared
+    std::shared_ptr<aligned_vector<uint8_t, Memory::page_size()>> code;
+
     std::string name { "<INVALID>" };
     uint32_t uid { 0 };
     uint32_t gid { 0 };
@@ -77,15 +90,17 @@ struct ProcessData
     int* wstatus { nullptr };
     uintptr_t waitstatus_phys { 0 };
 
-    std::string pwd = "/";
+    std::shared_ptr<std::string> pwd;
 
-    std::vector<tasking::FDInfo> fd_table;
+    std::shared_ptr<std::vector<tasking::FDInfo>> fd_table;
 
     std::unordered_map<uintptr_t, tasking::MemoryMapping> mappings;
 
     std::vector<std::string> args;
 
+#ifdef LUDOS_HAS_SHM
     std::unordered_map<unsigned int, tasking::ShmEntry> shm_list;
+#endif
 
     uintptr_t current_pc { 0 };
 };

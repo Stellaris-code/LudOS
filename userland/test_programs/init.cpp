@@ -27,10 +27,12 @@ SOFTWARE.
 
 #include <syscalls/syscall_list.hpp>
 
+void write_callback(void*, char c)
+{
+    write(1, &c, 1);
+}
+
 void __attribute__((constructor)) libc_init()
 {
-    init_printf(nullptr, [](void*, char c)
-    {
-        write(1, &c, 1);
-    });
+    init_printf(nullptr, write_callback);
 }

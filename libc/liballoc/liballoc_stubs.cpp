@@ -25,39 +25,34 @@ SOFTWARE.
 
 #if !defined(LUDOS_USER)
 
-#include "tasking/spinlock.hpp"
-
-#include "i686/mem/physallocator.hpp"
-
 #include <stdint.h>
+
+#include "mem/memmap.hpp"
 
 #include "utils/logging.hpp"
 #include "panic.hpp"
-
-// TODO : implement
-DECLARE_LOCK(liballoc_lock);
 
 extern "C"
 {
 int liballoc_lock()
 {
-    //LOCK(liballoc_lock);
+    cli();
     return 0;
 }
 
 int liballoc_unlock()
 {
-    //UNLOCK(liballoc_lock);
+    sti();
     return 0;
 }
 
 void* liballoc_alloc(size_t pages)
 {
-    uint8_t* addr = reinterpret_cast<uint8_t*>(Paging::alloc_virtual_page(pages));
+    uint8_t* addr = reinterpret_cast<uint8_t*>(Memory::allocate_virtual_page(pages, false));
     for (size_t i { 0 }; i < pages; ++i)
     {
-        Paging::map_page(PhysPageAllocator::alloc_physical_page(),
-                         addr + i*Paging::page_size, Memory::Read|Memory::Write);
+        Memory::map_page(Memory::allocate_physical_page(),
+                         addr + i*Memory::page_size(), Memory::Read|Memory::Write);
     }
     return addr;
 }
@@ -66,10 +61,10 @@ int liballoc_free(void* ptr, size_t pages)
 {    
     for (size_t i { 0 }; i < pages; ++i)
     {
-        PhysPageAllocator::release_physical_page(Memory::physical_address((uint8_t*)ptr + i*Paging::page_size));
+        Memory::release_physical_page(Memory::physical_address((uint8_t*)ptr + i*Memory::page_size()));
     }
 
-    Memory::unmap(ptr, pages * Paging::page_size);
+    Memory::unmap(ptr, pages * Memory::page_size());
     return 0;
 }
 }
@@ -78,20 +73,21 @@ int liballoc_free(void* ptr, size_t pages)
 
 #include <syscalls/syscall_list.hpp>
 
-// TODO : implement
-//DECLARE_LOCK(liballoc_lock);
+#include "tasking/spinlock.hpp"
+
+DECLARE_LOCK(liballoc_lock);
 
 extern "C"
 {
 int liballoc_lock()
 {
-    //LOCK(liballoc_lock);
+    LOCK(liballoc_lock);
     return 0;
 }
 
 int liballoc_unlock()
 {
-    //UNLOCK(liballoc_lock);
+    UNLOCK(liballoc_lock);
     return 0;
 }
 

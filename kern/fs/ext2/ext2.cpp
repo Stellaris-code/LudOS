@@ -400,7 +400,7 @@ void Ext2FS::error(const std::string &message) const
 
 MemBuffer ext2_node::read_impl(size_t offset, size_t size) const
 {
-    if (this->size() < 65536)
+    if (this->size() >= 65536)
     {
         fs.error("Files more than 64MiB long aren't supported\n");
     }

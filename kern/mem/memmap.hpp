@@ -56,18 +56,24 @@ public:
 
     static uintptr_t allocate_physical_page();
     static void release_physical_page(uintptr_t page);
+    static size_t allocated_physical_pages();
 
     static uintptr_t allocate_virtual_page(size_t number, bool user);
     static void release_virtual_page(uintptr_t page);
 
-    static size_t page_size();
+    static constexpr size_t page_size()
+    {
+#ifdef ARCH_i686
+        return 1 << 12;
+#endif
+    }
 
-    static inline uintptr_t page(uintptr_t addr)
+    static constexpr uintptr_t page(uintptr_t addr)
     {
         return (addr & ~(page_size()-1));
     }
 
-    static inline uintptr_t offset(uintptr_t addr)
+    static constexpr uintptr_t offset(uintptr_t addr)
     {
         return addr & (page_size()-1);
     }

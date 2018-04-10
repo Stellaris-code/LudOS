@@ -44,6 +44,13 @@ public:
     static void mark_as_used(uintptr_t addr, size_t size);
     static void mark_as_free(uintptr_t addr, size_t size);
 
+    static void start_recording_allocs();
+    static void stop_recording_allocs();
+
+public:
+    static int allocated_pages;
+    static uintptr_t allocated_list[50000];
+
 private:
     static uintptr_t find_free_page();
     static void clear_page(uintptr_t p_addr);

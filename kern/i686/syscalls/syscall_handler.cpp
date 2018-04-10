@@ -35,8 +35,8 @@ extern "C" uint32_t __attribute__((force_align_arg_pointer)) syscall_handler(reg
 {
     processing_syscall = true;
 
-    Process::current().arch_data->regs = *regs;
-    Process::current().arch_data->fpu_state = FPU::save();
+    Process::current().arch_context->regs = *regs;
+    Process::current().arch_context->fpu_state = FPU::save();
 
     uint32_t ret = ENOSYS;
 
@@ -62,7 +62,7 @@ extern "C" uint32_t __attribute__((force_align_arg_pointer)) syscall_handler(reg
             return ret;
     }
 
-    FPU::load(Process::current().arch_data->fpu_state);
+    FPU::load(Process::current().arch_context->fpu_state);
     regs->eax = ret;
     processing_syscall = false;
     return ret;

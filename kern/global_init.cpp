@@ -253,6 +253,9 @@ void global_init()
 
         tasking::scheduler_init();
 
+        uint8_t* ptr = (uint8_t*)kmalloc(56);
+        ptr = nullptr;
+
         sh.command("run /initrd/init.sh");
 
         sh.run();

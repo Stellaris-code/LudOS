@@ -1,7 +1,7 @@
 /*
-nop.cpp
+config.hpp
 
-Copyright (c) 22 Yann BOUCHER (yann)
+Copyright (c) 09 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,19 +22,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
+#ifndef CONFIG_HPP
+#define CONFIG_HPP
 
-#include "syscalls/LudOS/syscalls.hpp"
+#define LUDOS_HAS_SHM
 
-#include "mem/meminfo.hpp"
-#include "mem/memmap.hpp"
-
-#include "utils/logging.hpp"
-
-void sys_syscall_nop()
-{
-    size_t curr = MemoryInfo::free();
-    static size_t last_size = curr;
-    size_t diff = last_size - curr;
-
-    log_serial("Test : delta : %d (0x%x) total %d, allocated pages : %zd\n", diff, diff, curr, Memory::allocated_physical_pages());
-}
+#endif // CONFIG_HPP

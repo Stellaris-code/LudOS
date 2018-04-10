@@ -51,7 +51,7 @@ class SharedMemorySegment;
 class Process : NonCopyable
 {
 public:
-    struct ArchSpecificData;
+    struct ArchContext;
 
     enum class AccessRequestPerm : uint16_t
     {
@@ -61,12 +61,13 @@ public:
     };
 
     static constexpr size_t root_uid = 0;
+    static constexpr size_t user_stack_top = KERNEL_VIRTUAL_BASE - (1*Memory::page_size()) - sizeof(uintptr_t);
 
 public:
     static bool enabled();
 
     static Process* create(const std::vector<std::string> &args);
-    static Process* clone(Process& proc);
+    static Process* clone(Process& proc, uint32_t flags = 0);
     static Process& current();
     static size_t   count();
     static void     kill(pid_t pid, int err_code);
@@ -104,13 +105,18 @@ private:
 
 public:
     pid_t pid { 0 };
+    pid_t tgid { 0 };
     pid_t parent { 0 };
     ProcessData data;
-    ArchSpecificData* arch_data { nullptr };
+    ArchContext* arch_context { nullptr };
 
 private:
     void arch_init(gsl::span<const uint8_t> code_to_copy, size_t allocated_size);
+#ifdef LUDOS_HAS_SHM
     void map_shm();
+#endif
+    void map_code();
+    void map_stack();
     void create_mappings();
     void release_mappings();
     void map_address_space();

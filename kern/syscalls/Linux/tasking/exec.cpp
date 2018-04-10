@@ -107,6 +107,9 @@ int sys_execve(user_ptr<const char> path, user_ptr<user_ptr<const char>> argv, u
 
         process->set_args(args);
     }
+
     // Force scope deletion, otherwise it will never be called
     process->switch_to();
+
+    __builtin_unreachable();
 }

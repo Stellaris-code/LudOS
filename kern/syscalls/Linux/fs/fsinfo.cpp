@@ -29,6 +29,8 @@ SOFTWARE.
 #include "utils/user_ptr.hpp"
 #include "errno.h"
 
+#include "fs/vfs.hpp"
+
 int sys_getcwd(user_ptr<char> buf, unsigned long size)
 {
     if (!buf.check())
@@ -41,7 +43,7 @@ int sys_getcwd(user_ptr<char> buf, unsigned long size)
         return -EINVAL;
     }
 
-    std::string pwd = *Process::current().data.pwd;
+    std::string pwd = Process::current().data.pwd->path();
 
     if (pwd.size() + 1 > size)
     {

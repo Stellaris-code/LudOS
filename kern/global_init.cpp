@@ -30,6 +30,7 @@ SOFTWARE.
 #include "fs/tar/tar.hpp"
 #include "fs/vfs.hpp"
 #include "fs/devfs/devfs.hpp"
+#include "fs/procfs/procfs.hpp"
 #include "fs/fs.hpp"
 #include "fs/ext2/ext2.hpp"
 #include "fs/mbr/mbr.hpp"
@@ -85,6 +86,8 @@ SOFTWARE.
 
 #include "initrd/initrd.hpp"
 
+#include "info/version.hpp"
+
 // TODO : system calls
 // TODO : user mode
 // TODO : POC calculatrice
@@ -108,10 +111,10 @@ SOFTWARE.
 // TODO : task switch : fpu state
 
 // ROADMAP
-// : Rédiger le Tests
+// : implémenter /proc
 // : implémenter /dev/input
-// : implémenter shmat
 // : implémenter signaux
+// : implémenter expanding stack
 // : implémenter sigsegv
 
 /**********************************/
@@ -209,6 +212,7 @@ void global_init()
 
         vfs::init();
         devfs::init();
+        procfs::init();
 
         log(Info, "Available drives : %zd\n", Disk::disks().size());
 
@@ -252,9 +256,6 @@ void global_init()
         init_syscalls();
 
         tasking::scheduler_init();
-
-        uint8_t* ptr = (uint8_t*)kmalloc(56);
-        ptr = nullptr;
 
         sh.command("run /initrd/init.sh");
 

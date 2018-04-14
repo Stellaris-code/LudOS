@@ -37,7 +37,10 @@ SOFTWARE.
 
 #include "time/time.hpp"
 
+#include "fs/fsutils.hpp"
 #include "fs/vfs.hpp"
+
+#include "panic.hpp"
 
 void install_base_commands(Shell &sh)
 {

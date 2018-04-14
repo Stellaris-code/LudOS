@@ -1,7 +1,7 @@
 /*
-exception_support.cpp
+version.hpp
 
-Copyright (c) 05 Yann BOUCHER (yann)
+Copyright (c) 11 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,40 +22,25 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-
-#include "cpp_runtime/exception_support.hpp"
-
-#include "libunwind.h"
+#ifndef VERSION_HPP
+#define VERSION_HPP
 
 #include "utils/defs.hpp"
-#include "utils/logging.hpp"
-#include "elf/elf.hpp"
 
-#include "elf/kernel_binary.hpp"
+#define LUDOS_MINOR 1
+#define LUDOS_MAJOR 0
 
-#include "info/version.hpp"
+#define LUDOS_VERSION_STRING "v" EXPAND_AND_QUOTE(LUDOS_MAJOR) "." EXPAND_AND_QUOTE(LUDOS_MINOR)
 
-extern "C" unsigned int _dl_osversion;
-/* Platform name.  */
-extern "C" const char *_dl_platform;
-
-/* Cached value of `getpagesize ()'.  */
-extern "C" size_t _dl_pagesize;
-
-extern "C" void _dl_non_dynamic_init();
-
-void init_exceptions()
+#ifdef __cplusplus
+extern "C"
 {
-    _dl_platform = "LudOS";
-    _dl_osversion = LUDOS_MAJOR;
-    _dl_pagesize = 0x1000;
+#endif
 
-    _dl_non_dynamic_init();
+const char* get_version_str();
 
-//    const elf::Elf32_Ehdr* elf = elf::kernel_binary();
-
-//    for (size_t i { 0 }; i < elf->e_phnum; ++i)
-//    {
-//        log(Info, "Type : 0x%x\n", elf::program_header(elf, i)->p_type);
-//    }
+#ifdef __cplusplus
 }
+#endif
+
+#endif // VERSION_HPP

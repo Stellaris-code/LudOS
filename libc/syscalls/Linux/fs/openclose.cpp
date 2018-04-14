@@ -23,35 +23,11 @@ SOFTWARE.
 
 */
 #include "syscalls/syscalls.hpp"
+#include "syscalls/defs.hpp"
 
 #include <errno.h>
 
 extern int common_syscall(size_t type, size_t no, ...);
 
-long open(const char* path, int flags, int mode)
-{
-    auto ret = common_syscall(1, SYS_open, path, flags, mode);
-    if (ret < 0) // error set
-    {
-        errno = -ret;
-        return -1;
-    }
-    else
-    {
-        return ret; // sys_open returns -fd so we have to negate the return value
-    }
-}
-
-long close(unsigned int fd)
-{
-    auto ret = common_syscall(1, SYS_close, fd);
-    if (ret < 0)
-    {
-        errno = -ret;
-        return -1;
-    }
-    else
-    {
-        return ret;
-    }
-}
+LINUX_SYSCALL_DEFAULT_IMPL(open, (const char* path, int flags, int mode), path, flags, mode)
+LINUX_SYSCALL_DEFAULT_IMPL(close, (unsigned int fd), fd)

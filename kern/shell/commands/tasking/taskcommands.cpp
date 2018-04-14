@@ -27,6 +27,8 @@ SOFTWARE.
 
 #include "shell/shell.hpp"
 
+#include "fs/fsutils.hpp"
+#include "fs/pathutils.hpp"
 #include "fs/vfs.hpp"
 #include "tasking/process.hpp"
 #include "tasking/loaders/process_loader.hpp"
@@ -75,6 +77,9 @@ void install_task_commands(Shell &sh)
              sh.error("Can't load '%s'\n", args[0].c_str());
              return -4;
          }
+
+         process->data.pwd = sh.pwd;
+         process->data.name = filename(program_args[0]);
          process->switch_to();
 
          return 0;

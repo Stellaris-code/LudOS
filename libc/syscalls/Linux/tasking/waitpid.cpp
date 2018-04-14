@@ -23,19 +23,15 @@ SOFTWARE.
 
 */
 #include "syscalls/syscall_list.hpp"
+#include "syscalls/defs.hpp"
 
 #include <errno.h>
 
 extern int common_syscall(size_t type, size_t no, ...);
 
-long waitpid(pid_t pid, int *wstatus, int options)
-{
-    long ret = common_syscall(1, SYS_waitpid, pid, wstatus, options);
-    if (ret < 0)
-    {
-        errno = -ret;
-        return -1;
-    }
+LINUX_SYSCALL_DEFAULT_IMPL(waitpid, (pid_t pid, int *wstatus, int options), pid, wstatus, options)
 
-    return ret;
+pid_t wait(int *status)
+{
+    return waitpid(-1, status, 0);
 }

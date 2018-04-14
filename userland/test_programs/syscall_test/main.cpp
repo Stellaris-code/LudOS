@@ -53,6 +53,8 @@ int main(int argc, char* argv[])
 {
     //std::string std_str = "Bonjour depuis std::string !\n";
 
+    printf("Epoch : %zd\n", time(nullptr));
+
     char local_str[] = "Arguments :\n";
 
     std::string std_str = "From std::string;\n";
@@ -97,6 +99,15 @@ int main(int argc, char* argv[])
         data.emplace_back('\0');
         printf("Data : %s\n", data.data());
     }
+
+    int proc_name_fd = open("/proc/self/name", O_RDONLY, 0);
+    if (proc_name_fd < 0)
+    {
+        perror("proc self open"); return -1;
+    }
+    char name_buf[60];
+    read(proc_name_fd, name_buf, sizeof(name_buf));
+    printf("Process name : %s\n", name_buf);
 
     free(allocated_str);
     return 0;

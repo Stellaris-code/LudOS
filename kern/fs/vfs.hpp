@@ -29,19 +29,9 @@ SOFTWARE.
 
 #include <string.hpp>
 #include <vector.hpp>
-#include <functional.hpp>
-#include <variant.hpp>
-#include <optional.hpp>
-#include <type_traits.hpp>
-#include <unordered_map.hpp>
-#include <unordered_set.hpp>
 #include <utils/gsl/gsl_span.hpp>
 
-#include "utils/logging.hpp"
 #include "utils/membuffer.hpp"
-#include "panic.hpp"
-
-extern std::unordered_set<void*> created_node_list;
 
 namespace vfs
 {
@@ -78,7 +68,7 @@ struct node
 
     struct Stat
     {
-        uint16_t perms { 0 };
+        uint16_t perms { OtherRead };
         uint16_t uid { 0 };
         uint16_t gid { 0 };
         uint32_t flags { 0 };
@@ -151,8 +141,6 @@ private:
     std::shared_ptr<node> m_mounted_node {};
 };
 
-size_t new_descriptor(node &node);
-
 struct vfs_root : public node
 {
     vfs_root() : node(nullptr) { m_type = Directory; }
@@ -176,44 +164,36 @@ private:
 struct symlink : public node
 {
 
-    symlink(node& target)
-        : m_target(target)
-    {
+    symlink(std::string target);
 
-    }
+    symlink(std::string target, std::string name);
 
-    virtual size_t size() const override { return m_target.size(); }
-    virtual Type type() const override { return m_target.type(); }
+    virtual size_t size() const override { return actual_target()->size(); }
+    virtual Type type() const override { return actual_target()->type(); }
     virtual bool is_link() const override { return true; }
+    virtual std::string name() const override;
 
-    node& target() const { return m_target; }
-
-protected:
-    [[nodiscard]] virtual MemBuffer read_impl(size_t offset, size_t size) const override { return m_target.read(offset, size); }
-    [[nodiscard]] virtual bool write_impl(size_t offset, gsl::span<const uint8_t> data) override { return m_target.write(offset, data); }
-    virtual std::vector<std::shared_ptr<node>> readdir_impl() override { return m_target.readdir_impl(); }
-    [[nodiscard]] virtual std::shared_ptr<node> create_impl(const std::string& s, Type type) override { return m_target.create(s, type); };
+    std::string target() const { return m_target; }
 
 private:
-    node& m_target;
+    std::shared_ptr<node> actual_target();
+    std::shared_ptr<const node> actual_target() const;
+
+protected:
+    [[nodiscard]] virtual MemBuffer read_impl(size_t offset, size_t size) const override { return actual_target()->read(offset, size); }
+    [[nodiscard]] virtual bool write_impl(size_t offset, gsl::span<const uint8_t> data) override { return actual_target()->write(offset, data); }
+    virtual std::vector<std::shared_ptr<node>> readdir_impl() override { return actual_target()->readdir_impl(); }
+    [[nodiscard]] virtual std::shared_ptr<node> create_impl(const std::string& s, Type type) override { return actual_target()->create(s, type); };
+
+private:
+    std::string m_target;
+    std::string m_linkname;
 };
 
-void init();
-
-std::shared_ptr<node> find(const std::string& path);
-
-bool mount(std::shared_ptr<node> target, std::shared_ptr<node> mountpoint);
-bool umount(std::shared_ptr<node> target);
-
-void traverse(const vfs::node& node, size_t indent = 0);
-void traverse(const std::string& path);
-
-bool is_symlink(const vfs::node& node);
-node& link_target(const vfs::node& link);
-
-extern std::vector<std::reference_wrapper<node>> descriptors;
 extern std::shared_ptr<vfs_root> root;
 extern std::vector<node*> mounted_nodes;
+
+void init();
 };
 
 #endif // VFS_HPP

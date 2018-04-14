@@ -20,7 +20,7 @@ include(profile_detection)
 
 LOAD_PROFILE("${ARCH}" "${PLATFORM}")
 
-add_definitions("-DARCH_${ARCH}")
+add_definitions("-DARCH_${ARCH} -DLUDOS_ARCH=\"${ARCH}\"")
 
 set(CMAKE_ASM_NASM_OBJECT_FORMAT elf32)
 set(CMAKE_ASM_NASM_COMPILER "/usr/bin/nasm")

@@ -1,7 +1,7 @@
 /*
-exception_support.cpp
+main.cpp
 
-Copyright (c) 05 Yann BOUCHER (yann)
+Copyright (c) 11 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -23,39 +23,38 @@ SOFTWARE.
 
 */
 
-#include "cpp_runtime/exception_support.hpp"
+#include <stdint.h>
 
-#include "libunwind.h"
+#include <syscalls/syscall_list.hpp>
 
-#include "utils/defs.hpp"
-#include "utils/logging.hpp"
-#include "elf/elf.hpp"
+#include <stdio.h>
+#include <sys/fnctl.h>
 
-#include "elf/kernel_binary.hpp"
-
-#include "info/version.hpp"
-
-extern "C" unsigned int _dl_osversion;
-/* Platform name.  */
-extern "C" const char *_dl_platform;
-
-/* Cached value of `getpagesize ()'.  */
-extern "C" size_t _dl_pagesize;
-
-extern "C" void _dl_non_dynamic_init();
-
-void init_exceptions()
+int main(int argc, char* argv[])
 {
-    _dl_platform = "LudOS";
-    _dl_osversion = LUDOS_MAJOR;
-    _dl_pagesize = 0x1000;
+    if (argc < 2)
+    {
+//        fprintf(stdout, "cat needs one argument\n");
+//        return 1;
+    }
 
-    _dl_non_dynamic_init();
+    const char* path = argv[1];
 
-//    const elf::Elf32_Ehdr* elf = elf::kernel_binary();
+    int fd = open(path, O_RDONLY, 0);
+    if (fd < 0)
+    {
+        perror("open");
+        while (true){}
+    }
 
-//    for (size_t i { 0 }; i < elf->e_phnum; ++i)
-//    {
-//        log(Info, "Type : 0x%x\n", elf::program_header(elf, i)->p_type);
-//    }
+    char buf[0x1000];
+    if (read(fd, buf, sizeof(buf)) < 0)
+    {
+        perror("read");
+        while (true){}
+    }
+
+    printf("%s\n", buf);
+    while (true){}
+    return 0;
 }

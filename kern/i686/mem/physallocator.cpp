@@ -125,7 +125,7 @@ loop:
     }
 
     // Free essential memory
-    for (size_t i { 0 }; i < 0x1000; ++i)
+    for (size_t i { 0 }; i < Paging::page_size; ++i)
     {
         mem_bitmap[i] = false;
     }

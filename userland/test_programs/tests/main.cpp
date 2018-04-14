@@ -177,6 +177,15 @@ int main(int argc, char* argv[])
         ensure(std::string((char*)data.data()) == "2222");
     }
 
+    auto res = open("/initrd/test_programs/Tests", O_RDONLY, 0);
+    ensure(res > 0); close(res);
+    res = open("/initrd/test_programs/Tests/", O_RDONLY, 0);
+    ensure(res == -1 && errno == ENOTDIR);
+    res = open("ShittyShell", O_RDONLY, 0);
+    ensure (res > 0); close(res);
+    res = open("ShittyShell/", O_RDONLY, 0);
+    ensure(res == -1 && errno == ENOTDIR);
+
     fork_test();
 
     uint64_t total_test_ticks = 0;
@@ -195,7 +204,9 @@ int main(int argc, char* argv[])
 
     printf("Mean ticks : %zd\n", total_test_ticks / 100);
 
-//    int ret = execute_program("/initrd/test_programs/MoreOrLess");
-//    printf("Return : %d (0x%x)\n", ret, ret);
-//    execute_program("/initrd/test_programs/Sleep");
+    printf("Everyting seems ok\n");
+
+    int ret = execute_program("/initrd/test_programs/MoreOrLess");
+    printf("Return : %d (0x%x)\n", ret, ret);
+    execute_program("/initrd/test_programs/Sleep");
 }

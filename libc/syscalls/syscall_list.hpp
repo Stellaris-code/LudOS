@@ -55,4 +55,7 @@ extern int common_syscall(size_t type, size_t no, ...);
 #define syscall(num, ...) common_syscall(1, num, __VA_ARGS__)
 #define ludos_syscall(num, ...) common_syscall(0, num, __VA_ARGS__)
 
+
+pid_t wait(int *status);
+
 #endif // SYSCALLS_HPP

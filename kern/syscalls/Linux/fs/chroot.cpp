@@ -1,7 +1,7 @@
 /*
-exception_support.cpp
+chroot.cpp
 
-Copyright (c) 05 Yann BOUCHER (yann)
+Copyright (c) 12 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -23,39 +23,31 @@ SOFTWARE.
 
 */
 
-#include "cpp_runtime/exception_support.hpp"
+#include <errno.h>
 
-#include "libunwind.h"
+#include "fs/fsutils.hpp"
+#include "fs/vfs.hpp"
+#include "tasking/process.hpp"
+#include "utils/user_ptr.hpp"
 
-#include "utils/defs.hpp"
-#include "utils/logging.hpp"
-#include "elf/elf.hpp"
-
-#include "elf/kernel_binary.hpp"
-
-#include "info/version.hpp"
-
-extern "C" unsigned int _dl_osversion;
-/* Platform name.  */
-extern "C" const char *_dl_platform;
-
-/* Cached value of `getpagesize ()'.  */
-extern "C" size_t _dl_pagesize;
-
-extern "C" void _dl_non_dynamic_init();
-
-void init_exceptions()
+int sys_chroot(user_ptr<const char> path)
 {
-    _dl_platform = "LudOS";
-    _dl_osversion = LUDOS_MAJOR;
-    _dl_pagesize = 0x1000;
+    if (!path.check())
+    {
+        return -EFAULT;
+    }
 
-    _dl_non_dynamic_init();
+    auto result = vfs::user_find(path.get());
+    if (result.target_node == nullptr)
+    {
+        return -result.error;
+    }
+    if (result.target_node->type() != vfs::node::Directory)
+    {
+        return -ENOTDIR;
+    }
 
-//    const elf::Elf32_Ehdr* elf = elf::kernel_binary();
+    Process::current().data.root = result.target_node;
 
-//    for (size_t i { 0 }; i < elf->e_phnum; ++i)
-//    {
-//        log(Info, "Type : 0x%x\n", elf::program_header(elf, i)->p_type);
-//    }
+    return EOK;
 }

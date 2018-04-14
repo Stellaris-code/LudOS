@@ -25,7 +25,9 @@ SOFTWARE.
 
 #include "psf.hpp"
 
+#include "fs/fsutils.hpp"
 #include "fs/vfs.hpp"
+
 #include "graphics/drawing/bitmap.hpp"
 #include "utils/bitops.hpp"
 #include "utils/memutils.hpp"

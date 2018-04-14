@@ -1,7 +1,7 @@
 /*
-exception_support.cpp
+cmdline.hpp
 
-Copyright (c) 05 Yann BOUCHER (yann)
+Copyright (c) 10 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,40 +22,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
+#ifndef CMDLINE_HPP
+#define CMDLINE_HPP
 
-#include "cpp_runtime/exception_support.hpp"
+#include <string.hpp>
 
-#include "libunwind.h"
+extern std::string kernel_cmdline;
 
-#include "utils/defs.hpp"
-#include "utils/logging.hpp"
-#include "elf/elf.hpp"
-
-#include "elf/kernel_binary.hpp"
-
-#include "info/version.hpp"
-
-extern "C" unsigned int _dl_osversion;
-/* Platform name.  */
-extern "C" const char *_dl_platform;
-
-/* Cached value of `getpagesize ()'.  */
-extern "C" size_t _dl_pagesize;
-
-extern "C" void _dl_non_dynamic_init();
-
-void init_exceptions()
-{
-    _dl_platform = "LudOS";
-    _dl_osversion = LUDOS_MAJOR;
-    _dl_pagesize = 0x1000;
-
-    _dl_non_dynamic_init();
-
-//    const elf::Elf32_Ehdr* elf = elf::kernel_binary();
-
-//    for (size_t i { 0 }; i < elf->e_phnum; ++i)
-//    {
-//        log(Info, "Type : 0x%x\n", elf::program_header(elf, i)->p_type);
-//    }
-}
+#endif // CMDLINE_HPP

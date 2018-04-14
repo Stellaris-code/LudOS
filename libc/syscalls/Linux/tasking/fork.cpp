@@ -24,19 +24,8 @@ SOFTWARE.
 */
 
 #include "syscalls/syscall_list.hpp"
+#include "syscalls/defs.hpp"
 
 #include "errno.h"
 
-long fork()
-{
-    auto ret = common_syscall(1, SYS_fork);
-    if (ret < 0) // error set
-    {
-        errno = -ret;
-        return -1;
-    }
-    else
-    {
-        return ret;
-    }
-}
+LINUX_SYSCALL_DEFAULT_IMPL(fork, ())

@@ -24,22 +24,10 @@ SOFTWARE.
 */
 
 #include "syscalls/syscalls.hpp"
+#include "syscalls/defs.hpp"
 
 #include <errno.h>
 
 extern int common_syscall(size_t type, size_t no, ...);
 
-long getcwd(char* buf, unsigned long size)
-{
-    auto ret = common_syscall(1, SYS_getcwd, buf, size);
-
-    if (ret < 0)
-    {
-        errno = -ret;
-        return -1;
-    }
-    else
-    {
-        return ret;
-    }
-}
+LINUX_SYSCALL_DEFAULT_IMPL(getcwd, (char* buf, unsigned long size), buf, size)

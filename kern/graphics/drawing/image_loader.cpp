@@ -34,7 +34,10 @@ SOFTWARE.
 
 #include "utils/crc32.hpp"
 
+#include "fs/fsutils.hpp"
 #include "fs/vfs.hpp"
+
+#include "utils/logging.hpp"
 
 namespace graphics
 {

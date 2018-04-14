@@ -31,6 +31,7 @@ SOFTWARE.
 #include "drivers/storage/disk.hpp"
 #include "utils/memutils.hpp"
 #include "utils/crc32.hpp"
+#include "fs/fsutils.hpp"
 #include "fs/vfs.hpp"
 #include "fs/fs.hpp"
 #include "fs/pathutils.hpp"
@@ -136,7 +137,7 @@ void install_fs_commands(Shell &sh)
          }
 
          size_t offset = 0;
-         size_t size = node->size();
+         size_t size = node->size() ?: 0x1000;
 
          if (args.size() >= 2)
          {
@@ -150,7 +151,7 @@ void install_fs_commands(Shell &sh)
          auto data = node->read(offset, size);
          if (data.empty())
          {
-             sh.error("cannot read file : '%s'\n", path.c_str());
+             sh.error("%s returned empty\n", path.c_str());
              return -3;
          }
          data.emplace_back('\0');

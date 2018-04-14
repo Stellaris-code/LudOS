@@ -53,11 +53,11 @@ class Process : NonCopyable
 public:
     struct ArchContext;
 
-    enum class AccessRequestPerm : uint16_t
+    enum AccessRequestPerm : uint16_t
     {
-        Read,
-        Write,
-        Exec
+        ReadRequest,
+        WriteRequest,
+        ExecRequest
     };
 
     static constexpr size_t root_uid = 0;
@@ -72,6 +72,7 @@ public:
     static size_t   count();
     static void     kill(pid_t pid, int err_code);
     static Process* by_pid(pid_t pid);
+    static std::vector<pid_t> process_list();
 
     static bool check_args_size(const std::vector<std::string> &args);
 
@@ -95,7 +96,7 @@ public:
     void switch_to();
     void unswitch();
 
-    bool check_perms(uint16_t perms, uint16_t tgt_uid, uint16_t tgt_gid, AccessRequestPerm type);
+    bool check_perms(uint16_t perms, uint16_t tgt_uid, uint16_t tgt_gid, uint16_t type);
 
     uintptr_t allocate_pages(size_t pages);
     bool      release_pages(uintptr_t ptr, size_t pages);

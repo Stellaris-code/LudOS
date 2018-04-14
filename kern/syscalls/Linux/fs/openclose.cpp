@@ -30,6 +30,7 @@ SOFTWARE.
 #include "errno.h"
 #include "utils/user_ptr.hpp"
 
+#include "fs/fsutils.hpp"
 #include "fs/vfs.hpp"
 
 int sys_open(user_ptr<const char> path, int flags, int mode)
@@ -39,10 +40,10 @@ int sys_open(user_ptr<const char> path, int flags, int mode)
         return -EFAULT;
     }
 
-    auto node = vfs::find(path.get()); // TODO : pwd
-    if (!node)
+    auto result = vfs::user_find(path.get());
+    if (result.target_node == nullptr)
     {
-        return -ENOENT;
+        return -result.error;
     }
 
     if (flags & O_EXCL)
@@ -51,13 +52,14 @@ int sys_open(user_ptr<const char> path, int flags, int mode)
     }
 
     tasking::FDInfo info;
-    info.node = node;
+    info.node = result.target_node;
     info.cursor = 0;
 
-    const auto perms = node->stat().perms;
+    const auto perms = result.target_node->stat().perms;
     if ((flags & 0b11) == O_RDONLY || (flags & 0b11) == O_RDWR)
     {
-        if (!Process::current().check_perms(perms, node->stat().uid, node->stat().gid, Process::AccessRequestPerm::Read))
+        if (!Process::current().check_perms(perms, result.target_node->stat().uid,
+                                            result.target_node->stat().gid, Process::AccessRequestPerm::ReadRequest))
         {
             return -EACCES;
         }
@@ -65,7 +67,8 @@ int sys_open(user_ptr<const char> path, int flags, int mode)
     }
     if ((flags & 0b11) == O_WRONLY || (flags & 0b11) == O_RDWR)
     {
-        if (!Process::current().check_perms(perms, node->stat().uid, node->stat().gid, Process::AccessRequestPerm::Write))
+        if (!Process::current().check_perms(perms, result.target_node->stat().uid,
+                                            result.target_node->stat().gid, Process::AccessRequestPerm::WriteRequest))
         {
             return -EACCES;
         }

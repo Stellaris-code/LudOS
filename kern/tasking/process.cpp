@@ -25,7 +25,7 @@ SOFTWARE.
 
 #include "process.hpp"
 
-#include "fs/vfs.hpp"
+#include "fs/fsutils.hpp"
 
 #include "syscalls/syscalls.hpp"
 
@@ -40,7 +40,7 @@ SOFTWARE.
 #include "shared_memory.hpp"
 #endif
 
-#include "i686/tasking/process.hpp"
+#include "fs/vfs.hpp"
 
 #include <sys/wait.h>
 
@@ -49,7 +49,8 @@ constexpr uintptr_t argv_virt_page = KERNEL_VIRTUAL_BASE - (1*Memory::page_size(
 
 Process::Process()
 {
-    data.pwd = std::make_shared<std::string>("/");
+    data.pwd = vfs::root;
+    data.root = vfs::root;
     init_default_fds();
 }
 
@@ -133,16 +134,16 @@ void Process::wait_for(pid_t pid, int *wstatus)
     assert(data.wstatus);
 }
 
-bool Process::check_perms(uint16_t perms, uint16_t tgt_uid, uint16_t tgt_gid, AccessRequestPerm type)
+bool Process::check_perms(uint16_t perms, uint16_t tgt_uid, uint16_t tgt_gid, uint16_t type)
 {
-    uint16_t user_flag  = (type == AccessRequestPerm::Read ? vfs::UserRead :
-                                                             type == AccessRequestPerm::Write? vfs::UserWrite:
+    uint16_t user_flag  = (type == AccessRequestPerm::ReadRequest ? vfs::UserRead :
+                                                             type == AccessRequestPerm::WriteRequest? vfs::UserWrite:
                                                                                                vfs::UserExec);
-    uint16_t group_flag = (type == AccessRequestPerm::Read ? vfs::GroupRead :
-                                                             type == AccessRequestPerm::Write? vfs::GroupWrite:
+    uint16_t group_flag = (type == AccessRequestPerm::ReadRequest ? vfs::GroupRead :
+                                                             type == AccessRequestPerm::WriteRequest? vfs::GroupWrite:
                                                                                                vfs::GroupExec);
-    uint16_t other_flag = (type == AccessRequestPerm::Read ? vfs::OtherRead :
-                                                             type == AccessRequestPerm::Write? vfs::OtherWrite:
+    uint16_t other_flag = (type == AccessRequestPerm::ReadRequest ? vfs::OtherRead :
+                                                             type == AccessRequestPerm::WriteRequest? vfs::OtherWrite:
                                                                                                vfs::OtherExec);
 
     if (data.uid == Process::root_uid)
@@ -207,14 +208,6 @@ void Process::kill(pid_t pid, int err_code)
     --m_process_count;
     assert(!by_pid(pid));
 
-    static size_t last_size = 0;
-    size_t curr = MemoryInfo::free();
-    size_t diff = last_size - curr;
-
-    //log_serial("PID destroyed : %d delta : %d (0x%x) total %d, allocated pages : %zd\n", pid, diff, diff, curr, Memory::allocated_physical_pages());
-
-    last_size = curr;
-
     MessageBus::send(ProcessDestroyedEvent{pid, err_code});
 }
 
@@ -226,6 +219,21 @@ Process *Process::by_pid(pid_t pid)
     }
 
     return m_processes[pid].get();
+}
+
+std::vector<pid_t> Process::process_list()
+{
+    std::vector<pid_t> vec;
+
+    for (size_t i { 0 }; i < m_processes.size(); ++i)
+    {
+        if (by_pid(i))
+        {
+            vec.emplace_back(i);
+        }
+    }
+
+    return vec;
 }
 
 Process *Process::create(const std::vector<std::string>& args)
@@ -286,7 +294,7 @@ void Process::map_stack()
     for (size_t i { 0 }; i < code_page_amnt; ++i)
     {
         uintptr_t phys_addr = Memory::physical_address((uint8_t*)data.stack.data() + i*Memory::page_size());
-        uint8_t* virt_addr = (uint8_t*)(user_stack_top - (i * Memory::page_size()));
+        uint8_t* virt_addr = (uint8_t*)Memory::page(user_stack_top) - i*Memory::page_size();
 
         assert(phys_addr);
         data.mappings[(uintptr_t)virt_addr] = {phys_addr, Memory::Read|Memory::Write|Memory::User, false};

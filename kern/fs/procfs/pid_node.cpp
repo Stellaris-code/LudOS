@@ -1,7 +1,7 @@
 /*
-exception_support.cpp
+pid_node.cpp
 
-Copyright (c) 05 Yann BOUCHER (yann)
+Copyright (c) 11 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -23,39 +23,32 @@ SOFTWARE.
 
 */
 
-#include "cpp_runtime/exception_support.hpp"
+#include "pid_node.hpp"
 
-#include "libunwind.h"
+#include "tasking/process.hpp"
+#include "fs/utils/string_node.hpp"
 
-#include "utils/defs.hpp"
-#include "utils/logging.hpp"
-#include "elf/elf.hpp"
-
-#include "elf/kernel_binary.hpp"
-
-#include "info/version.hpp"
-
-extern "C" unsigned int _dl_osversion;
-/* Platform name.  */
-extern "C" const char *_dl_platform;
-
-/* Cached value of `getpagesize ()'.  */
-extern "C" size_t _dl_pagesize;
-
-extern "C" void _dl_non_dynamic_init();
-
-void init_exceptions()
+namespace procfs
 {
-    _dl_platform = "LudOS";
-    _dl_osversion = LUDOS_MAJOR;
-    _dl_pagesize = 0x1000;
 
-    _dl_non_dynamic_init();
+std::vector<std::shared_ptr<vfs::node> > pid_node::readdir_impl()
+{
+    std::vector<std::shared_ptr<node>> children;
 
-//    const elf::Elf32_Ehdr* elf = elf::kernel_binary();
+    children.emplace_back(std::make_shared<string_node>("name", Process::by_pid(m_pid)->data.name));
+    children.emplace_back(std::make_shared<vfs::symlink>(Process::by_pid(m_pid)->data.pwd->path(), "cwd"));
+    children.emplace_back(std::make_shared<vfs::symlink>(Process::by_pid(m_pid)->data.root->path(), "root"));
+    children.emplace_back(std::make_shared<string_node>("cmdline", [this]{
+        std::string str;
+        for (const auto& arg : Process::by_pid(m_pid)->data.args)
+        {
+            str += arg;
+            str += '\0';
+        }
+        return str;
+    }));
 
-//    for (size_t i { 0 }; i < elf->e_phnum; ++i)
-//    {
-//        log(Info, "Type : 0x%x\n", elf::program_header(elf, i)->p_type);
-//    }
+    return children;
+}
+
 }

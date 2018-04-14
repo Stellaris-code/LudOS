@@ -38,6 +38,9 @@ SOFTWARE.
 
 #include "syscalls/syscall_list.hpp"
 
+#include "fs/fsutils.hpp"
+#include "fs/vfs.hpp"
+
 #include "utils/membuffer.hpp"
 #include "utils/align.hpp"
 
@@ -107,7 +110,7 @@ void Process::arch_init(gsl::span<const uint8_t> code_to_copy, size_t allocated_
     assert(!arch_context);
     arch_context = new ArchContext;
 
-    data.stack.resize(Paging::page_size);
+    data.stack.resize(Paging::page_size * 2);
 
     data.code = std::make_shared<aligned_vector<uint8_t, Memory::page_size()>>();
     data.code->resize(std::max<int>(code_to_copy.size(), allocated_size));
@@ -162,12 +165,14 @@ Process *Process::clone(Process &proc, uint32_t flags)
 
     new_proc->data.code = std::make_shared<aligned_vector<uint8_t, Memory::page_size()>>(*proc.data.code); // noleak ? :(
     new_proc->data.stack = proc.data.stack; // noleak
-    new_proc->data.name = proc.data.name; // noleak
+    new_proc->data.name = proc.data.name + "_child"; // noleak
     new_proc->data.uid = proc.data.uid;
     new_proc->data.gid = proc.data.gid;
     new_proc->parent = proc.pid;
 
-    new_proc->data.pwd = std::make_shared<std::string>(*proc.data.pwd); // noleak
+    new_proc->data.pwd  = vfs::find(proc.data.pwd->path()); assert(new_proc->data.pwd);
+    new_proc->data.root = vfs::find(proc.data.root->path()); assert(new_proc->data.root);
+
     new_proc->data.fd_table = std::make_shared<std::vector<tasking::FDInfo>>(*proc.data.fd_table); // noleak
     proc.copy_allocated_pages(*new_proc); // noleak
     new_proc->data.args = proc.data.args; // noleak

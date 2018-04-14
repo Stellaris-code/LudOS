@@ -32,6 +32,9 @@ SOFTWARE.
 #include "utils/mathutils.hpp"
 #include "utils/stlutils.hpp"
 
+#include "fs/fsutils.hpp"
+#include "fs/vfs.hpp"
+
 Ext2FS::Ext2FS(Disk &disk) : FSImpl<Ext2FS>(disk)
 {
     m_superblock = *read_superblock(disk);
@@ -396,6 +399,24 @@ void Ext2FS::error(const std::string &message) const
     {
         warn("%s", message.c_str());
     }
+}
+
+std::string Ext2FS::link_name(const ext2::Inode &inode_struct)
+{
+    std::string str;
+
+    if (inode_struct.size_lower <= 60)
+    {
+        str = std::string((const char*)inode_struct.block_ptr, 60);
+    }
+    else
+    {
+        auto data = read_data(inode_struct, 0, inode_struct.size_lower);
+        str = std::string((const char*)data.data(), inode_struct.size_lower);
+    }
+    str += '\0'; // just to be safe
+
+    return trim_zstr(str);
 }
 
 MemBuffer ext2_node::read_impl(size_t offset, size_t size) const

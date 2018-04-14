@@ -77,8 +77,11 @@ struct FDInfo
 
 struct ProcessData
 {
+    template <typename T>
+    using shared_resource = std::shared_ptr<T>;
+
     aligned_vector<uint8_t, Memory::page_size()> stack; // stack is never shared
-    std::shared_ptr<aligned_vector<uint8_t, Memory::page_size()>> code;
+    shared_resource<aligned_vector<uint8_t, Memory::page_size()>> code;
 
     std::string name { "<INVALID>" };
     uint32_t uid { 0 };
@@ -90,9 +93,10 @@ struct ProcessData
     int* wstatus { nullptr };
     uintptr_t waitstatus_phys { 0 };
 
-    std::shared_ptr<std::string> pwd;
+    shared_resource<vfs::node> pwd;
+    shared_resource<vfs::node> root;
 
-    std::shared_ptr<std::vector<tasking::FDInfo>> fd_table;
+    shared_resource<std::vector<tasking::FDInfo>> fd_table;
 
     std::unordered_map<uintptr_t, tasking::MemoryMapping> mappings;
 

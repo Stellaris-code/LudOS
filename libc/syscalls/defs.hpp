@@ -1,7 +1,7 @@
 /*
-exception_support.cpp
+defs.hpp
 
-Copyright (c) 05 Yann BOUCHER (yann)
+Copyright (c) 12 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,40 +22,39 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
+#ifndef SYSCALL_DEFS_HPP
+#define SYSCALL_DEFS_HPP
 
-#include "cpp_runtime/exception_support.hpp"
+#define LINUX_SYSCALL_DEFAULT_IMPL(name, args, ...) \
+    long name args \
+    { \
+        auto ret = common_syscall(1, SYS_##name, ##__VA_ARGS__); \
+ \
+        if (ret < 0) \
+        { \
+            errno = -ret; \
+            return -1; \
+        } \
+        else \
+        { \
+            return ret; \
+        } \
+    }
 
-#include "libunwind.h"
+#define LUDOS_SYSCALL_DEFAULT_IMPL(name, args, ...) \
+    long name args \
+    { \
+        auto ret = common_syscall(0, SYS_##name, ##__VA_ARGS__); \
+ \
+        if (ret < 0) \
+        { \
+            errno = -ret; \
+            return -1; \
+        } \
+        else \
+        { \
+            return ret; \
+        } \
+    }
 
-#include "utils/defs.hpp"
-#include "utils/logging.hpp"
-#include "elf/elf.hpp"
-
-#include "elf/kernel_binary.hpp"
-
-#include "info/version.hpp"
-
-extern "C" unsigned int _dl_osversion;
-/* Platform name.  */
-extern "C" const char *_dl_platform;
-
-/* Cached value of `getpagesize ()'.  */
-extern "C" size_t _dl_pagesize;
-
-extern "C" void _dl_non_dynamic_init();
-
-void init_exceptions()
-{
-    _dl_platform = "LudOS";
-    _dl_osversion = LUDOS_MAJOR;
-    _dl_pagesize = 0x1000;
-
-    _dl_non_dynamic_init();
-
-//    const elf::Elf32_Ehdr* elf = elf::kernel_binary();
-
-//    for (size_t i { 0 }; i < elf->e_phnum; ++i)
-//    {
-//        log(Info, "Type : 0x%x\n", elf::program_header(elf, i)->p_type);
-//    }
-}
+#endif // DEFS_HPP

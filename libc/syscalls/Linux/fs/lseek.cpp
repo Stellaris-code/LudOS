@@ -24,22 +24,10 @@ SOFTWARE.
 */
 
 #include "syscalls/syscall_list.hpp"
+#include "syscalls/defs.hpp"
 
 #include <errno.h>
 
-
 extern int common_syscall(size_t type, size_t no, ...);
 
-long lseek(unsigned int fd, int off, int whence)
-{
-    auto ret = common_syscall(1, SYS_lseek, fd, off, whence);
-    if (ret < 0) // error set
-    {
-        errno = -ret;
-        return -1;
-    }
-    else
-    {
-        return ret;
-    }
-}
+LINUX_SYSCALL_DEFAULT_IMPL(lseek, (unsigned int fd, int off, int whence), fd, off, whence)

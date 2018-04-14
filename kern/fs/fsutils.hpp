@@ -1,7 +1,7 @@
 /*
-exception_support.cpp
+fsutils.hpp
 
-Copyright (c) 05 Yann BOUCHER (yann)
+Copyright (c) 13 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,40 +22,42 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
+#ifndef FSUTILS_HPP
+#define FSUTILS_HPP
 
-#include "cpp_runtime/exception_support.hpp"
+#include <memory.hpp>
 
-#include "libunwind.h"
+#include <sys/types.h>
+#include <errno.h>
 
-#include "utils/defs.hpp"
-#include "utils/logging.hpp"
-#include "elf/elf.hpp"
+class Process;
 
-#include "elf/kernel_binary.hpp"
-
-#include "info/version.hpp"
-
-extern "C" unsigned int _dl_osversion;
-/* Platform name.  */
-extern "C" const char *_dl_platform;
-
-/* Cached value of `getpagesize ()'.  */
-extern "C" size_t _dl_pagesize;
-
-extern "C" void _dl_non_dynamic_init();
-
-void init_exceptions()
+namespace vfs
 {
-    _dl_platform = "LudOS";
-    _dl_osversion = LUDOS_MAJOR;
-    _dl_pagesize = 0x1000;
 
-    _dl_non_dynamic_init();
+class node;
 
-//    const elf::Elf32_Ehdr* elf = elf::kernel_binary();
+struct QueryResult
+{
+    decltype(errno) error;
+    std::shared_ptr<node> target_node;
+};
 
-//    for (size_t i { 0 }; i < elf->e_phnum; ++i)
-//    {
-//        log(Info, "Type : 0x%x\n", elf::program_header(elf, i)->p_type);
-//    }
+std::shared_ptr<node> find(const std::string& path);
+std::shared_ptr<node> find(const std::string& path, std::shared_ptr<vfs::node> search_root);
+
+QueryResult user_find(const std::string& path);
+QueryResult user_find(const std::string& path, Process& process);
+
+[[nodiscard]] bool mount(std::shared_ptr<node> target, std::shared_ptr<node> mountpoint);
+[[nodiscard]] bool umount(std::shared_ptr<node> target);
+
+void traverse(const vfs::node& node, size_t indent = 0);
+void traverse(const std::string& path);
+
+[[nodiscard]] bool is_symlink(const vfs::node& node);
+QueryResult resolve_symlink(const std::shared_ptr<vfs::node> link);
+node& link_target(const vfs::node& link);
 }
+
+#endif // FSUTILS_HPP

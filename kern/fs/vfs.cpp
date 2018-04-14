@@ -25,24 +25,28 @@ SOFTWARE.
 
 #include "vfs.hpp"
 
-#include "utils/logging.hpp"
-
-#include "pathutils.hpp"
-#include "utils/nop.hpp"
-#include "utils/messagebus.hpp"
-#include "drivers/kbd/text_handler.hpp"
-#include "time/time.hpp"
-#include "power/powermanagement.hpp"
-#include "drivers/storage/disk.hpp"
-
 #include <typeinfo.hpp>
 
-std::unordered_set<void*> created_node_list;
+#include "pathutils.hpp"
+
+#include "utils/nop.hpp"
+#include "utils/messagebus.hpp"
+#include "utils/logging.hpp"
+
+#include "fsutils.hpp"
+
+#include "time/time.hpp"
+
+#include "power/powermanagement.hpp"
+
+#include "drivers/storage/disk.hpp"
+#include "drivers/kbd/text_handler.hpp"
+
+#include "tasking/process.hpp"
 
 namespace vfs
 {
 
-std::vector<std::reference_wrapper<node>> descriptors;
 std::shared_ptr<vfs_root> root;
 std::vector<node*> mounted_nodes;
 
@@ -61,118 +65,6 @@ void init()
     });
 
     log(Info, "VFS initialized.\n");
-}
-
-std::shared_ptr<vfs::node> find(const std::string& path)
-{
-    if (path.empty())
-    {
-        return nullptr;
-    }
-
-    if (path == "/")
-    {
-        return root;
-    }
-
-    auto dirs = path_list(path);
-
-    std::shared_ptr<vfs::node> cur_node = root;
-
-    for (size_t i { 0 }; i < dirs.size(); ++i)
-    {
-        auto v = cur_node->readdir();
-        for (const auto& child : v)
-        {
-            if (child->name() == dirs[i])
-            {
-                cur_node = child;
-                goto contin;
-            }
-        }
-        return {};
-
-contin:;
-    }
-
-    return cur_node;
-}
-
-bool mount(std::shared_ptr<vfs::node> target, std::shared_ptr<vfs::node> mountpoint)
-{
-    if (target->type() != vfs::node::Directory)
-    {
-        return false;
-    }
-
-    mountpoint->m_mounted_node = target;
-    target->set_parent(mountpoint.get());
-
-    mounted_nodes.emplace_back(target.get());
-
-    return true;
-}
-
-bool umount(std::shared_ptr<node> target)
-{
-    if (target->m_mounted_node == nullptr) return false;
-
-    for (auto& ptr : mounted_nodes)
-    {
-        if (ptr == target->m_mounted_node.get()) ptr = nullptr;
-    }
-
-    target->m_mounted_node = nullptr;
-
-    return true;
-}
-
-void traverse(const vfs::node &node, size_t indent)
-{
-    if (node.name() != "." && node.name() != "..")
-    {
-        for (size_t i { 0 }; i < indent; ++i)
-        {
-            kprintf("\t");
-        }
-
-        if (indent > 0)
-        {
-            kprintf("└─");
-        }
-        kprintf("%s", node.name().c_str());
-        if (node.type() == vfs::node::Directory)
-        {
-            kprintf("/");
-        };
-        kprintf("\n");
-        if (node.type() == vfs::node::Directory)
-        {
-            for (const auto& entry : node.readdir())
-            {
-                vfs::traverse(*entry, indent+1);
-            }
-        }
-    }
-}
-
-void traverse(const std::string &path)
-{
-    if (!vfs::find(path))
-    {
-        err("Can't find '%s' !\n", path.c_str());
-        return;
-    }
-    else
-    {
-        vfs::traverse(*vfs::find(path));
-    }
-}
-
-size_t new_descriptor(vfs::node &node)
-{
-    descriptors.emplace_back(node);
-    return descriptors.size()-1;
 }
 
 node::~node()
@@ -203,7 +95,7 @@ MemBuffer node::read(size_t offset, size_t size) const
 
     auto data = read_impl(offset, size);
 
-    assert(data.size() == size);
+    //assert(data.size() == size);
 
     update_access_time();
 
@@ -280,28 +172,17 @@ node::Stat node::mkstat()
 
 std::vector<std::shared_ptr<node> > node::readdir()
 {
-    //assert(is_dir());
-
-    //static std::vector<std::shared_ptr<const node>> fkcghugelist;
-
     auto list = (m_mounted_node ? m_mounted_node->readdir_impl() : readdir_impl());
 
-    auto cur_dir = std::make_shared<symlink>(*this);
-    cur_dir->m_name = ".";
+    auto cur_dir = std::make_shared<symlink>(path(), ".");
 
     list.emplace_back(cur_dir);
 
     if (m_parent)
     {
-        auto parent_dir = std::make_shared<symlink>(*m_parent);
-        parent_dir->m_name = "..";
+        auto parent_dir = std::make_shared<symlink>(m_parent->path(), "..");
 
         list.emplace_back(parent_dir);
-    }
-
-    for (auto el : list)
-    {
-        //fkcghugelist.emplace_back(el);
     }
 
     update_access_time();
@@ -327,16 +208,6 @@ bool node::remove(const node *child)
     return remove_impl(child);
 }
 
-bool is_symlink(const node &node)
-{
-    return dynamic_cast<const symlink*>(&node);
-}
-
-node &link_target(const node &link)
-{
-    return static_cast<const symlink&>(link).target();
-}
-
 std::shared_ptr<node> vfs_root::add_node(const std::string &name, Type type)
 {
     m_children.emplace_back(std::make_shared<vfs::node>(this));
@@ -358,6 +229,33 @@ bool vfs_root::remove_impl(const node *child)
     }));
 
     return found;
+}
+
+symlink::symlink(std::string target)
+    : m_target(target), m_linkname(filename(target))
+{
+
+}
+
+symlink::symlink(std::string target, std::string name)
+    : m_target(target), m_linkname(name)
+{
+
+}
+
+std::string symlink::name() const
+{
+    return m_linkname;
+}
+
+std::shared_ptr<node> symlink::actual_target()
+{
+    return find(m_target);
+}
+
+std::shared_ptr<const node> symlink::actual_target() const
+{
+    return find(m_target);
 }
 
 }

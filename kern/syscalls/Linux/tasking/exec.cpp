@@ -28,6 +28,7 @@ SOFTWARE.
 #include "tasking/process.hpp"
 #include "tasking/loaders/process_loader.hpp"
 #include "mem/meminfo.hpp"
+#include "fs/fsutils.hpp"
 #include "fs/vfs.hpp"
 #include "drivers/storage/disk.hpp"
 #include "mem/meminfo.hpp"
@@ -51,15 +52,18 @@ int sys_execve(user_ptr<const char> path, user_ptr<user_ptr<const char>> argv, u
     }
 
     {
-        //ALIGN_STACK(16);
-
-        auto node = vfs::find(path.get());
-        if (!node || node->type() != vfs::node::File)
+        auto res = vfs::user_find(path.get());
+        if (res.target_node == nullptr)
+        {
+            return -ENOENT;
+        }
+        if (res.target_node->type() != vfs::node::File)
         {
             return -ENOENT;
         }
 
-        if (!Process::current().check_perms(node->stat().perms, node->stat().uid, node->stat().gid, Process::AccessRequestPerm::Exec))
+        if (!Process::current().check_perms(res.target_node->stat().perms, res.target_node->stat().uid,
+                                            res.target_node->stat().gid, Process::AccessRequestPerm::ExecRequest))
         {
             return -EACCES;
         }
@@ -82,7 +86,7 @@ int sys_execve(user_ptr<const char> path, user_ptr<user_ptr<const char>> argv, u
         MemBuffer data;
         try
         {
-            data = node->read();
+            data = res.target_node->read();
         }
         catch (const DiskException& e)
         {

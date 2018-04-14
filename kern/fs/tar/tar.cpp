@@ -27,6 +27,9 @@ SOFTWARE.
 
 #include <stdlib.h>
 
+#include "fs/fsutils.hpp"
+#include "fs/vfs.hpp"
+
 #include "fs/pathutils.hpp"
 #include "utils/memutils.hpp"
 

@@ -25,6 +25,7 @@ SOFTWARE.
 
 #include "devfs.hpp"
 
+#include "fs/fsutils.hpp"
 #include "fs/vfs.hpp"
 
 #include <deque.hpp>
@@ -117,9 +118,13 @@ std::shared_ptr<devfs_root> root;
 void init()
 {
     auto dir = vfs::root->create("dev", vfs::node::Directory);
+    if (!dir) panic("Could not create devfs!\n");
 
     root = std::make_shared<devfs_root>(vfs::root.get());
-    vfs::mount(root, dir);
+    if (!vfs::mount(root, dir))
+    {
+        panic("Can't mount devfs !\n");
+    }
 
     auto stdin_node = std::make_shared<stdin_file>(root.get());
     stdin_node->rename("stdin");

@@ -67,6 +67,8 @@ SOFTWARE.
 
 #include "terminal/terminal.hpp"
 
+#include "info/cmdline.hpp"
+
 #include "utils/bitops.hpp"
 #include "utils/env.hpp"
 #include "utils/virt_machine_detect.hpp"
@@ -222,7 +224,8 @@ void init(uint32_t magic, const multiboot_info_t* mbd_info)
 
     log(Info, "End : %p\n", &kernel_physical_end);
 
-    read_from_cmdline(multiboot::parse_cmdline());
+    kernel_cmdline = multiboot::parse_cmdline();
+    read_from_cmdline(kernel_cmdline);
     read_logging_config();
 
     multiboot::print_info();

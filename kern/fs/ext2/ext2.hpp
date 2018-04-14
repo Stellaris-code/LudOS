@@ -96,6 +96,8 @@ public:
     void remove_inode(size_t inode, bool dir);
     void decrease_link_count(size_t inode);
 
+    std::string link_name(const ext2::Inode& inode_struct);
+
     std::vector<ext2::DirectoryEntry> read_directory(gsl::span<const uint8_t> data) const;
 
     ext2::DirectoryEntry create_dir_entry(size_t inode, uint8_t type, const std::string& name);

@@ -27,6 +27,7 @@ SOFTWARE.
 
 #include "shell/shell.hpp"
 
+#include "fs/fsutils.hpp"
 #include "fs/vfs.hpp"
 #include "fs/ext2/ext2.hpp"
 

@@ -24,38 +24,11 @@ SOFTWARE.
 */
 
 #include "syscalls/syscalls.hpp"
+#include "syscalls/defs.hpp"
 
 #include <errno.h>
 
 extern int common_syscall(size_t type, size_t no, ...);
 
-size_t read(unsigned int fd, void* buf, size_t count)
-{
-    auto ret = common_syscall(1, SYS_read, fd, buf, count);
-
-    if (ret < 0)
-    {
-        errno = -ret;
-        return -1;
-    }
-    else
-    {
-        return ret; // number of bytes read
-    }
-}
-
-
-size_t write(unsigned int fd, const void* buf, size_t count)
-{
-    auto ret = common_syscall(1, SYS_write, fd, buf, count);
-
-    if (ret < 0)
-    {
-        errno = -ret;
-        return -1;
-    }
-    else
-    {
-        return ret; // number of bytes read
-    }
-}
+LINUX_SYSCALL_DEFAULT_IMPL(read, (unsigned int fd, void* buf, size_t count), fd, buf, count)
+LINUX_SYSCALL_DEFAULT_IMPL(write,(unsigned int fd, const void* buf, size_t count), fd, buf, count)

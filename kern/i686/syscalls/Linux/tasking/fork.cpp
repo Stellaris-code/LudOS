@@ -30,13 +30,13 @@ SOFTWARE.
 
 #include "errno.h"
 
-size_t sys_fork()
+pid_t sys_fork()
 {
     auto child = Process::clone(Process::current());
     if (!child) return -ENOMEM;
 
     child->arch_context->regs.eax = 0; // return zero in the child
-    child->data.current_pc = Process::current().arch_context->regs.eip;
+    child->set_instruction_pointer(Process::current().arch_context->regs.eip);
 
     return child->pid;
 }

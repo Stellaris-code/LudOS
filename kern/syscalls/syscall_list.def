@@ -28,34 +28,49 @@ struct SyscallEntry;
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <signal.h>
 #include <stdint.h>
 
-LINUX_SYSCALL_DEF(0x01, exit,   void,   uint8_t errcode)
-LINUX_SYSCALL_DEF(0x02, fork,   size_t)
-LINUX_SYSCALL_DEF(0x03, read,   size_t, unsigned int fd, USER_PTR(void) buf, size_t count)
-LINUX_SYSCALL_DEF(0x04, write,  size_t, unsigned int fd, USER_PTR(const void) buf, size_t count)
-LINUX_SYSCALL_DEF(0x05, open,   int, USER_PTR(const char) path, int flags, int mode)
-LINUX_SYSCALL_DEF(0x06, close,  int, unsigned int fd)
-LINUX_SYSCALL_DEF(0x07, waitpid, pid_t, pid_t pid, USER_PTR(int) wstatus, int options)
-LINUX_SYSCALL_DEF(0x0b, execve, int, USER_PTR(const char) path, USER_PTR(USER_PTR(const char)) argv, USER_PTR(USER_PTR(const char)) envp)
-LINUX_SYSCALL_DEF(0x0d, time,   time_t, USER_PTR(time_t) t_loc)
-LINUX_SYSCALL_DEF(0x12, stat,   int, USER_PTR(const char) path, USER_PTR(struct stat))
-LINUX_SYSCALL_DEF(0x13, lseek,  int, unsigned int fd, int offset, int whence)
-LINUX_SYSCALL_DEF(0x14, getpid, int)
-LINUX_SYSCALL_DEF(0x3d, chroot, int, USER_PTR(const char) path)
-LINUX_SYSCALL_DEF(0xb7, getcwd, int, USER_PTR(char) buf, unsigned long size)
-LINUX_SYSCALL_DEF(0x9e, sched_yield, void)
-LINUX_SYSCALL_DEF(0xa2, nanosleep, int, USER_PTR(const struct timespec) req, USER_PTR(struct timespec) rem)
-LINUX_SYSCALL_DEF(0xe0, gettid, int)
+#define LINUX_SYSCALL_DEF_COMBINED(...) \
+        LINUX_SYSCALL_DEF_KERNEL(__VA_ARGS__) \
+        LINUX_SYSCALL_DEF_USER(__VA_ARGS__)
 
-LUDOS_SYSCALL_DEF(0, get_syscall_tables, void, USER_PTR(SyscallEntry) ludos, USER_PTR(SyscallEntry) linux)
-LUDOS_SYSCALL_DEF(1, print_serial, void, USER_PTR(const char) string)
-LUDOS_SYSCALL_DEF(2, print_debug, void, USER_PTR(const char) string)
-LUDOS_SYSCALL_DEF(3, panic, void, USER_PTR(const char) string)
-LUDOS_SYSCALL_DEF(4, alloc_pages, int, int number)
-LUDOS_SYSCALL_DEF(5, free_pages, int, uintptr_t addr, int number)
-LUDOS_SYSCALL_DEF(6, syscall_nop, void)
-LUDOS_SYSCALL_DEF(7, uptime, uint64_t)
-LUDOS_SYSCALL_DEF(8, shmget, int, key_t key, size_t size, int shmflag)
-LUDOS_SYSCALL_DEF(9, shmat, long, int shmid, USER_PTR(const void) shmaddr, int shmflg)
-LUDOS_SYSCALL_DEF(10,shmdt, long, USER_PTR(const void) shmaddr)
+#define LUDOS_SYSCALL_DEF_COMBINED(...) \
+        LUDOS_SYSCALL_DEF_KERNEL(__VA_ARGS__) \
+        LUDOS_SYSCALL_DEF_USER(__VA_ARGS__)
+
+LINUX_SYSCALL_DEF_COMBINED(0x01, exit,   void,   uint8_t errcode)
+LINUX_SYSCALL_DEF_COMBINED(0x02, fork,   pid_t)
+LINUX_SYSCALL_DEF_COMBINED(0x03, read,   size_t, unsigned int fd, USER_PTR(void) buf, size_t count)
+LINUX_SYSCALL_DEF_COMBINED(0x04, write,  size_t, unsigned int fd, USER_PTR(const void) buf, size_t count)
+LINUX_SYSCALL_DEF_COMBINED(0x05, open,   int, USER_PTR(const char) path, int flags, int mode)
+LINUX_SYSCALL_DEF_COMBINED(0x06, close,  int, unsigned int fd)
+LINUX_SYSCALL_DEF_COMBINED(0x07, waitpid, pid_t, pid_t pid, USER_PTR(int) wstatus, int options)
+LINUX_SYSCALL_DEF_COMBINED(0x0b, execve, int, USER_PTR(const char) path, USER_PTR(USER_PTR(const char)) argv, USER_PTR(USER_PTR(const char)) envp)
+LINUX_SYSCALL_DEF_COMBINED(0x0d, time,   time_t, USER_PTR(time_t) t_loc)
+LINUX_SYSCALL_DEF_COMBINED(0x12, stat,   int, USER_PTR(const char) path, USER_PTR(struct stat))
+LINUX_SYSCALL_DEF_COMBINED(0x13, lseek,  int, unsigned int fd, int offset, int whence)
+LINUX_SYSCALL_DEF_COMBINED(0x14, getpid, int)
+LINUX_SYSCALL_DEF_KERNEL(0x30, signal, uintptr_t,  int sig, user_ptr<sighandler_noptr_t> handler)
+LINUX_SYSCALL_DEF_USER  (0x30, signal, sighandler_t, int sig, sighandler_t handler)
+LINUX_SYSCALL_DEF_COMBINED(0x3d, chroot, int, USER_PTR(const char) path)
+LINUX_SYSCALL_DEF_COMBINED(0x43, sigaction, int,int signum, USER_PTR(const struct sigaction) act, USER_PTR(struct sigaction) oldact)
+LINUX_SYSCALL_DEF_COMBINED(0xb7, getcwd, int, USER_PTR(char) buf, unsigned long size)
+LINUX_SYSCALL_DEF_COMBINED(0x9e, sched_yield, void)
+LINUX_SYSCALL_DEF_COMBINED(0xa2, nanosleep, int, USER_PTR(const struct timespec) req, USER_PTR(struct timespec) rem)
+LINUX_SYSCALL_DEF_COMBINED(0xe0, gettid, int)
+
+LUDOS_SYSCALL_DEF_COMBINED(0, get_syscall_tables, void, USER_PTR(SyscallEntry) ludos, USER_PTR(SyscallEntry) linux)
+LUDOS_SYSCALL_DEF_COMBINED(1, print_serial, void, USER_PTR(const char) string)
+LUDOS_SYSCALL_DEF_COMBINED(2, print_debug, void, USER_PTR(const char) string)
+LUDOS_SYSCALL_DEF_COMBINED(3, panic, void, USER_PTR(const char) string)
+LUDOS_SYSCALL_DEF_COMBINED(4, alloc_pages, int, int number)
+LUDOS_SYSCALL_DEF_COMBINED(5, free_pages, int, uintptr_t addr, int number)
+LUDOS_SYSCALL_DEF_COMBINED(6, syscall_nop, void)
+LUDOS_SYSCALL_DEF_COMBINED(7, uptime, uint64_t)
+LUDOS_SYSCALL_DEF_COMBINED(8, shmget, int, key_t key, size_t size, int shmflag)
+LUDOS_SYSCALL_DEF_COMBINED(9, shmat, long, int shmid, USER_PTR(const void) shmaddr, int shmflg)
+LUDOS_SYSCALL_DEF_COMBINED(10,shmdt, long, USER_PTR(const void) shmaddr)
+
+#undef LINUX_SYSCALL_DEF_COMBINED
+#undef LUDOS_SYSCALL_DEF_COMBINED

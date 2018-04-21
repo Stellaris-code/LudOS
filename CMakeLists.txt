@@ -32,8 +32,10 @@ file(GLOB_RECURSE ACPICA_HEADERS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "external/
 file(GLOB_RECURSE CPP_SOURCES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "kern/cpp_runtime/*.cpp")
 file(GLOB_RECURSE LIBK_SOURCES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "libc/*.c" "libc/*.cpp" "libc/*.asm")
 file(GLOB_RECURSE LIBK_HEADERS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "libc/*.h" "libc/*.hpp")
+file(GLOB_RECURSE LIBKPP_SOURCES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "libk++/*.cpp" "libk++/*.c")
+file(GLOB_RECURSE LIBKPP_HEADERS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "libk++/*.hpp" "libk++/*.tpp" "libk++/*.h")
 file(GLOB_RECURSE LIBCPP_SOURCES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "external/libc++/*.cpp" "external/libc++/*.c")
-file(GLOB_RECURSE LIBCPP_HEADERS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "external/libc++/*.hpp" "external/libc++/*.h")
+file(GLOB_RECURSE LIBCPP_HEADERS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "external/libc++/*.hpp" "external/libc++/*.tpp" "external/libc++/*.h")
 file(GLOB_RECURSE LIBCXXABI_SOURCES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "external/libcxxabi/*.cpp" "external/libcxxabi/*.c")
 file(GLOB_RECURSE LIBCXXABI_HEADERS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "external/libcxxabi/*.hpp" "external/libcxxabi/*.h")
 file(GLOB_RECURSE LIBX86EMU_SOURCES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "external/libx86emu/*.c")
@@ -49,8 +51,10 @@ file(GLOB_RECURSE HEADERS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "kern/*.hpp" "ker
 file(GLOB_RECURSE LD_SCRIPTS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "*.ld")
 
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/kern")
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}/kern/include")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/kern/external")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/libc")
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}/libk++/include")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/external")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/external/libc++")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/external/acpica")
@@ -65,7 +69,7 @@ option(WITH_SSE2 "Compiles with gcc sse2 support" OFF)
 option(WITH_ARCH_NATIVE "Compiles with -march=native" OFF)
 option(WITH_UBSAN "Compiles with undefined behavior sanitization" OFF)
 option(WITH_ASAN "Compiles with address sanitization" OFF)
-option(USE_CLANG_TIDY "Run clang-tidy on build" ON)
+option(USE_CLANG_TIDY "Run clang-tidy on build" OFF)
 
 if (WITH_SSE)
     set(SIMD_OPTIONS "-mmmx -msse -mno-sse2 -ftree-vectorize")
@@ -101,8 +105,8 @@ add_executable(${PROJECT_NAME} ${PLATFORM_SRCS} ${ISA_SRCS} ${GENERIC_SRCS} ${HE
 
 target_compile_definitions(${PROJECT_NAME} PUBLIC "-D__LUDOS__")
 
-set(CMAKE_C_FLAGS "${ISA_C_FLAGS} ${PLATFORM_C_FLAGS} -O2 -g -fstack-protector -m32 ${SIMD_OPTIONS} ${ARCH_OPTIONS} -Wwrite-strings -ffast-math ${SANITIZER_OPTIONS} -std=c11 -Wall -Wextra -Wconversion -Wcast-qual -Wmisleading-indentation -Wno-unused-parameter -Wno-implicit-int -Wnull-dereference -lgcc -static-libgcc -ffreestanding -fno-builtin -nostdlib -fno-omit-frame-pointer -Werror=implicit-function-declaration -lgcc")
-set(CMAKE_CXX_FLAGS "${ISA_CXX_FLAGS} ${PLATFORM_CXX_FLAGS} -O2 -g -m32 ${SIMD_OPTIONS} ${ARCH_OPTIONS} -fexceptions -Wwrite-strings -Wsuggest-final-types -Wsuggest-final-methods -Wconversion -Woverloaded-virtual -ffast-math ${SANITIZER_OPTIONS} -fstack-protector -std=c++17 -Wall -Wextra -Wlogical-op -Wrestrict -Wnull-dereference -Wno-cast-qual -Wdouble-promotion -Wno-unused-parameter -Wno-format -Wno-switch -Wno-packed-bitfield-compat -Wno-reorder -Wno-trigraphs -Wmisleading-indentation -Wnull-dereference -lgcc -static-libgcc -ffreestanding -fno-builtin -nostdlib -fno-omit-frame-pointer -Werror=implicit-function-declaration -lgcc")
+set(CMAKE_C_FLAGS "${ISA_C_FLAGS} ${PLATFORM_C_FLAGS} -O2 -fstack-protector -m32 ${SIMD_OPTIONS} ${ARCH_OPTIONS} -Wwrite-strings -ffast-math ${SANITIZER_OPTIONS} -std=c11 -Wall -Wextra -Wconversion -Wcast-qual -Wmisleading-indentation -Wno-unused-parameter -Wno-implicit-int -Wnull-dereference -lgcc -static-libgcc -ffreestanding -fno-builtin -nostdlib -fno-omit-frame-pointer -Werror=implicit-function-declaration -lgcc")
+set(CMAKE_CXX_FLAGS "${ISA_CXX_FLAGS} ${PLATFORM_CXX_FLAGS} -O2 -m32 ${SIMD_OPTIONS} ${ARCH_OPTIONS} -fexceptions -Wwrite-strings -Wsuggest-final-types -Wsuggest-final-methods -Wconversion -Woverloaded-virtual -ffast-math ${SANITIZER_OPTIONS} -fstack-protector -std=c++17 -Wall -Wextra -Wlogical-op -Wrestrict -Wnull-dereference -Wno-cast-qual -Wdouble-promotion -Wno-unused-parameter -Wno-format -Wno-switch -Wno-packed-bitfield-compat -Wno-reorder -Wno-trigraphs -Wmisleading-indentation -Wnull-dereference -lgcc -static-libgcc -ffreestanding -fno-builtin -nostdlib -fno-omit-frame-pointer -Werror=implicit-function-declaration -lgcc")
 set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS
   "-T ${PLATFORM_LAYOUT} ${ISA_LINKER_FLAGS} ${PLATFORM_LINKER_FLAGS} -lgcc -fexceptions -Xlinker -Map=ld.map ")
 set_target_properties(${PROJECT_NAME} PROPERTIES SUFFIX ".bin")
@@ -132,6 +136,10 @@ set_target_properties(libcpp PROPERTIES COMPILE_FLAGS "-w")
 target_link_libraries(libcpp libcxxabi)
 target_compile_definitions(libcpp PUBLIC "-D__LUDOS__")
 
+add_library(libk++ ${LIBKPP_SOURCES} ${LIBKPP_HEADERS})
+set_target_properties(libk++ PROPERTIES COMPILE_FLAGS "-w")
+target_compile_definitions(libk++ PUBLIC "-D__LUDOS__")
+
 add_library(libx86emu ${LIBX86EMU_SOURCES} ${LIBX86EMU_HEADERS})
 set_target_properties(libx86emu PROPERTIES LINKER_LANGUAGE C)
 set_target_properties(libx86emu PROPERTIES COMPILE_FLAGS "-w")
@@ -153,7 +161,7 @@ include(ExternalProject)
 
 add_subdirectory(userland)
 
-target_link_libraries(${PROJECT_NAME} libk libcpp libcxxabi libx86emu libdisasm acpica)
+target_link_libraries(${PROJECT_NAME} libk libk++ libcpp libcxxabi libx86emu libdisasm acpica)
 target_link_libraries(libx86emu libk)
 
 set(CMAKE_CXX_LINK_EXECUTABLE "/usr/local/cross/bin/${ARCH}-elf-ld --build-id=none --eh-frame-hdr -T ${PLATFORM_LAYOUT} ${ISA_LINKER_FLAGS} <OBJECTS> -o <TARGET> <LINK_LIBRARIES>-L/usr/tooLargeForHome/cross_src/build-gcc/i686-elf/libgcc/ -lgcc")

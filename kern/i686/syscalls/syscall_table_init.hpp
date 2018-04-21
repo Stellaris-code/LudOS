@@ -68,16 +68,20 @@ inline void init_syscall_table()
     add_syscall<LudOS, max_syscalls-1>(test);
 
 
-#define LUDOS_SYSCALL_DEF(num, name, ret, ...) \
+#define LUDOS_SYSCALL_DEF_USER(...)
+#define LUDOS_SYSCALL_DEF_KERNEL(num, name, ret, ...) \
     add_syscall<LudOS, num>(sys_##name);
 
-#define LINUX_SYSCALL_DEF(num, name, ret, ...) \
+#define LINUX_SYSCALL_DEF_USER(...)
+#define LINUX_SYSCALL_DEF_KERNEL(num, name, ret, ...) \
     add_syscall<Linux, num>(sys_##name);
 
 #include "syscalls/syscall_list.def"
 
-#undef LUDOS_SYSCALL_DEF
-#undef LINUX_SYSCALL_DEF
+#undef LUDOS_SYSCALL_DEF_USER
+#undef LINUX_SYSCALL_DEF_USER
+#undef LUDOS_SYSCALL_DEF_KERNEL
+#undef LINUX_SYSCALL_DEF_KERNEL
 }
 
 #endif // SYSCALL_TABLE_INIT_HPP

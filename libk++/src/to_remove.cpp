@@ -1,7 +1,7 @@
 /*
-defs.hpp
+to_remove.cpp
 
-Copyright (c) 12 Yann BOUCHER (yann)
+Copyright (c) 18 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,39 +22,5 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef SYSCALL_DEFS_HPP
-#define SYSCALL_DEFS_HPP
 
-#define LINUX_SYSCALL_DEFAULT_IMPL(name, ret, args, ...) \
-    ret name args \
-    { \
-        auto ret_val = common_syscall(1, SYS_##name, ##__VA_ARGS__); \
- \
-        if (ret_val < 0) \
-        { \
-            errno = -ret_val; \
-            return (ret)-1; \
-        } \
-        else \
-        { \
-            return (ret)ret_val; \
-        } \
-    }
-
-#define LUDOS_SYSCALL_DEFAULT_IMPL(name, ret, args, ...) \
-    ret name args \
-    { \
-        auto ret_val = common_syscall(0, SYS_##name, ##__VA_ARGS__); \
- \
-        if (ret_val < 0) \
-        { \
-            errno = -ret_val; \
-            return (ret)-1; \
-        } \
-        else \
-        { \
-            return (ret)ret_val; \
-        } \
-    }
-
-#endif // DEFS_HPP
+#include "kstring/kstring.hpp"

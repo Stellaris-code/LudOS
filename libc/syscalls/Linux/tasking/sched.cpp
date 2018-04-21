@@ -28,8 +28,7 @@ SOFTWARE.
 
 extern int common_syscall(size_t type, size_t no, ...);
 
-long sched_yield()
+void sched_yield()
 {
     common_syscall(1, SYS_sched_yield);
-    return EOK;
 }

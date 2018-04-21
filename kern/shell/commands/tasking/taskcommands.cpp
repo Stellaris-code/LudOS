@@ -31,6 +31,7 @@ SOFTWARE.
 #include "fs/pathutils.hpp"
 #include "fs/vfs.hpp"
 #include "tasking/process.hpp"
+#include "tasking/process_data.hpp"
 #include "tasking/loaders/process_loader.hpp"
 
 void install_task_commands(Shell &sh)
@@ -78,8 +79,8 @@ void install_task_commands(Shell &sh)
              return -4;
          }
 
-         process->data.pwd = sh.pwd;
-         process->data.name = filename(program_args[0]);
+         process->data->pwd = sh.pwd;
+         process->data->name = filename(program_args[0]);
          process->switch_to();
 
          return 0;

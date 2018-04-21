@@ -29,5 +29,5 @@ SOFTWARE.
 
 extern int common_syscall(size_t type, size_t no, ...);
 
-LINUX_SYSCALL_DEFAULT_IMPL(open, (const char* path, int flags, int mode), path, flags, mode)
-LINUX_SYSCALL_DEFAULT_IMPL(close, (unsigned int fd), fd)
+LINUX_SYSCALL_DEFAULT_IMPL(open, int, (const char* path, int flags, int mode), path, flags, mode)
+LINUX_SYSCALL_DEFAULT_IMPL(close, int, (unsigned int fd), fd)

@@ -1,7 +1,7 @@
 /*
-defs.hpp
+signals.cpp
 
-Copyright (c) 12 Yann BOUCHER (yann)
+Copyright (c) 15 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,39 +22,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef SYSCALL_DEFS_HPP
-#define SYSCALL_DEFS_HPP
+#include "syscalls/syscall_list.hpp"
+#include "syscalls/defs.hpp"
 
-#define LINUX_SYSCALL_DEFAULT_IMPL(name, ret, args, ...) \
-    ret name args \
-    { \
-        auto ret_val = common_syscall(1, SYS_##name, ##__VA_ARGS__); \
- \
-        if (ret_val < 0) \
-        { \
-            errno = -ret_val; \
-            return (ret)-1; \
-        } \
-        else \
-        { \
-            return (ret)ret_val; \
-        } \
-    }
+#include <signal.h>
+#include <errno.h>
 
-#define LUDOS_SYSCALL_DEFAULT_IMPL(name, ret, args, ...) \
-    ret name args \
-    { \
-        auto ret_val = common_syscall(0, SYS_##name, ##__VA_ARGS__); \
- \
-        if (ret_val < 0) \
-        { \
-            errno = -ret_val; \
-            return (ret)-1; \
-        } \
-        else \
-        { \
-            return (ret)ret_val; \
-        } \
-    }
+extern int common_syscall(size_t type, size_t no, ...);
 
-#endif // DEFS_HPP
+LINUX_SYSCALL_DEFAULT_IMPL(signal, sighandler_t, (int num, sighandler_t handler), num, handler)
+LINUX_SYSCALL_DEFAULT_IMPL(sigaction, int, (int num, const struct sigaction* action, struct sigaction* old), num, action, old)
+

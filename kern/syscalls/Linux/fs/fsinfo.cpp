@@ -26,6 +26,7 @@ SOFTWARE.
 #include "syscalls/Linux/syscalls.hpp"
 
 #include "tasking/process.hpp"
+#include "tasking/process_data.hpp"
 #include "utils/user_ptr.hpp"
 #include "errno.h"
 
@@ -43,7 +44,7 @@ int sys_getcwd(user_ptr<char> buf, unsigned long size)
         return -EINVAL;
     }
 
-    std::string pwd = Process::current().data.pwd->path();
+    std::string pwd = Process::current().data->pwd->path();
 
     if (pwd.size() + 1 > size)
     {

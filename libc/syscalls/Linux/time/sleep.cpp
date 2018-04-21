@@ -28,7 +28,7 @@ SOFTWARE.
 
 extern int common_syscall(size_t type, size_t no, ...);
 
-long nanosleep(const struct timespec *req, struct timespec *rem)
+int nanosleep(const struct timespec *req, struct timespec *rem)
 {
     return -common_syscall(1, SYS_nanosleep, req, rem);
 }

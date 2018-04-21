@@ -107,12 +107,16 @@ SOFTWARE.
 // TODO : vfs canonicalize
 // TODO : process : free pages and alloc only at execute time
 // TODO : dissasemble from beggining of function
-// TODO : check usermode addresses
 // TODO : task switch : fpu state
 
 // ROADMAP
-// : implémenter /proc
+// : implémenter un kstring optimisé
+// : enlever acpica
+// : supprimer les exceptions
+// : supprimer la libc++ & libcxxabi
+// : supprimer les includes inutiles
 // : implémenter /dev/input
+// : vfs call qui liste des properties particukières et une liste possible d'appels
 // : implémenter signaux
 // : implémenter expanding stack
 // : implémenter sigsegv

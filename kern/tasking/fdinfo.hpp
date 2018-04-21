@@ -1,7 +1,7 @@
 /*
-defs.hpp
+fdinfo.hpp
 
-Copyright (c) 12 Yann BOUCHER (yann)
+Copyright (c) 15 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,39 +22,27 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef SYSCALL_DEFS_HPP
-#define SYSCALL_DEFS_HPP
+#ifndef FDINFO_HPP
+#define FDINFO_HPP
 
-#define LINUX_SYSCALL_DEFAULT_IMPL(name, ret, args, ...) \
-    ret name args \
-    { \
-        auto ret_val = common_syscall(1, SYS_##name, ##__VA_ARGS__); \
- \
-        if (ret_val < 0) \
-        { \
-            errno = -ret_val; \
-            return (ret)-1; \
-        } \
-        else \
-        { \
-            return (ret)ret_val; \
-        } \
-    }
+#include <memory.hpp>
+#include <stdint.h>
 
-#define LUDOS_SYSCALL_DEFAULT_IMPL(name, ret, args, ...) \
-    ret name args \
-    { \
-        auto ret_val = common_syscall(0, SYS_##name, ##__VA_ARGS__); \
- \
-        if (ret_val < 0) \
-        { \
-            errno = -ret_val; \
-            return (ret)-1; \
-        } \
-        else \
-        { \
-            return (ret)ret_val; \
-        } \
-    }
+namespace vfs
+{
+class node;
+}
 
-#endif // DEFS_HPP
+namespace tasking
+{
+struct FDInfo
+{
+    std::shared_ptr<vfs::node> node;
+    bool read { false };
+    bool write { false };
+    bool append { false };
+    size_t cursor { 0 };
+};
+}
+
+#endif // FDINFO_HPP

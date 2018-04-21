@@ -29,4 +29,4 @@ SOFTWARE.
 
 extern int common_syscall(size_t type, size_t no, ...);
 
-LINUX_SYSCALL_DEFAULT_IMPL(chroot, (char* buf), buf)
+LINUX_SYSCALL_DEFAULT_IMPL(chroot, int, (char* buf), buf)

@@ -33,14 +33,20 @@ SOFTWARE.
 #include <optional.hpp>
 #include <vector.hpp>
 #include <unordered_map.hpp>
+#include <stack.hpp>
+
+#include <kstring/kstring.hpp>
 
 #include <sys/types.h>
+#include <signal.h>
 
 #include "mem/memmap.hpp"
 
 #ifdef LUDOS_HAS_SHM
 #include "shared_memory.hpp"
 #endif
+
+#include "fdinfo.hpp"
 
 #include "utils/aligned_vector.hpp"
 
@@ -65,15 +71,9 @@ struct ShmEntry
     void* v_addr;
 };
 #endif
-struct FDInfo
-{
-    std::shared_ptr<vfs::node> node;
-    bool read { false };
-    bool write { false };
-    bool append { false };
-    size_t cursor { 0 };
-};
 }
+
+struct ProcessArchContext;
 
 struct ProcessData
 {
@@ -83,7 +83,7 @@ struct ProcessData
     aligned_vector<uint8_t, Memory::page_size()> stack; // stack is never shared
     shared_resource<aligned_vector<uint8_t, Memory::page_size()>> code;
 
-    std::string name { "<INVALID>" };
+    kstring name { "<INVALID>" };
     uint32_t uid { 0 };
     uint32_t gid { 0 };
 
@@ -106,7 +106,8 @@ struct ProcessData
     std::unordered_map<unsigned int, tasking::ShmEntry> shm_list;
 #endif
 
-    uintptr_t current_pc { 0 };
+    std::stack<ProcessArchContext*> sig_context;
+    shared_resource<std::array<struct sigaction, SIGRTMAX>> sig_handlers;
 };
 
 #endif // PROCESS_DATA_HPP

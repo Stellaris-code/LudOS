@@ -26,6 +26,7 @@ SOFTWARE.
 #include "fsutils.hpp"
 
 #include "tasking/process.hpp"
+#include "tasking/process_data.hpp"
 
 #include "vfs.hpp"
 #include "pathutils.hpp"
@@ -113,7 +114,7 @@ QueryResult user_find_impl(const std::string &path, Process &process, size_t rec
     auto dirs = path_list(path);
 
     // set the search root according to the relativeness of the pass
-    std::shared_ptr<vfs::node> cur_node = relative ? process.data.pwd : process.data.root;
+    std::shared_ptr<vfs::node> cur_node = relative ? process.data->pwd : process.data->root;
     std::string pwd = cur_node->path();
 
     for (size_t i { 0 }; i < dirs.size(); ++i)
@@ -196,7 +197,7 @@ bool mount(std::shared_ptr<vfs::node> target, std::shared_ptr<vfs::node> mountpo
     mountpoint->m_mounted_node = target;
     target->set_parent(mountpoint.get());
 
-    mounted_nodes.emplace_back(target.get());
+    mounted_nodes.emplace_back(target);
 
     return true;
 }
@@ -207,7 +208,7 @@ bool umount(std::shared_ptr<node> target)
 
     for (auto& ptr : mounted_nodes)
     {
-        if (ptr == target->m_mounted_node.get()) ptr = nullptr;
+        if (ptr.lock() == target->m_mounted_node) ptr.reset();
     }
 
     target->m_mounted_node = nullptr;

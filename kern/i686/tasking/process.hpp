@@ -30,7 +30,7 @@ SOFTWARE.
 #include "i686/fpu/fpu.hpp"
 #include "i686/cpu/registers.hpp"
 
-struct Process::ArchContext
+struct ProcessArchContext
 {
     registers regs;
     FPUState fpu_state;

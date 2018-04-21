@@ -37,6 +37,8 @@ SOFTWARE.
 #include "info/cmdline.hpp"
 #include "info/version.hpp"
 
+#include "panic.hpp"
+
 namespace procfs
 {
 

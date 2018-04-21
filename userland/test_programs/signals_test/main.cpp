@@ -1,7 +1,7 @@
 /*
-defs.hpp
+main.cpp
 
-Copyright (c) 12 Yann BOUCHER (yann)
+Copyright (c) 11 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,39 +22,36 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef SYSCALL_DEFS_HPP
-#define SYSCALL_DEFS_HPP
 
-#define LINUX_SYSCALL_DEFAULT_IMPL(name, ret, args, ...) \
-    ret name args \
-    { \
-        auto ret_val = common_syscall(1, SYS_##name, ##__VA_ARGS__); \
- \
-        if (ret_val < 0) \
-        { \
-            errno = -ret_val; \
-            return (ret)-1; \
-        } \
-        else \
-        { \
-            return (ret)ret_val; \
-        } \
+#include <syscalls/syscall_list.hpp>
+
+#include <errno.h>
+#include <stdio.h>
+
+void ensure(bool cond)
+{
+    if (!cond)
+    {
+        fprintf(stderr, "TEST FAILED :\n");
+        while (true) {}
+        exit(1);
     }
+}
 
-#define LUDOS_SYSCALL_DEFAULT_IMPL(name, ret, args, ...) \
-    ret name args \
-    { \
-        auto ret_val = common_syscall(0, SYS_##name, ##__VA_ARGS__); \
- \
-        if (ret_val < 0) \
-        { \
-            errno = -ret_val; \
-            return (ret)-1; \
-        } \
-        else \
-        { \
-            return (ret)ret_val; \
-        } \
-    }
+int main(int argc, char* argv[])
+{
+    printf("%d\n", signal(SIGTERM, SIG_IGN)); perror("1");
+    printf("%d\n", signal(SIGSTOP, SIG_IGN)); perror("1");
+    printf("%d\n", signal(SIGUSR1, SIG_IGN)); perror("1");
 
-#endif // DEFS_HPP
+    struct sigaction action, old;
+    action.sa_handler = SIG_IGN;
+    old.sa_flags = 56;
+    printf("%d\n", sigaction(SIGTERM, &action, &old)); perror("1");
+    printf("%d\n", sigaction(SIGSTOP, &action, &old)); perror("1");
+    printf("%d\n", sigaction(SIGUSR1, &action, &old)); perror("1");
+    if (old.sa_flags == 0) printf("Should be flags 0 in old : %d\n", old.sa_flags);
+
+    while (true){}
+    return 0;
+}

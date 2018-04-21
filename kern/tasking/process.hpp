@@ -25,15 +25,20 @@ SOFTWARE.
 #ifndef PROCESS_HPP
 #define PROCESS_HPP
 
+#include "config.hpp"
+
 #include <string.hpp>
 #include <vector.hpp>
-#include <unordered_map.hpp>
+
+#include "mem/memmap.hpp"
+
+#include "fdinfo.hpp"
+
 #include "utils/gsl/gsl_span.hpp"
 #include "utils/noncopyable.hpp"
 
-#include "process_data.hpp"
-
-#include "sys/types.h"
+#include <sys/types.h>
+#include <signal.h>
 
 struct ProcessCreatedEvent
 {
@@ -47,11 +52,12 @@ struct ProcessDestroyedEvent
 };
 
 class SharedMemorySegment;
+struct ProcessArchContext;
+struct ProcessData;
 
 class Process : NonCopyable
 {
 public:
-    struct ArchContext;
 
     enum AccessRequestPerm : uint16_t
     {
@@ -62,6 +68,30 @@ public:
 
     static constexpr size_t root_uid = 0;
     static constexpr size_t user_stack_top = KERNEL_VIRTUAL_BASE - (1*Memory::page_size()) - sizeof(uintptr_t);
+    static constexpr std::array<uintptr_t, 64> default_sighandler_actions
+    {{
+        SIG_ACTION_TERM, // 0
+        SIG_ACTION_TERM, // SIGHUP
+        SIG_ACTION_TERM, // SIGINT
+        SIG_ACTION_CORE, // SIGQUIT
+        SIG_ACTION_CORE, // SIGILL
+        SIG_ACTION_CORE, // SIGABRT
+        SIG_ACTION_CORE, // SIGFPE
+        SIG_ACTION_TERM, // SIGKILL
+        SIG_ACTION_CORE, // SIGSEGV
+        SIG_ACTION_TERM, // SIGPIPE
+        SIG_ACTION_TERM, // SIGALRM
+        SIG_ACTION_TERM, // SIGTERM
+        SIG_ACTION_TERM, // SIGUSR1
+        SIG_ACTION_TERM, // SIGUSR2
+        SIG_ACTION_IGN , // SIGCHLD
+        SIG_ACTION_CONT, // SIGCONT
+        SIG_ACTION_STOP, // SIGSTOP
+        SIG_ACTION_STOP, // SIGTSTP
+        SIG_ACTION_STOP, // SIGTTIN
+        SIG_ACTION_STOP  // SIGTTOU
+        // The rest is filled with zeroes which are equal to SIG_ACTION_TERM
+    }};
 
 public:
     static bool enabled();
@@ -83,6 +113,7 @@ public:
     ~Process();
 
     void reset(gsl::span<const uint8_t> code_to_copy, size_t allocated_size = 0);
+    void set_instruction_pointer(unsigned int value);
 
     void set_args(const std::vector<std::string> &args);
 
@@ -108,26 +139,32 @@ public:
     pid_t pid { 0 };
     pid_t tgid { 0 };
     pid_t parent { 0 };
-    ProcessData data;
-    ArchContext* arch_context { nullptr };
+    std::unique_ptr<ProcessData> data;
+    ProcessArchContext* arch_context { nullptr };
+
+private:
+    static pid_t find_free_pid();
 
 private:
     void arch_init(gsl::span<const uint8_t> code_to_copy, size_t allocated_size);
+    void init_default_fds();
+    void init_sig_handlers();
+
+    void map_code();
+    void map_stack();
 #ifdef LUDOS_HAS_SHM
     void map_shm();
 #endif
-    void map_code();
-    void map_stack();
+
     void create_mappings();
     void release_mappings();
+
     void map_address_space();
     void unmap_address_space();
+
     void cleanup();
-    void init_default_fds();
     void wake_up(pid_t child, int err_code);
     void copy_allocated_pages(Process& target);
-
-    static pid_t find_free_pid();
 
 private:
     static inline Process* m_current_process { nullptr };

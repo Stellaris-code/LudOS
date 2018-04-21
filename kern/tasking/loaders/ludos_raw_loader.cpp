@@ -26,6 +26,7 @@ SOFTWARE.
 #include "ludos_raw_loader.hpp"
 
 #include "tasking/process.hpp"
+#include "tasking/process_data.hpp"
 
 constexpr char ludos_raw_magic[] = "LUDOSBIN";
 constexpr size_t ludos_raw_len = sizeof(ludos_raw_magic) - 1 + sizeof(uint32_t); // size to alloc
@@ -42,7 +43,7 @@ bool LudosRawLoader::load(Process &p)
     uint32_t allocated_size = *(uint32_t*)(m_file.data() + 8);
 
     p.reset(m_file, allocated_size); // TODO : name
-    p.data.current_pc = ludos_raw_len;
+    p.set_instruction_pointer(ludos_raw_len); // skip the magic header
 
     return true;
 }

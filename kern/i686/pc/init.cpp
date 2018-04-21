@@ -92,7 +92,7 @@ extern "C" int _bss_end;
 
 #pragma GCC push_options
 #pragma GCC target ("no-sse")
-inline void early_abort(const char* str)
+inline void early_print(const char* str)
 {
     uint16_t* addr = reinterpret_cast<uint16_t*>(0xB8000 + KERNEL_VIRTUAL_BASE);
 
@@ -106,7 +106,11 @@ inline void early_abort(const char* str)
     {
         *addr++ = *str++ | (15 << 8);
     }
+}
 
+inline void early_abort(const char* str)
+{
+    early_print(str);
     halt();
 }
 
@@ -150,6 +154,8 @@ void init(uint32_t magic, const multiboot_info_t* mbd_info)
     }
 
     early_init();
+
+    early_print("Booting LudOS...");
 
     serial::debug::init(BDA::com1_port());
     serial::debug::write("Serial COM1 : Booting LudOS v%d...\n", 1);

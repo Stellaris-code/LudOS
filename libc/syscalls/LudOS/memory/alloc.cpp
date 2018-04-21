@@ -29,7 +29,7 @@ SOFTWARE.
 
 extern int common_syscall(size_t type, size_t no, ...);
 
-long alloc_pages(int pages)
+int alloc_pages(int pages)
 {
     auto addr = common_syscall(0, SYS_alloc_pages, pages);
     if (addr == 0)
@@ -40,7 +40,7 @@ long alloc_pages(int pages)
     return addr;
 }
 
-long free_pages(uintptr_t ptr, int pages)
+int free_pages(uintptr_t ptr, int pages)
 {
     common_syscall(0, SYS_free_pages, (uintptr_t)ptr, pages);
 

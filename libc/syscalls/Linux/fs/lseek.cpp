@@ -30,4 +30,4 @@ SOFTWARE.
 
 extern int common_syscall(size_t type, size_t no, ...);
 
-LINUX_SYSCALL_DEFAULT_IMPL(lseek, (unsigned int fd, int off, int whence), fd, off, whence)
+LINUX_SYSCALL_DEFAULT_IMPL(lseek, int, (unsigned int fd, int off, int whence), fd, off, whence)

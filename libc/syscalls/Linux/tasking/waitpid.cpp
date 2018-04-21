@@ -29,7 +29,7 @@ SOFTWARE.
 
 extern int common_syscall(size_t type, size_t no, ...);
 
-LINUX_SYSCALL_DEFAULT_IMPL(waitpid, (pid_t pid, int *wstatus, int options), pid, wstatus, options)
+LINUX_SYSCALL_DEFAULT_IMPL(waitpid, pid_t, (pid_t pid, int *wstatus, int options), pid, wstatus, options)
 
 pid_t wait(int *status)
 {

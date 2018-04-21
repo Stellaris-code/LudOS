@@ -24,6 +24,7 @@ SOFTWARE.
 */
 
 #include "process.hpp"
+#include "process_data.hpp"
 
 #include "fs/fsutils.hpp"
 
@@ -49,9 +50,12 @@ constexpr uintptr_t argv_virt_page = KERNEL_VIRTUAL_BASE - (1*Memory::page_size(
 
 Process::Process()
 {
-    data.pwd = vfs::root;
-    data.root = vfs::root;
+    data = std::make_unique<ProcessData>();
+
+    data->pwd = vfs::root;
+    data->root = vfs::root;
     init_default_fds();
+    init_sig_handlers();
 }
 
 void Process::reset(gsl::span<const uint8_t> code_to_copy, size_t allocated_size)
@@ -66,7 +70,7 @@ void Process::reset(gsl::span<const uint8_t> code_to_copy, size_t allocated_size
 
 void Process::init_default_fds()
 {
-    assert(data.fd_table = std::make_shared<std::vector<tasking::FDInfo>>());
+    assert(data->fd_table = std::make_shared<std::vector<tasking::FDInfo>>());
 
     assert(vfs::find("/dev/stdout"));
     assert(vfs::find("/dev/stdin"));
@@ -75,6 +79,15 @@ void Process::init_default_fds()
     assert(add_fd({vfs::find("/dev/stdin" ), .read = true,  .write = false}) == 0);
     assert(add_fd({vfs::find("/dev/stdout"), .read = false, .write = true }) == 1);
     assert(add_fd({vfs::find("/dev/stderr"), .read = false, .write = true }) == 2);
+}
+
+void Process::init_sig_handlers()
+{
+    data->sig_handlers = std::make_shared<std::array<struct sigaction, SIGRTMAX>>();
+    for (size_t i { 0 }; i < data->sig_handlers->size(); ++i)
+    {
+        (*data->sig_handlers)[i].sa_handler = (sighandler_t)default_sighandler_actions[i];
+    }
 }
 
 pid_t Process::find_free_pid()
@@ -90,48 +103,48 @@ pid_t Process::find_free_pid()
 size_t Process::add_fd(const tasking::FDInfo &info)
 {
     // Search for an empty entry in the table
-    for (size_t i { 0 }; i < data.fd_table->size(); ++i)
+    for (size_t i { 0 }; i < data->fd_table->size(); ++i)
     {
-        if ((*data.fd_table)[i].node == nullptr)
+        if ((*data->fd_table)[i].node == nullptr)
         {
-            (*data.fd_table)[i] = info;
+            (*data->fd_table)[i] = info;
             return i;
         }
     }
 
     // If nothing is found, we append an entry to the table
-    data.fd_table->emplace_back(info);
-    return data.fd_table->size() - 1;
+    data->fd_table->emplace_back(info);
+    return data->fd_table->size() - 1;
 }
 
 tasking::FDInfo *Process::get_fd(size_t fd)
 {
-    if (fd >= data.fd_table->size() || (*data.fd_table)[fd].node == nullptr)
+    if (fd >= data->fd_table->size() || (*data->fd_table)[fd].node == nullptr)
     {
         return nullptr;
     }
 
-    return &(*data.fd_table)[fd];
+    return &(*data->fd_table)[fd];
 }
 
 void Process::close_fd(size_t fd)
 {
     assert(get_fd(fd));
 
-    (*data.fd_table)[fd].node = nullptr;
+    (*data->fd_table)[fd].node = nullptr;
 }
 
 bool Process::is_waiting() const
 {
-    return data.waiting_pid.has_value();
+    return data->waiting_pid.has_value();
 }
 
 void Process::wait_for(pid_t pid, int *wstatus)
 {
-    data.waiting_pid = pid;
-    data.wstatus = wstatus;
-    data.waitstatus_phys = Memory::physical_address(wstatus);
-    assert(data.wstatus);
+    data->waiting_pid = pid;
+    data->wstatus = wstatus;
+    data->waitstatus_phys = Memory::physical_address(wstatus);
+    assert(data->wstatus);
 }
 
 bool Process::check_perms(uint16_t perms, uint16_t tgt_uid, uint16_t tgt_gid, uint16_t type)
@@ -146,13 +159,13 @@ bool Process::check_perms(uint16_t perms, uint16_t tgt_uid, uint16_t tgt_gid, ui
                                                              type == AccessRequestPerm::WriteRequest? vfs::OtherWrite:
                                                                                                vfs::OtherExec);
 
-    if (data.uid == Process::root_uid)
+    if (data->uid == Process::root_uid)
     {
         return true;
     }
 
-    if ((tgt_uid == data.uid && perms & user_flag) ||
-            (tgt_gid == data.gid && perms & group_flag)||
+    if ((tgt_uid == data->uid && perms & user_flag) ||
+            (tgt_gid == data->gid && perms & group_flag)||
             perms & other_flag)
     {
         return true;
@@ -190,10 +203,10 @@ void Process::kill(pid_t pid, int err_code)
     auto& parent = *by_pid(by_pid(pid)->parent);
 
     // erase pid from parent children list
-    assert(find(parent.data.children, pid));
-    erase(parent.data.children, pid);
+    assert(find(parent.data->children, pid));
+    erase(parent.data->children, pid);
 
-    if (parent.is_waiting() && (parent.data.waiting_pid.value() == -1 || parent.data.waiting_pid.value() == pid))
+    if (parent.is_waiting() && (parent.data->waiting_pid.value() == -1 || parent.data->waiting_pid.value() == pid))
     {
         log_serial("Waking up PID %d with PID %d\n", parent.pid, pid);
         parent.wake_up(pid, err_code);
@@ -252,7 +265,7 @@ Process *Process::create(const std::vector<std::string>& args)
 
     m_processes[free_idx]->tgid = free_idx;
     m_processes[free_idx]->pid  = free_idx;
-    m_processes[free_idx]->data.args = args;
+    m_processes[free_idx]->data->args = args;
 
     ++m_process_count;
 
@@ -264,7 +277,7 @@ Process *Process::create(const std::vector<std::string>& args)
 #ifdef LUDOS_HAS_SHM
 void Process::map_shm()
 {
-    for (auto pair : data.shm_list)
+    for (auto pair : data->shm_list)
     {
         if (pair.second.v_addr) pair.second.shm->map(pair.second.v_addr);
     }
@@ -273,31 +286,31 @@ void Process::map_shm()
 
 void Process::map_code()
 {
-    size_t code_page_amnt = data.code->size() / Memory::page_size() +
-            (data.code->size()%Memory::page_size()?1:0);
+    size_t code_page_amnt = data->code->size() / Memory::page_size() +
+            (data->code->size()%Memory::page_size()?1:0);
 
     for (size_t i { 0 }; i < code_page_amnt; ++i)
     {
-        uintptr_t phys_addr = Memory::physical_address((uint8_t*)data.code->data() + i*Memory::page_size());
+        uintptr_t phys_addr = Memory::physical_address((uint8_t*)data->code->data() + i*Memory::page_size());
         uint8_t* virt_addr = (uint8_t*)(i * Memory::page_size());
 
         assert(phys_addr);
-        data.mappings[(uintptr_t)virt_addr] = {phys_addr, Memory::Read|Memory::Write|Memory::User, false};
+        data->mappings[(uintptr_t)virt_addr] = {phys_addr, Memory::Read|Memory::Write|Memory::User, false};
     }
 }
 
 void Process::map_stack()
 {
-    size_t code_page_amnt = data.stack.size() / Memory::page_size() +
-            (data.stack.size()%Memory::page_size()?1:0);
+    size_t code_page_amnt = data->stack.size() / Memory::page_size() +
+            (data->stack.size()%Memory::page_size()?1:0);
 
     for (size_t i { 0 }; i < code_page_amnt; ++i)
     {
-        uintptr_t phys_addr = Memory::physical_address((uint8_t*)data.stack.data() + i*Memory::page_size());
+        uintptr_t phys_addr = Memory::physical_address((uint8_t*)data->stack.data() + i*Memory::page_size());
         uint8_t* virt_addr = (uint8_t*)Memory::page(user_stack_top) - i*Memory::page_size();
 
         assert(phys_addr);
-        data.mappings[(uintptr_t)virt_addr] = {phys_addr, Memory::Read|Memory::Write|Memory::User, false};
+        data->mappings[(uintptr_t)virt_addr] = {phys_addr, Memory::Read|Memory::Write|Memory::User, false};
     }
 }
 
@@ -305,15 +318,15 @@ void Process::create_mappings()
 {
     map_code();
     map_stack();
-    if (!data.mappings.count(argv_virt_page))
+    if (!data->mappings.count(argv_virt_page))
     {
-        data.mappings[argv_virt_page] = {Memory::allocate_physical_page(), Memory::Read|Memory::Write|Memory::User, true};
+        data->mappings[argv_virt_page] = {Memory::allocate_physical_page(), Memory::Read|Memory::Write|Memory::User, true};
     }
 }
 
 void Process::release_mappings()
 {
-    for (const auto& pair : data.mappings)
+    for (const auto& pair : data->mappings)
     {
         if (pair.second.owned)
         {
@@ -321,12 +334,12 @@ void Process::release_mappings()
         }
     }
 
-    data.mappings.clear();
+    data->mappings.clear();
 }
 
 void Process::map_address_space()
 {
-    for (const auto& pair : data.mappings)
+    for (const auto& pair : data->mappings)
     {
         Memory::map_page(pair.second.paddr, (void*)pair.first, pair.second.flags);
     }
@@ -341,8 +354,8 @@ uintptr_t Process::allocate_pages(size_t pages)
         uintptr_t physical_page = Memory::allocate_physical_page();
         Memory::map_page(physical_page, virtual_page, Memory::Read|Memory::Write|Memory::User);
 
-        assert(!data.mappings.count((uintptr_t)virtual_page));
-        data.mappings[(uintptr_t)virtual_page] = {(uintptr_t)physical_page, Memory::Read|Memory::Write|Memory::User, true};
+        assert(!data->mappings.count((uintptr_t)virtual_page));
+        data->mappings[(uintptr_t)virtual_page] = {(uintptr_t)physical_page, Memory::Read|Memory::Write|Memory::User, true};
     }
 
     return (uintptr_t)addr;
@@ -355,15 +368,15 @@ bool Process::release_pages(uintptr_t ptr, size_t pages)
     for (size_t i { 0 }; i < pages; ++i)
     {
         void* virtual_page  = (uint8_t*)ptr + i*Memory::page_size();
-        assert(data.mappings.count((uintptr_t)virtual_page));
+        assert(data->mappings.count((uintptr_t)virtual_page));
 
-        uintptr_t physical_page = data.mappings.at((uintptr_t)virtual_page).paddr;
+        uintptr_t physical_page = data->mappings.at((uintptr_t)virtual_page).paddr;
 
         Memory::release_physical_page(physical_page);
         if (Memory::is_mapped(virtual_page)) Memory::unmap_page(virtual_page);
 
-        assert(data.mappings.at((uintptr_t)virtual_page).owned);
-        data.mappings.erase((uintptr_t)virtual_page);
+        assert(data->mappings.at((uintptr_t)virtual_page).owned);
+        data->mappings.erase((uintptr_t)virtual_page);
     }
 
     return true;
@@ -371,16 +384,16 @@ bool Process::release_pages(uintptr_t ptr, size_t pages)
 
 void Process::copy_allocated_pages(Process &target)
 {
-    for (const auto& pair : data.mappings)
+    for (const auto& pair : data->mappings)
     {
         if (pair.second.owned)
         {
-            target.data.mappings[pair.first] = pair.second;
-            assert(target.data.mappings[pair.first].owned);
-            target.data.mappings[pair.first].paddr = Memory::allocate_physical_page();
+            target.data->mappings[pair.first] = pair.second;
+            assert(target.data->mappings[pair.first].owned);
+            target.data->mappings[pair.first].paddr = Memory::allocate_physical_page();
 
             auto src_ptr = Memory::mmap(pair.second.paddr, Memory::page_size());
-            auto dest_ptr = Memory::mmap(target.data.mappings[pair.first].paddr, Memory::page_size());
+            auto dest_ptr = Memory::mmap(target.data->mappings[pair.first].paddr, Memory::page_size());
 
             memcpy(dest_ptr, src_ptr, Memory::page_size());
 

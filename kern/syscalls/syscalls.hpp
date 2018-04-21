@@ -36,11 +36,13 @@ extern volatile bool processing_syscall;
 
 void init_syscalls();
 
-#define LUDOS_SYSCALL_DEF(num, name, ret, ...) \
+#define LUDOS_SYSCALL_DEF_USER(...)
+#define LUDOS_SYSCALL_DEF_KERNEL(num, name, ret, ...) \
     ret sys_##name(__VA_ARGS__); \
     constexpr size_t SYS_##name = num;
 
-#define LINUX_SYSCALL_DEF(num, name, ret, ...) \
+#define LINUX_SYSCALL_DEF_USER(...)
+#define LINUX_SYSCALL_DEF_KERNEL(num, name, ret, ...) \
     ret sys_##name(__VA_ARGS__); \
     constexpr size_t SYS_##name = num;
 
@@ -48,8 +50,10 @@ void init_syscalls();
 
 #include "syscall_list.def"
 
-#undef LUDOS_SYSCALL_DEF
-#undef LINUX_SYSCALL_DEF
+#undef LUDOS_SYSCALL_DEF_USER
+#undef LINUX_SYSCALL_DEF_USER
+#undef LUDOS_SYSCALL_DEF_KERNEL
+#undef LINUX_SYSCALL_DEF_KERNEL
 #undef USER_PTR
 
 #endif // SYSCALL_HPP

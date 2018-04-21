@@ -77,11 +77,7 @@ struct node
         size_t modification_time { 0 };
     };
 
-    node(node* parent = nullptr)
-    {
-        set_parent(parent);
-        m_stat = mkstat();
-    }
+    node(node* parent = nullptr);
 
     node(const node&) = delete;
     node(node&&) = default;
@@ -191,7 +187,7 @@ private:
 };
 
 extern std::shared_ptr<vfs_root> root;
-extern std::vector<node*> mounted_nodes;
+extern std::vector<std::weak_ptr<node>> mounted_nodes;
 
 void init();
 };

@@ -30,5 +30,5 @@ SOFTWARE.
 
 extern int common_syscall(size_t type, size_t no, ...);
 
-LINUX_SYSCALL_DEFAULT_IMPL(read, (unsigned int fd, void* buf, size_t count), fd, buf, count)
-LINUX_SYSCALL_DEFAULT_IMPL(write,(unsigned int fd, const void* buf, size_t count), fd, buf, count)
+LINUX_SYSCALL_DEFAULT_IMPL(read, size_t, (unsigned int fd, void* buf, size_t count), fd, buf, count)
+LINUX_SYSCALL_DEFAULT_IMPL(write,size_t, (unsigned int fd, const void* buf, size_t count), fd, buf, count)

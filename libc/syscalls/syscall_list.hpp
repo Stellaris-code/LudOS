@@ -31,18 +31,22 @@ SOFTWARE.
 //#error Reserved for userspace
 #endif
 
-#define LUDOS_SYSCALL_DEF(num, name, ret, ...) \
-    long name(__VA_ARGS__);
+#define LUDOS_SYSCALL_DEF_KERNEL(...)
+#define LUDOS_SYSCALL_DEF_USER(num, name, ret, ...) \
+    ret name(__VA_ARGS__);
 
-#define LINUX_SYSCALL_DEF(num, name, ret, ...) \
-    long name(__VA_ARGS__);
+#define LINUX_SYSCALL_DEF_KERNEL(...)
+#define LINUX_SYSCALL_DEF_USER(num, name, ret, ...) \
+    ret name(__VA_ARGS__);
 
 #define USER_PTR(type) type*
 
 #include "syscalls/syscall_list.def"
 
-#undef LUDOS_SYSCALL_DEF
-#undef LINUX_SYSCALL_DEF
+#undef LUDOS_SYSCALL_DEF_USER
+#undef LINUX_SYSCALL_DEF_USER
+#undef LUDOS_SYSCALL_DEF_KERNEL
+#undef LINUX_SYSCALL_DEF_KERNEL
 #undef USER_PTR
 
 #include "syscalls/syscalls.hpp"

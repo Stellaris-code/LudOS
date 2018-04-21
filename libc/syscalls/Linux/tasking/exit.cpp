@@ -29,11 +29,10 @@ SOFTWARE.
 
 extern int common_syscall(size_t type, size_t no, ...);
 
-long exit(uint8_t errcode)
+void exit(uint8_t errcode)
 {
     common_syscall(1, SYS_exit, errcode);
 
     __builtin_unreachable();
     abort(); // shouldn't return !!
-    return 0;
 }

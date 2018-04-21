@@ -30,4 +30,4 @@ SOFTWARE.
 
 extern int common_syscall(size_t type, size_t no, ...);
 
-LINUX_SYSCALL_DEFAULT_IMPL(stat, (const char* path, struct stat* ptr), path, ptr)
+LINUX_SYSCALL_DEFAULT_IMPL(stat, int, (const char* path, struct stat* ptr), path, ptr)

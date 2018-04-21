@@ -28,6 +28,7 @@ SOFTWARE.
 #include <errno.h>
 
 #include "tasking/process.hpp"
+#include "tasking/process_data.hpp"
 #include "tasking/shared_memory.hpp"
 
 #include "utils/logging.hpp"
@@ -59,9 +60,9 @@ int sys_shmget(key_t key, size_t size, int shmflags)
         auto shm = create_shared_mem(key, size);
         if (!shm) return -ENOMEM;
 
-        assert(!Process::current().data.shm_list.count(key));
-        Process::current().data.shm_list[key].shm = shm;
-        Process::current().data.shm_list[key].v_addr = 0; // not yet mapped
+        assert(!Process::current().data->shm_list.count(key));
+        Process::current().data->shm_list[key].shm = shm;
+        Process::current().data->shm_list[key].v_addr = 0; // not yet mapped
 
         return key;
     }

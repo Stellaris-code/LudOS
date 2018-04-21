@@ -30,7 +30,7 @@ SOFTWARE.
 
 extern int common_syscall(size_t type, size_t no, ...);
 
-long shmget(key_t key, size_t size, int shmflags)
+int shmget(key_t key, size_t size, int shmflags)
 {
     auto ret = common_syscall(0, SYS_shmget, key, size, shmflags);
     if (ret < 0)

@@ -33,6 +33,8 @@ SOFTWARE.
 #include "fs/fsutils.hpp"
 #include "fs/vfs.hpp"
 
+#include "utils/logging.hpp"
+
 int sys_open(user_ptr<const char> path, int flags, int mode)
 {
     if (!path.check())

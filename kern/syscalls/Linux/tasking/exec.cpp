@@ -26,9 +26,11 @@ SOFTWARE.
 #include "syscalls/syscalls.hpp"
 
 #include "tasking/process.hpp"
+#include "tasking/process_data.hpp"
 #include "tasking/loaders/process_loader.hpp"
 #include "mem/meminfo.hpp"
 #include "fs/fsutils.hpp"
+#include "fs/pathutils.hpp"
 #include "fs/vfs.hpp"
 #include "drivers/storage/disk.hpp"
 #include "mem/meminfo.hpp"
@@ -104,12 +106,15 @@ int sys_execve(user_ptr<const char> path, user_ptr<user_ptr<const char>> argv, u
             return -ENOEXEC;
         }
 
+        std::string proc_name = path.get();
+
         process = &Process::current();
 
         process->unswitch();
         loader->load(*process);
 
         process->set_args(args);
+        process->data->name = filename(proc_name);
     }
 
     // Force scope deletion, otherwise it will never be called

@@ -48,7 +48,7 @@ namespace vfs
 {
 
 std::shared_ptr<vfs_root> root;
-std::vector<node*> mounted_nodes;
+std::vector<std::weak_ptr<node>> mounted_nodes;
 
 void init()
 {
@@ -58,13 +58,19 @@ void init()
     {
         for (auto ptr : mounted_nodes)
         {
-            if (ptr) ptr->~node(); // force unmounting of mounted nodes
+            if (!ptr.expired()) ptr.lock()->~node(); // force unmounting of mounted nodes
         }
 
         MessageBus::send(SyncDisksCache{});
     });
 
     log(Info, "VFS initialized.\n");
+}
+
+node::node(node *parent)
+{
+    set_parent(parent);
+    m_stat = mkstat();
 }
 
 node::~node()

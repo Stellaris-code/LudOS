@@ -28,6 +28,7 @@ SOFTWARE.
 #include "fs/fsutils.hpp"
 #include "fs/vfs.hpp"
 #include "tasking/process.hpp"
+#include "tasking/process_data.hpp"
 #include "utils/user_ptr.hpp"
 
 int sys_chroot(user_ptr<const char> path)
@@ -47,7 +48,7 @@ int sys_chroot(user_ptr<const char> path)
         return -ENOTDIR;
     }
 
-    Process::current().data.root = result.target_node;
+    Process::current().data->root = result.target_node;
 
     return EOK;
 }

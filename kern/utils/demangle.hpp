@@ -25,13 +25,13 @@ SOFTWARE.
 #ifndef DEMANGLE_HPP
 #define DEMANGLE_HPP
 
-#include <string.hpp>
+#include <kstring/kstring.hpp>
 
 #include <cxxabi.h>
 
 #include "utils/logging.hpp"
 
-inline const char* demangle(const std::string& symbol)
+inline const char* demangle(const kpp::string& symbol)
 {
     static char buffer[2048];
     size_t len = sizeof(buffer);

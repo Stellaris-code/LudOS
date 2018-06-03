@@ -28,14 +28,15 @@ SOFTWARE.
 #include <functional.hpp>
 #include <unordered_map.hpp>
 #include <list.hpp>
-#include <typeindex.hpp>
-#include <any.hpp>
 #include <optional.hpp>
+
+#include <types/typeid.hpp>
 
 class MessageBus
 {
 public:
-    using Handle = std::pair<std::type_index, std::list<std::any>::const_iterator>;
+    struct Entry;
+    using Handle = std::pair<kpp::type_id_t, std::list<Entry>::const_iterator>;
 
 public:
     enum Priority
@@ -71,18 +72,18 @@ public:
             return *this;
         }
 
-        std::optional<Handle> handle {};
+        kpp::optional<Handle> handle {};
     };
 
-private:
-    template <typename T>
+public:
     struct Entry
     {
-        std::function<void(const T&)> handler;
+        std::function<void(const void*)> handler;
         Priority priority;
     };
 
-    static inline std::unordered_map<std::type_index, std::list<std::any>> handlers;
+private:
+    static inline std::unordered_map<kpp::type_id_t, std::list<Entry>> handlers;
 };
 
 #include "messagebus.tpp"

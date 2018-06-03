@@ -36,7 +36,7 @@ const Elf32_Ehdr* kernel_binary()
 {
     for (const auto& mod : multiboot::get_modules())
     {
-        std::string cmdline = (char*)mod.cmdline;
+        kpp::string cmdline = (char*)mod.cmdline;
         if (tokenize(cmdline, " ", true).back() == "kernel_binary")
         {
             return (const Elf32_Ehdr*)mod.mod_start;

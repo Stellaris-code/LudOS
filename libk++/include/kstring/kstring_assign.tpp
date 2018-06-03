@@ -1,5 +1,5 @@
 /*
-kstring_assign.tpp
+kpp::string_assign.tpp
 
 Copyright (c) 19 Yann BOUCHER (yann)
 
@@ -22,8 +22,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-
-#include "kstring.hpp"
 
 template<typename CharType, size_t SmallStrSize>
 kernel_string<CharType, SmallStrSize>::kernel_string()
@@ -69,7 +67,7 @@ kernel_string<CharType, SmallStrSize>::kernel_string(InputIterator first, InputI
 
 template<typename CharType, size_t SmallStrSize>
 kernel_string<CharType, SmallStrSize>::kernel_string(const CharType *str)
-    : kernel_string(str, strlen(str))
+    : kernel_string(str, string_length(str))
 {
 }
 
@@ -147,7 +145,7 @@ kernel_string<CharType, SmallStrSize> &kernel_string<CharType, SmallStrSize>::as
 template<typename CharType, size_t SmallStrSize>
 kernel_string<CharType, SmallStrSize> &kernel_string<CharType, SmallStrSize>::assign(const CharType *str)
 {
-    return assign(str, strlen(str));
+    return assign(str, string_length(str));
 }
 
 template<typename CharType, size_t SmallStrSize>

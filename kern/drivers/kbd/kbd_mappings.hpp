@@ -170,11 +170,11 @@ struct KeyEvent
     } state;
 };
 
-using Mapping = std::array<Key, 256>;
+using Mapping = kpp::array<Key, 256>;
 
 void install_mapping(const Mapping& mapping);
 
-static inline std::optional<MessageBus::Handle> current_handle;
+static inline kpp::optional<MessageBus::Handle> current_handle;
 
 namespace mappings
 {

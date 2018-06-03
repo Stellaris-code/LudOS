@@ -33,7 +33,6 @@ SOFTWARE.
 #include "panic.hpp"
 
 #include <array.hpp>
-#include <string.hpp>
 
 uint8_t* emu_mem;
 bool x86_flag = false;
@@ -160,7 +159,7 @@ RealModeState emuInt10h(uint16_t ax, uint16_t bx, uint16_t cx, uint16_t dx, uint
 
     x86emu_set_log(emu, 100, [](x86emu_t *emu, char *buf, unsigned size)->void
     {
-        std::string str(buf, size);
+        kpp::string str(buf, size);
         err("x86emu : %s\n", str.c_str());
     });
 

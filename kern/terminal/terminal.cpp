@@ -26,6 +26,7 @@ SOFTWARE.
 #include "terminal.hpp"
 
 #include <ctype.h>
+#include <memory.hpp>
 
 #include "nullterm.hpp"
 
@@ -148,7 +149,7 @@ void Terminal::clear_input()
     force_redraw();
 }
 
-void Terminal::set_input(const std::string &str)
+void Terminal::set_input(const kpp::string &str)
 {
     while (m_cur_line.size() > m_input_off)
     {
@@ -283,7 +284,7 @@ void Terminal::scroll_history(int scroll)
     draw();
 }
 
-void Terminal::set_title(std::u32string str, ColorPair color)
+void Terminal::set_title(kpp::u32string str, ColorPair color)
 {
     m_data.title_str = str;
 
@@ -309,7 +310,7 @@ void Terminal::set_title(std::u32string str, ColorPair color)
     draw();
 }
 
-void Terminal::set_title(std::u32string str)
+void Terminal::set_title(kpp::u32string str)
 {
     set_title(str, m_data.color());
 }
@@ -319,9 +320,9 @@ void Terminal::set_accept_input(bool val)
     m_accept_input = val;
 }
 
-std::string Terminal::input() const
+kpp::string Terminal::input() const
 {
-    std::string str;
+    kpp::string str;
     for (size_t i { m_input_off }; i < m_cur_line.size(); ++i)
     {
         str += decode_utf32(m_cur_line[i].c);
@@ -423,14 +424,14 @@ void Terminal::process_escape_code()
     if (param_list.size() == 5 && param_list[0] == "38" && param_list[1] == "2")
     {
         ColorPair pair = m_data.color();
-        pair.fg = graphics::Color(std::stoul(param_list[2]),std::stoul(param_list[3]),std::stoul(param_list[4]));
+        pair.fg = graphics::Color(kpp::stoul(param_list[2]),kpp::stoul(param_list[3]),kpp::stoul(param_list[4]));
 
         m_data.push_color(pair);
     }
     if (param_list.size() == 5 && param_list[0] == "48" && param_list[1] == "2")
     {
         ColorPair pair = m_data.color();
-        pair.bg = graphics::Color(std::stoul(param_list[2]),std::stoul(param_list[3]),std::stoul(param_list[4]));
+        pair.bg = graphics::Color(kpp::stoul(param_list[2]),kpp::stoul(param_list[3]),kpp::stoul(param_list[4]));
 
         m_data.push_color(pair);
     }

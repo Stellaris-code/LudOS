@@ -156,7 +156,7 @@ std::pair<const elf::Elf32_Shdr *, size_t> elf_info()
     return {shdr, elf_info.num};
 }
 
-std::string parse_cmdline()
+kpp::string parse_cmdline()
 {
     if (CHECK_FLAG(info->flags, 2))
     {
@@ -193,7 +193,7 @@ std::vector<multiboot_module_t> get_modules()
     }
 }
 
-std::string get_str(uintptr_t addr, size_t size)
+kpp::string get_str(uintptr_t addr, size_t size)
 {
     return (char*)Memory::mmap(addr, size, Memory::Read);
 }

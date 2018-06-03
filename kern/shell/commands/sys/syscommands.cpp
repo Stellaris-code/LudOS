@@ -41,7 +41,7 @@ void install_sys_commands(Shell &sh)
     sh.register_command(
     {"meminfo", "Print memory info",
      "Usage : 'meminfo'",
-     [](const std::vector<std::string>&)
+     [](const std::vector<kpp::string>&)
      {
          kprintf("Total memory : %s\n", human_readable_size(MemoryInfo::total()).c_str());
          kprintf("Free memory : %s\n", human_readable_size(MemoryInfo::free()).c_str());
@@ -54,7 +54,7 @@ void install_sys_commands(Shell &sh)
     sh.register_command(
     {"alloc_dump", "Print malloc info",
      "Usage : 'alloc_dump'",
-     [](const std::vector<std::string>&)
+     [](const std::vector<kpp::string>&)
      {
          liballoc_dump();
          return 0;
@@ -63,7 +63,7 @@ void install_sys_commands(Shell &sh)
     sh.register_command(
     {"halt", "stops computer",
      "Usage : 'halt'",
-     [](const std::vector<std::string>&)
+     [](const std::vector<kpp::string>&)
      {
          MessageBus::send(ShutdownMessage{});
          return 0;
@@ -72,7 +72,7 @@ void install_sys_commands(Shell &sh)
     sh.register_command(
     {"reboot", "reboots computer",
      "Usage : 'reboot'",
-     [](const std::vector<std::string>&)
+     [](const std::vector<kpp::string>&)
      {
          MessageBus::send(ResetMessage{});
          return 0;
@@ -81,7 +81,7 @@ void install_sys_commands(Shell &sh)
     sh.register_command(
     {"date", "prints current date",
      "Usage : 'date'",
-     [](const std::vector<std::string>&)
+     [](const std::vector<kpp::string>&)
      {
          auto date = Time::to_local_time(Time::get_time_of_day());
          kprintf("%s\n", Time::to_string(date));
@@ -91,7 +91,7 @@ void install_sys_commands(Shell &sh)
     sh.register_command(
     {"uptime", "prints uptime",
      "Usage : 'uptime'",
-     [](const std::vector<std::string>&)
+     [](const std::vector<kpp::string>&)
      {
          kprintf("Uptime : %f sec\n", Time::uptime());
          return 0;
@@ -100,7 +100,7 @@ void install_sys_commands(Shell &sh)
     sh.register_command(
     {"lspci", "list pci devices",
      "Usage : 'lspci'",
-     [](const std::vector<std::string>&)
+     [](const std::vector<kpp::string>&)
      {
          for (const auto& dev : pci::devices)
          {
@@ -116,7 +116,7 @@ void install_sys_commands(Shell &sh)
     sh.register_command(
     {"lsdrv", "list active drivers",
      "Usage : 'lsdrv'",
-     [](const std::vector<std::string>&)
+     [](const std::vector<kpp::string>&)
      {
          for (Driver& driver : Driver::list())
          {
@@ -128,7 +128,7 @@ void install_sys_commands(Shell &sh)
     sh.register_command(
     {"epoch", "print current unix time",
      "Usage : 'epoch'",
-     [](const std::vector<std::string>&)
+     [](const std::vector<kpp::string>&)
      {
          kprintf("%d\n", Time::epoch());
          return 0;

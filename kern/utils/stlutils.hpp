@@ -25,27 +25,28 @@ SOFTWARE.
 #ifndef STLUTILS_HPP
 #define STLUTILS_HPP
 
-#include <string.hpp>
 #include <vector.hpp>
 #include <functional.hpp>
 
 #include <utils/gsl/gsl_span.hpp>
 
+#include <kstring/kstring.hpp>
+
 #include <ctype.h>
 
-template <class ContainerT = std::vector<std::string>>
-inline ContainerT tokenize(const std::string& str, const std::string& delimiters = " ", bool trimEmpty = false)
+template <class ContainerT = std::vector<kpp::string>>
+inline ContainerT tokenize(const kpp::string& str, const kpp::string& delimiters = " ", bool trimEmpty = false)
 {
     ContainerT tokens;
 
-    std::string::size_type pos, lastPos = 0, length = str.length();
+    kpp::string::size_type pos, lastPos = 0, length = str.length();
 
     using value_type = typename ContainerT::value_type;
 
     while(lastPos < length + 1)
     {
         pos = str.find_first_of(delimiters, lastPos);
-        if(pos == std::string::npos)
+        if(pos == kpp::string::npos)
         {
             pos = length;
         }
@@ -73,15 +74,15 @@ inline ContainerU map(const ContainerT& in, std::function<U(const T&)> fun)
     return cont;
 }
 
-template <typename Container = std::vector<std::string>>
-inline std::string join(const Container& cont, const std::string& join_str)
+template <typename Container = std::vector<kpp::string>>
+inline kpp::string join(const Container& cont, const kpp::string& join_str)
 {
     if (cont.empty())
     {
         return "";
     }
 
-    std::string result;
+    kpp::string result;
     for (int i { 0 }; i < int(cont.size())-1; ++i)
     {
         result += cont[i];
@@ -101,36 +102,36 @@ inline void merge(Cont& lhs, const Cont& rhs)
     std::copy(rhs.begin(), rhs.end(), lhs.begin() + old_size);
 }
 
-std::string inline trim_zstr(const std::string& str)
+kpp::string inline trim_zstr(const kpp::string& str)
 {
-    return std::string(str.c_str(), strlen(str.c_str()));
+    return kpp::string(str.c_str(), strlen(str.c_str()));
 }
 
-std::string inline trim_right(std::string str)
+kpp::string inline trim_right(kpp::string str)
 {
-    while (isspace(str.back()))
+    while (!str.empty() && isspace(str.back()))
     {
         str.pop_back();
     }
     return str;
 }
 
-std::string inline trim_left(std::string str)
+kpp::string inline trim_left(kpp::string str)
 {
-    while (isspace(str.front()))
+    while (!str.empty() && isspace(str.front()))
     {
         str.erase(0, 1);
     }
     return str;
 }
 
-std::string inline trim(std::string str)
+kpp::string inline trim(kpp::string str)
 {
     return trim_right(trim_left(str));
 }
 
-template <class ContainerT = std::vector<std::string>>
-inline ContainerT quote_tokenize(const std::string& str)
+template <class ContainerT = std::vector<kpp::string>>
+inline ContainerT quote_tokenize(const kpp::string& str)
 {
     auto tokens = tokenize(str, "\"");
 
@@ -140,7 +141,7 @@ inline ContainerT quote_tokenize(const std::string& str)
     {
         bool is_in_quotes = i % 2;
 
-        std::string el = tokens[i];
+        kpp::string el = tokens[i];
 
         if (!is_in_quotes)
         {
@@ -216,13 +217,13 @@ inline std::vector<U> map(const std::vector<T>& cont, std::function<U(const T&)>
     return result;
 }
 
-inline std::string strtolower(std::string str)
+inline kpp::string strtolower(kpp::string str)
 {
     std::transform(str.begin(), str.end(),str.begin(), ::tolower);
     return str;
 }
 
-inline std::string strtoupper(std::string str)
+inline kpp::string strtoupper(kpp::string str)
 {
     std::transform(str.begin(), str.end(),str.begin(), ::toupper);
     return str;
@@ -253,12 +254,12 @@ inline T& closest(const T& base, std::vector<T>& values, std::function<U(const T
     return values[closest_idx];
 }
 
-inline std::string format(const std::string& format, const std::vector<std::pair<std::string, std::string>>& values)
+inline kpp::string format(const kpp::string& format, const std::vector<std::pair<kpp::string, kpp::string>>& values)
 {
     auto tokens = tokenize(format, "{}");
     bool in_param = false;
 
-    std::string result;
+    kpp::string result;
 
     for (auto tok : tokens)
     {
@@ -267,7 +268,7 @@ inline std::string format(const std::string& format, const std::vector<std::pair
             in_param = false;
 
             auto it = std::find_if(values.begin(), values.end(),
-                                   [tok](const std::pair<std::string, std::string>& p)
+                                   [tok](const std::pair<kpp::string, kpp::string>& p)
                     {return tok == p.first;});
             if (it != values.end())
             {

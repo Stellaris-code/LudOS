@@ -27,24 +27,24 @@ SOFTWARE.
 
 #include "drivers/driver.hpp"
 
+#include <kstring/kstring.hpp>
+
 #include <array.hpp>
-#include <stdexcept.hpp>
-#include <string.hpp>
+#include <expected.hpp>
 
 #include "utils/vecutils.hpp"
 
 // TODO : Use the messagebus for sending/receiving packets
 
-class NetworkException : public std::runtime_error
+struct NetworkError
 {
-public:
-    enum ErrorType
+    enum Type
     {
         NoNicFound,
-        Unkown
-    };
+        Unknown
+    } type;
 
-    std::string to_string(ErrorType type)
+    kpp::string to_string() const
     {
         switch (type)
         {
@@ -54,20 +54,14 @@ public:
                 return "Unknown error";
         }
     }
-
-    explicit NetworkException(ErrorType type)
-        : std::runtime_error("Network error : " + to_string(type))
-    {
-
-    }
 };
 
 class NetworkDriver : virtual public Driver
 {
 public:
-    static NetworkDriver& get();
+    static kpp::expected<std::reference_wrapper<NetworkDriver>, NetworkError> get();
 
-    virtual std::array<uint8_t, 6> mac_address() const = 0;
+    virtual kpp::array<uint8_t, 6> mac_address() const = 0;
 
 protected:
     static void add_nic(NetworkDriver& nic);

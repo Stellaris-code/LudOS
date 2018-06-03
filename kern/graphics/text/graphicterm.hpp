@@ -69,7 +69,7 @@ private:
     PointU m_cursor_pos { 0, 0 };
     Bitmap m_cursor_bitmap;
     Bitmap m_background;
-    std::string m_background_path;
+    kpp::string m_background_path;
     Timer::CallbackHandle m_callback;
     MessageBus::RAIIHandle m_msg_handle;
 };

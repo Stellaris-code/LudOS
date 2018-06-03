@@ -25,11 +25,11 @@ SOFTWARE.
 
 #include "driver.hpp"
 
-NetworkDriver &NetworkDriver::get()
+kpp::expected<std::reference_wrapper<NetworkDriver>, NetworkError> NetworkDriver::get()
 {
     if (m_nics.empty())
     {
-        throw NetworkException{NetworkException::NoNicFound};
+        return kpp::unexpected<NetworkError>{NetworkError{NetworkError::NoNicFound}};
     }
 
     return m_nics.back();

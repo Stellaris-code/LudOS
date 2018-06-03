@@ -26,6 +26,7 @@ SOFTWARE.
 #include "ps2mouse.hpp"
 
 #include <stdint.h>
+#include <kstring/kstring.hpp>
 
 #include "drivers/mouse/mouse.hpp"
 
@@ -216,6 +217,11 @@ void PS2Mouse::set_sample_rate(uint8_t rate)
 
     send_write(rate);
     if (read() != 0xFA) return;
+}
+
+kpp::string PS2Mouse::driver_name() const
+{
+    return "PS/2 Mouse";
 }
 
 ADD_DRIVER(PS2Mouse)

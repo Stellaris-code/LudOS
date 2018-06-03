@@ -28,7 +28,6 @@ SOFTWARE.
 #include "config.hpp"
 
 #include <stdint.h>
-#include <string.hpp>
 #include <memory.hpp>
 #include <optional.hpp>
 #include <vector.hpp>
@@ -83,13 +82,13 @@ struct ProcessData
     aligned_vector<uint8_t, Memory::page_size()> stack; // stack is never shared
     shared_resource<aligned_vector<uint8_t, Memory::page_size()>> code;
 
-    kstring name { "<INVALID>" };
+    kpp::string name { "<INVALID>" };
     uint32_t uid { 0 };
     uint32_t gid { 0 };
 
     std::vector<pid_t> children;
 
-    std::optional<pid_t> waiting_pid;
+    kpp::optional<pid_t> waiting_pid;
     int* wstatus { nullptr };
     uintptr_t waitstatus_phys { 0 };
 
@@ -100,14 +99,14 @@ struct ProcessData
 
     std::unordered_map<uintptr_t, tasking::MemoryMapping> mappings;
 
-    std::vector<std::string> args;
+    std::vector<kpp::string> args;
 
 #ifdef LUDOS_HAS_SHM
     std::unordered_map<unsigned int, tasking::ShmEntry> shm_list;
 #endif
 
     std::stack<ProcessArchContext*> sig_context;
-    shared_resource<std::array<struct sigaction, SIGRTMAX>> sig_handlers;
+    shared_resource<kpp::array<struct sigaction, SIGRTMAX>> sig_handlers;
 };
 
 #endif // PROCESS_DATA_HPP

@@ -56,7 +56,7 @@ struct EDIDInfo
 namespace EDID
 {
 
-std::optional<EDIDInfo> get();
+kpp::optional<EDIDInfo> get();
 
 graphics::MonitorInfo to_monitor_info(const EDIDInfo& info);
 

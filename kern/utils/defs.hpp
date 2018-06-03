@@ -34,6 +34,8 @@ SOFTWARE.
 
 #define KERNEL_VIRTUAL_BASE 0xC0000000
 #define CURRENT_YEAR 2017
+    
+#define USES_ACPICA 0
 
 #ifndef NDEBUG
 #define LUDOS_DEBUG

@@ -28,13 +28,14 @@ SOFTWARE.
 #define BREAKPOINT() do { __asm__ __volatile__ ("int3") } while(0)
 
 #include <functional.hpp>
-#include <string.hpp>
 
 #include <stdio.h>
 
+#include <kstring/kstring.hpp>
+
 #include "time/time.hpp"
 
-void benchmark(std::function<void()> fun, const std::string& description, size_t repetitions = 100)
+void benchmark(std::function<void()> fun, const kpp::string& description, size_t repetitions = 100)
 {
     kprintf("Benchmarking function %s\n", description.c_str());
 

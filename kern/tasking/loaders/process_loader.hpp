@@ -28,6 +28,8 @@ SOFTWARE.
 #include <vector.hpp>
 #include <memory.hpp>
 
+#include <kstring/kstrfwd.hpp>
+
 #include "utils/gsl/gsl_span.hpp"
 #include "utils/logging.hpp"
 
@@ -42,7 +44,7 @@ public:
 
 public:
     virtual bool load(Process&) = 0;
-    virtual std::string file_type() const = 0;
+    virtual kpp::string file_type() const = 0;
 
 public:
     void set_file(gsl::span<const uint8_t> file);

@@ -870,18 +870,19 @@ public:
 template <class _Key, class _Hash, class _Equal, class _Alloc>
 struct __diagnose_hash_table_helper {
   static constexpr bool __trigger_diagnostics()
-    _LIBCPP_DIAGNOSE_WARNING(__check_hash_requirements<_Key, _Hash>::value
-                         && !__invokable<_Hash const&, _Key const&>::value,
-      "the specified hash functor does not provide a const call operator")
+
+
+
     _LIBCPP_DIAGNOSE_WARNING(is_copy_constructible<_Equal>::value
                           && !__invokable<_Equal const&, _Key const&, _Key const&>::value,
       "the specified comparator type does not provide a const call operator")
   {
-    static_assert(__check_hash_requirements<_Key, _Hash>::value,
-      "the specified hash does not meet the Hash requirements");
+
+
     static_assert(is_copy_constructible<_Equal>::value,
       "the specified comparator is required to be copy constructible");
-    return true;
+    return _VSTD::__diagnose_hash_requirements_and_warnings<_Key, _Hash>()
+        || true;
   }
 };
 

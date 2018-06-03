@@ -24,6 +24,9 @@ SOFTWARE.
 */
 
 #include "speaker.hpp"
+
+#include <kstring/kstring.hpp>
+
 #include "io.hpp"
 #include "pit.hpp"
 #include "time/timer.hpp"
@@ -62,6 +65,11 @@ void Speaker::stop()
     uint8_t tmp = inb(0x61) & 0xFC;
 
     outb(0x61, tmp);
+}
+
+kpp::string Speaker::driver_name() const
+{
+    return "PC Speaker";
 }
 
 ADD_DRIVER(Speaker)

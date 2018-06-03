@@ -44,7 +44,7 @@ void install_fs_commands(Shell &sh)
     sh.register_command(
     {"pwd", "print current directory",
      "Usage : pwd",
-     [&sh](const std::vector<std::string>&)
+     [&sh](const std::vector<kpp::string>&)
      {
          puts(sh.pwd->path().c_str());
          return 0;
@@ -53,7 +53,7 @@ void install_fs_commands(Shell &sh)
     sh.register_command(
     {"ls", "list current directory",
      "Usage : ls",
-     [&sh](const std::vector<std::string>&)
+     [&sh](const std::vector<kpp::string>&)
      {
          auto vec = sh.pwd->readdir();
          std::sort(vec.begin(), vec.end(), [](const auto& lhs, const auto& rhs)
@@ -82,12 +82,12 @@ void install_fs_commands(Shell &sh)
     sh.register_command(
     {"cd", "change directory",
      "Usage : cd <dir>",
-     [&sh](const std::vector<std::string>& args)
+     [&sh](const std::vector<kpp::string>& args)
      {
-         std::string target = "/";
+         kpp::string target = "/";
          if (!args.empty()) target = args[0];
 
-         auto node = vfs::find(sh.get_path(target));
+         auto node = vfs::find(sh.get_path(target)).value_or(nullptr);
 
          if (!node)
          {
@@ -120,16 +120,16 @@ void install_fs_commands(Shell &sh)
     sh.register_command(
     {"cat", "print file contents",
      "Usage : cat <file> (offset) (size)",
-     [&sh](const std::vector<std::string>& args)
+     [&sh](const std::vector<kpp::string>& args)
      {
-         std::string path = "/";
+         kpp::string path = "/";
 
          if (!args.empty())
          {
              path = args[0];
          }
 
-         auto node = vfs::find(sh.get_path(path));
+         auto node = vfs::find(sh.get_path(path)).value_or(nullptr);
          if (!node)
          {
              sh.error("file not found : '%s'\n", path.c_str());
@@ -141,11 +141,11 @@ void install_fs_commands(Shell &sh)
 
          if (args.size() >= 2)
          {
-             offset = std::stoul(args[1]);
+             offset = kpp::stoul(args[1]);
          }
          if (args.size() >= 3)
          {
-             size = std::stoul(args[2]);
+             size = kpp::stoul(args[2]);
          }
 
          auto data = node->read(offset, size);
@@ -164,7 +164,7 @@ void install_fs_commands(Shell &sh)
     sh.register_command(
     {"tree", "print current fs tree",
      "Usage : tree",
-     [&sh](const std::vector<std::string>&)
+     [&sh](const std::vector<kpp::string>&)
      {
          vfs::traverse(*sh.pwd);
          return 0;
@@ -173,7 +173,7 @@ void install_fs_commands(Shell &sh)
     sh.register_command(
     {"lsblk", "list current drives",
      "Usage : lsblk",
-     [](const std::vector<std::string>&)
+     [](const std::vector<kpp::string>&)
      {
          for (Disk& disk : Disk::disks())
          {
@@ -186,7 +186,7 @@ void install_fs_commands(Shell &sh)
     sh.register_command(
     {"df", "list current file systems",
      "Usage : df",
-     [](const std::vector<std::string>&)
+     [](const std::vector<kpp::string>&)
      {
          for (FileSystem& fs : FileSystem::fs_list())
          {
@@ -200,16 +200,16 @@ void install_fs_commands(Shell &sh)
     sh.register_command(
     {"crc32", "print file crc32 checksum",
      "Usage : crc32 <file>",
-     [&sh](const std::vector<std::string>& args)
+     [&sh](const std::vector<kpp::string>& args)
      {
-         std::string path = "/";
+         kpp::string path = "/";
 
          if (!args.empty())
          {
              path = args[0];
          }
 
-         auto node = vfs::find(sh.get_path(path));
+         auto node = vfs::find(sh.get_path(path)).value_or(nullptr);
          if (!node)
          {
              sh.error("file not found : '%s'\n", path.c_str());
@@ -244,16 +244,16 @@ void install_fs_commands(Shell &sh)
     sh.register_command(
     {"dump", "dump file",
      "Usage : 'dump <file> (offset) (size)'",
-     [&sh](const std::vector<std::string>& args)
+     [&sh](const std::vector<kpp::string>& args)
      {
-         std::string path = "/";
+         kpp::string path = "/";
 
          if (!args.empty())
          {
              path = args[0];
          }
 
-         auto node = vfs::find(sh.get_path(path));
+         auto node = vfs::find(sh.get_path(path)).value_or(nullptr);
          if (!node)
          {
              sh.error("file not found : '%s'\n", path.c_str());
@@ -264,13 +264,13 @@ void install_fs_commands(Shell &sh)
 
          if (args.size() >= 2)
          {
-             offset = std::stoul(args[1]);
+             offset = kpp::stoul(args[1]);
          }
 
          size_t size = node->size() - offset;
          if (args.size() >= 3)
          {
-             size = std::stoul(args[2]);
+             size = kpp::stoul(args[2]);
          }
 
          auto data = node->read(offset, size);
@@ -288,9 +288,9 @@ void install_fs_commands(Shell &sh)
     sh.register_command(
     {"write", "write to file",
      "Usage : 'write <file> <data> (offset)'",
-     [&sh](const std::vector<std::string>& args)
+     [&sh](const std::vector<kpp::string>& args)
      {
-         std::string path = "/";
+         kpp::string path = "/";
 
          if (args.size() < 2)
          {
@@ -299,17 +299,17 @@ void install_fs_commands(Shell &sh)
          }
          path = args[0];
 
-         auto node = vfs::find(sh.get_path(path));
+         auto node = vfs::find(sh.get_path(path)).value_or(nullptr);
          if (!node)
          {
              sh.error("file not found : '%s'\n", path.c_str());
              return -2;
          }
 
-         std::string data = args[1];
+         kpp::string data = args[1];
 
          size_t offset = 0;
-         if (args.size() >= 3) offset = std::stoul(args[2]);
+         if (args.size() >= 3) offset = kpp::stoul(args[2]);
 
          if (!node->write(offset, {(uint8_t*)data.data(), (int)data.size()}))
          {
@@ -324,9 +324,9 @@ void install_fs_commands(Shell &sh)
     sh.register_command(
     {"ren", "rename file",
      "Usage : 'ren <old> <new>'",
-     [&sh](const std::vector<std::string>& args)
+     [&sh](const std::vector<kpp::string>& args)
      {
-         std::string path = "/";
+         kpp::string path = "/";
 
          if (args.size() != 2)
          {
@@ -335,7 +335,7 @@ void install_fs_commands(Shell &sh)
          }
          path = args[0];
 
-         auto node = vfs::find(sh.get_path(path));
+         auto node = vfs::find(sh.get_path(path)).value_or(nullptr);
          if (!node)
          {
              sh.error("file not found : '%s'\n", path.c_str());
@@ -358,7 +358,7 @@ void install_fs_commands(Shell &sh)
     sh.register_command(
     {"sync", "flush disks cache",
      "Usage : sync",
-     [](const std::vector<std::string>&)
+     [](const std::vector<kpp::string>&)
      {
          MessageBus::send(SyncDisksCache{});
          return 0;
@@ -368,7 +368,7 @@ void install_fs_commands(Shell &sh)
     sh.register_command(
     {"mkdir", "creates a directory",
      "Usage : mkdir <name>",
-     [&sh](const std::vector<std::string>& args)
+     [&sh](const std::vector<kpp::string>& args)
      {
          if (args.size() != 1)
          {
@@ -376,7 +376,7 @@ void install_fs_commands(Shell &sh)
              return -1;
          }
 
-         std::shared_ptr<vfs::node> node = vfs::find(sh.get_path(parent_path(args[0])));
+         std::shared_ptr<vfs::node> node = vfs::find(sh.get_path(parent_path(args[0]))).value_or(nullptr);
          if (!node)
          {
              sh.error("Could not find path '%s'\n", sh.get_path(parent_path(args[0])).c_str());
@@ -395,7 +395,7 @@ void install_fs_commands(Shell &sh)
     sh.register_command(
     {"touch", "creates a file",
      "Usage : touch <name>",
-     [&sh](const std::vector<std::string>& args)
+     [&sh](const std::vector<kpp::string>& args)
      {
          if (args.size() != 1)
          {
@@ -415,7 +415,7 @@ void install_fs_commands(Shell &sh)
     sh.register_command(
     {"resize", "resizes a file",
      "Usage : resize <name> <size>",
-     [&sh](const std::vector<std::string>& args)
+     [&sh](const std::vector<kpp::string>& args)
      {
          if (args.size() != 2)
          {
@@ -423,16 +423,16 @@ void install_fs_commands(Shell &sh)
              return -1;
          }
 
-         auto node = vfs::find(sh.get_path(args[0]));
+         auto node = vfs::find(sh.get_path(args[0])).value_or(nullptr);
          if (!node)
          {
              sh.error("Can't find '%s' !\n", args[0].c_str());
              return -2;
          }
 
-         if (!node->resize(std::stoul(args[1])))
+         if (!node->resize(kpp::stoul(args[1])))
          {
-             sh.error("Could not resize file '%s' to length %d\n", args[0].c_str(), std::stoul(args[1]));
+             sh.error("Could not resize file '%s' to length %d\n", args[0].c_str(), kpp::stoul(args[1]));
              return -3;
          }
 
@@ -444,7 +444,7 @@ void install_fs_commands(Shell &sh)
     sh.register_command(
     {"rm", "removes a file",
      "Usage : rm <name>",
-     [&sh](const std::vector<std::string>& args)
+     [&sh](const std::vector<kpp::string>& args)
      {
          if (args.size() != 1)
          {
@@ -452,7 +452,7 @@ void install_fs_commands(Shell &sh)
              return -1;
          }
 
-         auto node = vfs::find(sh.get_path(args[0]));
+         auto node = vfs::find(sh.get_path(args[0])).value_or(nullptr);
          if (!node)
          {
              sh.error("Can't find '%s' !\n", args[0].c_str());
@@ -471,7 +471,7 @@ void install_fs_commands(Shell &sh)
     sh.register_command(
     {"mount", "mounts a file system",
      "Usage : mount <disk> <target>",
-     [&sh](const std::vector<std::string>& args)
+     [&sh](const std::vector<kpp::string>& args)
      {
          if (args.size() != 2)
          {
@@ -479,7 +479,7 @@ void install_fs_commands(Shell &sh)
              return -1;
          }
 
-         auto vfs_disk_node = vfs::find(sh.get_path(args[0]));
+         auto vfs_disk_node = vfs::find(sh.get_path(args[0])).value_or(nullptr);
          if (!vfs_disk_node)
          {
              sh.error("Can't find disk file '%s' !\n", args[0].c_str());
@@ -492,7 +492,7 @@ void install_fs_commands(Shell &sh)
              return -3;
          }
 
-         auto target_node = vfs::find(sh.get_path(args[1]));
+         auto target_node = vfs::find(sh.get_path(args[1])).value_or(nullptr);
          if (!target_node)
          {
              sh.error("Can't find mount point '%s' !\n", args[1].c_str());
@@ -518,7 +518,7 @@ void install_fs_commands(Shell &sh)
     sh.register_command(
     {"umount", "unmounts a file system",
      "Usage : umount <target>",
-     [&sh](const std::vector<std::string>& args)
+     [&sh](const std::vector<kpp::string>& args)
      {
          if (args.size() != 1)
          {
@@ -526,7 +526,7 @@ void install_fs_commands(Shell &sh)
              return -1;
          }
 
-         auto target_node = vfs::find(sh.get_path(args[0]));
+         auto target_node = vfs::find(sh.get_path(args[0])).value_or(nullptr);
          if (!target_node)
          {
              sh.error("Can't find mount point '%s' !\n", args[0].c_str());
@@ -545,7 +545,7 @@ void install_fs_commands(Shell &sh)
     sh.register_command(
     {"stat", "shows file info",
      "Usage : stat <file>",
-     [&sh](const std::vector<std::string>& args)
+     [&sh](const std::vector<kpp::string>& args)
      {
          if (args.size() != 1)
          {
@@ -553,7 +553,7 @@ void install_fs_commands(Shell &sh)
              return -1;
          }
 
-         auto target_node = vfs::find(sh.get_path(args[0]));
+         auto target_node = vfs::find(sh.get_path(args[0])).value_or(nullptr);
          if (!target_node)
          {
              sh.error("Can't find '%s' !\n", args[0].c_str());
@@ -562,7 +562,7 @@ void install_fs_commands(Shell &sh)
 
          auto stat = target_node->stat();
 
-         std::string perm_str(6, '-');
+         kpp::string perm_str(6, '-');
          if (stat.perms & vfs::Permissions::UserRead) perm_str[0] = 'r';
          if (stat.perms & vfs::Permissions::UserWrite) perm_str[1] = 'w';
          if (stat.perms & vfs::Permissions::UserExec) perm_str[2] = 'x';

@@ -25,8 +25,10 @@ SOFTWARE.
 #ifndef DISK_HPP
 #define DISK_HPP
 
-#include <string.hpp>
 #include <exception.hpp>
+
+#include <kstring/kstring.hpp>
+#include <expected.hpp>
 
 #include "utils/vecutils.hpp"
 #include "utils/messagebus.hpp"
@@ -73,7 +75,7 @@ public:
 
     virtual size_t disk_size() const = 0;
     virtual size_t sector_size() const = 0;
-    virtual std::string drive_name() const = 0;
+    virtual kpp::string drive_name() const = 0;
     virtual void flush_hardware_cache() = 0;
     virtual Type media_type() const = 0;
     virtual bool is_partition() const { return false; };
@@ -139,7 +141,7 @@ public:
 
     virtual size_t disk_size() const override { return m_size; }
     virtual size_t sector_size() const override { return 512; }
-    virtual std::string drive_name() const override { return m_name; }
+    virtual kpp::string drive_name() const override { return m_name; }
     virtual void flush_hardware_cache() override {}
     virtual Type media_type() const override { return Disk::RamDrive; }
 
@@ -148,13 +150,13 @@ protected:
     virtual void write_sector(size_t sector, gsl::span<const uint8_t> data) override;
 
 public:
-    MemoryDisk(uint8_t* data, size_t size, const std::string& name);
-    MemoryDisk(const uint8_t* data, size_t size, const std::string& name);
+    MemoryDisk(uint8_t* data, size_t size, const kpp::string& name);
+    MemoryDisk(const uint8_t* data, size_t size, const kpp::string& name);
 
 private:
     size_t m_size { 0 };
     uint8_t* m_data { nullptr };
-    std::string m_name;
+    kpp::string m_name;
     bool m_const { false };
 };
 
@@ -165,7 +167,7 @@ public:
 
     virtual size_t disk_size() const override { return m_size * sector_size(); }
     virtual size_t sector_size() const override { return m_base_disk.sector_size(); }
-    virtual std::string drive_name() const override { return m_base_disk.drive_name() + " - slice"; }
+    virtual kpp::string drive_name() const override { return m_base_disk.drive_name() + " - slice"; }
     virtual void flush_hardware_cache() override { m_base_disk.flush_hardware_cache(); }
     virtual Type media_type() const override { return m_base_disk.media_type(); }
     virtual bool is_partition() const override { return true; };
@@ -183,6 +185,42 @@ private:
     size_t m_size {};
 };
 
+struct DiskError
+{
+    enum Type
+    {
+        OutOfBounds,
+        ReadOnly,
+        BadSector,
+        NoMedia,
+        Aborted,
+        TimeOut,
+        Unknown
+    } type;
+
+    kpp::string to_string() const
+    {
+        switch (type)
+        {
+            case OutOfBounds:
+                return "Out of bounds access";
+            case ReadOnly:
+                return "Disk is read only";
+            case BadSector:
+                return "Bad sector access";
+            case NoMedia:
+                return "No media";
+            case Aborted:
+                return "Access aborted";
+            case TimeOut:
+                return "Device didn't respond";
+            case Unknown:
+            default:
+                return "Unknown error";
+        }
+    }
+};
+
 class DiskException : public std::runtime_error
 {
 public:
@@ -198,7 +236,7 @@ public:
         Unknown
     };
 
-    std::string to_string(ErrorType type)
+    kpp::string to_string(ErrorType type)
     {
         switch (type)
         {
@@ -221,7 +259,7 @@ public:
     }
 
     explicit DiskException(const Disk& disk, ErrorType type)
-        : std::runtime_error("Disk error : " + to_string(type) + " on disk " + disk.drive_name())
+        : std::runtime_error(("Disk error : " + to_string(type) + " on disk " + disk.drive_name()).c_str())
     {
         assert(type != OK);
     }

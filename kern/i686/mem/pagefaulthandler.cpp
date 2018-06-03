@@ -27,15 +27,13 @@ SOFTWARE.
 
 #include "panic.hpp"
 
-#include <string.hpp>
-
 #include "utils/stlutils.hpp"
 
 bool Paging::page_fault_handler(const registers *regs)
 {
     panic_regs = regs;
 
-    std::string message;
+    kpp::string message;
 
     if (regs->err_code & (1<<2))
     {

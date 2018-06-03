@@ -69,7 +69,7 @@ std::shared_ptr<vfs::node> Ext2FS::root() const
     return ptr;
 }
 
-std::optional<const ext2::Superblock> Ext2FS::read_superblock(const Disk &disk)
+kpp::optional<const ext2::Superblock> Ext2FS::read_superblock(const Disk &disk)
 {
     if (disk.disk_size() < 1024*2)
     {
@@ -189,7 +189,7 @@ const ext2::Inode Ext2FS::read_inode(size_t inode) const
 {
     if (!check_inode_presence(inode))
     {
-        error("Inode " + std::to_string(inode) + " is marked as free\n");
+        error(("Inode " + kpp::to_string(inode) + " is marked as free\n").c_str());
     }
 
     auto block_group = get_block_group((inode - 1) / m_superblock.inodes_in_block_group);
@@ -388,7 +388,7 @@ uint32_t Ext2FS::block_size() const
     return 1024<<m_superblock.block_size;
 }
 
-void Ext2FS::error(const std::string &message) const
+void Ext2FS::error(const kpp::string &message) const
 {
     m_has_error = (uint16_t)ext2::FSState::HasErrors;
     if (m_superblock.error_handling == (int)ext2::ErrorHandling::Panic)
@@ -401,18 +401,18 @@ void Ext2FS::error(const std::string &message) const
     }
 }
 
-std::string Ext2FS::link_name(const ext2::Inode &inode_struct)
+kpp::string Ext2FS::link_name(const ext2::Inode &inode_struct)
 {
-    std::string str;
+    kpp::string str;
 
     if (inode_struct.size_lower <= 60)
     {
-        str = std::string((const char*)inode_struct.block_ptr, 60);
+        str = kpp::string((const char*)inode_struct.block_ptr, 60);
     }
     else
     {
         auto data = read_data(inode_struct, 0, inode_struct.size_lower);
-        str = std::string((const char*)data.data(), inode_struct.size_lower);
+        str = kpp::string((const char*)data.data(), inode_struct.size_lower);
     }
     str += '\0'; // just to be safe
 
@@ -430,7 +430,7 @@ MemBuffer ext2_node::read_impl(size_t offset, size_t size) const
     {
         auto ptr = link_target();
         if (ptr) return ptr->read(offset, size);
-        else return {};
+        else return {}; // TODO
     }
 
     size_t block_off = offset/fs.block_size();
@@ -457,7 +457,7 @@ std::vector<std::shared_ptr<vfs::node>> ext2_node::readdir_impl()
 
     for (const auto& entry : fs.read_directory_entries(inode))
     {
-        auto entry_name = std::string(entry.name, entry.name_len);
+        auto entry_name = kpp::string(entry.name, entry.name_len);
         if (entry_name != "." &&
                 entry_name != "..")
         {
@@ -557,25 +557,25 @@ vfs::node::Stat ext2_node::stat() const
     return stat;
 }
 
-std::string ext2_node::name() const
+kpp::string ext2_node::name() const
 {
     return filename;
 }
 
-std::string ext2_node::link_name() const
+kpp::string ext2_node::link_name() const
 {
     ext2::Inode inode_struct = fs.read_inode(inode);
 
-    std::string str;
+    kpp::string str;
 
     if (inode_struct.size_lower <= 60)
     {
-        str = std::string((const char*)inode_struct.block_ptr, 60);
+        str = kpp::string((const char*)inode_struct.block_ptr, 60);
     }
     else
     {
         auto data = fs.read_data(inode_struct, 0, inode_struct.size_lower);
-        str = std::string((const char*)data.data(), inode_struct.size_lower);
+        str = kpp::string((const char*)data.data(), inode_struct.size_lower);
     }
     str += '\0'; // just to be safe
 
@@ -585,7 +585,7 @@ std::string ext2_node::link_name() const
 std::shared_ptr<vfs::node> ext2_node::link_target() const
 {
     assert(is_link());
-    return vfs::find(m_parent->path() + link_name());
+    return vfs::find(m_parent->path() + link_name()).value_or(nullptr);
 }
 
 ADD_FS(Ext2FS)

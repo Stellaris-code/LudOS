@@ -27,7 +27,6 @@ SOFTWARE.
 
 #include "config.hpp"
 
-#include <string.hpp>
 #include <vector.hpp>
 
 #include "mem/memmap.hpp"
@@ -39,6 +38,8 @@ SOFTWARE.
 
 #include <sys/types.h>
 #include <signal.h>
+
+#include "kstring/kstrfwd.hpp"
 
 struct ProcessCreatedEvent
 {
@@ -68,7 +69,7 @@ public:
 
     static constexpr size_t root_uid = 0;
     static constexpr size_t user_stack_top = KERNEL_VIRTUAL_BASE - (1*Memory::page_size()) - sizeof(uintptr_t);
-    static constexpr std::array<uintptr_t, 64> default_sighandler_actions
+    static constexpr kpp::array<uintptr_t, 64> default_sighandler_actions
     {{
         SIG_ACTION_TERM, // 0
         SIG_ACTION_TERM, // SIGHUP
@@ -96,7 +97,7 @@ public:
 public:
     static bool enabled();
 
-    static Process* create(const std::vector<std::string> &args);
+    static Process* create(const std::vector<kpp::string> &args);
     static Process* clone(Process& proc, uint32_t flags = 0);
     static Process& current();
     static size_t   count();
@@ -104,7 +105,7 @@ public:
     static Process* by_pid(pid_t pid);
     static std::vector<pid_t> process_list();
 
-    static bool check_args_size(const std::vector<std::string> &args);
+    static bool check_args_size(const std::vector<kpp::string> &args);
 
 public:
     Process& operator=(Process&&) noexcept = default;
@@ -115,7 +116,7 @@ public:
     void reset(gsl::span<const uint8_t> code_to_copy, size_t allocated_size = 0);
     void set_instruction_pointer(unsigned int value);
 
-    void set_args(const std::vector<std::string> &args);
+    void set_args(const std::vector<kpp::string> &args);
 
     size_t add_fd(const tasking::FDInfo& info);
     tasking::FDInfo *get_fd(size_t fd);

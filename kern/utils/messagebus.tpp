@@ -26,36 +26,36 @@ SOFTWARE.
 
 #include "messagebus.hpp"
 
-#include "utils/vecutils.hpp"
+#include <types/typeid.hpp>
 
 template <typename T>
 MessageBus::Handle MessageBus::register_handler(std::function<void(const T&)> handler, Priority prio)
 {
-    handlers[std::type_index(typeid(T))].push_back(Entry<T>{handler, prio});
-    return {std::type_index(typeid(T)), --handlers[std::type_index(typeid(T))].end()};
+    handlers[kpp::type_id<T>()].push_back(Entry{[handler](const void* obj) { handler(*((const T*)obj)); }, prio});
+    return {kpp::type_id<T>(), --handlers[kpp::type_id<T>()].end()};
 }
 
 template <typename T>
 size_t MessageBus::send(const T& event)
 {
     size_t counter { 0 };
-    std::vector<std::any> late_callbacks;
-    for (const auto& callback : handlers[std::type_index(typeid(T))])
+    std::list<Entry> late_callbacks;
+    for (const auto& callback : handlers[kpp::type_id<T>()])
     {
         ++counter;
-        if (std::any_cast<Entry<T>>(callback).priority == Priority::Last)
+        if (callback.priority == Priority::Last)
         {
             late_callbacks.emplace_back(callback);
         }
         else
         {
-            std::any_cast<Entry<T>>(callback).handler(event);
+            callback.handler(&event);
         }
     }
 
     for (const auto& late_callback : late_callbacks)
     {
-        std::any_cast<Entry<T>>(late_callback).handler(event);
+        late_callback.handler(&event);
     }
 
     return counter;

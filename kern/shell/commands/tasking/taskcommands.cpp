@@ -39,16 +39,16 @@ void install_task_commands(Shell &sh)
     sh.register_command(
     {"exec", "loads a process from a file and executes it",
      "Usage : exec <file>",
-     [&sh](const std::vector<std::string>& args)
+     [&sh](const std::vector<kpp::string>& args)
      {
-         std::string path = "/";
+         kpp::string path = "/";
 
          if (!args.empty())
          {
              path = args[0];
          }
 
-         auto node = vfs::find(sh.get_path(path));
+         auto node = vfs::find(sh.get_path(path)).value_or(nullptr);
          if (!node)
          {
              sh.error("file not found : '%s'\n", path.c_str());
@@ -65,7 +65,7 @@ void install_task_commands(Shell &sh)
 
          kprintf("File type : %s\n", loader->file_type().c_str());
 
-         std::vector<std::string> program_args(args.size()+1);
+         std::vector<kpp::string> program_args(args.size()+1);
          program_args[0] = sh.get_path(path);
          for (size_t i { 1 }; i < args.size(); ++i)
          {

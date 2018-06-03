@@ -29,8 +29,6 @@ SOFTWARE.
 
 #include "drivers/driver.hpp"
 
-#include <string.hpp>
-
 class PS2Mouse : public Driver
 {
 public:
@@ -44,7 +42,7 @@ public:
 
     void set_sample_rate(uint8_t rate);
 
-    virtual std::string driver_name() const override { return "PS/2 Mouse"; }
+    virtual kpp::string driver_name() const override;
 
 private:
     bool isr(const registers* regs);

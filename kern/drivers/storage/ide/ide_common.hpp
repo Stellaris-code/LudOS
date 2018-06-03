@@ -27,7 +27,6 @@ SOFTWARE.
 
 #include <stdint.h>
 
-#include <string.hpp>
 #include <optional.hpp>
 
 #include <ctype.h>
@@ -93,12 +92,12 @@ static constexpr uint32_t ata_identify = 0xEC;
 static constexpr uint32_t ata_flush_ext = 0xEA;
 
 template <typename T>
-std::string ata_string(T&& arr)
+kpp::string ata_string(T&& arr)
 {
     using type = std::remove_reference_t<T>;
     static_assert(std::is_array_v<type>, "Must use const char[] !");
 
-    std::string str;
+    kpp::string str;
     for (size_t i { 0 }; i < std::extent_v<type>; i+=2)
     {
         str += arr[i + 1];
@@ -125,7 +124,7 @@ void clear_error(uint16_t port);
 void cache_flush(uint16_t port, uint8_t type);
 
 void select(uint16_t port, uint8_t type, uint64_t block, uint16_t count);
-std::optional<identify_data> identify(uint16_t port, uint8_t type);
+kpp::optional<identify_data> identify(uint16_t port, uint8_t type);
 
 class IDEDisk : public ::DiskImpl<IDEDisk>
 {
@@ -134,7 +133,7 @@ public:
 
     virtual size_t disk_size() const override;
     virtual size_t sector_size() const override;
-    virtual std::string drive_name() const override;
+    virtual kpp::string drive_name() const override;
     virtual void flush_hardware_cache() override;
     virtual Type media_type() const override { return Disk::HardDrive; }
 
@@ -148,7 +147,7 @@ protected:
 protected:
     uint16_t m_port;
     uint8_t m_type;
-    mutable std::optional<identify_data> m_id_data;
+    mutable kpp::optional<identify_data> m_id_data;
 };
 
 }

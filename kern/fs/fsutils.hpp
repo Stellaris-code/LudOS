@@ -27,6 +27,9 @@ SOFTWARE.
 
 #include <memory.hpp>
 
+#include <kstring/kstrfwd.hpp>
+#include <expected.hpp>
+
 #include <sys/types.h>
 #include <errno.h>
 
@@ -36,6 +39,7 @@ namespace vfs
 {
 
 class node;
+struct FSError;
 
 struct QueryResult
 {
@@ -43,17 +47,17 @@ struct QueryResult
     std::shared_ptr<node> target_node;
 };
 
-std::shared_ptr<node> find(const std::string& path);
-std::shared_ptr<node> find(const std::string& path, std::shared_ptr<vfs::node> search_root);
+kpp::expected<std::shared_ptr<node>, vfs::FSError> find(const kpp::string& path);
+kpp::expected<std::shared_ptr<node>, vfs::FSError> find(const kpp::string& path, std::shared_ptr<vfs::node> search_root);
 
-QueryResult user_find(const std::string& path);
-QueryResult user_find(const std::string& path, Process& process);
+QueryResult user_find(const kpp::string& path);
+QueryResult user_find(const kpp::string& path, Process& process);
 
 [[nodiscard]] bool mount(std::shared_ptr<node> target, std::shared_ptr<node> mountpoint);
 [[nodiscard]] bool umount(std::shared_ptr<node> target);
 
 void traverse(const vfs::node& node, size_t indent = 0);
-void traverse(const std::string& path);
+void traverse(const kpp::string& path);
 
 [[nodiscard]] bool is_symlink(const vfs::node& node);
 QueryResult resolve_symlink(const std::shared_ptr<vfs::node> link);

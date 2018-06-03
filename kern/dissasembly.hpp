@@ -27,13 +27,13 @@ SOFTWARE.
 
 #include <stdint.h>
 
-#include <string.hpp>
+#include <kstring/kstring.hpp>
 
 #include "utils/membuffer.hpp"
 
 struct DisasmInfo
 {
-    std::string str;
+    kpp::string str;
     MemBuffer bytes;
     size_t len;
 };

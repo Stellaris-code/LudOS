@@ -41,7 +41,7 @@ SOFTWARE.
 
 extern "C" void enter_ring3(uint32_t esp, uint32_t eip, uint32_t argc, uint32_t argv);
 
-std::vector<std::string> args;
+std::vector<kpp::string> args;
 Process* process { nullptr };
 
 // TODO : ETXTBSY
@@ -106,7 +106,7 @@ int sys_execve(user_ptr<const char> path, user_ptr<user_ptr<const char>> argv, u
             return -ENOEXEC;
         }
 
-        std::string proc_name = path.get();
+        kpp::string proc_name = path.get();
 
         process = &Process::current();
 

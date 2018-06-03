@@ -45,7 +45,7 @@ void install_gfx_commands(Shell &sh)
     sh.register_command(
     {"display", "Display a specified image",
      "Usage : 'display <file>'",
-     [&sh](const std::vector<std::string>& args)
+     [&sh](const std::vector<kpp::string>& args)
      {
          if (args.size() != 1)
          {
@@ -94,7 +94,7 @@ void install_gfx_commands(Shell &sh)
     sh.register_command(
     {"setmode", "Set a graphical mode",
      "Usage : 'setmode <width>x<height>(x<depth>)'",
-     [&sh](const std::vector<std::string>& args)
+     [&sh](const std::vector<kpp::string>& args)
      {
          if (args.size() != 1)
          {
@@ -113,7 +113,7 @@ void install_gfx_commands(Shell &sh)
              return -2;
          }
 
-         if (!graphics::change_mode(std::stoul(toks[0]), std::stoul(toks[1]), std::stoul(toks[2])))
+         if (!graphics::change_mode(kpp::stoul(toks[0]), kpp::stoul(toks[1]), kpp::stoul(toks[2])))
          {
              sh.error("Can't set mode %s\n", args[0].c_str());
              return -2;
@@ -129,7 +129,7 @@ void install_gfx_commands(Shell &sh)
     sh.register_command(
     {"listmodes", "List available video modes",
      "Usage : 'listmodes'",
-     [](const std::vector<std::string>&)
+     [](const std::vector<kpp::string>&)
      {
          for (const auto& mode : graphics::list_video_modes())
          {
@@ -141,7 +141,7 @@ void install_gfx_commands(Shell &sh)
     sh.register_command(
     {"setfont", "Set terminal font",
      "Usage : 'setmode <font>'",
-     [&sh](const std::vector<std::string>& args)
+     [&sh](const std::vector<kpp::string>& args)
      {
          if (args.size() != 1)
          {

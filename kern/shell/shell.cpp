@@ -103,7 +103,7 @@ Shell::Shell()
                 }
                 else
                 {
-                    std::string input = term().input();
+                    kpp::string input = term().input();
                     if (input.back() == '\t') input.pop_back();
                     auto toks = tokenize(input, " ", true);
                     auto actual_size = tokenize(input, " ").size();
@@ -112,7 +112,7 @@ Shell::Shell()
                     ++m_current_match;
                     m_current_match %= m_matches.size();
 
-                    std::string prefix = join(toks, " ");
+                    kpp::string prefix = join(toks, " ");
                     if (toks.size() >= 1) prefix += " ";
 
                     term().set_input(prefix + m_matches[m_current_match]);
@@ -139,12 +139,12 @@ void Shell::run()
     {
         show_prompt();
 
-        std::string input = read_input();
+        kpp::string input = read_input();
         process(input);
     }
 }
 
-int Shell::command(const std::string &command)
+int Shell::command(const kpp::string &command)
 {
     auto tokens = quote_tokenize(command);
 
@@ -154,7 +154,7 @@ int Shell::command(const std::string &command)
     }
 
     const auto cmd = tokens[0];
-    auto args = std::vector<std::string>(tokens.begin() + 1, tokens.end());
+    auto args = std::vector<kpp::string>(tokens.begin() + 1, tokens.end());
 
     if (m_commands.find(cmd) != m_commands.end())
     {
@@ -181,7 +181,7 @@ void Shell::show_prompt()
     term().force_redraw();
 }
 
-std::string Shell::read_input()
+kpp::string Shell::read_input()
 {
     m_waiting_input = true;
     term().set_accept_input(true);
@@ -193,7 +193,7 @@ std::string Shell::read_input()
     return m_input;
 }
 
-void Shell::process(const std::string &in)
+void Shell::process(const kpp::string &in)
 {
     if (!in.empty())
     {
@@ -210,7 +210,7 @@ void Shell::process(const std::string &in)
 
 void Shell::autocomplete()
 {
-    std::string input = term().input();
+    kpp::string input = term().input();
 
     if (input.substr(input.size()-term().tab_size, term().tab_size) == "    ")
     {
@@ -247,14 +247,14 @@ void Shell::autocomplete()
     {
         if (!(toks.size() == 1 && actual_size != 1) && !toks.empty()) toks.pop_back();
 
-        std::string prefix = join(toks, " ");
+        kpp::string prefix = join(toks, " ");
         if (toks.size() >= 1) prefix += " ";
 
         term().set_input(prefix + m_matches[m_current_match]);
     }
 }
 
-std::string Shell::prompt() const
+kpp::string Shell::prompt() const
 {
     return format(params.prompt, {{"path", pwd->path()}});
 }
@@ -264,7 +264,7 @@ void Shell::update_coloring()
 {
     auto toks = quote_tokenize(term().input());
 
-    std::string input = term().input();
+    kpp::string input = term().input();
 
     if (toks.empty()) return;
 
@@ -303,7 +303,7 @@ std::vector<Shell::Command> Shell::commands()
     return vec;
 }
 
-std::string Shell::get_path(const std::string &path)
+kpp::string Shell::get_path(const kpp::string &path)
 {
     if (path[0] == '/')
     {

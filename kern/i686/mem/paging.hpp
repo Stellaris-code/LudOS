@@ -53,7 +53,7 @@ struct [[gnu::packed]] PDEntry
 };
 static_assert(sizeof(PDEntry) == 4);
 
-using PageDirectory = std::array<PDEntry, 1024>;
+using PageDirectory = kpp::array<PDEntry, 1024>;
 
 struct [[gnu::packed]] PTEntry
 {
@@ -72,12 +72,12 @@ struct [[gnu::packed]] PTEntry
 };
 static_assert(sizeof(PTEntry) == 4);
 
-using PageTable = std::array<PTEntry, 1024>;
+using PageTable = kpp::array<PTEntry, 1024>;
 
 struct PagingInformation
 {
     alignas(4096) PageDirectory                 page_directory;
-    alignas(4096) std::array<PageTable, 1024>   page_tables;
+    alignas(4096) kpp::array<PageTable, 1024>   page_tables;
 };
 
 class Paging

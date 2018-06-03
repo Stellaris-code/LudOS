@@ -110,11 +110,11 @@ SOFTWARE.
 // TODO : task switch : fpu state
 
 // ROADMAP
-// : implémenter un kstring optimisé
 // : enlever acpica
 // : supprimer les exceptions
 // : supprimer la libc++ & libcxxabi
 // : supprimer les includes inutiles
+// : faire une boucle de traitement de callbacks d'interruption
 // : implémenter /dev/input
 // : vfs call qui liste des properties particukières et une liste possible d'appels
 // : implémenter signaux
@@ -137,6 +137,7 @@ SOFTWARE.
 // * If someting doesn't work :
 // --> SSE and FPU state between interrupts !!
 // --> ctors ?
+// --> any impl in MessageBus
 // * don't forget about fpu state
 /**********************************/
 

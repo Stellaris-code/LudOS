@@ -32,13 +32,13 @@ long allocs;
 
 void *operator new(size_t size) noexcept
 {
-    log_serial("heap alloc : %zd\n", ++allocs);
+    //log_serial("heap alloc : %zd\n", ++allocs);
     return kmalloc(size);
 }
 
 void *operator new[](size_t size) noexcept
 {
-    log_serial("heap array alloc : %zd\n", ++allocs);
+    //log_serial("heap array alloc : %zd\n", ++allocs);
     return kmalloc(size);
 }
 

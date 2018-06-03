@@ -28,19 +28,20 @@ SOFTWARE.
 #include <stdint.h>
 #include <math.h>
 #include <stdio.h>
+#include <stdlib.h>
 
-#include <string.hpp>
+#include <kstring/kstring.hpp>
 
 #include "utils/logging.hpp"
 #include "utils/mathutils.hpp"
 
-inline std::string human_readable_size(size_t bytes)
+inline kpp::string human_readable_size(size_t bytes)
 {
     const size_t unit = 1024;
-    if (bytes < unit) return std::to_string(bytes) + " B";
+    if (bytes < unit) return (kpp::to_string(bytes) + " B").c_str();
     const size_t exp = intlog(unit, bytes);
-    const std::string units = "KMGTPE";
-    const std::string suffix = units[exp-1] + std::string("iB");
+    const kpp::string units = "KMGTPE";
+    const kpp::string suffix = units[exp-1] + kpp::string("iB");
 
     char buf[16];
     ksnprintf(buf, 16, "%.1f ", static_cast<double>(bytes) / ipow(unit, exp));
@@ -66,7 +67,7 @@ inline void dump(const void* address, size_t amnt)
             kprintf(" ");
         }
 
-        for (size_t j { 0 }; j < std::min(bytes_per_line, current_amnt); ++j)
+        for (size_t j { 0 }; j < (bytes_per_line < current_amnt ? bytes_per_line : current_amnt); ++j)
         {
             kprintf("%02x ", reinterpret_cast<const uint8_t*>(address)[i*bytes_per_line + j]);
         }

@@ -33,7 +33,7 @@ namespace devfs
 {
 struct disk_file : public vfs::node
 {
-    disk_file(Disk& disk, const std::string& node_name)
+    disk_file(Disk& disk, const kpp::string& node_name)
         : m_disk(disk)
     {
         m_name = node_name;

@@ -41,7 +41,7 @@ public:
 
 public:
     virtual Type type() const override { return Directory; }
-    virtual std::string name() const override { return std::to_string(m_pid); }
+    virtual kpp::string name() const override;
     virtual std::vector<std::shared_ptr<node>> readdir_impl() override;
 
 private:

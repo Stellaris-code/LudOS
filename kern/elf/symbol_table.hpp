@@ -28,8 +28,9 @@ SOFTWARE.
 #include <stdint.h>
 
 #include <unordered_map.hpp>
-#include <string.hpp>
 #include <optional.hpp>
+
+#include <kstring/kstring.hpp>
 
 #include <utils/gsl/gsl_span.hpp>
 
@@ -40,14 +41,14 @@ namespace elf
 
 struct SymbolInfo
 {
-    std::string name;
-    std::string file;
+    kpp::string name;
+    kpp::string file;
     uintptr_t offset;
 };
 
 struct SymbolTable
 {
-    std::optional<SymbolInfo> get_function(uintptr_t addr)
+    kpp::optional<SymbolInfo> get_function(uintptr_t addr)
     {
         while (addr-- > KERNEL_VIRTUAL_BASE)
         {

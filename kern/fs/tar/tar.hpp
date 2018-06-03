@@ -57,12 +57,12 @@ struct tar_node : public vfs::node
     virtual size_t size() const override;
     virtual Type type() const override;
     virtual bool is_link() const override;
-    virtual std::string name() const override;
+    virtual kpp::string name() const override;
 
     const TarFS& m_fs;
     const uint8_t* m_data_addr { nullptr };
     size_t m_size { 0 };
-    std::string m_link_target {};
+    kpp::string m_link_target {};
     std::vector<std::shared_ptr<tar_node>> m_children;
 };
 
@@ -76,7 +76,7 @@ public:
 
     virtual std::shared_ptr<vfs::node> root() const override { return m_root_dir; }
 
-    virtual std::string type() const override { return "tar"; }
+    virtual kpp::string type() const override { return "tar"; }
 
     virtual void umount() override {};
 

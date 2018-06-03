@@ -55,7 +55,7 @@ SymbolTable get_symbol_table(const Elf32_Shdr *base, size_t sh_num)
     if (!symtab) return {};
     symtab->sh_addr = (Elf32_Addr)Memory::mmap(symtab->sh_addr, symtab->sh_size, Memory::Read);
 
-    std::string current_symbol_file;
+    kpp::string current_symbol_file;
 
     for (size_t j { 0 }; j < symtab->sh_size / symtab->sh_entsize; ++j)
     {

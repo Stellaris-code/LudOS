@@ -27,8 +27,9 @@ SOFTWARE.
 
 #include <deque.hpp>
 #include <unordered_map.hpp>
-#include <string.hpp>
 #include <functional.hpp>
+
+#include <kstring/kstring.hpp>
 
 #include "utils/circularbuffer.hpp"
 #include "utils/messagebus.hpp"
@@ -41,19 +42,19 @@ class node;
 class Shell
 {
 public:
-    using CommandCallback = std::function<int(const std::vector<std::string>)>;
+    using CommandCallback = std::function<int(const std::vector<kpp::string>)>;
     struct Command
     {
-        std::string cmd;
-        std::string description;
-        std::string help;
+        kpp::string cmd;
+        kpp::string description;
+        kpp::string help;
         CommandCallback callback;
     };
 
 public:
     struct
     {
-        std::string prompt;
+        kpp::string prompt;
     } params;
 
 public:
@@ -63,35 +64,35 @@ public:
 
     void run();
 
-    int command(const std::string& command);
+    int command(const kpp::string& command);
 
     PRINTF_FMT(2, 3)
     void error(const char* fmt, ...);
 
     std::vector<Command> commands();
 
-    std::string get_path(const std::string& path);
+    kpp::string get_path(const kpp::string& path);
 
 public:
     std::shared_ptr<vfs::node> pwd { nullptr };
 
 private:
     void show_prompt();
-    std::string read_input();
-    void process(const std::string& in);
+    kpp::string read_input();
+    void process(const kpp::string& in);
     void autocomplete();
-    std::string prompt() const;
+    kpp::string prompt() const;
     void update_coloring();
 
 private:
-    std::unordered_map<std::string, Command> m_commands;
+    std::unordered_map<kpp::string, Command> m_commands;
     volatile bool m_waiting_input { true };
-    std::string m_input;
+    kpp::string m_input;
 
-    std::deque<std::string> m_command_history;
+    std::deque<kpp::string> m_command_history;
     size_t m_current_hist_idx { 0 };
 
-    std::vector<std::string> m_matches;
+    std::vector<kpp::string> m_matches;
     size_t m_current_match { 0 };
 
     MessageBus::RAIIHandle m_input_handle;

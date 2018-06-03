@@ -76,14 +76,14 @@ void Process::init_default_fds()
     assert(vfs::find("/dev/stdin"));
     assert(vfs::find("/dev/stderr"));
 
-    assert(add_fd({vfs::find("/dev/stdin" ), .read = true,  .write = false}) == 0);
-    assert(add_fd({vfs::find("/dev/stdout"), .read = false, .write = true }) == 1);
-    assert(add_fd({vfs::find("/dev/stderr"), .read = false, .write = true }) == 2);
+    assert(add_fd({vfs::find("/dev/stdin" ).value(), .read = true,  .write = false}) == 0);
+    assert(add_fd({vfs::find("/dev/stdout").value(), .read = false, .write = true }) == 1);
+    assert(add_fd({vfs::find("/dev/stderr").value(), .read = false, .write = true }) == 2);
 }
 
 void Process::init_sig_handlers()
 {
-    data->sig_handlers = std::make_shared<std::array<struct sigaction, SIGRTMAX>>();
+    data->sig_handlers = std::make_shared<kpp::array<struct sigaction, SIGRTMAX>>();
     for (size_t i { 0 }; i < data->sig_handlers->size(); ++i)
     {
         (*data->sig_handlers)[i].sa_handler = (sighandler_t)default_sighandler_actions[i];
@@ -249,7 +249,7 @@ std::vector<pid_t> Process::process_list()
     return vec;
 }
 
-Process *Process::create(const std::vector<std::string>& args)
+Process *Process::create(const std::vector<kpp::string>& args)
 {
     pid_t free_idx = find_free_pid();
     if (free_idx == (int)m_processes.size())

@@ -36,7 +36,7 @@ SOFTWARE.
 namespace vbe
 {
 
-std::optional<VbeInfoBlock> detail_get_info(bool vbe2)
+kpp::optional<VbeInfoBlock> detail_get_info(bool vbe2)
 {
     memset(emu_mem + 0x20000, 0, sizeof(VbeInfoBlock));
     VbeInfoBlock* block = reinterpret_cast<VbeInfoBlock*>(emu_mem + 0x20000);
@@ -80,11 +80,11 @@ uint16_t get_vbe_version()
     }
 }
 
-std::optional<VbeInfoBlock> get_vbe_info()
+kpp::optional<VbeInfoBlock> get_vbe_info()
 {
     uint16_t version = get_vbe_version();
 
-    std::optional<VbeInfoBlock> info;
+    kpp::optional<VbeInfoBlock> info;
 
     if ((version >> 8) >= 2)
     {

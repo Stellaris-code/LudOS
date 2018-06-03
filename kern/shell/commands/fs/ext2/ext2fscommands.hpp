@@ -38,7 +38,7 @@ void install_ext2fs_commands(Shell& sh)
     sh.register_command(
     {"ext2info", "print file ext2 info",
      "Usage : ext2info <file>",
-     [&sh](const std::vector<std::string>& args)
+     [&sh](const std::vector<kpp::string>& args)
      {
          if (args.empty())
          {
@@ -46,9 +46,9 @@ void install_ext2fs_commands(Shell& sh)
              return -1;
          }
 
-         std::string path = args[0];
+         kpp::string path = args[0];
 
-         auto node = vfs::find(sh.get_path(path));
+         auto node = vfs::find(sh.get_path(path)).value_or(nullptr);
          if (!node)
          {
              sh.error("file not found : '%s'\n", path.c_str());
@@ -65,7 +65,7 @@ void install_ext2fs_commands(Shell& sh)
          auto inode_struct = ext2->fs.read_inode(ext2->inode);
 
          auto type = (ext2::InodeType)(inode_struct.type & 0xF000);
-         std::string type_str = "other";
+         kpp::string type_str = "other";
          switch (type)
          {
              case ext2::InodeType::Regular:

@@ -25,8 +25,6 @@ SOFTWARE.
 
 #include "initrd/initrd.hpp"
 
-#include <string.hpp>
-
 #include "i686/pc/multiboot/multiboot_kern.hpp"
 #include "drivers/storage/disk.hpp"
 #include "fs/vfs.hpp"
@@ -36,7 +34,7 @@ Disk* get_initrd_disk()
 {
     for (auto module : multiboot::get_modules())
     {
-        auto str = std::string(reinterpret_cast<const char*>(module.cmdline));
+        auto str = kpp::string(reinterpret_cast<const char*>(module.cmdline));
         auto tokens = tokenize(str, " ", true);
         if (tokens.back() == "initrd")
         {

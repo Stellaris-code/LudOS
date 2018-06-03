@@ -6,7 +6,7 @@
 #include <inttypes.h>
 
 #ifdef _MSC_VER
-        #define snprintf        _snprintf
+        #define ksnprintf        _ksnprintf
         #define inline          __inline
 #endif
 
@@ -31,7 +31,7 @@
 #define STRNCATF( buf, fmt, data, len ) do {        \
         char _tmp[MAX_OP_STRING];                   \
                                                     \
-        snprintf( _tmp, sizeof _tmp, fmt, data );   \
+        ksnprintf( _tmp, sizeof _tmp, fmt, data );   \
         STRNCAT( buf, _tmp, len );                  \
 } while( 0 )
 
@@ -77,16 +77,16 @@ static void get_operand_data_str( x86_op_t *op, char *str, int len ){
         if ( op->flags & op_signed ) {
                 switch ( op->datatype ) {
                         case op_byte:
-                                snprintf( str, len, "%" PRId8, op->data.sbyte );
+                                ksnprintf( str, len, "%" PRId8, op->data.sbyte );
                                 return;
                         case op_word:
-                                snprintf( str, len, "%" PRId16, op->data.sword );
+                                ksnprintf( str, len, "%" PRId16, op->data.sword );
                                 return;
                         case op_qword:
-                                snprintf( str, len, "%" PRId64, op->data.sqword );
+                                ksnprintf( str, len, "%" PRId64, op->data.sqword );
                                 return;
                         default:
-                                snprintf( str, len, "%" PRId32, op->data.sdword );
+                                ksnprintf( str, len, "%" PRId32, op->data.sdword );
                                 return;
                 }
         }
@@ -94,16 +94,16 @@ static void get_operand_data_str( x86_op_t *op, char *str, int len ){
         //else
         switch ( op->datatype ) {
                 case op_byte:
-                        snprintf( str, len, "0x%02" PRIX8, op->data.byte );
+                        ksnprintf( str, len, "0x%02" PRIX8, op->data.byte );
                         return;
                 case op_word:
-                        snprintf( str, len, "0x%04" PRIX16, op->data.word );
+                        ksnprintf( str, len, "0x%04" PRIX16, op->data.word );
                         return;
                 case op_qword:
-                        snprintf( str, len, "0x%08" PRIX64,op->data.sqword );
+                        ksnprintf( str, len, "0x%08" PRIX64,op->data.sqword );
                         return;
                 default:
-                        snprintf( str, len, "0x%08" PRIX32, op->data.dword );
+                        ksnprintf( str, len, "0x%08" PRIX32, op->data.dword );
                         return;
         }
 }
@@ -1228,17 +1228,17 @@ static int format_xml_insn( x86_insn_t *insn, char *buf, int len ) {
 int x86_format_header( char *buf, int len, enum x86_asm_format format ) {
         switch (format) {
                 case att_syntax:
-                        snprintf( buf, len, "MNEMONIC\tSRC, DEST, IMM" );
+                        ksnprintf( buf, len, "MNEMONIC\tSRC, DEST, IMM" );
                         break;
                 case intel_syntax:
-                        snprintf( buf, len, "MNEMONIC\tDEST, SRC, IMM" );
+                        ksnprintf( buf, len, "MNEMONIC\tDEST, SRC, IMM" );
                         break;
                 case native_syntax:
-                        snprintf( buf, len, "ADDRESS\tBYTES\tMNEMONIC\t"
+                        ksnprintf( buf, len, "ADDRESS\tBYTES\tMNEMONIC\t"
                                             "DEST\tSRC\tIMM" );
                         break;
                 case raw_syntax:
-                        snprintf( buf, len, "ADDRESS|OFFSET|SIZE|BYTES|"
+                        ksnprintf( buf, len, "ADDRESS|OFFSET|SIZE|BYTES|"
                                "PREFIX|PREFIX_STRING|GROUP|TYPE|NOTES|"
 			       "MNEMONIC|CPU|ISA|FLAGS_SET|FLAGS_TESTED|"
 			       "STACK_MOD|STACK_MOD_VAL"
@@ -1246,7 +1246,7 @@ int x86_format_header( char *buf, int len, enum x86_asm_format format ) {
                                 );
                         break;
                 case xml_syntax:
-                        snprintf( buf, len,
+                        ksnprintf( buf, len,
                                   "<x86_insn>"
                                       "<address rva= offset= size= bytes=/>"
                                       "<prefix type= string=/>"

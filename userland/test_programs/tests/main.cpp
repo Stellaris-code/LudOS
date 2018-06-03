@@ -30,7 +30,9 @@ SOFTWARE.
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
+
 #include <string.hpp>
+
 #include <stdlib.h>
 #include <sys/fnctl.h>
 #include <sys/fs.h>
@@ -152,7 +154,7 @@ int main(int argc, char* argv[])
     std::string process_info;
     char buf[512];
     getcwd(buf, 512);
-    process_info += "Pwd : " + trim_zstr(buf);
+    process_info += "Pwd : " + std::string(trim_zstr(buf).c_str());
     process_info += ", PID : " + std::to_string(getpid());
 
     printf("%s\n", process_info.c_str());

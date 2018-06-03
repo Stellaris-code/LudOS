@@ -30,10 +30,10 @@ SOFTWARE.
 #include "graphics/color.hpp"
 #include "unicode/utf8decoder.hpp"
 
-#include <string.hpp>
 #include <stack.hpp>
 #include <type_traits.hpp>
 #include <memory.hpp>
+#include <vector.hpp>
 
 #include "utils/circularbuffer.hpp"
 
@@ -42,7 +42,7 @@ SOFTWARE.
 
 struct TermInputEvent
 {
-    std::string line;
+    kpp::string line;
 };
 
 class Terminal
@@ -56,9 +56,9 @@ public:
 
     void add_input(char32_t c);
     void clear_input();
-    void set_input(const std::string &str);
+    void set_input(const kpp::string &str);
     void switch_to_input();
-    std::string input() const;
+    kpp::string input() const;
     void set_input_color(size_t pos, size_t sz, ColorPair color);
 
     void write(const char* data, size_t size);
@@ -83,8 +83,8 @@ public:
     size_t height() const;
     size_t true_height() const;
 
-    void set_title(std::u32string str, ColorPair color);
-    void set_title(std::u32string str);
+    void set_title(kpp::u32string str, ColorPair color);
+    void set_title(kpp::u32string str);
 
     void set_accept_input(bool val);
 
@@ -141,7 +141,7 @@ private:
 
     bool m_escape_code { false };
     bool m_expecting_bracket { false };
-    std::string m_escape_sequence;
+    kpp::string m_escape_sequence;
 
     std::vector<TermEntry> m_cur_line;
 

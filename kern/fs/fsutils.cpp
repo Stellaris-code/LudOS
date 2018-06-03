@@ -43,10 +43,10 @@ bool is_symlink(const node &node)
 
 node &link_target(const node &link)
 {
-    return *vfs::find(static_cast<const symlink&>(link).target());
+    return *vfs::find(static_cast<const symlink&>(link).target()).value();
 }
 
-std::shared_ptr<vfs::node> find(const std::string& path, std::shared_ptr<node> search_root)
+kpp::expected<std::shared_ptr<node>, FSError> find(const kpp::string& path, std::shared_ptr<node> search_root)
 {
     if (path.empty())
     {
@@ -67,13 +67,14 @@ std::shared_ptr<vfs::node> find(const std::string& path, std::shared_ptr<node> s
         auto v = cur_node->readdir();
         for (const auto& child : v)
         {
+            assert(child);
             if (child->name() == dirs[i])
             {
                 cur_node = child;
                 goto contin;
             }
         }
-        return {};
+        return kpp::make_unexpected(FSError{FSError::NotFound});
 
 contin:;
     }
@@ -81,17 +82,17 @@ contin:;
     return cur_node;
 }
 
-std::shared_ptr<vfs::node> find(const std::string& path)
+kpp::expected<std::shared_ptr<node>, FSError> find(const kpp::string& path)
 {
-    return find(path, vfs::root);
+    return vfs::find(path, vfs::root);
 }
 
-QueryResult user_find_impl(const std::string &path, Process &process, size_t recur_depth)
+QueryResult user_find_impl(const kpp::string &path, Process &process, size_t recur_depth)
 {
     if (recur_depth >= max_symlink_loop) return {ELOOP, nullptr};
     if (path.empty()) return {ENOENT, nullptr};
 
-    auto resolve_symlink_lambd = [&](std::shared_ptr<node> link, const std::string& pwd)->QueryResult
+    auto resolve_symlink_lambd = [&](std::shared_ptr<node> link, const kpp::string& pwd)->QueryResult
     {
         std::shared_ptr<vfs::node> cur_node = link;
         size_t counter = 0;
@@ -115,7 +116,7 @@ QueryResult user_find_impl(const std::string &path, Process &process, size_t rec
 
     // set the search root according to the relativeness of the pass
     std::shared_ptr<vfs::node> cur_node = relative ? process.data->pwd : process.data->root;
-    std::string pwd = cur_node->path();
+    kpp::string pwd = cur_node->path();
 
     for (size_t i { 0 }; i < dirs.size(); ++i)
     {
@@ -163,12 +164,12 @@ contin:;
     return {EOK, cur_node};
 }
 
-inline QueryResult user_find(const std::string &path, Process &process)
+inline QueryResult user_find(const kpp::string &path, Process &process)
 {
     return user_find_impl(path, process, 0);
 }
 
-QueryResult user_find(const std::string &path)
+QueryResult user_find(const kpp::string &path)
 {
     return user_find(path, Process::current());
 }
@@ -181,7 +182,11 @@ inline QueryResult resolve_symlink(const std::shared_ptr<node> link)
     {
         if (counter++ >= max_symlink_loop) return {ELOOP, nullptr};
 
-        cur_node = find(cur_node->path() + std::static_pointer_cast<vfs::symlink>(cur_node)->target());
+        auto result = find(cur_node->path() + std::static_pointer_cast<vfs::symlink>(cur_node)->target());
+        if (!result)
+            return {result.error().to_errno(), nullptr};
+
+        cur_node = result.value();
     }
 
     return {EOK, cur_node};
@@ -245,7 +250,7 @@ void traverse(const vfs::node &node, size_t indent)
     }
 }
 
-void traverse(const std::string &path)
+void traverse(const kpp::string &path)
 {
     if (!vfs::find(path))
     {
@@ -254,7 +259,7 @@ void traverse(const std::string &path)
     }
     else
     {
-        vfs::traverse(*vfs::find(path));
+        vfs::traverse(*vfs::find(path).value());
     }
 }
 

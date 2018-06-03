@@ -211,7 +211,7 @@ std::vector<uint8_t> read_cluster(size_t first_sector, const fat::FATInfo &info)
 
 std::vector<size_t> get_cluster_chain(size_t first_cluster, const fat::FATInfo& info);
 
-std::shared_ptr<fat_file> entry_to_vfs_node(const Entry& entry, fat_file* parent, const FATInfo &info, const std::string &long_name);
+std::shared_ptr<fat_file> entry_to_vfs_node(const Entry& entry, fat_file* parent, const FATInfo &info, const kpp::string &long_name);
 
 std::vector<uint8_t> get_FAT(const FATInfo& info);
 uint32_t FAT_entry(const FATInfo &info, size_t cluster);
@@ -299,7 +299,7 @@ struct fat_file : public vfs::node
         });
     }
 
-    virtual vfs::node* mkdir(const std::string& str) override
+    virtual vfs::node* mkdir(const kpp::string& str) override
     {
         if (!is_dir() || info.read_only)
         {
@@ -318,7 +318,7 @@ struct fat_file : public vfs::node
         return back.get();
     }
 
-    virtual vfs::node* touch(const std::string& str) override
+    virtual vfs::node* touch(const kpp::string& str) override
     {
         if (!is_dir() || info.read_only)
         {

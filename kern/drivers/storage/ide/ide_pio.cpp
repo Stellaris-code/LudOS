@@ -34,7 +34,6 @@ SOFTWARE.
 #include "time/timer.hpp"
 
 #include <array.hpp>
-#include <string.hpp>
 
 bool ide::pio::detail::read_one(uint16_t port, uint8_t type, uint64_t block, uint16_t *buf)
 {

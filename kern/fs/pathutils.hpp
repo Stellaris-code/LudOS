@@ -25,17 +25,16 @@ SOFTWARE.
 #ifndef PATHUTILS_HPP
 #define PATHUTILS_HPP
 
-#include <string.hpp>
 #include <vector.hpp>
 
 #include "utils/stlutils.hpp"
 
-inline std::string filename(const std::string& path)
+inline kpp::string filename(const kpp::string& path)
 {
     return tokenize(path, "/").back();
 }
 
-inline std::string stem(const std::string& path)
+inline kpp::string stem(const kpp::string& path)
 {
     auto file = filename(path);
     auto toks = tokenize(file, ".");
@@ -43,25 +42,25 @@ inline std::string stem(const std::string& path)
     return join(toks, ".");
 }
 
-inline std::string extension(const std::string& path)
+inline kpp::string extension(const kpp::string& path)
 {
     auto file = filename(path);
     return tokenize(file, ".").back();
 }
 
-inline std::string parent_path(const std::string& path)
+inline kpp::string parent_path(const kpp::string& path)
 {
     auto toks = tokenize(path, "/");
     toks.pop_back(); // remove file
     return join(toks, "/") + "/";
 }
 
-inline std::vector<std::string> dir_list(const std::string& path)
+inline std::vector<kpp::string> dir_list(const kpp::string& path)
 {
     return tokenize(parent_path(path), "/", true);
 }
 
-inline std::vector<std::string> path_list(const std::string& path)
+inline std::vector<kpp::string> path_list(const kpp::string& path)
 {
     return tokenize(path, "/", true);
 }

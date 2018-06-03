@@ -192,13 +192,13 @@ ref_vector<Disk> Disk::disks()
     return vec;
 }
 
-MemoryDisk::MemoryDisk(uint8_t* data, size_t size, const std::string& name)
+MemoryDisk::MemoryDisk(uint8_t* data, size_t size, const kpp::string& name)
     : DiskImpl<MemoryDisk>(), m_size(size), m_data(data), m_name(name)
 {
     enable_caching(false);
 }
 
-MemoryDisk::MemoryDisk(const uint8_t *data, size_t size, const std::string& name)
+MemoryDisk::MemoryDisk(const uint8_t *data, size_t size, const kpp::string& name)
     : MemoryDisk(const_cast<uint8_t*>(data), size, name)
 {
     m_const = true;

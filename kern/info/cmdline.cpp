@@ -25,4 +25,6 @@ SOFTWARE.
 
 #include "cmdline.hpp"
 
-std::string kernel_cmdline;
+#include <kstring/kstring.hpp>
+
+kpp::string kernel_cmdline;

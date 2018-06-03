@@ -90,7 +90,7 @@ std::vector<VideoMode> list_video_modes()
     }
 }
 
-std::optional<VideoMode> change_mode(size_t width, size_t height, size_t depth)
+kpp::optional<VideoMode> change_mode(size_t width, size_t height, size_t depth)
 {
     auto vbe_info = vbe::get_vbe_info();
     if (!vbe_info) return {};
@@ -148,7 +148,7 @@ Screen *screen()
     return scr.get();
 }
 
-std::optional<MonitorInfo> monitor_info()
+kpp::optional<MonitorInfo> monitor_info()
 {
     if (auto edid = EDID::get(); edid)
     {

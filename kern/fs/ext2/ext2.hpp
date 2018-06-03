@@ -42,14 +42,14 @@ public:
 
     virtual std::shared_ptr<vfs::node> root() const override;
 
-    virtual std::string type() const override { return "ext2"; }
+    virtual kpp::string type() const override { return "ext2"; }
     virtual size_t total_size() const override { return m_superblock.block_count*block_size(); }
     virtual size_t free_size() const override { return m_superblock.unallocated_blocks*block_size(); }
 
     virtual void umount() override;
 
 public:
-    static std::optional<const ext2::Superblock> read_superblock(const Disk& disk);
+    static kpp::optional<const ext2::Superblock> read_superblock(const Disk& disk);
 
     static bool check_superblock(const ext2::Superblock&);
 
@@ -96,11 +96,11 @@ public:
     void remove_inode(size_t inode, bool dir);
     void decrease_link_count(size_t inode);
 
-    std::string link_name(const ext2::Inode& inode_struct);
+    kpp::string link_name(const ext2::Inode& inode_struct);
 
     std::vector<ext2::DirectoryEntry> read_directory(gsl::span<const uint8_t> data) const;
 
-    ext2::DirectoryEntry create_dir_entry(size_t inode, uint8_t type, const std::string& name);
+    ext2::DirectoryEntry create_dir_entry(size_t inode, uint8_t type, const kpp::string& name);
 
     std::vector<ext2::DirectoryEntry> read_directory_entries(size_t inode) const;
     void write_directory_entries(size_t inode, gsl::span<ext2::DirectoryEntry> entries);
@@ -108,7 +108,7 @@ public:
     uint16_t inode_size() const;
     uint32_t block_size() const;
 
-    void error(const std::string& message) const;
+    void error(const kpp::string& message) const;
 
 private:
     ext2::Superblock m_superblock;
@@ -118,7 +118,7 @@ private:
 class ext2_node : public vfs::node
 {
 public:
-    ext2_node(Ext2FS& p_fs, vfs::node* p_parent, const std::string& p_name, size_t p_inode)
+    ext2_node(Ext2FS& p_fs, vfs::node* p_parent, const kpp::string& p_name, size_t p_inode)
         : vfs::node(p_parent), fs(p_fs), inode(p_inode), filename(p_name)
     {
     }
@@ -128,8 +128,8 @@ public:
         if (inode == (uint16_t)ext2::ReservedInodes::RootInode) fs.umount(); // root
     }
 
-    virtual std::string name() const override;
-    virtual void rename_impl(const std::string& s) override;
+    virtual kpp::string name() const override;
+    virtual void rename_impl(const kpp::string& s) override;
 
     virtual Stat stat() const override;
     virtual void set_stat(const Stat& stat) override;
@@ -137,7 +137,7 @@ public:
     [[nodiscard]] virtual MemBuffer read_impl(size_t offset, size_t size) const override;
     [[nodiscard]] virtual bool write_impl(size_t offset, gsl::span<const uint8_t> data) override;
     virtual std::vector<std::shared_ptr<node>> readdir_impl() override;
-    [[nodiscard]] virtual std::shared_ptr<node> create_impl(const std::string&, Type type) override;
+    [[nodiscard]] virtual std::shared_ptr<node> create_impl(const kpp::string&, Type type) override;
     virtual bool resize_impl(size_t size) override;
     virtual bool remove_impl(const vfs::node*) override;
     virtual size_t size() const override;
@@ -147,16 +147,16 @@ public:
 public:
     Ext2FS& fs;
     const size_t inode;
-    std::string filename;
+    kpp::string filename;
 
 private:
-    void remove_child(const std::string &name);
+    void remove_child(const kpp::string &name);
     ext2::InodeType vfs_type_to_ext2_inode(Type type);
     ext2::DirectoryType vfs_type_to_ext2_dir(Type type);
-    void update_dir_entry(size_t inode, const std::string& name);
+    void update_dir_entry(size_t inode, const kpp::string& name);
     void write_inode_struct(const ext2::Inode &inode_struct);
-    std::shared_ptr<ext2_node> create_child(const std::string& name, Type type);
-    std::string link_name() const;
+    std::shared_ptr<ext2_node> create_child(const kpp::string& name, Type type);
+    kpp::string link_name() const;
     std::shared_ptr<vfs::node> link_target() const;
 };
 

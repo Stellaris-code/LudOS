@@ -34,7 +34,9 @@ SOFTWARE.
 #include "io.hpp"
 #include "time/time.hpp"
 
+#if USES_ACPICA
 #include "acpi.h"
+#endif
 
 namespace rtc
 {
@@ -47,7 +49,11 @@ namespace detail
 
 inline uint8_t century_register()
 {
+#if USES_ACPICA
     return AcpiGbl_FADT.Century;
+#else
+    return 0;
+#endif
 }
 
 inline uint8_t get_register(uint8_t reg)

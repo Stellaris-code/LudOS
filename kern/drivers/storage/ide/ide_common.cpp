@@ -59,7 +59,7 @@ void select(uint16_t port, uint8_t type, uint64_t block, uint16_t count)
     }
 }
 
-std::optional<identify_data> identify(uint16_t port, uint8_t type)
+kpp::optional<identify_data> identify(uint16_t port, uint8_t type)
 {
     select(port, type == Master ? 0xA0 : 0xB0, 0, 0);
 
@@ -100,7 +100,7 @@ std::optional<identify_data> identify(uint16_t port, uint8_t type)
 
         log(Debug, "ATA %s%s is online.\n", port_name, type==Master?" master":" slave");
 
-        std::array<uint16_t, 256> buffer;
+        kpp::array<uint16_t, 256> buffer;
 
         poll(port);
 
@@ -238,7 +238,7 @@ size_t IDEDisk::sector_size() const
     else return 512;
 }
 
-std::string IDEDisk::drive_name() const
+kpp::string IDEDisk::drive_name() const
 {
     if (!m_id_data) update_id_data();
 

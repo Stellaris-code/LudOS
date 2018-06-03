@@ -29,9 +29,9 @@ SOFTWARE.
 #include "utils/logging.hpp"
 #include "utils/messagebus.hpp"
 
-std::unordered_map<std::string, std::string> kenv;
+std::unordered_map<kpp::string, kpp::string> kenv;
 
-void read_from_cmdline(const std::string& cmdline)
+void read_from_cmdline(const kpp::string& cmdline)
 {
     kenv.clear();
 
@@ -43,7 +43,7 @@ void read_from_cmdline(const std::string& cmdline)
     }
 }
 
-std::optional<std::string> kgetenv(std::string s)
+kpp::optional<kpp::string> kgetenv(kpp::string s)
 {
     if (kenv.find(s) != kenv.end())
     {
@@ -55,7 +55,7 @@ std::optional<std::string> kgetenv(std::string s)
     }
 }
 
-void ksetenv(const std::string &key, std::string val)
+void ksetenv(const kpp::string &key, kpp::string val)
 {
     kenv[key] = val;
     MessageBus::send<EnvVarChange>({key, val});

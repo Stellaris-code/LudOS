@@ -23,19 +23,25 @@ SOFTWARE.
 
 */
 
+#ifndef ENV_HPP
+#define ENV_HPP
+
 #include <unordered_map.hpp>
-#include <string.hpp>
 #include <optional.hpp>
 
-extern std::unordered_map<std::string, std::string> kenv;
+#include <kstring/kstring.hpp>
+
+extern std::unordered_map<kpp::string, kpp::string> kenv;
 
 struct EnvVarChange
 {
-    std::string key;
-    std::string val;
+    kpp::string key;
+    kpp::string val;
 };
 
-void read_from_cmdline(const std::string& cmdline);
+void read_from_cmdline(const kpp::string& cmdline);
 
-std::optional<std::string> kgetenv(std::string s);
-void ksetenv(const std::string& key, std::string val);
+kpp::optional<kpp::string> kgetenv(kpp::string s);
+void ksetenv(const kpp::string& key, kpp::string val);
+
+#endif

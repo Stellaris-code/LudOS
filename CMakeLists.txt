@@ -70,6 +70,7 @@ option(WITH_ARCH_NATIVE "Compiles with -march=native" OFF)
 option(WITH_UBSAN "Compiles with undefined behavior sanitization" OFF)
 option(WITH_ASAN "Compiles with address sanitization" OFF)
 option(USE_CLANG_TIDY "Run clang-tidy on build" OFF)
+option(WITH_ACPICA "Compiles libacpica" OFF)
 
 if (WITH_SSE)
     set(SIMD_OPTIONS "-mmmx -msse -mno-sse2 -ftree-vectorize")
@@ -96,17 +97,26 @@ endif()
 # Compilation options
 set(KERNEL_VIRTUAL_BASE 0xC0000000 CACHE STRING "")
 set(CURRENT_YEAR 2017)
+if (WITH_ACPICA)
+    set(USES_ACPICA 1)
+else()
+    set(USES_ACPICA 0)
+endif()
 
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/kern/utils/defs.hpp.in" "${CMAKE_CURRENT_SOURCE_DIR}/kern/utils/defs.hpp")
 
 set(GENERIC_SRCS ${CPP_SOURCES} ${KERN_BASE_SOURCES} ${STB_SOURCES})
 
+if (NOT WITH_ACPICA)
+    list(FILTER GENERIC_SRCS EXCLUDE REGEX "acpi/.*")
+endif()
+
 add_executable(${PROJECT_NAME} ${PLATFORM_SRCS} ${ISA_SRCS} ${GENERIC_SRCS} ${HEADERS} ${STB_HEADERS} ${LD_SCRIPTS})
 
 target_compile_definitions(${PROJECT_NAME} PUBLIC "-D__LUDOS__")
 
-set(CMAKE_C_FLAGS "${ISA_C_FLAGS} ${PLATFORM_C_FLAGS} -O2 -fstack-protector -m32 ${SIMD_OPTIONS} ${ARCH_OPTIONS} -Wwrite-strings -ffast-math ${SANITIZER_OPTIONS} -std=c11 -Wall -Wextra -Wconversion -Wcast-qual -Wmisleading-indentation -Wno-unused-parameter -Wno-implicit-int -Wnull-dereference -lgcc -static-libgcc -ffreestanding -fno-builtin -nostdlib -fno-omit-frame-pointer -Werror=implicit-function-declaration -lgcc")
-set(CMAKE_CXX_FLAGS "${ISA_CXX_FLAGS} ${PLATFORM_CXX_FLAGS} -O2 -m32 ${SIMD_OPTIONS} ${ARCH_OPTIONS} -fexceptions -Wwrite-strings -Wsuggest-final-types -Wsuggest-final-methods -Wconversion -Woverloaded-virtual -ffast-math ${SANITIZER_OPTIONS} -fstack-protector -std=c++17 -Wall -Wextra -Wlogical-op -Wrestrict -Wnull-dereference -Wno-cast-qual -Wdouble-promotion -Wno-unused-parameter -Wno-format -Wno-switch -Wno-packed-bitfield-compat -Wno-reorder -Wno-trigraphs -Wmisleading-indentation -Wnull-dereference -lgcc -static-libgcc -ffreestanding -fno-builtin -nostdlib -fno-omit-frame-pointer -Werror=implicit-function-declaration -lgcc")
+set(CMAKE_C_FLAGS "${ISA_C_FLAGS} ${PLATFORM_C_FLAGS} -O2 -fno-strict-aliasing -fstack-protector -m32 ${SIMD_OPTIONS} ${ARCH_OPTIONS} -Wwrite-strings -ffast-math ${SANITIZER_OPTIONS} -std=c11 -Wall -Wextra -Wconversion -Wcast-qual -Wmisleading-indentation -Wno-unused-parameter -Wno-implicit-int -Wnull-dereference -lgcc -static-libgcc -ffreestanding -fno-builtin -nostdlib -fno-omit-frame-pointer -Werror=implicit-function-declaration -lgcc")
+set(CMAKE_CXX_FLAGS "${ISA_CXX_FLAGS} ${PLATFORM_CXX_FLAGS} -O2 -fno-strict-aliasing -m32 ${SIMD_OPTIONS} ${ARCH_OPTIONS} -fexceptions -Wwrite-strings -Wsuggest-final-types -Wsuggest-final-methods -Wconversion -Woverloaded-virtual -ffast-math ${SANITIZER_OPTIONS} -fstack-protector -std=c++17 -Wall -Wextra -Wlogical-op -Wrestrict -Wnull-dereference -Wno-cast-qual -Wdouble-promotion -Wno-unused-parameter -Wno-format -Wno-switch -Wno-packed-bitfield-compat -Wno-reorder -Wno-trigraphs -Wmisleading-indentation -Wnull-dereference -lgcc -static-libgcc -ffreestanding -fno-builtin -nostdlib -fno-omit-frame-pointer -Werror=implicit-function-declaration -lgcc")
 set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS
   "-T ${PLATFORM_LAYOUT} ${ISA_LINKER_FLAGS} ${PLATFORM_LINKER_FLAGS} -lgcc -fexceptions -Xlinker -Map=ld.map ")
 set_target_properties(${PROJECT_NAME} PROPERTIES SUFFIX ".bin")
@@ -151,17 +161,22 @@ set_target_properties(libdisasm PROPERTIES COMPILE_FLAGS "-w")
 target_link_libraries(libdisasm libk)
 target_compile_definitions(libdisasm PUBLIC "-D__LUDOS__")
 
-add_library(acpica ${ACPICA_SOURCES} ${ACPICA_HEADERS})
-set_target_properties(acpica PROPERTIES LINKER_LANGUAGE C)
-set_target_properties(acpica PROPERTIES COMPILE_FLAGS "-w")
-target_link_libraries(acpica libk)
-target_compile_definitions(acpica PUBLIC "-D__LUDOS__")
+if (WITH_ACPICA)
+    add_library(acpica ${ACPICA_SOURCES} ${ACPICA_HEADERS})
+    set_target_properties(acpica PROPERTIES LINKER_LANGUAGE C)
+    set_target_properties(acpica PROPERTIES COMPILE_FLAGS "-w")
+    target_link_libraries(acpica libk)
+    target_compile_definitions(acpica PUBLIC "-D__LUDOS__")
+endif()
 
 include(ExternalProject)
 
 add_subdirectory(userland)
 
-target_link_libraries(${PROJECT_NAME} libk libk++ libcpp libcxxabi libx86emu libdisasm acpica)
+target_link_libraries(${PROJECT_NAME} libk libk++ libcpp libcxxabi libx86emu libdisasm)
+if (WITH_ACPICA)
+    target_link_libraries(${PROJECT_NAME} acpica)
+endif()
 target_link_libraries(libx86emu libk)
 
 set(CMAKE_CXX_LINK_EXECUTABLE "/usr/local/cross/bin/${ARCH}-elf-ld --build-id=none --eh-frame-hdr -T ${PLATFORM_LAYOUT} ${ISA_LINKER_FLAGS} <OBJECTS> -o <TARGET> <LINK_LIBRARIES>-L/usr/tooLargeForHome/cross_src/build-gcc/i686-elf/libgcc/ -lgcc")

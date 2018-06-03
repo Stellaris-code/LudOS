@@ -32,29 +32,29 @@ SOFTWARE.
 struct string_node : public vfs::node
 {
 public:
-    string_node(std::string name, std::function<std::string(size_t,size_t)> fun)
+    string_node(kpp::string name, std::function<kpp::string(size_t,size_t)> fun)
         : m_name(name)
     {
         m_callback = fun;
     }
 
-    string_node(std::string name, std::function<std::string()> fun)
+    string_node(kpp::string name, std::function<kpp::string()> fun)
         : m_name(name)
     {
         m_callback = [fun](size_t off, size_t size)
         {
             auto str = fun();
-            if (off >= str.length()) return std::string();
+            if (off >= str.length()) return kpp::string();
             return str.substr(off, size);
         };
     }
 
-    string_node(std::string name, std::string str)
+    string_node(kpp::string name, kpp::string str)
         : m_name(name)
     {
         m_callback = [str](size_t off, size_t size)
         {
-            if (off >= str.length()) return std::string();
+            if (off >= str.length()) return kpp::string();
             return str.substr(off, size);
         };
     }
@@ -62,7 +62,7 @@ public:
 
 public:
     virtual Type type() const override { return File; }
-    virtual std::string name() const override { return m_name; }
+    virtual kpp::string name() const override { return m_name; }
     virtual size_t size() const override { return 0; }
 
 protected:
@@ -74,8 +74,8 @@ protected:
     }
 
 private:
-    std::string m_name;
-    std::function<std::string(size_t, size_t)> m_callback;
+    kpp::string m_name;
+    std::function<kpp::string(size_t, size_t)> m_callback;
 };
 
 #endif // STRING_NODE_HPP

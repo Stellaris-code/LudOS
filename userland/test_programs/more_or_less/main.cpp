@@ -23,12 +23,14 @@ SOFTWARE.
 
 */
 
-#include <string.hpp>
+
 #include <stdio.h>
 
 #include <sys/fnctl.h>
 #include <sys/fs.h>
 #include <syscalls/syscall_list.hpp>
+
+#include <string.hpp>
 
 std::string read_str()
 {

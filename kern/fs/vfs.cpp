@@ -77,7 +77,7 @@ node::~node()
 {
 }
 
-void node::rename(const std::string &name)
+void node::rename(const kpp::string &name)
 {
     // Check if no entries with the same name already exist
     if (parent())
@@ -125,7 +125,7 @@ bool node::resize(size_t size)
     return resize_impl(size);
 }
 
-std::shared_ptr<node> node::create(const std::string & str, Type type)
+std::shared_ptr<node> node::create(const kpp::string & str, Type type)
 {
     assert(this->type() == Directory);
 
@@ -137,9 +137,9 @@ std::shared_ptr<node> node::create(const std::string & str, Type type)
     return node;
 }
 
-std::string node::path() const
+kpp::string node::path() const
 {
-    std::string suffix;
+    kpp::string suffix;
     if (type() == Directory) suffix = "/";
 
     if (!m_parent)
@@ -214,7 +214,7 @@ bool node::remove(const node *child)
     return remove_impl(child);
 }
 
-std::shared_ptr<node> vfs_root::add_node(const std::string &name, Type type)
+std::shared_ptr<node> vfs_root::add_node(const kpp::string &name, Type type)
 {
     m_children.emplace_back(std::make_shared<vfs::node>(this));
     auto node = m_children.back();
@@ -237,31 +237,31 @@ bool vfs_root::remove_impl(const node *child)
     return found;
 }
 
-symlink::symlink(std::string target)
+symlink::symlink(kpp::string target)
     : m_target(target), m_linkname(filename(target))
 {
 
 }
 
-symlink::symlink(std::string target, std::string name)
+symlink::symlink(kpp::string target, kpp::string name)
     : m_target(target), m_linkname(name)
 {
 
 }
 
-std::string symlink::name() const
+kpp::string symlink::name() const
 {
     return m_linkname;
 }
 
 std::shared_ptr<node> symlink::actual_target()
 {
-    return find(m_target);
+    return find(m_target).value_or(nullptr);
 }
 
 std::shared_ptr<const node> symlink::actual_target() const
 {
-    return find(m_target);
+    return find(m_target).value_or(nullptr);
 }
 
 }

@@ -31,7 +31,7 @@ SOFTWARE.
 namespace EDID
 {
 
-std::optional<EDIDInfo> get()
+kpp::optional<EDIDInfo> get()
 {
     memset(emu_mem + 0x20000, 0, sizeof(EDIDInfo));
     EDIDInfo* block = reinterpret_cast<EDIDInfo*>(emu_mem + 0x20000);

@@ -26,10 +26,12 @@ SOFTWARE.
 #define VFS_HPP
 
 #include <stdint.h>
+#include <errno.h>
 
-#include <string.hpp>
 #include <vector.hpp>
 #include <utils/gsl/gsl_span.hpp>
+
+#include <kstring/kstring.hpp>
 
 #include "utils/membuffer.hpp"
 
@@ -49,6 +51,30 @@ enum Permissions : uint16_t
     OtherRead = 0x0004,
     OtherWrite = 0x0002,
     OtherExec = 0x0001
+};
+
+struct FSError
+{
+    enum Type
+    {
+        NotFound,
+        ReadError
+    } type;
+
+    union Details
+    {
+        int read_error_type;
+    } details { 0 };
+
+    int to_errno() const
+    {
+        switch (type)
+        {
+            case NotFound:
+            default:
+                return ENOENT;
+        }
+    }
 };
 
 struct node
@@ -84,8 +110,8 @@ struct node
 
     virtual ~node();
 
-    virtual std::string name() const { return m_name; }
-    void rename(const std::string& name);
+    virtual kpp::string name() const { return m_name; }
+    void rename(const kpp::string& name);
 
     virtual Stat stat() const { return m_stat; }
     virtual void set_stat(const Stat& stat) { m_stat = stat; }
@@ -97,7 +123,7 @@ struct node
     [[nodiscard]] MemBuffer read(size_t offset, size_t size) const;
     [[nodiscard]] MemBuffer read() const { return read(0, size()); }
     [[nodiscard]] bool write(size_t offset, gsl::span<const uint8_t> data);
-    [[nodiscard]] std::shared_ptr<node> create(const std::string&, Type);
+    [[nodiscard]] std::shared_ptr<node> create(const kpp::string&, Type);
     bool resize(size_t);
     std::vector<std::shared_ptr<node>> readdir();
     std::vector<std::shared_ptr<const node>> readdir() const;
@@ -106,15 +132,15 @@ struct node
     node* parent() const { return m_parent; }
     void set_parent(node* parent) { m_parent = parent; }
 
-    std::string path() const;
+    kpp::string path() const;
 
 protected:
     [[nodiscard]] virtual MemBuffer read_impl(size_t, size_t) const { return {}; }
     [[nodiscard]] virtual bool write_impl(size_t, gsl::span<const uint8_t>) { return false; }
     virtual bool resize_impl(size_t) { return false; }
     virtual std::vector<std::shared_ptr<node>> readdir_impl() { return {}; }
-    [[nodiscard]] virtual std::shared_ptr<node> create_impl(const std::string&, Type) { return nullptr; }
-    virtual void rename_impl(const std::string&) {}
+    [[nodiscard]] virtual std::shared_ptr<node> create_impl(const kpp::string&, Type) { return nullptr; }
+    virtual void rename_impl(const kpp::string&) {}
     virtual bool remove_impl(const vfs::node*) { return false; }
 
 private:
@@ -127,7 +153,7 @@ protected:
 
     mutable Stat m_stat;
 
-    std::string m_name {};
+    kpp::string m_name {};
 
     node* m_parent { nullptr };
 
@@ -141,14 +167,14 @@ struct vfs_root : public node
 {
     vfs_root() : node(nullptr) { m_type = Directory; }
 
-    virtual std::string name() const override { return ""; }
+    virtual kpp::string name() const override { return ""; }
     virtual Type type() const override { return Directory; }
 
 private:
-    std::shared_ptr<node> add_node(const std::string& name, Type type);
+    std::shared_ptr<node> add_node(const kpp::string& name, Type type);
 
 protected:
-    virtual std::shared_ptr<node> create_impl(const std::string& str, Type type) override
+    virtual std::shared_ptr<node> create_impl(const kpp::string& str, Type type) override
     { return add_node(str, type); }
     virtual std::vector<std::shared_ptr<node>> readdir_impl() override { return m_children; }
     virtual bool remove_impl(const vfs::node* child) override;
@@ -160,16 +186,16 @@ private:
 struct symlink : public node
 {
 
-    symlink(std::string target);
+    symlink(kpp::string target);
 
-    symlink(std::string target, std::string name);
+    symlink(kpp::string target, kpp::string name);
 
     virtual size_t size() const override { return actual_target()->size(); }
     virtual Type type() const override { return actual_target()->type(); }
     virtual bool is_link() const override { return true; }
-    virtual std::string name() const override;
+    virtual kpp::string name() const override;
 
-    std::string target() const { return m_target; }
+    kpp::string target() const { return m_target; }
 
 private:
     std::shared_ptr<node> actual_target();
@@ -179,11 +205,11 @@ protected:
     [[nodiscard]] virtual MemBuffer read_impl(size_t offset, size_t size) const override { return actual_target()->read(offset, size); }
     [[nodiscard]] virtual bool write_impl(size_t offset, gsl::span<const uint8_t> data) override { return actual_target()->write(offset, data); }
     virtual std::vector<std::shared_ptr<node>> readdir_impl() override { return actual_target()->readdir_impl(); }
-    [[nodiscard]] virtual std::shared_ptr<node> create_impl(const std::string& s, Type type) override { return actual_target()->create(s, type); };
+    [[nodiscard]] virtual std::shared_ptr<node> create_impl(const kpp::string& s, Type type) override { return actual_target()->create(s, type); };
 
 private:
-    std::string m_target;
-    std::string m_linkname;
+    kpp::string m_target;
+    kpp::string m_linkname;
 };
 
 extern std::shared_ptr<vfs_root> root;

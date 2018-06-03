@@ -32,6 +32,8 @@ SOFTWARE.
 
 #include "utils/vecutils.hpp"
 
+#include "kstring/kstrfwd.hpp"
+
 class Driver
 {
 public:
@@ -57,7 +59,7 @@ public:
     }
 
 public:
-    virtual std::string driver_name() const = 0;
+    virtual kpp::string driver_name() const = 0;
 
 private:
     static inline std::vector<std::unique_ptr<Driver>> m_drivers;

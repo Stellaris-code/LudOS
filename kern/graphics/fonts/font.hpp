@@ -27,9 +27,10 @@ SOFTWARE.
 
 #include "graphics/drawing/bitmap.hpp"
 
-#include <string.hpp>
 #include <vector.hpp>
 #include <memory.hpp>
+
+#include <kstring/kstrfwd.hpp>
 
 #include "utils/logging.hpp"
 
@@ -57,7 +58,7 @@ public:
         m_font_cache.resize(0x10000);
     }
 
-    [[nodiscard]] virtual bool load(const std::string& path) = 0;
+    [[nodiscard]] virtual bool load(const kpp::string& path) = 0;
 
     const Glyph& get(char32_t c) const;
 

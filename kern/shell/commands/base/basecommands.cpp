@@ -47,7 +47,7 @@ void install_base_commands(Shell &sh)
     sh.register_command(
     {"test", "a test command",
      "nothing to say here",
-     [](const std::vector<std::string>&)
+     [](const std::vector<kpp::string>&)
      {
          puts("Called test");
          return 0;
@@ -56,7 +56,7 @@ void install_base_commands(Shell &sh)
     sh.register_command(
     {"help", "print terminal help",
      "help <command>",
-     [&sh](const std::vector<std::string>& args)
+     [&sh](const std::vector<kpp::string>& args)
      {
          if (args.size() > 1)
          {
@@ -98,7 +98,7 @@ void install_base_commands(Shell &sh)
     sh.register_command(
     {"get", "get an environment variable",
      "Usage : get <var>",
-     [&sh](const std::vector<std::string>& args)
+     [&sh](const std::vector<kpp::string>& args)
      {
          if (args.size() > 1)
          {
@@ -115,7 +115,7 @@ void install_base_commands(Shell &sh)
          else
          {
              auto env = kgetenv(args[0]);
-             std::string str = (env?*env:"");
+             kpp::string str = (env?*env:"");
 
              kprintf("%s : '%s'\n", args[0].c_str(), str.c_str());
          }
@@ -125,7 +125,7 @@ void install_base_commands(Shell &sh)
     sh.register_command(
     {"set", "set an environment variable",
      "Usage : set <var> <value>",
-     [&sh](const std::vector<std::string>& args)
+     [&sh](const std::vector<kpp::string>& args)
      {
          if (args.size() != 2)
          {
@@ -140,9 +140,9 @@ void install_base_commands(Shell &sh)
     sh.register_command(
     {"echo", "echoes string",
      "Usage : echo <args>",
-     [](const std::vector<std::string>& args)
+     [](const std::vector<kpp::string>& args)
      {
-         std::string str;
+         kpp::string str;
          if (args.size() > 1 && args[0] == "-s")
          {
              str = args[1];
@@ -160,7 +160,7 @@ void install_base_commands(Shell &sh)
     sh.register_command(
     {"settitle", "set terminal title",
      "Usage : settitle <title>",
-     [](const std::vector<std::string>& args)
+     [](const std::vector<kpp::string>& args)
      {
          if (!args.empty())
          {
@@ -173,7 +173,7 @@ void install_base_commands(Shell &sh)
     sh.register_command(
     {"serial", "enable echoing to serial port",
      "Usage : serial <on/off>",
-     [](const std::vector<std::string>& args)
+     [](const std::vector<kpp::string>& args)
      {
          if (!args.empty())
          {
@@ -198,7 +198,7 @@ void install_base_commands(Shell &sh)
     sh.register_command(
     {"run", "run shell script",
      "Usage : run <file>",
-     [&sh](const std::vector<std::string>& args)
+     [&sh](const std::vector<kpp::string>& args)
      {
          if (args.size() != 1)
          {
@@ -213,7 +213,7 @@ void install_base_commands(Shell &sh)
              return -2;
          }
 
-         auto vec = file->read();
+         auto vec = file.value()->read();
          if (vec.empty())
          {
              sh.error("Can't read file %s !\n", args[0].c_str());
@@ -222,7 +222,7 @@ void install_base_commands(Shell &sh)
          vec.emplace_back('\0');
 
          auto old_pwd = sh.pwd;
-         sh.pwd = std::shared_ptr<vfs::node>(file->parent(), [](vfs::node*){});
+         sh.pwd = std::shared_ptr<vfs::node>(file.value()->parent(), [](vfs::node*){});
 
          const char* c_str = reinterpret_cast<const char*>(vec.data());
          auto commands = tokenize(c_str, "\n");
@@ -242,7 +242,7 @@ void install_base_commands(Shell &sh)
     sh.register_command(
     {"alias", "creates an alias",
      "Usage : alias <name> <command>",
-     [&sh](const std::vector<std::string>& args)
+     [&sh](const std::vector<kpp::string>& args)
      {
          if (args.size() < 2)
          {
@@ -250,12 +250,13 @@ void install_base_commands(Shell &sh)
              return -1;
          }
 
-         std::string alias = args[0];
-         auto toks = std::vector<std::string>{args.begin() + 1, args.end()};
-         for (auto& tok : toks) { tok.insert(tok.begin(), '"'); tok += '"'; }
-         std::string cmd = join(toks, " ");
+         kpp::string alias = args[0];
+         auto toks = std::vector<kpp::string>{args.begin() + 1, args.end()};
+         panic("Implement"); // TODO ::::
+         for (auto& tok : toks) { tok = '"' + tok + '"'; }
+         kpp::string cmd = join(toks, " ");
 
-         sh.register_command({alias, "<alias>", "<alias>", [&sh, cmd](const std::vector<std::string>&)
+         sh.register_command({alias, "<alias>", "<alias>", [&sh, cmd](const std::vector<kpp::string>&)
                               {sh.command(cmd);return 0;}});
 
          return 0;
@@ -264,9 +265,9 @@ void install_base_commands(Shell &sh)
     sh.register_command(
     {"panic", "forces a kernel panic",
      "Usage : panic (<reason>)",
-     [](const std::vector<std::string>& args)
+     [](const std::vector<kpp::string>& args)
      {
-         std::string reason = "Panic requested";
+         kpp::string reason = "Panic requested";
          if (!args.empty()) reason = join(args, " ");
 
          panic("%s\n", reason.c_str());
@@ -277,7 +278,7 @@ void install_base_commands(Shell &sh)
     sh.register_command(
     {"greet", "Greets the user",
      "Usage : greet",
-     [](const std::vector<std::string>&)
+     [](const std::vector<kpp::string>&)
      {
          greet();
          return 0;
@@ -286,7 +287,7 @@ void install_base_commands(Shell &sh)
     sh.register_command(
     {"clear", "clears the screen",
      "Usage : clear",
-     [](const std::vector<std::string>&)
+     [](const std::vector<kpp::string>&)
      {
          for (size_t i { 0 }; i < term().height(); ++i)
          {
@@ -298,7 +299,7 @@ void install_base_commands(Shell &sh)
     sh.register_command(
     {"cowsay", "Let the cow speak",
      "Usage : cowsay <txt>",
-     [&sh](const std::vector<std::string>& args)
+     [&sh](const std::vector<kpp::string>& args)
      {
          if (args.empty())
          {
@@ -313,9 +314,9 @@ void install_base_commands(Shell &sh)
     sh.register_command(
     {"time", "benchmark command",
      "Usage : 'time <command>'",
-     [&sh](const std::vector<std::string>& args)
+     [&sh](const std::vector<kpp::string>& args)
      {
-         std::string command = join(args, " ");
+         kpp::string command = join(args, " ");
 
          auto start = Time::uptime();
          sh.command(command);
@@ -328,7 +329,7 @@ void install_base_commands(Shell &sh)
     sh.register_command(
     {"loop", "loop command to infinity",
      "Usage : 'loop <command>'",
-     [&sh](const std::vector<std::string>& args)
+     [&sh](const std::vector<kpp::string>& args)
      {
          while (true)
          {

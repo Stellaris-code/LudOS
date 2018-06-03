@@ -46,7 +46,7 @@ struct stdout_file : public vfs::node
 protected:
     [[nodiscard]] virtual bool write_impl(size_t offset, gsl::span<const uint8_t> data) override
     {
-        auto str = std::string((const char*)data.data(), data.size());
+        auto str = kpp::string((const char*)data.data(), data.size());
         kprintf("%s", str.c_str());
         return true;
     }
@@ -57,7 +57,7 @@ struct stderr_file : public vfs::node
 protected:
     [[nodiscard]] virtual bool write_impl(size_t offset, gsl::span<const uint8_t> data) override
     {
-        auto str = std::string((const char*)data.data(), data.size());
+        auto str = kpp::string((const char*)data.data(), data.size());
         err("%s", str.c_str());
         return true;
     }
@@ -156,15 +156,15 @@ void init()
 namespace detail
 {
 
-std::string drive_label(const Disk& disk)
+kpp::string drive_label(const Disk& disk)
 {
-    static std::map<std::string, std::string> label_mappings;
-    static std::map<std::string, size_t> disk_partitions;
-    static std::array<std::string, Disk::Unknown + 1> suffixes;
+    static std::map<kpp::string, kpp::string> label_mappings;
+    static std::map<kpp::string, size_t> disk_partitions;
+    static kpp::array<kpp::string, Disk::Unknown + 1> suffixes;
     if (suffixes[0].empty()) suffixes.fill("a");
 
-    std::string prefix;
-    std::string name;
+    kpp::string prefix;
+    kpp::string name;
 
     switch (disk.media_type())
     {
@@ -188,7 +188,7 @@ std::string drive_label(const Disk& disk)
         // TODO : GUID
         auto parent_name = static_cast<const DiskSlice*>(&disk)->parent().drive_name();
 
-        name = label_mappings.at(parent_name) + std::to_string(++disk_partitions[parent_name]);
+        name = label_mappings.at(parent_name) + kpp::to_string(++disk_partitions[parent_name]);
     }
     else
     {
@@ -211,7 +211,7 @@ std::string drive_label(const Disk& disk)
 
 void add_drive(Disk &disk)
 {
-    std::string name = drive_label(disk);
+    kpp::string name = drive_label(disk);
 
     auto node = std::make_shared<disk_file>(disk, name);
     root->children.emplace_back(node);

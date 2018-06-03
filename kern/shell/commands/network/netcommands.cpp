@@ -36,16 +36,17 @@ void install_net_commands(Shell &sh)
     sh.register_command(
     {"netinfo", "Get network information",
      "Usage : 'netinfo'",
-     [](const std::vector<std::string>&)
+     [](const std::vector<kpp::string>&)
      {
-         try
+         auto result = NetworkDriver::get();
+         if (!result)
          {
-             auto mac = NetworkDriver::get().mac_address();
-             kprintf("MAC Address : %02x:%02x:%02x:%02x:%02x:%02x\n", mac[0],mac[1],mac[2],mac[3],mac[4],mac[5]);
+             err("Network error : %s\n", result.error().to_string().c_str());
          }
-         catch (const NetworkException& e)
+         else
          {
-            err("Network error : %s\n", e.what());
+             auto mac = result.value().get().mac_address();
+             kprintf("MAC Address : %02x:%02x:%02x:%02x:%02x:%02x\n", mac[0],mac[1],mac[2],mac[3],mac[4],mac[5]);
          }
 
          return 0;

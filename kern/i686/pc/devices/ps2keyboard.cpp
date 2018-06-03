@@ -25,6 +25,8 @@ SOFTWARE.
 
 #include "ps2keyboard.hpp"
 
+#include <kstring/kstring.hpp>
+
 #include "i686/interrupts/isr.hpp"
 #include "i686/pc/devices/pic.hpp"
 
@@ -113,6 +115,11 @@ void PS2Keyboard::toggle_led(uint8_t led, bool value)
     leds |=  led & (value ? 0xFF : 0); // set to val
 
     set_leds(leds);
+}
+
+kpp::string PS2Keyboard::driver_name() const
+{
+    return "PS/2 Keyboard";
 }
 
 bool PS2Keyboard::isr(const registers *)
@@ -260,12 +267,12 @@ void PS2Keyboard::init_assocs()
     long_key_assocs.emplace_back(kbd::pos(16, 0), std::vector<uint8_t>{0xE1, 0x1D, 0x45, 0xE1, 0x9D, 0xC5});
 }
 
-void PS2Keyboard::define_assoc(uint8_t i, uint8_t pos, const std::string &name)
+void PS2Keyboard::define_assoc(uint8_t i, uint8_t pos, const kpp::string &name)
 {
     key_assocs[i] = pos;
 }
 
-void PS2Keyboard::define_e0_assoc(uint8_t i, uint8_t pos, const std::string &name)
+void PS2Keyboard::define_e0_assoc(uint8_t i, uint8_t pos, const kpp::string &name)
 {
     e0_key_assocs[i] = pos;
 }

@@ -124,7 +124,7 @@ void print_disassembly()
         for (size_t i { 0 }; i < dump_len; ++i)
         {
             DisasmInfo info = get_disasm(ip);
-            std::string bytes = join(map<uint8_t, std::string>(info.bytes, [](uint8_t c){return std::to_hex_string(c);}), " ");
+            kpp::string bytes = join(map<uint8_t, kpp::string>(info.bytes, [](uint8_t c){return kpp::to_hex_string(c);}), " ");
             if (ip == base_ip)
             {
                 kprintf("->  ");

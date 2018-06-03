@@ -25,6 +25,8 @@ SOFTWARE.
 
 #include "init.hpp"
 
+#include "utils/defs.hpp"
+
 #include "multiboot/multiboot_kern.hpp"
 
 #include "devices/pic.hpp"
@@ -52,8 +54,12 @@ SOFTWARE.
 #include "drivers/storage/ide/ide_pio.hpp"
 #include "drivers/storage/ide/ide_dma.hpp"
 #include "drivers/storage/ahci/ahci.hpp"
+
+#if USES_ACPICA
 #include "drivers/acpi/acpi_init.hpp"
 #include "drivers/acpi/powermanagement.hpp"
+#endif
+
 #include "drivers/driver.hpp"
 #include "drivers/pci/pcidriver.hpp"
 
@@ -228,7 +234,7 @@ void init(uint32_t magic, const multiboot_info_t* mbd_info)
 #endif
     }
 
-    log(Info, "End : %p\n", &kernel_physical_end);
+    log(Info, "Kernel end : %p\n", &kernel_physical_end);
 
     kernel_cmdline = multiboot::parse_cmdline();
     read_from_cmdline(kernel_cmdline);
@@ -254,6 +260,7 @@ void init(uint32_t magic, const multiboot_info_t* mbd_info)
 
     init_emu_mem();
 
+#if USES_ACPICA
     auto status = acpi_init();
     if (ACPI_FAILURE(status))
     {
@@ -261,8 +268,8 @@ void init(uint32_t magic, const multiboot_info_t* mbd_info)
         err("\n\n");
         halt();
     }
-
     acpi::power::init();
+#endif
 
     pci::scan();
 

@@ -48,7 +48,7 @@ bool LudosRawLoader::load(Process &p)
     return true;
 }
 
-std::string LudosRawLoader::file_type() const
+kpp::string LudosRawLoader::file_type() const
 {
     return "LudOS Raw executable";
 }

@@ -59,12 +59,16 @@ PSFFont::PSFFont()
 {
 }
 
-bool PSFFont::load(const std::string &path)
+bool PSFFont::load(const kpp::string &path)
 {
     auto file = vfs::find(path);
-    if (!file) return false;
+    if (!file)
+    {
+        log_serial("Path : %s\n", path.c_str());
+        return false;
+    }
 
-    m_data = file->read();
+    m_data = file.value()->read();
     if (m_data.empty()) return false;
 
     return load_psf();

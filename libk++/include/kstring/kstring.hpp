@@ -1,5 +1,5 @@
 /*
-kstring.hpp
+kpp::string.hpp
 
 Copyright (c) 17 Yann BOUCHER (yann)
 
@@ -26,8 +26,13 @@ SOFTWARE.
 #define KSTRING_HPP
 
 #include <stddef.h>
+#include <assert.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
 
-#include <string.hpp>
+namespace kpp
+{
 
 template <typename CharType = char, size_t SmallStrSize = 60>
 class kernel_string
@@ -43,7 +48,7 @@ public:
     using difference_type = ptrdiff_t;
     using size_type = size_t;
 
-    static const size_t npos = -1;
+    static constexpr size_t npos = -1;
 
 public:
     kernel_string();
@@ -56,10 +61,6 @@ public:
     kernel_string(InputIterator first, InputIterator last);
     kernel_string(kernel_string&& str);
     ~kernel_string();
-
-    // TODO : remove
-    kernel_string(const std::string& str) : kernel_string(str.c_str()) {}
-    operator std::string() { return c_str(); }
 
     kernel_string& operator=(const kernel_string& str);
     kernel_string& operator=(const CharType* str);
@@ -93,8 +94,17 @@ public:
 
     kernel_string substr(size_t pos = 0, size_t len = npos) const;
 
+    size_t find(const kernel_string& str, size_t pos = 0) const noexcept;
+    size_t find(const CharType* str, size_t pos = 0) const noexcept;
+    size_t find(const CharType* str, size_t pos, size_t n) const noexcept;
+    size_t find(CharType c, size_t pos = 0) const noexcept;
+
+    size_t find_first_of(const kernel_string& str, size_t pos = 0) const noexcept;
+
+
     kernel_string& erase(size_t pos = 0, size_t len = npos);
     iterator erase(const_iterator p);
+    iterator erase(const_iterator start, const_iterator end);
 
     size_t size() const noexcept { return m_size; }
     size_t length() const noexcept { return size(); }
@@ -109,6 +119,11 @@ public:
     iterator begin() const noexcept { return const_cast<CharType*>(c_str()); }
     iterator end() const noexcept { return const_cast<CharType*>(c_str() + size()); }
 
+    CharType& front() { return (*this)[0]; }
+    const CharType& front() const { return (*this)[0]; }
+    CharType& back() { return (*this)[size() - 1]; }
+    const CharType& back() const { return (*this)[size() - 1]; }
+
     CharType& operator[] (size_t pos) { assert(pos < size()); return mutable_data()[pos]; }
     const CharType& operator[] (size_t pos) const { assert(pos < size());  return data()[pos]; }
 
@@ -116,6 +131,8 @@ private:
     CharType* mutable_data() noexcept { return const_cast<CharType*>(c_str()); }
     void allocate_heap(size_t size);
     void release_heap();
+
+    static size_t string_length(const CharType* c);
 
 private:
     CharType m_stack_str[SmallStrSize+1] = { CharType{} }; // reserve one char for the null terminator
@@ -135,11 +152,127 @@ kernel_string<CharType, SmallStrSize> operator+(CharType lhs, const kernel_strin
 template <typename CharType = char, size_t SmallStrSize = 60>
 kernel_string<CharType, SmallStrSize> operator+(const kernel_string<CharType, SmallStrSize>& lhs, CharType rhs);
 
-using kstring = kernel_string<>;
-using ku16string = kernel_string<char16_t>;
-using ku32string = kernel_string<char32_t>;
+template <typename CharType = char, size_t SmallStrSize = 60>
+bool operator== (const kernel_string<CharType, SmallStrSize>& lhs, const kernel_string<CharType, SmallStrSize>& rhs) noexcept;
+template <typename CharType = char, size_t SmallStrSize = 60>
+bool operator== (const char*   lhs, const kernel_string<CharType, SmallStrSize>& rhs);
+template <typename CharType = char, size_t SmallStrSize = 60>
+bool operator== (const kernel_string<CharType, SmallStrSize>& lhs, const char*   rhs);
+
+template <typename CharType = char, size_t SmallStrSize = 60>
+bool operator!= (const kernel_string<CharType, SmallStrSize>& lhs, const kernel_string<CharType, SmallStrSize>& rhs) noexcept
+{ return !(lhs == rhs); }
+template <typename CharType = char, size_t SmallStrSize = 60>
+bool operator!= (const char*   lhs, const kernel_string<CharType, SmallStrSize>& rhs)
+{ return !(lhs == rhs); }
+template <typename CharType = char, size_t SmallStrSize = 60>
+bool operator!= (const kernel_string<CharType, SmallStrSize>& lhs, const char*   rhs)
+{ return !(lhs == rhs); }
+
+template <typename CharType = char, size_t SmallStrSize = 60>
+bool operator< (const kernel_string<CharType, SmallStrSize>& lhs, const kernel_string<CharType, SmallStrSize>& rhs) noexcept;
+template <typename CharType = char, size_t SmallStrSize = 60>
+bool operator< (const char*   lhs, const kernel_string<CharType, SmallStrSize>& rhs);
+template <typename CharType = char, size_t SmallStrSize = 60>
+bool operator< (const kernel_string<CharType, SmallStrSize>& lhs, const char*   rhs);
+
+template <typename ConvType, typename CharType = char, size_t SmallStrSize = 60>
+kernel_string<CharType, SmallStrSize> do_string_conversion(ConvType val, const char* fmt)
+{
+    char buffer[SmallStrSize];
+    size_t len = ksnprintf(buffer, sizeof(buffer), fmt, val);
+
+    assert(len >= 0 && len <= sizeof(buffer));
+
+    return kernel_string<CharType, SmallStrSize>{buffer};
+}
+
+template <typename CharType = char, size_t SmallStrSize = 60>
+kernel_string<CharType, SmallStrSize> to_string(int v)
+{
+    return do_string_conversion<int, CharType, SmallStrSize>(v, "%d");
+}
+template <typename CharType = char, size_t SmallStrSize = 60>
+kernel_string<CharType, SmallStrSize> to_string(long v)
+{
+    return do_string_conversion<int, CharType, SmallStrSize>(v, "%l");
+}
+template <typename CharType = char, size_t SmallStrSize = 60>
+kernel_string<CharType, SmallStrSize> to_string(unsigned v)
+{
+    return do_string_conversion<int, CharType, SmallStrSize>(v, "%u");
+}
+template <typename CharType = char, size_t SmallStrSize = 60>
+kernel_string<CharType, SmallStrSize> to_string(unsigned long v)
+{
+    return do_string_conversion<int, CharType, SmallStrSize>(v, "%u");
+}
+template <typename CharType = char, size_t SmallStrSize = 60>
+kernel_string<CharType, SmallStrSize> to_string(float v)
+{
+    return do_string_conversion<int, CharType, SmallStrSize>(v, "%f");
+}
+template <typename CharType = char, size_t SmallStrSize = 60>
+kernel_string<CharType, SmallStrSize> to_string(double v)
+{
+    return do_string_conversion<int, CharType, SmallStrSize>(v, "%f");
+}
+template <typename CharType = char, size_t SmallStrSize = 60>
+kernel_string<CharType, SmallStrSize> to_hex_string(unsigned v)
+{
+    return do_string_conversion<int, CharType, SmallStrSize>(v, "%x");
+}
+
+template <typename CharType = char, size_t SmallStrSize = 60>
+unsigned long stoul(const kernel_string<CharType, SmallStrSize>& str)
+{
+    char* end = nullptr;
+    unsigned long result = strtoul(str.c_str(), &end, 0);
+    assert(end != nullptr);
+
+    return result;
+}
+
+using string = kernel_string<>;
+using u16string = kernel_string<char16_t>;
+using u32string = kernel_string<char32_t>;
+
+template <typename CharType = char, size_t SmallStrSize = 60>
+unsigned long khash(const kernel_string<CharType, SmallStrSize>& str)
+{
+    unsigned long hash = 5381;
+    int c;
+
+    const CharType* ptr = str.c_str();
+
+    while ((c = *ptr++))
+        hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
+
+    return hash;
+}
 
 #include "kstring.tpp"
 #include "kstring_assign.tpp"
+
+}
+
+namespace std
+{
+namespace __1
+{
+template <typename T>
+struct hash;
+}
+
+template <typename CharType, size_t SmallStrSize>
+struct __1::hash<kpp::kernel_string<CharType, SmallStrSize>>
+{
+public:
+    size_t operator()(const kpp::kernel_string<CharType, SmallStrSize> &str) const
+    {
+        return kpp::khash(str);
+    }
+};
+}
 
 #endif // KSTRING_HPP

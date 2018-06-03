@@ -28,8 +28,9 @@ SOFTWARE.
 #include <stdint.h>
 
 #include <vector.hpp>
-#include <string.hpp>
 #include <stack.hpp>
+
+#include <kstring/kstring.hpp>
 
 #include "utils/circularbuffer.hpp"
 
@@ -75,7 +76,7 @@ public:
     }
 
 public:
-    std::u32string title_str;
+    kpp::u32string title_str;
     ColorPair title_color;
     size_t title_height { 1 };
     std::stack<ColorPair> color_stack;

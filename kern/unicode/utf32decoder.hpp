@@ -25,8 +25,8 @@ SOFTWARE.
 #ifndef UTF32DECODER_HPP
 #define UTF32DECODER_HPP
 
-#include <string.hpp>
+#include <kstring/kstrfwd.hpp>
 
-std::string decode_utf32(char32_t ch);
+kpp::string decode_utf32(char32_t ch);
 
 #endif // UTF32DECODER_HPP

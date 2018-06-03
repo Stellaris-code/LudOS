@@ -40,7 +40,7 @@ void print_cow()
     puts(  "                ||     ||");
 }
 
-void cowsay(std::string str, size_t cowsay_width)
+void cowsay(kpp::string str, size_t cowsay_width)
 {
     assert(cowsay_width);
 

@@ -32,7 +32,7 @@ SOFTWARE.
 #include <numeric.hpp>
 
 // Generates a lookup table for the checksums of all 8-bit values.
-inline std::array<uint32_t, 256> generate_crc_lookup_table() noexcept
+inline kpp::array<uint32_t, 256> generate_crc_lookup_table() noexcept
 {
   auto const reversed_polynomial = uint32_t{0xEDB88320uL};
 
@@ -53,7 +53,7 @@ inline std::array<uint32_t, 256> generate_crc_lookup_table() noexcept
     unsigned n = 0;
   };
 
-  auto table = std::array<uint32_t, 256>{};
+  auto table = kpp::array<uint32_t, 256>{};
   std::generate(table.begin(), table.end(), byte_checksum{});
 
   return table;

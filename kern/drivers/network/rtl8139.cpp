@@ -62,9 +62,9 @@ void RTL8139::init()
     NetworkDriver::add_nic(*this);
 }
 
-std::array<uint8_t, 6> RTL8139::mac_address() const
+kpp::array<uint8_t, 6> RTL8139::mac_address() const
 {
-    std::array<uint8_t, 6> mac;
+    kpp::array<uint8_t, 6> mac;
 
     for (size_t i { 0 }; i < 6; ++i)
     {

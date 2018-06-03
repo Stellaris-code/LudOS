@@ -27,7 +27,6 @@ SOFTWARE.
 #include "tasking/process_data.hpp"
 #include "i686/tasking/process.hpp"
 
-#include <string.hpp>
 #include <vector.hpp>
 
 #include <sys/wait.h>
@@ -50,7 +49,7 @@ extern "C" [[noreturn]] void enter_ring3(const registers* regs);
 // Let the upper page free for argv/argc
 constexpr uintptr_t argv_virt_page = KERNEL_VIRTUAL_BASE - (1*Paging::page_size);
 
-void populate_argv(uintptr_t addr, gsl::span<const std::string> args)
+void populate_argv(uintptr_t addr, gsl::span<const kpp::string> args)
 {
     // Structure:
     // 0..n*4 : ptr array
@@ -74,7 +73,7 @@ void populate_argv(uintptr_t addr, gsl::span<const std::string> args)
     assert(cursor < Paging::page_size);
 }
 
-bool Process::check_args_size(const std::vector<std::string> &args)
+bool Process::check_args_size(const std::vector<kpp::string> &args)
 {
     size_t tb_size { args.size()*sizeof(uintptr_t) };
 
@@ -86,7 +85,7 @@ bool Process::check_args_size(const std::vector<std::string> &args)
     return tb_size < Paging::page_size;
 }
 
-void Process::set_args(const std::vector<std::string>& args)
+void Process::set_args(const std::vector<kpp::string>& args)
 {
     data->args = args;
 
@@ -171,8 +170,8 @@ Process *Process::clone(Process &proc, uint32_t flags)
     new_proc->data->gid = proc.data->gid;
     new_proc->parent = proc.pid;
 
-    new_proc->data->pwd  = vfs::find(proc.data->pwd->path()); assert(new_proc->data->pwd);
-    new_proc->data->root = vfs::find(proc.data->root->path()); assert(new_proc->data->root);
+    new_proc->data->pwd  = vfs::find(proc.data->pwd->path()).value(); assert(new_proc->data->pwd);
+    new_proc->data->root = vfs::find(proc.data->root->path()).value(); assert(new_proc->data->root);
 
     new_proc->data->fd_table = std::make_shared<std::vector<tasking::FDInfo>>(*proc.data->fd_table); // noleak
     proc.copy_allocated_pages(*new_proc); // noleak
@@ -180,7 +179,7 @@ Process *Process::clone(Process &proc, uint32_t flags)
 #ifdef LUDOS_HAS_SHM
     new_proc->data->shm_list = proc.data->shm_list;
 #endif
-    new_proc->data->sig_handlers = std::make_shared<std::array<struct sigaction, SIGRTMAX>>(*proc.data->sig_handlers);
+    new_proc->data->sig_handlers = std::make_shared<kpp::array<struct sigaction, SIGRTMAX>>(*proc.data->sig_handlers);
     new_proc->arch_context = new ProcessArchContext;
     *new_proc->arch_context = *proc.arch_context;
 

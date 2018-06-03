@@ -45,5 +45,5 @@ DisasmInfo get_disasm(uint8_t* ptr)
 
     x86_cleanup();
 
-    return {std::string(line), {instr.bytes, instr.bytes + instr.size}, size};
+    return {kpp::string(line), {instr.bytes, instr.bytes + instr.size}, size};
 }

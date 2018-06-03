@@ -35,7 +35,7 @@ public:
 
 public:
     virtual bool load(Process& p);
-    virtual std::string file_type() const;
+    virtual kpp::string file_type() const;
 };
 
 

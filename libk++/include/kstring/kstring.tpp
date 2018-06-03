@@ -1,5 +1,5 @@
 /*
-kstring.cpp
+kpp::string.cpp
 
 Copyright (c) 17 Yann BOUCHER (yann)
 
@@ -22,14 +22,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-
-#include "kstring.hpp"
-
-#include <assert.h>
-#include <string.h>
-#include <stdlib.h>
-
-#include <stdio.h>
 
 template<typename CharType, size_t SmallStrSize>
 void kernel_string<CharType, SmallStrSize>::resize(size_t n, CharType c) noexcept
@@ -111,7 +103,7 @@ kernel_string<CharType, SmallStrSize> &kernel_string<CharType, SmallStrSize>::ap
 template<typename CharType, size_t SmallStrSize>
 kernel_string<CharType, SmallStrSize> &kernel_string<CharType, SmallStrSize>::append(const CharType *str)
 {
-    return append(str, strlen(str));
+    return append(str, string_length(str));
 }
 
 template<typename CharType, size_t SmallStrSize>
@@ -139,15 +131,71 @@ kernel_string<CharType, SmallStrSize> &kernel_string<CharType, SmallStrSize>::op
 }
 
 template<typename CharType, size_t SmallStrSize>
+size_t kernel_string<CharType, SmallStrSize>::find_first_of(const kernel_string &str, size_t pos) const noexcept
+{
+    for (size_t i { pos }; i < size(); ++i)
+    {
+        for (auto c : str)
+        {
+            if ((*this)[i] == c) return i;
+        }
+    }
+
+    return npos;
+}
+
+template<typename CharType, size_t SmallStrSize>
+size_t kernel_string<CharType, SmallStrSize>::find(const kernel_string &str, size_t pos) const noexcept
+{
+    if (str.empty()) return npos;
+
+    for (size_t i { pos }; i <= size() - str.size(); ++i)
+    {
+        if (substr(i, str.size()) == str)
+        {
+            return i;
+        }
+    }
+
+    return npos;
+}
+
+template<typename CharType, size_t SmallStrSize>
+size_t kernel_string<CharType, SmallStrSize>::find(CharType c, size_t pos) const noexcept
+{
+    for (size_t i { pos }; i < size(); ++i)
+    {
+        if ((*this)[i] == c)
+        {
+            return i;
+        }
+    }
+
+    return npos;
+}
+
+template<typename CharType, size_t SmallStrSize>
+size_t kernel_string<CharType, SmallStrSize>::find(const CharType *str, size_t pos) const noexcept
+{
+    return find(kernel_string(str), pos);
+}
+
+template<typename CharType, size_t SmallStrSize>
+size_t kernel_string<CharType, SmallStrSize>::find(const CharType *str, size_t pos, size_t n) const noexcept
+{
+    return find(kernel_string(str, n), pos);
+}
+
+template<typename CharType, size_t SmallStrSize>
 kernel_string<CharType, SmallStrSize> kernel_string<CharType, SmallStrSize>::substr(size_t pos, size_t len) const
 {
-    return kstring(*this, pos, len);
+    return kpp::string(*this, pos, len);
 }
 
 template<typename CharType, size_t SmallStrSize>
 typename kernel_string<CharType, SmallStrSize>::iterator kernel_string<CharType, SmallStrSize>::erase(const_iterator p)
 {
-    kstring new_str;
+    kpp::string new_str;
     size_t idx = p - begin();
 
     new_str = substr(0, idx);
@@ -159,9 +207,25 @@ typename kernel_string<CharType, SmallStrSize>::iterator kernel_string<CharType,
 }
 
 template<typename CharType, size_t SmallStrSize>
+typename kernel_string<CharType, SmallStrSize>::iterator kernel_string<CharType, SmallStrSize>::erase
+(kernel_string::const_iterator start, kernel_string::const_iterator end)
+{
+    kpp::string copy = *this;
+
+    size_t start_idx = start - begin();
+    size_t end_idx = end - begin();
+
+    copy.erase(start_idx, end_idx - start_idx);
+
+    *this = copy;
+
+    return start_idx < size() ? &(*this)[start_idx] : this->end();
+}
+
+template<typename CharType, size_t SmallStrSize>
 kernel_string<CharType, SmallStrSize> &kernel_string<CharType, SmallStrSize>::erase(size_t pos, size_t len)
 {
-    kstring new_str;
+    kpp::string new_str;
 
     new_str = substr(0, pos);
     if (len != npos && pos + len < size()) new_str += substr(pos + len);
@@ -201,6 +265,18 @@ void kernel_string<CharType, SmallStrSize>::release_heap()
 }
 
 template<typename CharType, size_t SmallStrSize>
+size_t kernel_string<CharType, SmallStrSize>::string_length(const CharType *c)
+{
+    size_t len = 0;
+    while (c[len] != CharType{})
+    {
+        ++len;
+    }
+
+    return len;
+}
+
+template<typename CharType, size_t SmallStrSize>
 kernel_string<CharType, SmallStrSize> operator+(const kernel_string<CharType, SmallStrSize> &lhs, const kernel_string<CharType, SmallStrSize> &rhs)
 {
     kernel_string<CharType, SmallStrSize> str;
@@ -232,4 +308,43 @@ template<typename CharType, size_t SmallStrSize>
 kernel_string<CharType, SmallStrSize> operator+(const kernel_string<CharType, SmallStrSize> &lhs, CharType rhs)
 {
     return lhs + kernel_string<CharType, SmallStrSize>(1, rhs);
+}
+
+template<typename CharType, size_t SmallStrSize>
+bool operator==(const kernel_string<CharType, SmallStrSize> &lhs, const kernel_string<CharType, SmallStrSize> &rhs) noexcept
+{
+    if (lhs.size() != rhs.size()) return false;
+
+    for (size_t i { 0 }; i < lhs.size(); ++i)
+    {
+        if (lhs[i] != rhs[i]) return false;
+    }
+
+    return true;
+}
+
+template<typename CharType, size_t SmallStrSize>
+bool operator==(const char *lhs, const kernel_string<CharType, SmallStrSize> &rhs)
+{
+    return kernel_string<CharType, SmallStrSize>(lhs) == rhs;
+}
+
+template<typename CharType, size_t SmallStrSize>
+bool operator==(const kernel_string<CharType, SmallStrSize> &lhs, const char *rhs)
+{
+    return lhs == kernel_string<CharType, SmallStrSize>(rhs);
+}
+
+template<typename CharType, size_t SmallStrSize>
+bool operator<(const kernel_string<CharType, SmallStrSize> &lhs, const kernel_string<CharType, SmallStrSize> &rhs) noexcept
+{
+    for (size_t i { 0 }; i < (lhs.size() < rhs.size() ? lhs.size() : rhs.size()); ++i)
+    {
+        if (lhs[i] < rhs[i]) return true;
+        else if (lhs[i] > rhs[i]) return false;
+    }
+
+    if (lhs.size() < rhs.size()) return true;
+
+    return false;
 }

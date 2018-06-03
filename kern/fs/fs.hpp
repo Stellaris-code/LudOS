@@ -39,7 +39,7 @@ public:
 
     virtual std::shared_ptr<vfs::node> root() const = 0;
 
-    virtual std::string type() const = 0;
+    virtual kpp::string type() const = 0;
     virtual size_t total_size() const = 0;
     virtual size_t free_size() const = 0;
 

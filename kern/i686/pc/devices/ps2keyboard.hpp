@@ -29,7 +29,6 @@ SOFTWARE.
 
 #include <array.hpp>
 #include <vector.hpp>
-#include <string.hpp>
 
 #include "drivers/driver.hpp"
 
@@ -47,24 +46,24 @@ public:
     void set_leds(uint8_t leds);
     void toggle_led(uint8_t led, bool value);
 
-    virtual std::string driver_name() const override { return "PS/2 Keyboard"; }
+    virtual kpp::string driver_name() const override;
 
 private:
     bool isr(const registers*);
 
     void init_assocs();
 
-    void define_assoc(uint8_t i, uint8_t pos, const std::string& name);
-    void define_e0_assoc(uint8_t i, uint8_t pos, const std::string& name);
+    void define_assoc(uint8_t i, uint8_t pos, const kpp::string& name);
+    void define_e0_assoc(uint8_t i, uint8_t pos, const kpp::string& name);
 
 private:
     uint8_t leds { 0 };
 
     bool last_is_e0 { false };
 
-    std::array<uint8_t, 256> key_assocs;
+    kpp::array<uint8_t, 256> key_assocs;
 
-    std::array<uint8_t, 256> e0_key_assocs;
+    kpp::array<uint8_t, 256> e0_key_assocs;
 
     std::vector<std::pair<uint8_t, std::vector<uint8_t>>> long_key_assocs;
 };

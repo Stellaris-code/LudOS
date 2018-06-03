@@ -29,11 +29,13 @@ SOFTWARE.
 
 #include <optional.hpp>
 
+#include <kstring/kstrfwd.hpp>
+
 namespace graphics
 {
 
 [[nodiscard]]
-std::optional<Bitmap> load_image(const std::string& path);
+kpp::optional<Bitmap> load_image(const kpp::string& path);
 
 }
 

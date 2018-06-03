@@ -120,7 +120,7 @@ size_t ahci::Disk::sector_size() const
     else return 512;
 }
 
-std::string ahci::Disk::drive_name() const
+kpp::string ahci::Disk::drive_name() const
 {
     if (!m_id_data) update_id_data();
 

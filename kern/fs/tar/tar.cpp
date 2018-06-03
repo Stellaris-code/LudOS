@@ -125,7 +125,7 @@ std::shared_ptr<tar_node> TarFS::read_header(const Header *hdr) const
         case LNKTYPE:
         case SYMTYPE:
             node->m_type = vfs::node::SymLink;
-            node->m_link_target = std::string(hdr->linkname, 101);
+            node->m_link_target = kpp::string(hdr->linkname, 101);
             node->m_link_target.back() = '\0';
             node->m_link_target = trim_zstr(node->m_link_target);
             break;
@@ -143,7 +143,7 @@ std::shared_ptr<tar_node> TarFS::read_header(const Header *hdr) const
     node->m_stat.gid = read_number(hdr->gid);
     node->m_stat.creation_time = node->m_stat.modification_time = read_number(hdr->mtime);
     node->m_stat.access_time = 0;
-    node->m_name = std::string(hdr->name, 101); node->m_name.back() = '\0';
+    node->m_name = kpp::string(hdr->name, 101); node->m_name.back() = '\0';
     node->m_name = trim_zstr(node->m_name);
 
     return node;
@@ -260,9 +260,9 @@ void TarFS::attach_parents(std::vector<std::shared_ptr<tar_node>> nodes)
 {
     if (!m_link_target.empty())
     {
-        auto target = vfs::find(m_parent->path() + m_link_target);
-        if (!target) return {};
-        return target->read(offset, size);
+        auto result = vfs::find(m_parent->path() + m_link_target);
+        if (!result) return {}; // TODO
+        return result.value()->read(offset, size);
     }
 
     size_t amnt = std::min(size, this->size());
@@ -273,9 +273,9 @@ std::vector<std::shared_ptr<vfs::node> > tar_node::readdir_impl()
 {
     if (!m_link_target.empty())
     {
-        auto target = vfs::find(m_parent->path() + m_link_target);
-        if (!target) return {};
-        return target->readdir();
+        auto result = vfs::find(m_parent->path() + m_link_target);
+        if (!result) return {}; // TODO
+        return result.value()->readdir();
     }
 
     std::vector<std::shared_ptr<vfs::node> > vec;
@@ -288,9 +288,9 @@ size_t tar_node::size() const
 {
     if (!m_link_target.empty())
     {
-        auto target = vfs::find(m_parent->path() + m_link_target);
-        if (!target) return 0;
-        return target->size();
+        auto result = vfs::find(m_parent->path() + m_link_target);
+        if (!result) return 0; // TODO
+        return result.value()->size();
     }
 
     return m_size;
@@ -300,9 +300,9 @@ vfs::node::Type tar_node::type() const
 {
     if (!m_link_target.empty())
     {
-        auto target = vfs::find(m_parent->path() + m_link_target);
-        if (!target) return vfs::node::Unknown;
-        return target->type();
+        auto result = vfs::find(m_parent->path() + m_link_target);
+        if (!result) return vfs::node::Unknown; // TODO
+        return result.value()->type();
     }
 
     return m_type;
@@ -313,7 +313,7 @@ bool tar_node::is_link() const
     return !m_link_target.empty();
 }
 
-std::string tar_node::name() const
+kpp::string tar_node::name() const
 {
     return filename(m_name);
 }

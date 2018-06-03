@@ -29,8 +29,6 @@ SOFTWARE.
 
 #include "drivers/driver.hpp"
 
-#include <string.hpp>
-
 class Speaker : public Driver
 {
 public:
@@ -42,7 +40,7 @@ public:
     void beep_(uint32_t time, uint16_t freq = 1000);
     void stop();
 
-    virtual std::string driver_name() const override { return "PC Speaker"; }
+    virtual kpp::string driver_name() const override;
 
 private:
     void play_sound(uint16_t freq);

@@ -88,7 +88,7 @@ namespace details
     };
 
     template <class ElementType, size_t Extent>
-    struct is_std_array_oracle<std::array<ElementType, Extent>> : std::true_type
+    struct is_std_array_oracle<kpp::array<ElementType, Extent>> : std::true_type
     {
     };
 
@@ -355,13 +355,13 @@ public:
     }
 
     template <size_t N, class ArrayElementType = std::remove_const_t<element_type>>
-    constexpr span(std::array<ArrayElementType, N>& arr) GSL_NOEXCEPT
+    constexpr span(kpp::array<ArrayElementType, N>& arr) GSL_NOEXCEPT
         : storage_(&arr[0], details::extent_type<N>())
     {
     }
 
     template <size_t N>
-    constexpr span(const std::array<std::remove_const_t<element_type>, N>& arr) GSL_NOEXCEPT
+    constexpr span(const kpp::array<std::remove_const_t<element_type>, N>& arr) GSL_NOEXCEPT
         : storage_(&arr[0], details::extent_type<N>())
     {
     }

@@ -25,10 +25,10 @@ SOFTWARE.
 
 #include "pcidriver.hpp"
 
+#include <kstring/kstring.hpp>
+
 #include "pci.hpp"
 #include "utils/logging.hpp"
-
-#include <string.hpp>
 
 extern "C" int start_pci_driver_ctors;
 extern "C" int end_pci_driver_ctors;
@@ -63,7 +63,7 @@ class TestDriver : public PciDriver
 public:
     virtual void init() {}
 
-    virtual std::string driver_name() const override { return "PCI Test driver"; }
+    virtual kpp::string driver_name() const override { return "PCI Test driver"; }
 
     static bool accept(const pci::PciDevice& dev)
     {

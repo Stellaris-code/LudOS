@@ -26,10 +26,11 @@ SOFTWARE.
 #include "utf8decoder.hpp"
 
 #include <array.hpp>
+#include <kstring/kstring.hpp>
 
 #include "utils/logging.hpp"
 
-const std::array<uint8_t, 256> UTF8TailLengths =
+const kpp::array<uint8_t, 256> UTF8TailLengths =
 {
     {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
      0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -152,9 +153,9 @@ size_t UTF8Decoder::get_length(uint8_t first_byte)
     return l;
 }
 
-std::u32string u8_decode(const std::string &str)
+kpp::u32string u8_decode(const kpp::string &str)
 {
-    std::u32string result;
+    kpp::u32string kresult;
     UTF8Decoder decoder;
 
     for (auto c : str)
@@ -162,9 +163,9 @@ std::u32string u8_decode(const std::string &str)
         decoder.feed(c);
         if (decoder.ready())
         {
-            result += decoder.spit();
+            kresult += decoder.spit();
         }
     }
 
-    return result;
+    return kresult;
 }

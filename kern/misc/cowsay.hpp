@@ -25,8 +25,8 @@ SOFTWARE.
 #ifndef COWSAY_HPP
 #define COWSAY_HPP
 
-#include <string.hpp>
+#include <kstring/kstring.hpp>
 
-void cowsay(std::string str, size_t cowsay_width = 40);
+void cowsay(kpp::string str, size_t cowsay_width = 40);
 
 #endif // COWSAY_HPP

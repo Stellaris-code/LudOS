@@ -46,7 +46,7 @@ public:
 
     virtual size_t disk_size() const override;
     virtual size_t sector_size() const override;
-    virtual std::string drive_name() const override;
+    virtual kpp::string drive_name() const override;
     virtual void flush_hardware_cache() override;
     virtual Type media_type() const override { return Disk::HardDrive; }
 
@@ -59,7 +59,7 @@ private:
 
 private:
     uint16_t m_port;
-    mutable std::optional<ide::identify_data> m_id_data;
+    mutable kpp::optional<ide::identify_data> m_id_data;
 };
 
 namespace detail

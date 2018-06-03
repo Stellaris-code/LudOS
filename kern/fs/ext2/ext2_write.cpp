@@ -32,6 +32,8 @@ SOFTWARE.
 #include "utils/memutils.hpp"
 #include "utils/stlutils.hpp"
 
+#include <string.h>
+
 void Ext2FS::umount()
 {
     m_superblock.fs_state = m_has_error;
@@ -302,7 +304,7 @@ void Ext2FS::write_inode(size_t inode, const ext2::Inode& structure)
 {
     if (!check_inode_presence(inode))
     {
-        error("Inode " + std::to_string(inode) + " is marked as free\n");
+        error(("Inode " + kpp::to_string(inode) + " is marked as free\n").c_str());
         return;
     }
 
@@ -475,7 +477,7 @@ void Ext2FS::free_block(size_t block)
 
     if (!bit_check(bitmap[index / 8], index % 8))
     {
-        error("Double free, block " + std::to_string(block) + "\n");
+        error(("Double free, block " + kpp::to_string(block) + "\n").c_str());
     }
 
     bit_clear(bitmap[index / 8], index % 8);
@@ -612,7 +614,7 @@ size_t Ext2FS::alloc_inode_in_block_group(size_t group, bool directory)
     return 0;
 }
 
-ext2::DirectoryEntry Ext2FS::create_dir_entry(size_t inode, uint8_t type, const std::string &name)
+ext2::DirectoryEntry Ext2FS::create_dir_entry(size_t inode, uint8_t type, const kpp::string &name)
 {
     ext2::DirectoryEntry new_entry;
     new_entry.inode = inode;
@@ -628,7 +630,7 @@ ext2::DirectoryEntry Ext2FS::create_dir_entry(size_t inode, uint8_t type, const 
     return new_entry;
 }
 
-void ext2_node::rename_impl(const std::string &s)
+void ext2_node::rename_impl(const kpp::string &s)
 {
     if (parent() && dynamic_cast<ext2_node*>(parent()))
     {
@@ -651,7 +653,7 @@ void ext2_node::set_stat(const vfs::node::Stat &stat)
     write_inode_struct(inode_struct);
 }
 
-std::shared_ptr<vfs::node> ext2_node::create_impl(const std::string & name, Type type)
+std::shared_ptr<vfs::node> ext2_node::create_impl(const kpp::string & name, Type type)
 {    
     auto dir = create_child(name, type);
     if (!dir) return nullptr;
@@ -711,7 +713,7 @@ bool ext2_node::remove_impl(const vfs::node * node)
     return true;
 }
 
-void ext2_node::update_dir_entry(size_t inode, const std::string &name)
+void ext2_node::update_dir_entry(size_t inode, const kpp::string &name)
 {
     ext2::Inode inode_struct = fs.read_inode(this->inode);
 
@@ -726,8 +728,8 @@ void ext2_node::update_dir_entry(size_t inode, const std::string &name)
 
     if (entry == entries.end())
     {
-        fs.error("Can't find inode "+ std::to_string(inode) +" of directory "
-                 + std::to_string(this->inode) +"!\n");
+        fs.error(("Can't find inode "+ kpp::to_string(inode) +" of directory "
+                 + kpp::to_string(this->inode) +"!\n").c_str());
         return;
     }
 
@@ -742,7 +744,7 @@ void ext2_node::write_inode_struct(const ext2::Inode& inode_struct)
     fs.write_inode(inode, inode_struct);
 }
 
-std::shared_ptr<ext2_node> ext2_node::create_child(const std::string &name, Type type)
+std::shared_ptr<ext2_node> ext2_node::create_child(const kpp::string &name, Type type)
 {
     ext2::Inode inode_struct = fs.read_inode(inode);
 
@@ -773,7 +775,7 @@ std::shared_ptr<ext2_node> ext2_node::create_child(const std::string &name, Type
     return node;
 }
 
-void ext2_node::remove_child(const std::string& name)
+void ext2_node::remove_child(const kpp::string& name)
 {
     ext2::Inode inode_struct = fs.read_inode(inode);
 
@@ -783,7 +785,7 @@ void ext2_node::remove_child(const std::string& name)
 
     for (const auto& entry : dir_entries)
     {
-        if (std::string(entry.name, entry.name_len) == name)
+        if (kpp::string(entry.name, entry.name_len) == name)
         {
             fs.decrease_link_count(entry.inode);
         }
@@ -791,7 +793,7 @@ void ext2_node::remove_child(const std::string& name)
 
     dir_entries.erase(std::remove_if(dir_entries.begin(), dir_entries.end(), [name](const ext2::DirectoryEntry& entry)
     {
-        return std::string(entry.name, entry.name_len) == name;
+        return kpp::string(entry.name, entry.name_len) == name;
     }), dir_entries.end());
 
     fs.write_directory_entries(inode, dir_entries);

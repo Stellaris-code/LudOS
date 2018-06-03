@@ -44,7 +44,7 @@ int sys_getcwd(user_ptr<char> buf, unsigned long size)
         return -EINVAL;
     }
 
-    std::string pwd = Process::current().data->pwd->path();
+    kpp::string pwd = Process::current().data->pwd->path();
 
     if (pwd.size() + 1 > size)
     {

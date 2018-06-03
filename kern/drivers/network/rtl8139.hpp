@@ -33,11 +33,11 @@ class RTL8139 : public NetworkDriver, public PciDriver
 public:
     virtual void init() override;
 
-    virtual std::array<uint8_t, 6> mac_address() const override;
+    virtual kpp::array<uint8_t, 6> mac_address() const override;
 
     static bool accept(const pci::PciDevice& dev);
 
-    virtual std::string driver_name() const override { return "Realtek RTL8139"; }
+    virtual kpp::string driver_name() const override { return "Realtek RTL8139"; }
 
 private:
     void power_on();
@@ -46,7 +46,7 @@ private:
 
 private:
     uint16_t m_iobase {};
-    std::array<uint8_t, 8192 + 16 + 1500> m_rcv_buf;
+    kpp::array<uint8_t, 8192 + 16 + 1500> m_rcv_buf;
 };
 
 #endif // RTL8139_HPP

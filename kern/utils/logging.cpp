@@ -97,7 +97,7 @@ void read_logging_config()
 {
     if (kgetenv("loglevel"))
     {
-        std::string level = strtolower(*kgetenv("loglevel"));
+        kpp::string level = strtolower(*kgetenv("loglevel"));
         if (level == "none")
         {
             log_level = Always;

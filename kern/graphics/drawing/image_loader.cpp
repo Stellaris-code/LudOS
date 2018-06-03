@@ -32,6 +32,8 @@ SOFTWARE.
 #define STBI_NO_STDIO
 #include "stb/stb_image.h"
 
+#include <kstring/kstring.hpp>
+
 #include "utils/crc32.hpp"
 
 #include "fs/fsutils.hpp"
@@ -42,7 +44,7 @@ SOFTWARE.
 namespace graphics
 {
 
-std::optional<Bitmap> load_image(const std::string &path)
+kpp::optional<Bitmap> load_image(const kpp::string &path)
 {
     auto node = vfs::find(path);
 
@@ -51,7 +53,7 @@ std::optional<Bitmap> load_image(const std::string &path)
         return {};
     }
 
-    auto data = node->read();
+    auto data = node.value()->read();
     if (data.empty())
     {
         return {};

@@ -44,7 +44,7 @@ public:
 
     virtual void init() override;
 
-    virtual std::string driver_name() const override { return "PCI IDE Controller"; }
+    virtual kpp::string driver_name() const override { return "PCI IDE Controller"; }
 
 private:
     bool int14_handler(const registers* regs);

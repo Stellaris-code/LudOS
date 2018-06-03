@@ -25,8 +25,8 @@ SOFTWARE.
 #ifndef CMDLINE_HPP
 #define CMDLINE_HPP
 
-#include <string.hpp>
+#include <kstring/kstrfwd.hpp>
 
-extern std::string kernel_cmdline;
+extern kpp::string kernel_cmdline;
 
 #endif // CMDLINE_HPP

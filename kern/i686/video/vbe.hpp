@@ -158,7 +158,7 @@ struct VideoMode
 
 uint16_t get_vbe_version(); // 0 if absent
 
-std::optional<VbeInfoBlock> get_vbe_info();
+kpp::optional<VbeInfoBlock> get_vbe_info();
 std::vector<VideoMode> get_vbe_modes(rmode_ptr mode_list);
 bool is_mode_supported(const ModeInfoBlock &mode);
 VideoMode closest_mode(const std::vector<VideoMode>& modes, size_t width, size_t height, size_t depth);

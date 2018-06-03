@@ -25,9 +25,11 @@ SOFTWARE.
 
 #include "utf32decoder.hpp"
 
-std::string decode_utf32(char32_t ch)
+#include <kstring/kstring.hpp>
+
+kpp::string decode_utf32(char32_t ch)
 {
-    std::string utf8;
+    kpp::string utf8;
 
     size_t len { 0 };
 

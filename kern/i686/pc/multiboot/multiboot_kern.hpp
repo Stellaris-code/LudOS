@@ -28,8 +28,9 @@ SOFTWARE.
 #include "multiboot.h"
 #include <stdint.h>
 
-#include <string.hpp>
 #include <vector.hpp>
+
+#include <kstring/kstrfwd.hpp>
 
 #include "elf/elf.hpp"
 
@@ -43,10 +44,10 @@ extern const multiboot_info_t* info;
 void parse_info();
 void print_info();
 void parse_mem();
-std::string parse_cmdline();
+kpp::string parse_cmdline();
 std::vector<multiboot_module_t> get_modules();
 
-std::string get_str(uintptr_t addr, size_t size);
+kpp::string get_str(uintptr_t addr, size_t size);
 
 std::pair<const elf::Elf32_Shdr*, size_t> elf_info();
 

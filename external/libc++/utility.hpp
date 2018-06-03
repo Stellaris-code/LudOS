@@ -1356,6 +1356,7 @@ struct _LIBCPP_TEMPLATE_VIS __enum_hash
 };
 template <class _Tp>
 struct _LIBCPP_TEMPLATE_VIS __enum_hash<_Tp, false> {
+    using __is_invalid_std_hash = true_type;
     __enum_hash() = delete;
     __enum_hash(__enum_hash const&) = delete;
     __enum_hash& operator=(__enum_hash const&) = delete;
@@ -1381,16 +1382,89 @@ struct _LIBCPP_TEMPLATE_VIS hash<nullptr_t>
 #endif
 
 #ifndef _LIBCPP_CXX03_LANG
+#if _LIBCPP_STD_VER > 11
+template <class _Hash, class = void>
+struct __is_invalid_std_hash : false_type {};
+
+template <class _Arg>
+struct __is_invalid_std_hash<
+    _Arg,
+    typename __void_t<typename _Arg::__is_invalid_std_hash>::type
+> : true_type {};
+#else
+template <class _Hash>
+struct __is_hash_specialization : false_type {};
+
+template <class _Arg>
+struct __is_hash_specialization<hash<_Arg>> : true_type {};
+
+template <class _Hash, class = void>
+struct __is_invalid_std_hash
+    : integral_constant<bool, __is_hash_specialization<_Hash>::value> {};
+
+template <class _Arg>
+struct __is_invalid_std_hash<hash<_Arg>,
+    typename __void_t<integral_constant<size_t, sizeof(hash<_Arg>)>>::type
+> : false_type {};
+
+
+#endif
+
+template <class _Key, class _Hash, bool _EnableAssertions = false,
+          bool _IsStdHashInvalid = __is_invalid_std_hash<_Hash>::value,
+          class = typename enable_if<_IsStdHashInvalid>::type>
+constexpr bool __check_hash_requirements() {
+  static_assert(!_IsStdHashInvalid || !_EnableAssertions,
+    "no matching specialization for std::hash<Key>");
+  return false;
+}
+
+template <class _Key, class _Hash, bool _EnableAssertions = false,
+          class _StdHashIsInvalid = __is_invalid_std_hash<_Hash>,
+          class = typename enable_if<!_StdHashIsInvalid::value>::type,
+          bool _IsCopyConstructible = is_copy_constructible<_Hash>::value,
+          bool _IsMoveConstructible = is_move_constructible<_Hash>::value,
+          bool _HasCallOperator = __invokable<_Hash, _Key const&>::value,
+          bool _HasCorrectReturnType = __invokable_r<size_t, _Hash, _Key const&>::value,
+          bool _IsGood = _IsCopyConstructible
+                      && _IsMoveConstructible && _HasCallOperator
+                      && _HasCorrectReturnType>
+constexpr bool __check_hash_requirements() {
+  static_assert(_IsCopyConstructible || !_EnableAssertions,
+    "the specified hash is required to be copy constructible");
+  static_assert(_IsMoveConstructible  || !_IsCopyConstructible || !_EnableAssertions,
+    "the specified hash is required to be copy and move constructible");
+  static_assert(_HasCallOperator || !_EnableAssertions,
+    "the specified hash is required to be callable type");
+  static_assert(_HasCorrectReturnType || !_HasCallOperator || !_EnableAssertions,
+    "the specified hash is required to return an type convertible to size_t");
+
+  return _IsGood;
+}
+
+
 template <class _Key, class _Hash>
-using __check_hash_requirements = integral_constant<bool,
-    is_copy_constructible<_Hash>::value &&
-    is_move_constructible<_Hash>::value &&
-    __invokable_r<size_t, _Hash, _Key const&>::value
->;
+constexpr
+typename enable_if<_VSTD::__check_hash_requirements<_Key, _Hash>(), bool>::type
+__diagnose_hash_requirements_and_warnings()
+    _LIBCPP_DIAGNOSE_WARNING(!__invokable<_Hash const&, _Key const&>::value,
+      "the specified hash does not provide a const call operator")
+{
+  return true;
+}
+
+template <class _Key, class _Hash>
+constexpr
+typename enable_if<!_VSTD::__check_hash_requirements<_Key, _Hash>(), bool>::type
+__diagnose_hash_requirements_and_warnings()
+{
+  return _VSTD::__check_hash_requirements<_Key, _Hash, /*EnableAssertions*/true>()
+    || true;
+}
 
 template <class _Key, class _Hash = std::hash<_Key> >
 using __has_enabled_hash = integral_constant<bool,
-    __check_hash_requirements<_Key, _Hash>::value &&
+    __check_hash_requirements<_Key, _Hash>() &&
     is_default_constructible<_Hash>::value
 >;
 

@@ -185,24 +185,24 @@ uint8_t drive_register(uint16_t port)
     return inb(port + 6);
 }
 
-DiskException::ErrorType get_error(uint16_t port)
+DiskError::Type get_error(uint16_t port)
 {
     auto err = error_register(port);
     if (err & ATA_ER_BBK)
     {
-        return DiskException::BadSector;
+        return DiskError::BadSector;
     }
     if (err & ATA_ER_MC || err & ATA_ER_MCR)
     {
-        return DiskException::NoMedia;
+        return DiskError::NoMedia;
     }
     if (err & ATA_ER_ABRT)
     {
-        return DiskException::Aborted;
+        return DiskError::Aborted;
     }
     else
     {
-        return DiskException::Unknown;
+        return DiskError::Unknown;
     }
 }
 

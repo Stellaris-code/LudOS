@@ -147,27 +147,31 @@ bool ide::pio::write(uint16_t port, uint8_t type, uint64_t block, size_t count, 
     return true;
 }
 
-MemBuffer ide::pio::Disk::read_sector(size_t sector, size_t count) const
+[[nodiscard]]
+kpp::expected<MemBuffer, DiskError> ide::pio::Disk::read_sector(size_t sector, size_t count) const
 {
     MemBuffer data(count * sector_size());
     if (ide::pio::read(m_port, m_type, sector, count, (uint16_t*)data.data()))
     {
-        return data;
+        return std::move(data);
     }
     else
     {
-        throw DiskException(*this, get_error(m_port));
+        return kpp::make_unexpected(DiskError{get_error(m_port)});
     }
 }
 
-void ide::pio::Disk::write_sector(size_t sector, gsl::span<const uint8_t> data)
+[[nodiscard]]
+kpp::expected<kpp::dummy_t, DiskError> ide::pio::Disk::write_sector(size_t sector, gsl::span<const uint8_t> data)
 {
     const size_t count = data.size() / sector_size() + (data.size()%sector_size()?1:0);
 
     if (!ide::pio::write(m_port, m_type, sector, count, (const uint16_t*)data.data()))
     {
-        throw DiskException(*this, get_error(m_port));
+        return kpp::make_unexpected(DiskError{get_error(m_port)});
     }
+
+    return {};
 }
 
 ide::pio::Disk::Disk(BusPort port, DriveType type)

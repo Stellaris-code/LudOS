@@ -51,8 +51,10 @@ public:
     virtual Type media_type() const override { return Disk::HardDrive; }
 
 protected:
-    virtual MemBuffer read_sector(size_t sector, size_t count) const override;
-    virtual void write_sector(size_t sector, gsl::span<const uint8_t> data) override;
+    [[nodiscard]]
+    virtual kpp::expected<MemBuffer, DiskError> read_sector(size_t sector, size_t count) const override;
+    [[nodiscard]]
+    virtual kpp::expected<kpp::dummy_t, DiskError> write_sector(size_t sector, gsl::span<const uint8_t> data) override;
 
 private:
     void update_id_data() const;

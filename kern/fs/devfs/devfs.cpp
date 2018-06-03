@@ -222,12 +222,12 @@ size_t disk_file::size() const { return m_disk.disk_size(); }
 
 MemBuffer disk_file::read_impl(size_t offset, size_t size) const
 {
-    return m_disk.read(offset, size);
+    return m_disk.read(offset, size).value();
 }
 
 bool disk_file::write_impl(size_t offset, gsl::span<const uint8_t> data)
 {
-    m_disk.write(offset, data);
+    m_disk.write(offset, data).value();
     return true;
 }
 

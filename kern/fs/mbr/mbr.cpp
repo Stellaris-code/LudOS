@@ -35,7 +35,10 @@ ref_vector<mbr::Partition> mbr::read_partitions(Disk& disk)
 
     ref_vector<Partition> partitions;
 
-    auto buf = disk.read(0, 512);
+    auto result = disk.read(0, 512);
+    if (!result) return {};
+
+    auto buf = std::move(result.value());
 
     if (buf.empty()) return {};
     if (buf[0x1fe] != 0x55 && buf[0x1ff] != 0xAA)

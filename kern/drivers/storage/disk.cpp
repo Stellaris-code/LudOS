@@ -44,7 +44,9 @@ void Disk::system_init()
     {
         for (Disk& disk : disks())
         {
-            disk.flush_cache();
+            auto result = disk.flush_cache();
+            if (!result)
+                err("Could not flush disk %s : %s\n", disk.drive_name().c_str(), result.error().to_string());
         }
     });
 
@@ -57,7 +59,7 @@ void Disk::system_init()
 Disk::Disk()
     : m_cache(*this)
 {
-    enable_caching(true);
+    (void)enable_caching(true);
 }
 
 Disk::~Disk()
@@ -74,7 +76,7 @@ void Disk::set_read_only(bool val)
     m_read_only = val;
 }
 
-MemBuffer Disk::read(size_t offset, size_t size) const
+kpp::expected<MemBuffer, DiskError> Disk::read(size_t offset, size_t size) const
 {
     LOCK(read_lock);
 
@@ -87,7 +89,11 @@ MemBuffer Disk::read(size_t offset, size_t size) const
 
     assert(count <= disk_size()/sector_size() + (disk_size()%sector_size()?1:0));
 
-    auto data = read_cache_sector(sector, count);
+    auto result = read_cache_sector(sector, count);
+    if (!result) return result;
+
+    auto data = std::move(result.value());
+
     assert(data.size() >= size);
 
     offset %= sect_size;
@@ -99,12 +105,13 @@ MemBuffer Disk::read(size_t offset, size_t size) const
     return MemBuffer{data.begin() + offset, data.begin() + offset + size};
 }
 
-MemBuffer Disk::read() const
+kpp::expected<MemBuffer, DiskError> Disk::read() const
 {
     return read(0, disk_size());
 }
 
-void Disk::write_offseted_sector(size_t base, size_t byte_off, gsl::span<const uint8_t> data)
+[[nodiscard]]
+kpp::expected<kpp::dummy_t, DiskError> Disk::write_offseted_sector(size_t base, size_t byte_off, gsl::span<const uint8_t> data)
 {
     LOCK(write_lock);
 
@@ -121,22 +128,28 @@ void Disk::write_offseted_sector(size_t base, size_t byte_off, gsl::span<const u
 
     for (size_t i { 0 }; i < 2; ++i)
     {
-        auto sect_data = read_cache_sector(base+i, 1);
+        auto result = read_cache_sector(base+i, 1);
+        assert(result); // TODO
+
+        auto sect_data = std::move(result.value());
 
         assert((size_t)spans[i].size() <= sect_data.size() - byte_off);
 
         std::copy(spans[i].begin(), spans[i].end(), sect_data.begin() + byte_off);
-        write_cache_sector(base+i, sect_data);
+        auto write_result = write_cache_sector(base+i, sect_data);
+        if (!write_result) return write_result;
 
         byte_off = 0;
     }
 
     UNLOCK(write_lock);
+
+    return {};
 }
 
-void Disk::write(size_t offset, gsl::span<const uint8_t> data)
+kpp::expected<kpp::dummy_t, DiskError> Disk::write(size_t offset, gsl::span<const uint8_t> data)
 {
-    if (read_only()) return;
+    if (read_only()) return {};
 
     const size_t sect_size = sector_size();
 
@@ -147,38 +160,48 @@ void Disk::write(size_t offset, gsl::span<const uint8_t> data)
 
     for (size_t i { 0 }; i < count; ++i)
     {
-        write_offseted_sector(base + i, offset % sect_size, chunks[i]);
+        auto result = write_offseted_sector(base + i, offset % sect_size, chunks[i]);
+        if (!result) return result;
         offset -= sect_size;
     }
 }
 
-void Disk::enable_caching(bool val)
+[[nodiscard]]
+kpp::expected<kpp::dummy_t, DiskError> Disk::enable_caching(bool val)
 {
     if (!val && m_caching)
     {
-        flush_cache();
+        auto result = flush_cache();
+        if (!result) return result;
     }
 
     m_caching = val;
+
+    return {};
 }
 
-void Disk::flush_cache()
+[[nodiscard]]
+kpp::expected<kpp::dummy_t, DiskError> Disk::flush_cache()
 {
-    m_cache.flush();
+    auto result = m_cache.flush();
+    if (!result) return result;
     flush_hardware_cache();
+
+    return {};
 }
 
-MemBuffer Disk::read_cache_sector(size_t sector, size_t count) const
+kpp::expected<MemBuffer, DiskError> Disk::read_cache_sector(size_t sector, size_t count) const
 {
     if (m_caching) return m_cache.read_sector(sector, count);
     else return read_sector(sector, count);
 }
 
-void Disk::write_cache_sector(size_t sector, gsl::span<const uint8_t> data)
+[[nodiscard]]
+kpp::expected<kpp::dummy_t, DiskError> Disk::write_cache_sector(size_t sector, gsl::span<const uint8_t> data)
 {
 
-    if (m_caching) m_cache.write_sector(sector, data);
-    else write_sector(sector, data);
+    if (m_caching) return m_cache.write_sector(sector, data);
+    else return write_sector(sector, data);
 }
 
 ref_vector<Disk> Disk::disks()
@@ -195,7 +218,7 @@ ref_vector<Disk> Disk::disks()
 MemoryDisk::MemoryDisk(uint8_t* data, size_t size, const kpp::string& name)
     : DiskImpl<MemoryDisk>(), m_size(size), m_data(data), m_name(name)
 {
-    enable_caching(false);
+    (void)enable_caching(false);
 }
 
 MemoryDisk::MemoryDisk(const uint8_t *data, size_t size, const kpp::string& name)
@@ -204,7 +227,7 @@ MemoryDisk::MemoryDisk(const uint8_t *data, size_t size, const kpp::string& name
     m_const = true;
 }
 
-MemBuffer MemoryDisk::read_sector(size_t sector, size_t count) const
+kpp::expected<MemBuffer, DiskError> MemoryDisk::read_sector(size_t sector, size_t count) const
 {
     MemBuffer data(count * sector_size());
 
@@ -212,19 +235,22 @@ MemBuffer MemoryDisk::read_sector(size_t sector, size_t count) const
 
     std::copy(m_data + offset, m_data + offset + count * sector_size(), data.begin());
 
-    return data;
+    return std::move(data);
 }
 
-void MemoryDisk::write_sector(size_t sector, gsl::span<const uint8_t> data)
+[[nodiscard]]
+kpp::expected<kpp::dummy_t, DiskError> MemoryDisk::write_sector(size_t sector, gsl::span<const uint8_t> data)
 {
     if (m_const)
     {
-        throw DiskException(*this, DiskException::ReadOnly);
+        return kpp::make_unexpected(DiskError{DiskError::ReadOnly});
     }
 
     const size_t offset = sector * sector_size();
 
     std::copy(data.begin(), data.end(), m_data + offset);
+
+    return {};
 }
 
 DiskSlice::DiskSlice(Disk &disk, size_t offset, size_t size)
@@ -232,24 +258,25 @@ DiskSlice::DiskSlice(Disk &disk, size_t offset, size_t size)
 {
 }
 
-MemBuffer DiskSlice::read_sector(size_t sector, size_t count) const
+kpp::expected<MemBuffer, DiskError> DiskSlice::read_sector(size_t sector, size_t count) const
 {
     if (sector + count > m_size)
     {
-        throw DiskException(*this, DiskException::OutOfBounds);
+        return kpp::make_unexpected(DiskError{DiskError::OutOfBounds});
     }
 
     return m_base_disk.read_sector(sector + m_offset, count);
 }
 
-void DiskSlice::write_sector(size_t sector, gsl::span<const uint8_t> data)
+[[nodiscard]]
+kpp::expected<kpp::dummy_t, DiskError> DiskSlice::write_sector(size_t sector, gsl::span<const uint8_t> data)
 {
     if (sector + data.size()/sector_size() > m_size)
     {
-        throw DiskException(*this, DiskException::OutOfBounds);
+        return kpp::make_unexpected(DiskError{DiskError::OutOfBounds});
     }
 
-    m_base_disk.write_sector(sector + m_offset, data);
+    return m_base_disk.write_sector(sector + m_offset, data);
 }
 
 void test_writes(Disk &disk)
@@ -264,15 +291,31 @@ void test_writes(Disk &disk)
 
     bool caching_state = disk.caching_enabled();
 
-    disk.enable_caching(false);
+    (void)disk.enable_caching(false);
 
     for (size_t i { 0 }; i < 100; ++i)
     {
-        disk.write(i*160, data);
+        if (!disk.write(i*160, data))
+        {
+            err("Disk write test error\n");
+            return;
+        }
 
-        disk.flush_cache();
+        if (!disk.flush_cache())
+        {
+            err("Disk write test error\n");
+            return;
+        }
 
-        auto result = disk.read(i*160, data.size());
+        auto expected = disk.read(i*160, data.size());
+        if (!expected)
+        {
+            err("Error on disk write test : %s\n", expected.error().to_string());
+            return;
+        }
+
+        auto result = std::move(expected.value());
+
         assert(result.size() == data.size());
 
         for (size_t j { 0 }; j < result.size(); ++j)
@@ -285,5 +328,5 @@ void test_writes(Disk &disk)
         }
     }
 
-    disk.enable_caching(caching_state);
+    (void)disk.enable_caching(caching_state);
 }

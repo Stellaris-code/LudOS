@@ -77,7 +77,8 @@ kpp::optional<const ext2::Superblock> Ext2FS::read_superblock(const Disk &disk)
     }
 
     auto data = disk.read(1024, 1024);
-    return *reinterpret_cast<const ext2::Superblock*>(data.data());
+    if (!data) return {};
+    return *reinterpret_cast<const ext2::Superblock*>(data->data());
 }
 
 bool Ext2FS::check_superblock(const ext2::Superblock &superblock)
@@ -182,7 +183,8 @@ MemBuffer Ext2FS::read_block(size_t number) const
     assert(number < m_superblock.block_count);
     auto vec = m_disk.read(number * block_size(), block_size());
 
-    return vec;
+    // TODO
+    return std::move(vec.value());
 }
 
 const ext2::Inode Ext2FS::read_inode(size_t inode) const

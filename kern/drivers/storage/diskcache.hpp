@@ -29,11 +29,14 @@ SOFTWARE.
 #include <unordered_map.hpp>
 #include <map.hpp>
 
+#include <expected.hpp>
+
 #include <utils/gsl/gsl_span.hpp>
 
 #include "utils/membuffer.hpp"
 
 class Disk;
+struct DiskError;
 
 class DiskCache
 {
@@ -43,18 +46,25 @@ public:
     static inline size_t max_cache_size = 4096*1000;
 
 public:
-    void write_sector(size_t sec, gsl::span<const uint8_t> data);
-    MemBuffer read_sector(size_t sec, size_t count);
-    void flush();
+    [[nodiscard]]
+    kpp::expected<kpp::dummy_t, DiskError> write_sector(size_t sec, gsl::span<const uint8_t> data);
+    [[nodiscard]]
+    kpp::expected<MemBuffer, DiskError> read_sector(size_t sec, size_t count);
+    [[nodiscard]]
+    kpp::expected<kpp::dummy_t, DiskError> flush();
 
-    void set_ratio(size_t ratio);
+    [[nodiscard]]
+    kpp::expected<kpp::dummy_t, DiskError> set_ratio(size_t ratio);
     size_t ratio() const { return m_size_ratio; }
 
 private:
-    void add_span(size_t sec, size_t count);
+    [[nodiscard]]
+    kpp::expected<kpp::dummy_t, DiskError> add_span(size_t sec, size_t count);
     void add_to_cache(size_t sec, gsl::span<const uint8_t> data, bool write = false);
-    void prune_cache();
-    void remove_entry(size_t id);
+    [[nodiscard]]
+    kpp::expected<kpp::dummy_t, DiskError> prune_cache();
+    [[nodiscard]]
+    kpp::expected<kpp::dummy_t, DiskError> remove_entry(size_t id);
 
     size_t mem_usage_ratio() const;
 

@@ -49,6 +49,42 @@ struct SyncDisksCache
 {
 };
 
+struct DiskError
+{
+    enum Type
+    {
+        OutOfBounds,
+        ReadOnly,
+        BadSector,
+        NoMedia,
+        Aborted,
+        TimeOut,
+        Unknown
+    } type;
+
+    const char* to_string() const
+    {
+        switch (type)
+        {
+            case OutOfBounds:
+                return "Out of bounds access";
+            case ReadOnly:
+                return "Disk is read only";
+            case BadSector:
+                return "Bad sector access";
+            case NoMedia:
+                return "No media";
+            case Aborted:
+                return "Access aborted";
+            case TimeOut:
+                return "Device didn't respond";
+            case Unknown:
+            default:
+                return "Unknown error";
+        }
+    }
+};
+
 class Disk : NonCopyable
 {
     friend class DiskSlice;
@@ -83,24 +119,31 @@ public:
     bool read_only() const;
     void set_read_only(bool val);
 
-    MemBuffer read(size_t offset, size_t size) const;
-    MemBuffer read() const;
+    kpp::expected<MemBuffer, DiskError> read(size_t offset, size_t size) const;
+    kpp::expected<MemBuffer, DiskError> read() const;
 
-    void write(size_t offset, gsl::span<const uint8_t> data);
+    [[nodiscard]]
+    kpp::expected<kpp::dummy_t, DiskError> write(size_t offset, gsl::span<const uint8_t> data);
 
-    void enable_caching(bool val);
+    [[nodiscard]]
+    kpp::expected<kpp::dummy_t, DiskError> enable_caching(bool val);
     bool caching_enabled() const { return m_caching; }
-    void flush_cache();
+    [[nodiscard]]
+    kpp::expected<kpp::dummy_t, DiskError> flush_cache();
 
 private:
-    void write_offseted_sector(size_t base, size_t byte_off, gsl::span<const uint8_t> data);
+    [[nodiscard]]
+    kpp::expected<kpp::dummy_t, DiskError> write_offseted_sector(size_t base, size_t byte_off, gsl::span<const uint8_t> data);
 
-    MemBuffer read_cache_sector(size_t sector, size_t count) const;
-    void write_cache_sector(size_t sector, gsl::span<const uint8_t> data);
+    kpp::expected<MemBuffer, DiskError> read_cache_sector(size_t sector, size_t count) const;
+    [[nodiscard]]
+    kpp::expected<kpp::dummy_t, DiskError> write_cache_sector(size_t sector, gsl::span<const uint8_t> data);
 
 public:
-    virtual MemBuffer read_sector(size_t sector, size_t count) const = 0;
-    virtual void write_sector(size_t sector, gsl::span<const uint8_t> data) = 0;
+    [[nodiscard]]
+    virtual kpp::expected<MemBuffer, DiskError> read_sector(size_t sector, size_t count) const = 0;
+    [[nodiscard]]
+    virtual kpp::expected<kpp::dummy_t, DiskError> write_sector(size_t sector, gsl::span<const uint8_t> data) = 0;
 
 public:
     static ref_vector<Disk> disks();
@@ -146,8 +189,9 @@ public:
     virtual Type media_type() const override { return Disk::RamDrive; }
 
 protected:
-    virtual MemBuffer read_sector(size_t sector, size_t count) const override;
-    virtual void write_sector(size_t sector, gsl::span<const uint8_t> data) override;
+    virtual kpp::expected<MemBuffer, DiskError> read_sector(size_t sector, size_t count) const override;
+    [[nodiscard]]
+    virtual kpp::expected<kpp::dummy_t, DiskError> write_sector(size_t sector, gsl::span<const uint8_t> data) override;
 
 public:
     MemoryDisk(uint8_t* data, size_t size, const kpp::string& name);
@@ -176,93 +220,14 @@ public:
     const Disk& parent() const { return m_base_disk; }
 
 protected:
-    virtual MemBuffer read_sector(size_t sector, size_t count) const override;
-    virtual void write_sector(size_t sector, gsl::span<const uint8_t> data) override;
+    virtual kpp::expected<MemBuffer, DiskError> read_sector(size_t sector, size_t count) const override;
+    [[nodiscard]]
+    virtual kpp::expected<kpp::dummy_t, DiskError> write_sector(size_t sector, gsl::span<const uint8_t> data) override;
 
 private:
     Disk& m_base_disk;
     size_t m_offset {};
     size_t m_size {};
-};
-
-struct DiskError
-{
-    enum Type
-    {
-        OutOfBounds,
-        ReadOnly,
-        BadSector,
-        NoMedia,
-        Aborted,
-        TimeOut,
-        Unknown
-    } type;
-
-    kpp::string to_string() const
-    {
-        switch (type)
-        {
-            case OutOfBounds:
-                return "Out of bounds access";
-            case ReadOnly:
-                return "Disk is read only";
-            case BadSector:
-                return "Bad sector access";
-            case NoMedia:
-                return "No media";
-            case Aborted:
-                return "Access aborted";
-            case TimeOut:
-                return "Device didn't respond";
-            case Unknown:
-            default:
-                return "Unknown error";
-        }
-    }
-};
-
-class DiskException : public std::runtime_error
-{
-public:
-    enum ErrorType
-    {
-        OK = 0,
-        OutOfBounds,
-        ReadOnly,
-        BadSector,
-        NoMedia,
-        Aborted,
-        TimeOut,
-        Unknown
-    };
-
-    kpp::string to_string(ErrorType type)
-    {
-        switch (type)
-        {
-            case OutOfBounds:
-                return "Out of bounds access";
-            case ReadOnly:
-                return "Disk is read only";
-            case BadSector:
-                return "Bad sector access";
-            case NoMedia:
-                return "No media";
-            case Aborted:
-                return "Access aborted";
-            case TimeOut:
-                return "Device didn't respond";
-            case Unknown:
-            default:
-                return "Unknown error";
-        }
-    }
-
-    explicit DiskException(const Disk& disk, ErrorType type)
-        : std::runtime_error(("Disk error : " + to_string(type) + " on disk " + disk.drive_name()).c_str())
-    {
-        assert(type != OK);
-    }
 };
 
 #endif // DISK_HPP

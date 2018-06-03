@@ -59,14 +59,8 @@ size_t sys_read(unsigned int fd, user_ptr<void> buf, size_t count)
 
     MemBuffer data;
 
-    try
-    {
-        data = node->read(fd_entry->cursor, count);
-    }
-    catch (const DiskException& e)
-    {
-        return -EIO;
-    }
+    data = node->read(fd_entry->cursor, count);
+    // TODO : return -EIO
 
     if (data.empty() && count != 0)
     {
@@ -103,14 +97,9 @@ size_t sys_write(unsigned int fd, user_ptr<const void> buf, size_t count)
     }
 
     bool okay { false };
-    try
-    {
-        okay = node->write(fd_entry->cursor, {(uint8_t*)buf.get(), (gsl::span<uint8_t>::index_type)(count)});
-    }
-    catch (const DiskException& e)
-    {
-        return -EIO;
-    }
+
+    okay = node->write(fd_entry->cursor, {(uint8_t*)buf.get(), (gsl::span<uint8_t>::index_type)(count)});
+    // TODO : too
 
     if (!okay)
     {

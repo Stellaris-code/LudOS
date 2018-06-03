@@ -38,27 +38,25 @@ bool install_initrd()
     auto initrd_disk = get_initrd_disk();
     if (initrd_disk)
     {
-        try
+        auto fs = FileSystem::get_disk_fs(*initrd_disk);
+        if (!fs)
         {
-            auto fs = FileSystem::get_disk_fs(*initrd_disk);
-            if (!fs)
-            {
-                err("Initrd is not valid filesystem\n");
-                return false;
-            }
-
-            auto root = fs->root();
-            auto initrd = vfs::root->create("initrd", vfs::node::Directory);
-            if (vfs::mount(root, initrd))
-            {
-                log(Info, "Mounted initrd\n");
-                return true;
-            }
-        }
-        catch (const DiskException& e)
-        {
-            err("Couldn't load initrd : %s", e.what());
+            err("Initrd is not valid filesystem\n");
             return false;
+        }
+
+        auto root = fs->root();
+        if (!root)
+        {
+            err("Couldn't load initrd on disk %s\n", initrd_disk->drive_name().c_str());
+            return false;
+        }
+
+        auto initrd = vfs::root->create("initrd", vfs::node::Directory);
+        if (vfs::mount(root, initrd))
+        {
+            log(Info, "Mounted initrd\n");
+            return true;
         }
     }
 

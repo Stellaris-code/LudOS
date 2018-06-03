@@ -115,7 +115,7 @@ kpp::string ata_string(T&& arr)
 uint8_t error_register(uint16_t port);
 uint8_t status_register(uint16_t port);
 uint8_t drive_register(uint16_t port);
-DiskException::ErrorType get_error(uint16_t port);
+DiskError::Type get_error(uint16_t port);
 void poll(uint16_t port);
 void poll_bsy(uint16_t port);
 bool flush(uint16_t port);
@@ -138,8 +138,10 @@ public:
     virtual Type media_type() const override { return Disk::HardDrive; }
 
 protected:
-    virtual MemBuffer read_sector(size_t sector, size_t count) const override = 0;
-    virtual void write_sector(size_t sector, gsl::span<const uint8_t> data) override = 0;
+    [[nodiscard]]
+    virtual kpp::expected<MemBuffer, DiskError> read_sector(size_t sector, size_t count) const override = 0;
+    [[nodiscard]]
+    virtual kpp::expected<kpp::dummy_t, DiskError> write_sector(size_t sector, gsl::span<const uint8_t> data) override = 0;
 
 protected:
     void update_id_data() const;

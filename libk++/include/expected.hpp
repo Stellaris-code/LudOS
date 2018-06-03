@@ -25,6 +25,11 @@ SOFTWARE.
 #ifndef EXPECTED_HPP
 #define EXPECTED_HPP
 
+namespace kpp
+{
+struct dummy_t {};
+}
+
 #if 0
 
 #include <utility.hpp>

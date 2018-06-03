@@ -40,7 +40,8 @@ DiskCache::DiskCache(Disk &disk)
 
 }
 
-void DiskCache::write_sector(size_t sec, gsl::span<const uint8_t> data)
+[[nodiscard]]
+kpp::expected<kpp::dummy_t, DiskError> DiskCache::write_sector(size_t sec, gsl::span<const uint8_t> data)
 {
     auto chunks = split(data, m_disk.sector_size());
     for (size_t i { 0 }; i < chunks.size(); ++i)
@@ -48,15 +49,17 @@ void DiskCache::write_sector(size_t sec, gsl::span<const uint8_t> data)
         add_to_cache(sec + i, chunks[i], true);
     }
 
-    prune_cache();
+    return prune_cache();
 }
 
-MemBuffer DiskCache::read_sector(size_t sec, size_t count)
+[[nodiscard]]
+kpp::expected<MemBuffer, DiskError> DiskCache::read_sector(size_t sec, size_t count)
 {
     MemBuffer data;
     data.reserve(count*m_disk.sector_size());
 
-    add_span(sec, count);
+    auto result = add_span(sec, count);
+    if (!result) return kpp::make_unexpected(result.error());
 
     for (size_t i { sec }; i < sec + count; ++i)
     {
@@ -69,26 +72,33 @@ MemBuffer DiskCache::read_sector(size_t sec, size_t count)
         m_cache.at(i).access_time = ticks;
     }
 
-    prune_cache();
+    auto prune_result = prune_cache();
+    if (!prune_result)
+        return kpp::make_unexpected(prune_result.error());
 
-    return data;
+    return std::move(data);
 }
 
-void DiskCache::flush()
+[[nodiscard]]
+kpp::expected<kpp::dummy_t, DiskError> DiskCache::flush()
 {
     while (!m_cache.empty())
     {
-        remove_entry(m_access_times.begin()->second);
+        auto result = remove_entry(m_access_times.begin()->second);
+        if (!result)
+            return kpp::make_unexpected(result.error());
     }
 }
 
-void DiskCache::set_ratio(size_t ratio)
+[[nodiscard]]
+kpp::expected<kpp::dummy_t, DiskError> DiskCache::set_ratio(size_t ratio)
 {
     m_size_ratio = ratio;
-    prune_cache();
+    return prune_cache();
 }
 
-void DiskCache::add_span(size_t sec, size_t count)
+[[nodiscard]]
+kpp::expected<kpp::dummy_t, DiskError> DiskCache::add_span(size_t sec, size_t count)
 {
 #if 1
     for (size_t i { sec }; i < sec + count;)
@@ -99,7 +109,9 @@ void DiskCache::add_span(size_t sec, size_t count)
             while (m_cache.count(i + len) == 0 && len < count) { ++len; };
 
 #if 1
-            auto data = split(m_disk.read_sector(i, len), m_disk.sector_size());
+            auto result = m_disk.read_sector(i, len);
+            if (!result) return kpp::make_unexpected(result.error());
+            auto data = split(result.value(), m_disk.sector_size());
 
             for (size_t j { 0 }; j < len; ++j)
             {
@@ -128,6 +140,8 @@ void DiskCache::add_span(size_t sec, size_t count)
         add_to_cache(i, m_disk.read_sector(i, 1));
     }
 #endif
+
+    return {};
 }
 
 void DiskCache::add_to_cache(size_t sec, gsl::span<const uint8_t> data, bool write)
@@ -153,7 +167,8 @@ void DiskCache::add_to_cache(size_t sec, gsl::span<const uint8_t> data, bool wri
     }
 }
 
-void DiskCache::prune_cache()
+[[nodiscard]]
+kpp::expected<kpp::dummy_t, DiskError> DiskCache::prune_cache()
 {
     if (mem_usage_ratio() > m_size_ratio)
     {
@@ -162,13 +177,19 @@ void DiskCache::prune_cache()
 
     while (!m_cache.empty() && mem_usage_ratio() > m_size_ratio)
     {
-        remove_entry(m_access_times.begin()->second);
+        auto result = remove_entry(m_access_times.begin()->second);
+        if (!result) return kpp::make_unexpected(result.error());
     }
 }
 
-void DiskCache::remove_entry(size_t id)
+[[nodiscard]]
+kpp::expected<kpp::dummy_t, DiskError> DiskCache::remove_entry(size_t id)
 {
-    if (m_cache.at(id).dirty) m_disk.write_sector(id, m_cache.at(id).data);
+    if (m_cache.at(id).dirty)
+    {
+       auto result = m_disk.write_sector(id, m_cache.at(id).data);
+       if (!result) return kpp::make_unexpected(result.error());
+    }
 
     assert(m_access_times.erase(m_cache.at(id).access_time));
     assert(m_cache.erase(id));

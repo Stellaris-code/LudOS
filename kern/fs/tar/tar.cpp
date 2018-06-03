@@ -74,22 +74,34 @@ namespace tar
 TarFS::TarFS(Disk &disk)
     : FSImpl<tar::TarFS>(disk)
 {
-    m_file = disk.read();
+    auto result = disk.read();
+    if (!result)
+    {
+        m_root_dir = nullptr;
+        err("Cannot load tar fs on disk %s : %s\n", disk.drive_name().c_str(), result.error().to_string());
+    }
+    else
+    {
+        m_file = std::move(result.value());
 
-    m_root_dir = std::make_shared<tar_node>(*this, nullptr);
-    m_root_dir->m_type = vfs::node::Directory;
-    m_root_dir->m_name = "";
-    m_root_dir->m_data_addr = m_file.data() + sizeof(Header);
-    m_root_dir->m_size = m_file.size();
+        m_root_dir = std::make_shared<tar_node>(*this, nullptr);
+        m_root_dir->m_type = vfs::node::Directory;
+        m_root_dir->m_name = "";
+        m_root_dir->m_data_addr = m_file.data() + sizeof(Header);
+        m_root_dir->m_size = m_file.size();
 
-    auto nodes = list_nodes();
-    prune_directories_names(nodes);
-    attach_parents(nodes);
+        auto nodes = list_nodes();
+        prune_directories_names(nodes);
+        attach_parents(nodes);
+    }
 }
 
 bool TarFS::accept(const Disk &disk)
 {
-    Header hdr = *(Header*)disk.read(0, sizeof(Header)).data();
+    auto result = disk.read(0, sizeof(Header));
+    if (!result) return false;
+
+    Header hdr = *(Header*)result->data();
 
     return strncmp(hdr.magic, TMAGIC, 5) == 0;
 }
@@ -230,7 +242,7 @@ void TarFS::attach_parents(std::vector<std::shared_ptr<tar_node>> nodes)
             auto parent = std::find_if(nodes.begin(), nodes.end(), [&parent_name](std::shared_ptr<tar_node> node)
             {
                     return node->m_type == vfs::node::Directory && path_list(node->m_name).back() == parent_name;
-            });
+        });
 
             if (parent != nodes.end())
             {

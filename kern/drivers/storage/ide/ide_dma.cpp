@@ -56,7 +56,8 @@ volatile bool secondary_master_int { false };
 volatile bool secondary_slave_int { false };
 
 volatile bool raised_ints[2][2] { {false, false}, {false, false} };
-DiskException::ErrorType drive_status[2][2];
+int drive_status[2][2];
+constexpr int status_ok = -1;
 
 bool Controller::accept(const pci::PciDevice &dev)
 {
@@ -94,7 +95,7 @@ bool Controller::common_handler(BusPort port)
         }
         else
         {
-            drive_status[port==BusPort::Primary][slave] = DiskException::OK;
+            drive_status[port==BusPort::Primary][slave] = status_ok;
         }
 
         bit_clear(status, 0); bit_clear(status, 1); // clear error and interrupt bits
@@ -235,7 +236,8 @@ Disk::Disk(Controller& controller, BusPort port, DriveType type)
 
 // TODO : unify
 
-MemBuffer Disk::read_sector(size_t sector, size_t count) const
+[[nodiscard]]
+kpp::expected<MemBuffer, DiskError> Disk::read_sector(size_t sector, size_t count) const
 {
     volatile auto& int_status = raised_ints[m_port==BusPort::Primary][m_type==DriveType::Slave];
 
@@ -248,22 +250,23 @@ MemBuffer Disk::read_sector(size_t sector, size_t count) const
 
     if (!Timer::sleep_until_int([&int_status]{return int_status;}, 2000))
     {
-        throw DiskException(*this, DiskException::TimeOut);
+        return kpp::make_unexpected(DiskError{DiskError::TimeOut});
     }
 
     int_status = false;
 
     auto status = drive_status[m_port==BusPort::Primary][m_type==DriveType::Slave];
 
-    if (status != DiskException::OK)
+    if (status != status_ok)
     {
-        throw DiskException(*this, status);
+        return kpp::make_unexpected(DiskError{(DiskError::Type)status});
     }
 
-    return data;
+    return std::move(data);
 }
 
-void Disk::write_sector(size_t sector, gsl::span<const uint8_t> data)
+[[nodiscard]]
+kpp::expected<kpp::dummy_t, DiskError> Disk::write_sector(size_t sector, gsl::span<const uint8_t> data)
 {
     assert(data.size() % sector_size() == 0);
     assert(sector <= m_id_data->sectors_48);
@@ -280,17 +283,19 @@ void Disk::write_sector(size_t sector, gsl::span<const uint8_t> data)
 
     if (!Timer::sleep_until_int([&int_status]{return int_status;}, 2000))
     {
-        throw DiskException(*this, DiskException::TimeOut);
+        return kpp::make_unexpected(DiskError{DiskError::TimeOut});
     }
 
     int_status = false;
 
     auto status = drive_status[m_port==BusPort::Primary][m_type==DriveType::Slave];
 
-    if (status != DiskException::OK)
+    if (status != status_ok)
     {
-        throw DiskException(*this, status);
+        return kpp::make_unexpected(DiskError{(DiskError::Type)status});
     }
+
+    return {};
 }
 
 ADD_PCI_DRIVER(Controller);

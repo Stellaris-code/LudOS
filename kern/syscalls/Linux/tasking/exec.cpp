@@ -86,14 +86,8 @@ int sys_execve(user_ptr<const char> path, user_ptr<user_ptr<const char>> argv, u
         }
 
         MemBuffer data;
-        try
-        {
-            data = res.target_node->read();
-        }
-        catch (const DiskException& e)
-        {
-            return -EIO;
-        }
+        data = res.target_node->read();
+        // TODO : too
 
         if (data.empty())
         {

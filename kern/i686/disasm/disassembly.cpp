@@ -27,13 +27,13 @@ SOFTWARE.
 
 #include "libdis.h"
 
-DisasmInfo get_disasm(uint8_t* ptr)
+DisasmInfo get_disasm(const uint8_t *ptr)
 {
     x86_init(opt_none, nullptr, nullptr);
 
     x86_insn_t instr;
 
-    size_t size = x86_disasm(ptr, 16, 0, 0, &instr);
+    size_t size = x86_disasm((uint8_t*)ptr, 16, 0, 0, &instr);
 
     if (!size)
     {

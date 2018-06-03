@@ -60,8 +60,6 @@ size_t trace_offset(const std::vector<uintptr_t>& trace)
 {
     size_t offset = 0;
 #ifdef ARCH_i686
-
-
     while (offset < trace.size() &&
            trace[offset] != (uintptr_t)&isr_common_stub + 31 &&
            trace[offset] != (uintptr_t)&irq_common_stub + 31)
@@ -112,34 +110,47 @@ void print_stack_symbols()
 
 void print_disassembly()
 {
-    if (Memory::is_mapped((void*)panic_regs->eip))
-    {
-        kprintf("Disassembly : \n");
-
-        const size_t dump_len = 6;
-
-        uint8_t* base_ip = (uint8_t*)panic_regs->eip;
-        uint8_t* ip = base_ip;
-
-        for (size_t i { 0 }; i < dump_len; ++i)
-        {
-            DisasmInfo info = get_disasm(ip);
-            kpp::string bytes = join(map<uint8_t, kpp::string>(info.bytes, [](uint8_t c){return kpp::to_hex_string(c);}), " ");
-            if (ip == base_ip)
-            {
-                kprintf("->  ");
-            }
-            else
-            {
-                kprintf("    ");
-            }
-            kprintf("%s (%s)\n", info.str.c_str(), bytes.c_str());
-            ip += info.len;
-        }
-    }
-    else
+    if (!Memory::is_mapped((void*)panic_regs->eip))
     {
         kprintf("No disassembly available, eip is at an unmapped address : \n");
+        return;
+    }
+
+
+    kprintf("Disassembly : \n");
+
+    constexpr size_t dump_len = 7;
+
+    auto func_base = elf::kernel_symbol_table.get_function(panic_regs->eip);
+    const uint8_t* base_ip;
+    if (!func_base)
+        base_ip = (uint8_t*)panic_regs->eip;
+    else
+    {
+        base_ip = (uint8_t*)elf::kernel_symbol_table.get_function(panic_regs->eip)->offset;
+        const uint8_t* target_ip = (uint8_t*)panic_regs->eip;
+        while (next_ins(base_ip, dump_len/2) < target_ip)
+        {
+            base_ip = next_ins(base_ip);
+        }
+    }
+
+    const uint8_t* ip = base_ip;
+
+    for (size_t i { 0 }; i < dump_len; ++i)
+    {
+        DisasmInfo info = get_disasm(ip);
+        kpp::string bytes = join(map<uint8_t, kpp::string>(info.bytes, [](uint8_t c){return kpp::to_hex_string(c);}), " ");
+        if (ip == (uint8_t*)panic_regs->eip)
+        {
+            kprintf("->  ");
+        }
+        else
+        {
+            kprintf("    ");
+        }
+        kprintf("%s (%s)\n", info.str.c_str(), bytes.c_str());
+        ip += info.len;
     }
 }
 

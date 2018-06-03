@@ -38,6 +38,17 @@ struct DisasmInfo
     size_t len;
 };
 
-DisasmInfo get_disasm(uint8_t *ptr);
+DisasmInfo get_disasm(const uint8_t *ptr);
+
+inline const uint8_t *next_ins(const uint8_t* ptr, size_t instructions = 1)
+{
+    for (size_t i { 0 }; i < instructions; ++i)
+    {
+        auto info = get_disasm(ptr);
+        ptr += info.len;
+    }
+
+    return ptr;
+}
 
 #endif // DISSASEMBLY_HPP

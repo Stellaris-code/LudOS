@@ -7,6 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 
+#if 0
+
 #include "algorithm.hpp"
 #include "random.hpp"
 //#include "mutex"
@@ -89,3 +91,5 @@ _LIBCPP_SAFE_STATIC static __libcpp_mutex_t __rs_mut = _LIBCPP_MUTEX_INITIALIZER
 //}
 
 _LIBCPP_END_NAMESPACE_STD
+
+#endif

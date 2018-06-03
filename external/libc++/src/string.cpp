@@ -7,6 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 
+#ifdef LUDOS_USER
+
 #include "string.hpp"
 #include "stdlib.h"
 #include "wchar.h"
@@ -541,3 +543,5 @@ wstring to_wstring(long double val)
     return as_string(get_swprintf(), initial_string<wstring, long double>()(), L"%Lf", val);
 }
 _LIBCPP_END_NAMESPACE_STD
+
+#endif

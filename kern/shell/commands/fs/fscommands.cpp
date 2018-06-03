@@ -148,7 +148,13 @@ void install_fs_commands(Shell &sh)
              size = kpp::stoul(args[2]);
          }
 
-         auto data = node->read(offset, size);
+         auto result = node->read();
+         if (!result)
+         {
+             sh.error("Error reading file %s : %s\n", args[0].c_str(), result.error().to_string());
+         }
+
+         auto data = std::move(result.value());
          if (data.empty())
          {
              sh.error("%s returned empty\n", path.c_str());
@@ -219,12 +225,13 @@ void install_fs_commands(Shell &sh)
          size_t crc32;
          for (size_t i { 0 }; i < 600; ++i)
          {
-             auto data = node->read();
-             if (data.empty())
+             auto result = node->read();
+             if (!result)
              {
-                 sh.error("cannot read file : '%s'\n", path.c_str());
-                 return -3;
+                 sh.error("Error reading file %s : %s\n", args[0].c_str(), result.error().to_string());
              }
+
+             auto data = std::move(result.value());
 
              if (i == 0) crc32 = crc(data.begin(), data.end());
              else
@@ -273,7 +280,14 @@ void install_fs_commands(Shell &sh)
              size = kpp::stoul(args[2]);
          }
 
-         auto data = node->read(offset, size);
+         auto result = node->read();
+         if (!result)
+         {
+             sh.error("Error reading file %s : %s\n", args[0].c_str(), result.error().to_string());
+         }
+
+         auto data  = std::move(result.value());
+
          if (data.empty())
          {
              sh.error("cannot read file : '%s'\n", path.c_str());
@@ -342,15 +356,8 @@ void install_fs_commands(Shell &sh)
              return -2;
          }
 
-         try
-         {
-             node->rename(args[1]);
-         }
-         catch (const std::exception& e)
-         {
-             sh.error("Can't rename file '%s' to '%s' : %s\n", args[0].c_str(), args[1].c_str(), e.what());
-             return -3;
-         }
+         node->rename(args[1]);
+         // TODO :
 
          return 0;
      }});

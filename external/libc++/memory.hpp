@@ -23,7 +23,6 @@
 #include "__functional_base.hpp"
 #include "iosfwd.hpp"
 #include "tuple.hpp"
-#include "stdexcept.hpp"
 #include <string.h>
 #include <assert.h>
 #if !defined(_LIBCPP_HAS_NO_ATOMIC_HEADER)
@@ -1114,7 +1113,7 @@ public:
     _LIBCPP_INLINE_VISIBILITY pointer allocate(size_type __n, allocator<void>::const_pointer = 0)
         {
         if (__n > max_size())
-            __throw_length_error("allocator<T>::allocate(size_t n)"
+            assert(false && "allocator<T>::allocate(size_t n)"
                                  " 'n' exceeds maximum supported size");
         return static_cast<pointer>(_VSTD::__allocate(__n * sizeof(_Tp)));
         }
@@ -1210,7 +1209,7 @@ public:
     _LIBCPP_INLINE_VISIBILITY pointer allocate(size_type __n, allocator<void>::const_pointer = 0)
     {
         if (__n > max_size())
-            __throw_length_error("allocator<const T>::allocate(size_t n)"
+            assert(false && "allocator<const T>::allocate(size_t n)"
                                  " 'n' exceeds maximum supported size");
         return static_cast<pointer>(_VSTD::__allocate(__n * sizeof(_Tp)));
     }
@@ -2758,14 +2757,6 @@ __libcpp_atomic_refcount_decrement(_Tp& __t) _NOEXCEPT
     return __t -= 1;
 #endif
 }
-
-class _LIBCPP_EXCEPTION_ABI bad_weak_ptr
-    : public std::exception
-{
-public:
-    virtual ~bad_weak_ptr() _NOEXCEPT;
-    virtual const char* what() const  _NOEXCEPT;
-};
 
 _LIBCPP_NORETURN inline _LIBCPP_ALWAYS_INLINE
 void __throw_bad_weak_ptr()

@@ -59,8 +59,13 @@ size_t sys_read(unsigned int fd, user_ptr<void> buf, size_t count)
 
     MemBuffer data;
 
-    data = node->read(fd_entry->cursor, count);
-    // TODO : return -EIO
+    auto result = node->read(fd_entry->cursor, count);
+    if (!result)
+    {
+        return -result.error().to_errno();
+    }
+
+    data = std::move(result.value());
 
     if (data.empty() && count != 0)
     {
@@ -96,14 +101,10 @@ size_t sys_write(unsigned int fd, user_ptr<const void> buf, size_t count)
         return -EIO;
     }
 
-    bool okay { false };
-
-    okay = node->write(fd_entry->cursor, {(uint8_t*)buf.get(), (gsl::span<uint8_t>::index_type)(count)});
-    // TODO : too
-
-    if (!okay)
+    auto result = node->write(fd_entry->cursor, {(uint8_t*)buf.get(), (gsl::span<uint8_t>::index_type)(count)});
+    if (!result)
     {
-        return -EIO;
+        return -result.error().to_errno();
     }
 
     return count; // again, to allow errno numbers

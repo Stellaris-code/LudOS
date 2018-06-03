@@ -26,7 +26,6 @@
 #include <stddef.h>   // for ptrdiff_t, size_t, nullptr_t
 #include <iterator.hpp>  // for reverse_iterator, distance, random_access_...
 #include <limits.hpp>
-#include <stdexcept.hpp>
 #include <type_traits.hpp> // for enable_if_t, declval, is_convertible, inte...
 #include <utility.hpp>
 

@@ -19,14 +19,6 @@ _LIBCPP_BEGIN_NAMESPACE_STD
 
 const allocator_arg_t allocator_arg = allocator_arg_t();
 
-bad_weak_ptr::~bad_weak_ptr() _NOEXCEPT {}
-
-const char*
-bad_weak_ptr::what() const _NOEXCEPT
-{
-    return "bad_weak_ptr";
-}
-
 __shared_count::~__shared_count()
 {
 }

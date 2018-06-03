@@ -86,7 +86,6 @@ void  operator delete[](void* ptr, void*) noexcept;
 */
 
 #include "__config.hpp"
-#include "exception.hpp"
 #include <stddef.h>
 #ifdef _LIBCPP_NO_EXCEPTIONS
 #include <stdlib.h>
@@ -118,23 +117,6 @@ namespace std  // purposefully not using versioning namespace
 struct _LIBCPP_TYPE_VIS nothrow_t {};
 extern _LIBCPP_FUNC_VIS const nothrow_t nothrow;
 
-class _LIBCPP_EXCEPTION_ABI bad_alloc
-    : public exception
-{
-public:
-    bad_alloc() _NOEXCEPT;
-    virtual ~bad_alloc() _NOEXCEPT;
-    virtual const char* what() const _NOEXCEPT;
-};
-
-class _LIBCPP_EXCEPTION_ABI bad_array_new_length
-    : public bad_alloc
-{
-public:
-    bad_array_new_length() _NOEXCEPT;
-    virtual ~bad_array_new_length() _NOEXCEPT;
-    virtual const char* what() const _NOEXCEPT;
-};
 
 typedef void (*new_handler)();
 _LIBCPP_FUNC_VIS new_handler set_new_handler(new_handler) _NOEXCEPT;
@@ -145,14 +127,6 @@ _LIBCPP_FUNC_VIS new_handler get_new_handler() _NOEXCEPT;
 _LIBCPP_NORETURN _LIBCPP_FUNC_VIS void __throw_bad_alloc();  // not in C++ spec
 
 #if defined(_LIBCPP_BUILDING_LIBRARY) || (_LIBCPP_STD_VER > 11)
-
-class _LIBCPP_EXCEPTION_ABI _LIBCPP_AVAILABILITY_BAD_ARRAY_LENGTH
-    bad_array_length : public bad_alloc {
-public:
-    bad_array_length() _NOEXCEPT;
-    virtual ~bad_array_length() _NOEXCEPT;
-    virtual const char* what() const _NOEXCEPT;
-};
 
 #define _LIBCPP_BAD_ARRAY_LENGTH_DEFINED
 

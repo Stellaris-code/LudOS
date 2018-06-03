@@ -29,6 +29,11 @@ SOFTWARE.
 
 class Disk;
 
+namespace vfs
+{
+struct FSError;
+}
+
 namespace devfs
 {
 struct disk_file : public vfs::node
@@ -44,8 +49,8 @@ struct disk_file : public vfs::node
     Disk& disk() { return m_disk; }
 
 protected:
-    [[nodiscard]] virtual MemBuffer read_impl(size_t offset, size_t size) const override;
-    [[nodiscard]] virtual bool write_impl(size_t offset, gsl::span<const uint8_t> data) override;
+    [[nodiscard]] virtual kpp::expected<MemBuffer, vfs::FSError> read_impl(size_t offset, size_t size) const override;
+    [[nodiscard]] virtual kpp::expected<kpp::dummy_t, vfs::FSError> write_impl(size_t offset, gsl::span<const uint8_t> data) override;
 
 public:
     Disk& m_disk;

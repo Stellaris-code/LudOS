@@ -14,7 +14,6 @@
 #include <__config.hpp>
 #include <__hash_table.hpp>
 #include <functional.hpp>
-#include <stdexcept.hpp>
 #include <tuple.hpp>
 
 #include <__debug.hpp>

@@ -42,9 +42,6 @@ file(GLOB_RECURSE LIBX86EMU_SOURCES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "extern
 file(GLOB_RECURSE LIBX86EMU_HEADERS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "external/libx86emu/include/*.h")
 file(GLOB_RECURSE LIBDISASM_SOURCES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "external/libdisasm/*.c")
 file(GLOB_RECURSE LIBDISASM_HEADERS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "external/libdisasm/*.h")
-file(GLOB_RECURSE LIBUNWIND_SOURCES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "external/libunwind/*.c" "external/libunwind/*.cpp" "external/libunwind/*.C")
-file(GLOB_RECURSE LIBUNWIND_ASM RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "external/libunwind/*.S")
-file(GLOB_RECURSE LIBUNWIND_HEADERS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "external/libunwind/*.h" "external/libunwind/*.hpp")
 file(GLOB_RECURSE STB_HEADERS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "external/stb/*.h")
 file(GLOB_RECURSE STB_SOURCES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "external/stb/*.c")
 file(GLOB_RECURSE HEADERS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "kern/*.hpp" "kern/*.h" "kern/*.def" "kern/*.tpp")
@@ -116,11 +113,11 @@ add_executable(${PROJECT_NAME} ${PLATFORM_SRCS} ${ISA_SRCS} ${GENERIC_SRCS} ${HE
 target_compile_definitions(${PROJECT_NAME} PUBLIC "-D__LUDOS__")
 
 set(CMAKE_C_FLAGS "${ISA_C_FLAGS} ${PLATFORM_C_FLAGS} -O2 -fno-strict-aliasing -fstack-protector -m32 ${SIMD_OPTIONS} ${ARCH_OPTIONS} -Wwrite-strings -ffast-math ${SANITIZER_OPTIONS} -std=c11 -Wall -Wextra -Wconversion -Wcast-qual -Wmisleading-indentation -Wno-unused-parameter -Wno-implicit-int -Wnull-dereference -lgcc -static-libgcc -ffreestanding -fno-builtin -nostdlib -fno-omit-frame-pointer -Werror=implicit-function-declaration -lgcc")
-set(CMAKE_CXX_FLAGS "${ISA_CXX_FLAGS} ${PLATFORM_CXX_FLAGS} -O2 -fno-strict-aliasing -m32 ${SIMD_OPTIONS} ${ARCH_OPTIONS} -fexceptions -Wwrite-strings -Wsuggest-final-types -Wsuggest-final-methods -Wconversion -Woverloaded-virtual -ffast-math ${SANITIZER_OPTIONS} -fstack-protector -std=c++17 -Wall -Wextra -Wlogical-op -Wrestrict -Wnull-dereference -Wno-cast-qual -Wdouble-promotion -Wno-unused-parameter -Wno-format -Wno-switch -Wno-packed-bitfield-compat -Wno-reorder -Wno-trigraphs -Wmisleading-indentation -Wnull-dereference -lgcc -static-libgcc -ffreestanding -fno-builtin -nostdlib -fno-omit-frame-pointer -Werror=implicit-function-declaration -lgcc")
+set(CMAKE_CXX_FLAGS "${ISA_CXX_FLAGS} ${PLATFORM_CXX_FLAGS} -O2 -fno-exceptions -fno-strict-aliasing -m32 ${SIMD_OPTIONS} ${ARCH_OPTIONS} -Wwrite-strings -Wsuggest-final-types -Wsuggest-final-methods -Wconversion -Woverloaded-virtual -ffast-math ${SANITIZER_OPTIONS} -fstack-protector -std=c++17 -Wall -Wextra -Wlogical-op -Wrestrict -Wnull-dereference -Wno-cast-qual -Wdouble-promotion -Wno-unused-parameter -Wno-format -Wno-switch -Wno-packed-bitfield-compat -Wno-reorder -Wno-trigraphs -Wmisleading-indentation -Wnull-dereference -lgcc -static-libgcc -ffreestanding -fno-builtin -nostdlib -fno-omit-frame-pointer -Werror=implicit-function-declaration -lgcc")
 set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS
-  "-T ${PLATFORM_LAYOUT} ${ISA_LINKER_FLAGS} ${PLATFORM_LINKER_FLAGS} -lgcc -fexceptions -Xlinker -Map=ld.map ")
+  "-T ${PLATFORM_LAYOUT} ${ISA_LINKER_FLAGS} ${PLATFORM_LINKER_FLAGS} -lgcc -Xlinker -Map=ld.map ")
 set_target_properties(${PROJECT_NAME} PROPERTIES SUFFIX ".bin")
-set(CMAKE_ASM_NASM_LINK_EXECUTABLE "${ARCH}-elf-gcc -T ${PLATFORM_LAYOUT} ${ISA_LINKER_FLAGS} --eh-frame-hdr --no-ld-generated-unwind-info ${PLATFORM_LINKER_FLAGS} <OBJECTS> -o <TARGET>.bin")
+set(CMAKE_ASM_NASM_LINK_EXECUTABLE "${ARCH}-elf-gcc -T ${PLATFORM_LAYOUT} ${ISA_LINKER_FLAGS} --no-ld-generated-unwind-info ${PLATFORM_LINKER_FLAGS} <OBJECTS> -o <TARGET>.bin")
 
 add_library(libk ${LIBK_SOURCES} ${LIBK_HEADERS})
 target_compile_definitions(libk
@@ -128,18 +125,11 @@ target_compile_definitions(libk
 #set_target_properties(libk PROPERTIES COMPILE_FLAGS "-w")
 target_compile_options(libk PUBLIC $<$<NOT:$<COMPILE_LANGUAGE:ASM_NASM>>:-w>)
 
-add_library(libunwind ${LIBUNWIND_SOURCES} ${LIBUNWIND_HEADERS} ${LIBUNWIND_ASM})
-set_target_properties(libunwind PROPERTIES LINKER_LANGUAGE CXX)
-set_target_properties(libunwind PROPERTIES COMPILE_FLAGS "-w")
-target_compile_definitions(libunwind PUBLIC "-D__LUDOS__")
-set_source_files_properties(${LIBUNWIND_ASM}
-                            PROPERTIES LANGUAGE C)
-
 add_library(libcxxabi ${LIBCXXABI_SOURCES} ${LIBCXXABI_HEADERS})
 set_target_properties(libcxxabi PROPERTIES LINKER_LANGUAGE CXX)
 set_target_properties(libcxxabi PROPERTIES COMPILE_FLAGS "-w")
 target_compile_definitions(libcxxabi PUBLIC "-D__LUDOS__")
-target_link_libraries(libcxxabi libunwind)
+target_link_libraries(libcxxabi)
 
 add_library(libcpp ${LIBCPP_SOURCES} ${LIBCPP_HEADERS})
 set_target_properties(libcpp PROPERTIES COMPILE_FLAGS "-w")
@@ -179,7 +169,7 @@ if (WITH_ACPICA)
 endif()
 target_link_libraries(libx86emu libk)
 
-set(CMAKE_CXX_LINK_EXECUTABLE "/usr/local/cross/bin/${ARCH}-elf-ld --build-id=none --eh-frame-hdr -T ${PLATFORM_LAYOUT} ${ISA_LINKER_FLAGS} <OBJECTS> -o <TARGET> <LINK_LIBRARIES>-L/usr/tooLargeForHome/cross_src/build-gcc/i686-elf/libgcc/ -lgcc")
+set(CMAKE_CXX_LINK_EXECUTABLE "/usr/local/cross/bin/${ARCH}-elf-ld --build-id=none -T ${PLATFORM_LAYOUT} ${ISA_LINKER_FLAGS} <OBJECTS> -o <TARGET> <LINK_LIBRARIES>-L/usr/tooLargeForHome/cross_src/build-gcc/i686-elf/libgcc/ -lgcc")
 
 if (USE_CLANG_TIDY)
     set(DO_CLANG_TIDY "clang-tidy" "-checks=-*,clang-analyzer-*,-clang-analyzer-cplusplus*,cppcoreguidelines-*")

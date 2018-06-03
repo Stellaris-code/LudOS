@@ -17,7 +17,6 @@
 #include <functional.hpp>
 #include <initializer_list.hpp>
 #include <new.hpp>
-#include <stdexcept.hpp>
 #include <type_traits.hpp>
 #include <utility.hpp>
 
@@ -27,21 +26,6 @@
 
 _LIBCPP_PUSH_MACROS
 #include <__undef_macros.hpp>
-
-
-namespace std  // purposefully not using versioning namespace
-{
-
-class _LIBCPP_EXCEPTION_ABI bad_optional_access
-    : public exception
-{
-public:
-    // Get the key function ~bad_optional_access() into the dylib
-    virtual ~bad_optional_access() _NOEXCEPT;
-    virtual const char* what() const _NOEXCEPT;
-};
-
-}  // std
 
 #if _LIBCPP_STD_VER > 14
 

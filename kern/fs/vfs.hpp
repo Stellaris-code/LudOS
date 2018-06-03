@@ -32,6 +32,7 @@ SOFTWARE.
 #include <utils/gsl/gsl_span.hpp>
 
 #include <kstring/kstring.hpp>
+#include <expected.hpp>
 
 #include "utils/membuffer.hpp"
 
@@ -58,7 +59,12 @@ struct FSError
     enum Type
     {
         NotFound,
-        ReadError
+        ReadError,
+        WriteError,
+        InvalidLink,
+        TooLarge,
+        AlreadyExists,
+        Unknown
     } type;
 
     union Details
@@ -70,11 +76,22 @@ struct FSError
     {
         switch (type)
         {
+            case ReadError:
+            case WriteError:
+                return EIO;
+            case TooLarge:
+                return E2BIG;
+            case InvalidLink:
+                return ENOLINK;
+            case AlreadyExists:
+                return EEXIST;
             case NotFound:
             default:
                 return ENOENT;
         }
     }
+
+    const char *to_string();
 };
 
 struct node
@@ -103,6 +120,9 @@ struct node
         size_t modification_time { 0 };
     };
 
+    template <typename T>
+    using result = kpp::expected<T, FSError>;
+
     node(node* parent = nullptr);
 
     node(const node&) = delete;
@@ -111,7 +131,7 @@ struct node
     virtual ~node();
 
     virtual kpp::string name() const { return m_name; }
-    void rename(const kpp::string& name);
+    kpp::expected<kpp::dummy_t, FSError> rename(const kpp::string& name);
 
     virtual Stat stat() const { return m_stat; }
     virtual void set_stat(const Stat& stat) { m_stat = stat; }
@@ -120,14 +140,15 @@ struct node
     virtual Type type() const { return m_type; }
     virtual bool is_link() const { return false; }
 
-    [[nodiscard]] MemBuffer read(size_t offset, size_t size) const;
-    [[nodiscard]] MemBuffer read() const { return read(0, size()); }
-    [[nodiscard]] bool write(size_t offset, gsl::span<const uint8_t> data);
-    [[nodiscard]] std::shared_ptr<node> create(const kpp::string&, Type);
-    bool resize(size_t);
+    [[nodiscard]] result<MemBuffer> read(size_t offset, size_t size) const;
+    [[nodiscard]] result<MemBuffer> read() const { return read(0, size()); }
+    [[nodiscard]] result<kpp::dummy_t> write(size_t offset, gsl::span<const uint8_t> data);
+    [[nodiscard]] result<std::shared_ptr<node>> create(const kpp::string&, Type);
+    // TODO : error
+    result<kpp::dummy_t> resize(size_t);
     std::vector<std::shared_ptr<node>> readdir();
     std::vector<std::shared_ptr<const node>> readdir() const;
-    bool remove(const vfs::node* child);
+    result<kpp::dummy_t> remove(const vfs::node* child);
 
     node* parent() const { return m_parent; }
     void set_parent(node* parent) { m_parent = parent; }
@@ -135,13 +156,16 @@ struct node
     kpp::string path() const;
 
 protected:
-    [[nodiscard]] virtual MemBuffer read_impl(size_t, size_t) const { return {}; }
-    [[nodiscard]] virtual bool write_impl(size_t, gsl::span<const uint8_t>) { return false; }
-    virtual bool resize_impl(size_t) { return false; }
+    [[nodiscard]] virtual result<MemBuffer> read_impl(size_t, size_t) const { return {}; }
+    [[nodiscard]] virtual result<kpp::dummy_t> write_impl(size_t, gsl::span<const uint8_t>)
+    { return kpp::make_unexpected(FSError{FSError::Unknown}); }
+    [[nodiscard]] virtual result<kpp::dummy_t>  resize_impl(size_t)
+    { return kpp::make_unexpected(FSError{FSError::Unknown}); }
     virtual std::vector<std::shared_ptr<node>> readdir_impl() { return {}; }
-    [[nodiscard]] virtual std::shared_ptr<node> create_impl(const kpp::string&, Type) { return nullptr; }
-    virtual void rename_impl(const kpp::string&) {}
-    virtual bool remove_impl(const vfs::node*) { return false; }
+    [[nodiscard]] virtual result<std::shared_ptr<node>> create_impl(const kpp::string&, Type) { return nullptr; }
+    [[nodiscard]] virtual result<kpp::dummy_t> rename_impl(const kpp::string&) {}
+    [[nodiscard]] virtual result<kpp::dummy_t> remove_impl(const vfs::node*)
+    { return kpp::make_unexpected(FSError{FSError::Unknown}); }
 
 private:
     void update_access_time() const;
@@ -174,10 +198,10 @@ private:
     std::shared_ptr<node> add_node(const kpp::string& name, Type type);
 
 protected:
-    virtual std::shared_ptr<node> create_impl(const kpp::string& str, Type type) override
+    virtual node::result<std::shared_ptr<node>> create_impl(const kpp::string& str, Type type) override
     { return add_node(str, type); }
     virtual std::vector<std::shared_ptr<node>> readdir_impl() override { return m_children; }
-    virtual bool remove_impl(const vfs::node* child) override;
+    [[nodiscard]] virtual kpp::expected<kpp::dummy_t, FSError> remove_impl(const vfs::node* child) override;
 
 private:
     std::vector<std::shared_ptr<node>> m_children;
@@ -202,10 +226,13 @@ private:
     std::shared_ptr<const node> actual_target() const;
 
 protected:
-    [[nodiscard]] virtual MemBuffer read_impl(size_t offset, size_t size) const override { return actual_target()->read(offset, size); }
-    [[nodiscard]] virtual bool write_impl(size_t offset, gsl::span<const uint8_t> data) override { return actual_target()->write(offset, data); }
+    [[nodiscard]] virtual kpp::expected<MemBuffer, FSError> read_impl(size_t offset, size_t size) const override
+    { return actual_target()->read(offset, size); }
+    [[nodiscard]] virtual kpp::expected<kpp::dummy_t, FSError> write_impl(size_t offset, gsl::span<const uint8_t> data) override
+    { return actual_target()->write(offset, data); }
     virtual std::vector<std::shared_ptr<node>> readdir_impl() override { return actual_target()->readdir_impl(); }
-    [[nodiscard]] virtual std::shared_ptr<node> create_impl(const kpp::string& s, Type type) override { return actual_target()->create(s, type); };
+    [[nodiscard]] virtual node::result<std::shared_ptr<node>> create_impl(const kpp::string& s, Type type) override
+    { return actual_target()->create(s, type); };
 
 private:
     kpp::string m_target;

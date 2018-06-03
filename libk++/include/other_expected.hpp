@@ -17,7 +17,6 @@
 #define TL_EXPECTED_VERSION_MAJOR 0
 #define TL_EXPECTED_VERSION_MINOR 2
 
-#include <exception.hpp>
 #include <functional.hpp>
 #include <type_traits.hpp>
 #include <utility.hpp>
@@ -1064,23 +1063,6 @@ template <class T, class E> struct expected_default_ctor_base<T, E, false> {
 };
 } // namespace detail
 
-template <class E> class bad_expected_access : public std::exception {
-public:
-  explicit bad_expected_access(E e) : m_val(std::move(e)) {}
-
-  virtual const char *what() const noexcept override {
-    return "Bad expected access";
-  }
-
-  const E &error() const & { return m_val; }
-  E &error() & { return m_val; }
-  const E &&error() const && { return std::move(m_val); }
-  E &&error() && { return std::move(m_val); }
-
-private:
-  E m_val;
-};
-
 /// An `expected<T, E>` object is an object that contains the storage for
 /// another object and manages the lifetime of this contained object `T`.
 /// Alternatively it could contain the storage for another unexpected object
@@ -1788,7 +1770,7 @@ public:
             detail::enable_if_t<!std::is_void<U>::value> * = nullptr>
   TL_EXPECTED_11_CONSTEXPR const U &value() const & {
     if (!has_value())
-      detail::throw_exception(bad_expected_access<E>(err().value()));
+      abort();
     return val();
   }
   /// \group value
@@ -1796,7 +1778,7 @@ public:
             detail::enable_if_t<!std::is_void<U>::value> * = nullptr>
   TL_EXPECTED_11_CONSTEXPR U &value() & {
     if (!has_value())
-      detail::throw_exception(bad_expected_access<E>(err().value()));
+      abort();
     return val();
   }
   /// \group value
@@ -1804,7 +1786,7 @@ public:
             detail::enable_if_t<!std::is_void<U>::value> * = nullptr>
   TL_EXPECTED_11_CONSTEXPR const U &&value() const && {
     if (!has_value())
-      detail::throw_exception(bad_expected_access<E>(err().value()));
+      abort();
     return std::move(val());
   }
   /// \group value
@@ -1812,7 +1794,7 @@ public:
             detail::enable_if_t<!std::is_void<U>::value> * = nullptr>
   TL_EXPECTED_11_CONSTEXPR U &&value() && {
     if (!has_value())
-      detail::throw_exception(bad_expected_access<E>(err().value()));
+      abort();
     return std::move(val());
   }
 

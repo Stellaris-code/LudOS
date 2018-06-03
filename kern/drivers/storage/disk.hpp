@@ -25,8 +25,6 @@ SOFTWARE.
 #ifndef DISK_HPP
 #define DISK_HPP
 
-#include <exception.hpp>
-
 #include <kstring/kstring.hpp>
 #include <expected.hpp>
 

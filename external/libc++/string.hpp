@@ -476,7 +476,6 @@ basic_string<char32_t> operator "" s( const char32_t *str, size_t len ); // C++1
 #include "iterator.hpp"
 #include "utility.hpp"
 #include "memory.hpp"
-#include "stdexcept.hpp"
 #include "type_traits.hpp"
 #include "initializer_list.hpp"
 #include "__functional_base.hpp"
@@ -570,14 +569,14 @@ template <bool __b>
 void
 __basic_string_common<__b>::__throw_length_error() const
 {
-    _VSTD::__throw_length_error("basic_string");
+    assert(false && "basic_string");
 }
 
 template <bool __b>
 void
 __basic_string_common<__b>::__throw_out_of_range() const
 {
-    _VSTD::__throw_out_of_range("basic_string");
+    assert(false && "basic_string");
 }
 
 _LIBCPP_EXTERN_TEMPLATE(class _LIBCPP_EXTERN_TEMPLATE_TYPE_VIS __basic_string_common<true>)

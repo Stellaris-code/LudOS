@@ -228,7 +228,6 @@ template <> struct hash<std::error_condition>;
 #include "__config.hpp"
 #include <errno.h>
 #include "type_traits.hpp"
-#include "stdexcept.hpp"
 #include "__functional_base.hpp"
 #include "string.hpp"
 
@@ -645,25 +644,7 @@ struct _LIBCPP_TEMPLATE_VIS hash<error_condition>
 
 // system_error
 
-class _LIBCPP_TYPE_VIS system_error
-    : public runtime_error
-{
-    error_code __ec_;
-public:
-    system_error(error_code __ec, const string& __what_arg);
-    system_error(error_code __ec, const char* __what_arg);
-    system_error(error_code __ec);
-    system_error(int __ev, const error_category& __ecat, const string& __what_arg);
-    system_error(int __ev, const error_category& __ecat, const char* __what_arg);
-    system_error(int __ev, const error_category& __ecat);
-    ~system_error() _NOEXCEPT;
 
-    _LIBCPP_ALWAYS_INLINE
-    const error_code& code() const _NOEXCEPT {return __ec_;}
-
-private:
-    static string __init(const error_code&, string);
-};
 
 _LIBCPP_NORETURN _LIBCPP_FUNC_VIS
 void __throw_system_error(int ev, const char* what_arg);

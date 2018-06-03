@@ -77,55 +77,59 @@ node::~node()
 {
 }
 
-void node::rename(const kpp::string &name)
+node::result<kpp::dummy_t> node::rename(const kpp::string &name)
 {
     // Check if no entries with the same name already exist
     if (parent())
     {
         for (auto node : parent()->readdir())
         {
-            if (node->name() == name) return;
+            if (node->name() == name) return kpp::make_unexpected(FSError{FSError::AlreadyExists});
         }
     }
 
     m_name = name;
-    rename_impl(name);
+    auto result = rename_impl(name);
 
     update_modification_time();
+
+    return result;
 }
 
-MemBuffer node::read(size_t offset, size_t size) const
+node::result<MemBuffer> node::read(size_t offset, size_t size) const
 {
     assert(type() != Directory);
     if (this->size()) assert(offset + size <= this->size());
 
-    auto data = read_impl(offset, size);
+    auto result = read_impl(offset, size);
 
     //assert(data.size() == size);
 
     update_access_time();
 
-    return data;
+    return result;
 }
 
-bool node::write(size_t offset, gsl::span<const uint8_t> data)
+node::result<kpp::dummy_t> node::write(size_t offset, gsl::span<const uint8_t> data)
 {
     assert(type() != Directory);
     if (size()) assert(offset + data.size() <= size());
 
     auto result = write_impl(offset, data);
+
     update_modification_time();
+
     return result;
 }
 
-bool node::resize(size_t size)
+node::result<kpp::dummy_t> node::resize(size_t size)
 {
     assert(type() != Directory);
 
     return resize_impl(size);
 }
 
-std::shared_ptr<node> node::create(const kpp::string & str, Type type)
+node::result<std::shared_ptr<node>> node::create(const kpp::string & str, Type type)
 {
     assert(this->type() == Directory);
 
@@ -208,7 +212,7 @@ std::vector<std::shared_ptr<const node> > node::readdir() const
     return vec;
 }
 
-bool node::remove(const node *child)
+node::result<kpp::dummy_t> node::remove(const node *child)
 {
     if (m_mounted_node) return m_mounted_node->remove_impl(child);
     return remove_impl(child);
@@ -226,7 +230,7 @@ std::shared_ptr<node> vfs_root::add_node(const kpp::string &name, Type type)
     return node;
 }
 
-bool vfs_root::remove_impl(const node *child)
+node::result<kpp::dummy_t> vfs_root::remove_impl(const node *child)
 {
     bool found = false;
     m_children.erase(std::remove_if(m_children.begin(), m_children.end(), [child, &found](std::shared_ptr<node> node)
@@ -234,7 +238,11 @@ bool vfs_root::remove_impl(const node *child)
         return found = (node.get() == child);
     }));
 
-    return found;
+    if (!found)
+    {
+        return kpp::make_unexpected(FSError{FSError::NotFound});
+    }
+    return {};
 }
 
 symlink::symlink(kpp::string target)
@@ -262,6 +270,26 @@ std::shared_ptr<node> symlink::actual_target()
 std::shared_ptr<const node> symlink::actual_target() const
 {
     return find(m_target).value_or(nullptr);
+}
+
+const char *FSError::to_string()
+{
+    switch (type)
+    {
+        case ReadError:
+        case WriteError:
+            return DiskError{(DiskError::Type)details.read_error_type}.to_string();
+        case InvalidLink:
+            return "Invalid link";
+        case AlreadyExists:
+            return "File already exists";
+        case TooLarge:
+            return "Too large";
+        case NotFound:
+            return "Not Found";
+        case Unknown:
+            return "Unknown";
+    }
 }
 
 }

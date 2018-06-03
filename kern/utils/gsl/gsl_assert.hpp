@@ -17,9 +17,6 @@
 #ifndef GSL_CONTRACTS_H
 #define GSL_CONTRACTS_H
 
-#include <exception.hpp>
-#include <stdexcept.hpp> // for logic_error
-
 //
 // There are three configuration options for this GSL implementation's behavior
 // when pre/post conditions on the GSL types are violated:
@@ -62,14 +59,6 @@
 // GSL.assert: assertions
 //
 
-namespace gsl
-{
-struct fail_fast : public std::logic_error
-{
-    explicit fail_fast(char const* const message) : std::logic_error(message) {}
-};
-}
-
 #if defined(GSL_THROW_ON_CONTRACT_VIOLATION)
 
 #define GSL_CONTRACT_CHECK(type, cond)                                                             \
@@ -79,7 +68,7 @@ struct fail_fast : public std::logic_error
 
 #elif defined(GSL_TERMINATE_ON_CONTRACT_VIOLATION)
 
-#define GSL_CONTRACT_CHECK(type, cond) (GSL_LIKELY(cond) ? static_cast<void>(0) : std::terminate())
+#define GSL_CONTRACT_CHECK(type, cond) (GSL_LIKELY(cond) ? static_cast<void>(0) : abort())
 
 #elif defined(GSL_UNENFORCED_ON_CONTRACT_VIOLATION)
 

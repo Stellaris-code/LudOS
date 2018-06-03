@@ -13,7 +13,6 @@
 
 #include <experimental/__config.hpp>
 #include <functional.hpp>
-#include <stdexcept.hpp>
 #if _LIBCPP_STD_VER > 11
 #include <initializer_list.hpp>
 #include <type_traits.hpp>
@@ -28,21 +27,6 @@
 
 _LIBCPP_PUSH_MACROS
 #include <__undef_macros.hpp>
-
-
-_LIBCPP_BEGIN_NAMESPACE_EXPERIMENTAL
-class _LIBCPP_EXCEPTION_ABI _LIBCPP_AVAILABILITY_BAD_OPTIONAL_ACCESS bad_optional_access
-    : public std::logic_error
-{
-public:
-    bad_optional_access() : std::logic_error("Bad optional Access") {}
-
-//	Get the key function ~bad_optional_access() into the dylib
-    virtual ~bad_optional_access() _NOEXCEPT;
-};
-
-_LIBCPP_END_NAMESPACE_EXPERIMENTAL
-
 
 #if _LIBCPP_STD_VER > 11
 

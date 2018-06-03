@@ -630,12 +630,14 @@ ext2::DirectoryEntry Ext2FS::create_dir_entry(size_t inode, uint8_t type, const 
     return new_entry;
 }
 
-void ext2_node::rename_impl(const kpp::string &s)
+[[nodiscard]] kpp::expected<kpp::dummy_t, vfs::FSError> ext2_node::rename_impl(const kpp::string &s)
 {
     if (parent() && dynamic_cast<ext2_node*>(parent()))
     {
         static_cast<ext2_node*>(parent())->update_dir_entry(inode, s);
     }
+
+    return {};
 }
 
 void ext2_node::set_stat(const vfs::node::Stat &stat)
@@ -653,7 +655,7 @@ void ext2_node::set_stat(const vfs::node::Stat &stat)
     write_inode_struct(inode_struct);
 }
 
-std::shared_ptr<vfs::node> ext2_node::create_impl(const kpp::string & name, Type type)
+vfs::node::result<std::shared_ptr<vfs::node>> ext2_node::create_impl(const kpp::string & name, Type type)
 {    
     auto dir = create_child(name, type);
     if (!dir) return nullptr;
@@ -677,25 +679,26 @@ std::shared_ptr<vfs::node> ext2_node::create_impl(const kpp::string & name, Type
 }
 
 
-bool ext2_node::write_impl(size_t offset, gsl::span<const uint8_t> data)
+kpp::expected<kpp::dummy_t, vfs::FSError> ext2_node::write_impl(size_t offset, gsl::span<const uint8_t> data)
 {
     if (size() >= 65536)
     {
         fs.error("Files more than 64MiB long aren't supported\n");
+        return kpp::make_unexpected(vfs::FSError{vfs::FSError::TooLarge});
     }
 
     fs.write_data(data, offset, fs.read_inode(inode));
 
-    return true;
+    return {};
 }
 
-bool ext2_node::resize_impl(size_t size)
+vfs::node::result<kpp::dummy_t> ext2_node::resize_impl(size_t size)
 {
-    fs.resize_inode(inode, size);
-    return true;
+    fs.resize_inode(inode, size); // TODO : checks here
+    return {};
 }
 
-bool ext2_node::remove_impl(const vfs::node * node)
+vfs::node::result<kpp::dummy_t> ext2_node::remove_impl(const vfs::node * node)
 {
     // remove node's children
     if (node->type() == Directory)
@@ -708,9 +711,9 @@ bool ext2_node::remove_impl(const vfs::node * node)
         }
     }
 
-    remove_child(node->name());
+    remove_child(node->name()); // again, checks...
 
-    return true;
+    return {};
 }
 
 void ext2_node::update_dir_entry(size_t inode, const kpp::string &name)

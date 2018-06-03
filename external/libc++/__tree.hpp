@@ -14,7 +14,6 @@
 #include <__config.hpp>
 #include <iterator.hpp>
 #include <memory.hpp>
-#include <stdexcept.hpp>
 #include <algorithm.hpp>
 
 #if !defined(_LIBCPP_HAS_NO_PRAGMA_SYSTEM_HEADER)

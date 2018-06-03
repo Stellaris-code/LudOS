@@ -25,16 +25,11 @@ SOFTWARE.
 #ifndef L_LIMITS_H
 #define L_LIMITS_H
 
-#include <features.h>
-
 
 /* Maximum length of any multibyte character in any locale.
    We define this value here since the gcc header does not define
    the correct value.  */
 #define MB_LEN_MAX	16
-
-
-#include <bits/wordsize.h>
 
 /* We don't have #include_next.
    Define ANSI <limits.h> for standard 32-bit words.  */

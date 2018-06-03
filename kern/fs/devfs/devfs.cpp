@@ -44,22 +44,22 @@ struct stdout_file : public vfs::node
     using node::node;
 
 protected:
-    [[nodiscard]] virtual bool write_impl(size_t offset, gsl::span<const uint8_t> data) override
+    [[nodiscard]] virtual kpp::expected<kpp::dummy_t, vfs::FSError> write_impl(size_t offset, gsl::span<const uint8_t> data) override
     {
         auto str = kpp::string((const char*)data.data(), data.size());
         kprintf("%s", str.c_str());
-        return true;
+        return {};
     }
 };
 struct stderr_file : public vfs::node
 {
     using node::node;
 protected:
-    [[nodiscard]] virtual bool write_impl(size_t offset, gsl::span<const uint8_t> data) override
+    [[nodiscard]] virtual kpp::expected<kpp::dummy_t, vfs::FSError> write_impl(size_t offset, gsl::span<const uint8_t> data) override
     {
         auto str = kpp::string((const char*)data.data(), data.size());
         err("%s", str.c_str());
-        return true;
+        return {};
     }
 };
 
@@ -81,7 +81,7 @@ public:
     }
 
 protected:
-    [[nodiscard]] virtual MemBuffer read_impl(size_t offset, size_t size) const override
+    [[nodiscard]] virtual kpp::expected<MemBuffer, vfs::FSError> read_impl(size_t offset, size_t size) const override
     {
         MemBuffer buf;
 
@@ -95,7 +95,7 @@ protected:
 
         assert(buf.size() == size);
 
-        return buf;
+        return std::move(buf);
     }
 
 private:
@@ -117,11 +117,11 @@ std::shared_ptr<devfs_root> root;
 
 void init()
 {
-    auto dir = vfs::root->create("dev", vfs::node::Directory);
-    if (!dir) panic("Could not create devfs!\n");
+    auto result = vfs::root->create("dev", vfs::node::Directory);
+    if (!result) panic("Could not create devfs : %s\n", result.error().to_string());
 
     root = std::make_shared<devfs_root>(vfs::root.get());
-    if (!vfs::mount(root, dir))
+    if (!vfs::mount(root, result.value()))
     {
         panic("Can't mount devfs !\n");
     }
@@ -220,15 +220,24 @@ void add_drive(Disk &disk)
 
 size_t disk_file::size() const { return m_disk.disk_size(); }
 
-MemBuffer disk_file::read_impl(size_t offset, size_t size) const
+kpp::expected<MemBuffer, vfs::FSError> disk_file::read_impl(size_t offset, size_t size) const
 {
-    return m_disk.read(offset, size).value();
+    auto result = m_disk.read(offset, size);
+    if (!result)
+    {
+        return kpp::make_unexpected(vfs::FSError{vfs::FSError::ReadError, {result.error().type}});
+    }
+    return std::move(result.value());
 }
 
-bool disk_file::write_impl(size_t offset, gsl::span<const uint8_t> data)
+kpp::expected<kpp::dummy_t, vfs::FSError> disk_file::write_impl(size_t offset, gsl::span<const uint8_t> data)
 {
-    m_disk.write(offset, data).value();
-    return true;
+    auto result = m_disk.write(offset, data);
+    if (!result)
+    {
+        return kpp::make_unexpected(vfs::FSError{vfs::FSError::WriteError, {result.error().type}});
+    }
+    return {};
 }
 
 }

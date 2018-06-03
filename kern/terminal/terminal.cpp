@@ -217,6 +217,7 @@ void Terminal::clear(ColorPair color)
         clear_line(i, color.bg);
     }
 
+    m_dirty = true;
     draw();
 }
 

@@ -14,7 +14,6 @@
 #include <__config.hpp>
 #include <__tuple.hpp>
 #include <array.hpp>
-#include <exception.hpp>
 #include <functional.hpp>
 #include <initializer_list.hpp>
 #include <new.hpp>
@@ -25,15 +24,6 @@
 #if !defined(_LIBCPP_HAS_NO_PRAGMA_SYSTEM_HEADER)
 #pragma GCC system_header
 #endif
-
-namespace std { // explicitly not using versioning namespace
-
-class _LIBCPP_EXCEPTION_ABI bad_variant_access : public exception {
-public:
-  virtual const char* what() const _NOEXCEPT;
-};
-
-} // namespace std
 
 _LIBCPP_BEGIN_NAMESPACE_STD
 

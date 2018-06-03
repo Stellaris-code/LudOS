@@ -52,8 +52,13 @@ bool install_initrd()
             return false;
         }
 
-        auto initrd = vfs::root->create("initrd", vfs::node::Directory);
-        if (vfs::mount(root, initrd))
+        auto result = vfs::root->create("initrd", vfs::node::Directory);
+        if (!result)
+        {
+            err("Couldn't create initrd directory : %s\n", result.error().to_string());
+            return false;
+        }
+        if (vfs::mount(root, result.value()))
         {
             log(Info, "Mounted initrd\n");
             return true;

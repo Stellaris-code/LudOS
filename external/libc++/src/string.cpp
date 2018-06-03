@@ -12,7 +12,6 @@
 #include "wchar.h"
 #include "errno.h"
 #include "limits.hpp"
-#include "stdexcept.hpp"
 #include <stdio.h>
 
 _LIBCPP_BEGIN_NAMESPACE_STD
@@ -48,13 +47,13 @@ void throw_helper( const string& msg )
 inline
 void throw_from_string_out_of_range( const string& func )
 {
-    throw_helper<out_of_range>(func + ": out of range");
+    assert(false && " out of range");
 }
 
 inline
 void throw_from_string_invalid_arg( const string& func )
 {
-    throw_helper<invalid_argument>(func + ": no conversion");
+    assert(false && " no conversion");
 }
 
 // as_integer

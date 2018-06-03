@@ -22,14 +22,6 @@
 #pragma GCC system_header
 #endif
 
-namespace std {
-class _LIBCPP_EXCEPTION_ABI bad_any_cast : public bad_cast
-{
-public:
-    virtual const char* what() const _NOEXCEPT;
-};
-} // namespace std
-
 _LIBCPP_BEGIN_NAMESPACE_STD
 
 #if _LIBCPP_STD_VER > 14

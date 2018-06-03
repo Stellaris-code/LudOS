@@ -85,9 +85,13 @@ int sys_execve(user_ptr<const char> path, user_ptr<user_ptr<const char>> argv, u
             return -E2BIG;
         }
 
-        MemBuffer data;
-        data = res.target_node->read();
-        // TODO : too
+        auto result = res.target_node->read();
+        if (!result)
+        {
+            return -result.error().to_errno();
+        }
+
+        MemBuffer data = std::move(result.value());
 
         if (data.empty())
         {

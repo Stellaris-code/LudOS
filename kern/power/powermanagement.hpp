@@ -33,4 +33,12 @@ struct ShutdownMessage
 {
 
 };
+
+namespace power
+{
+
+void init_power_management();
+
+}
+
 #endif // POWERMANAGEMENT_HPP

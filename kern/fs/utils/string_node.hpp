@@ -66,7 +66,7 @@ public:
     virtual size_t size() const override { return 0; }
 
 protected:
-    [[nodiscard]] virtual MemBuffer read_impl(size_t offset, size_t size) const override
+    [[nodiscard]] virtual kpp::expected<MemBuffer, vfs::FSError> read_impl(size_t offset, size_t size) const override
     {
         //auto substr = m_str.substr(offset, size);
         auto substr = m_callback(offset, size) + '\0';

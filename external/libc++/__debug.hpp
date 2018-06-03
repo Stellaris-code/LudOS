@@ -25,7 +25,6 @@
 #   include <stdlib.h>
 #   include <stdio.h>
 #   include <stddef.h>
-#   include <exception.hpp>
 #endif
 
 #if _LIBCPP_DEBUG_LEVEL >= 1 && !defined(_LIBCPP_ASSERT)
@@ -96,20 +95,6 @@ bool __libcpp_set_debug_function(__libcpp_debug_function_type __func);
 #   error _LIBCPP_DEBUG_USE_EXCEPTIONS cannot be used when exceptions are disabled.
 # endif
 static bool __init_dummy = __libcpp_set_debug_function(__libcpp_throw_debug_function);
-#endif
-
-#if _LIBCPP_DEBUG_LEVEL >= 1 || defined(_LIBCPP_BUILDING_LIBRARY)
-class _LIBCPP_EXCEPTION_ABI __libcpp_debug_exception : public exception {
-public:
-  __libcpp_debug_exception() _NOEXCEPT;
-  explicit __libcpp_debug_exception(__libcpp_debug_info const& __i);
-  __libcpp_debug_exception(__libcpp_debug_exception const&);
-  ~__libcpp_debug_exception() _NOEXCEPT;
-  const char* what() const _NOEXCEPT;
-private:
-  struct __libcpp_debug_exception_imp;
-  __libcpp_debug_exception_imp *__imp_;
-};
 #endif
 
 #if _LIBCPP_DEBUG_LEVEL >= 2 || defined(_LIBCPP_BUILDING_LIBRARY)

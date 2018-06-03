@@ -42,7 +42,8 @@ Ext2FS::Ext2FS(Disk &disk) : FSImpl<Ext2FS>(disk)
     // these are the only supported features
     m_superblock.optional_features = (int)ext2::OptFeatureFlags::InodeExtendedAttributes | (int)ext2::OptFeatureFlags::InodeResize;
 
-    disk.enable_caching(false);
+    // NOTE ???
+    (void)disk.enable_caching(false);
 
     check_superblock_backups();
 
@@ -421,7 +422,7 @@ kpp::string Ext2FS::link_name(const ext2::Inode &inode_struct)
     return trim_zstr(str);
 }
 
-MemBuffer ext2_node::read_impl(size_t offset, size_t size) const
+kpp::expected<MemBuffer, vfs::FSError> ext2_node::read_impl(size_t offset, size_t size) const
 {
     if (this->size() >= 65536)
     {
@@ -432,7 +433,7 @@ MemBuffer ext2_node::read_impl(size_t offset, size_t size) const
     {
         auto ptr = link_target();
         if (ptr) return ptr->read(offset, size);
-        else return {}; // TODO
+        else return kpp::make_unexpected(vfs::FSError{vfs::FSError::InvalidLink});
     }
 
     size_t block_off = offset/fs.block_size();
@@ -442,7 +443,7 @@ MemBuffer ext2_node::read_impl(size_t offset, size_t size) const
 
     auto data = fs.read_data(fs.read_inode(inode), block_off, block_size);
 
-    if (byte_off == 0) { data.resize(size); return data; }
+    if (byte_off == 0) { data.resize(size); return std::move(data); }
     else { return MemBuffer(data.begin() + byte_off, data.begin() + offset + size); }
 }
 

@@ -24,12 +24,6 @@
 
 _LIBCPP_BEGIN_NAMESPACE_LFTS
 
-class _LIBCPP_EXCEPTION_ABI _LIBCPP_AVAILABILITY_BAD_ANY_CAST bad_any_cast : public bad_cast
-{
-public:
-    virtual const char* what() const _NOEXCEPT;
-};
-
 #if _LIBCPP_STD_VER > 11                                            // C++ > 11
 
 _LIBCPP_NORETURN inline _LIBCPP_ALWAYS_INLINE

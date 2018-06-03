@@ -69,12 +69,12 @@ public:
 
 void procfs::init()
 {
-    auto dir = vfs::root->create("proc", vfs::node::Directory);
-    if (!dir) panic("Could not create procfs !\n");
+    auto result = vfs::root->create("proc", vfs::node::Directory);
+    if (!result) panic("Could not create procfs : %s\n", result.error().to_string());
 
     auto root = std::make_shared<procfs_root>(vfs::root.get());
 
-    if (!vfs::mount(root, dir))
+    if (!vfs::mount(root, result.value()))
     {
         panic("Couldn't mount procfs !\n");
     }

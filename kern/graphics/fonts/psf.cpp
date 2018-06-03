@@ -68,7 +68,10 @@ bool PSFFont::load(const kpp::string &path)
         return false;
     }
 
-    m_data = file.value()->read();
+    auto data = file.value()->read();
+    if (!data) return false;
+
+    m_data = std::move(data.value());
     if (m_data.empty()) return false;
 
     return load_psf();

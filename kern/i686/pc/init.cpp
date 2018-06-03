@@ -65,8 +65,6 @@ SOFTWARE.
 
 #include "tasking/process.hpp"
 
-#include "cpp_runtime/exception_support.hpp"
-
 #include "graphics/vga.hpp"
 
 #include "elf/symbol_table.hpp"
@@ -202,8 +200,6 @@ void init(uint32_t magic, const multiboot_info_t* mbd_info)
     {
         elf::kernel_symbol_table = elf::get_symbol_table(elf_info.first, elf_info.second);
     }
-
-    init_exceptions();
 
     term().set_title(U"LudOS " LUDOS_VERSION_STRING " - build date " __DATE__,
     {0x000000, 0x00aaaa});

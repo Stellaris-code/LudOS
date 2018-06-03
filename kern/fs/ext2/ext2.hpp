@@ -129,17 +129,17 @@ public:
     }
 
     virtual kpp::string name() const override;
-    virtual void rename_impl(const kpp::string& s) override;
+    [[nodiscard]] virtual kpp::expected<kpp::dummy_t, vfs::FSError> rename_impl(const kpp::string& s) override;
 
     virtual Stat stat() const override;
     virtual void set_stat(const Stat& stat) override;
 
-    [[nodiscard]] virtual MemBuffer read_impl(size_t offset, size_t size) const override;
-    [[nodiscard]] virtual bool write_impl(size_t offset, gsl::span<const uint8_t> data) override;
+    [[nodiscard]] virtual kpp::expected<MemBuffer, vfs::FSError> read_impl(size_t offset, size_t size) const override;
+    [[nodiscard]] virtual kpp::expected<kpp::dummy_t, vfs::FSError> write_impl(size_t offset, gsl::span<const uint8_t> data) override;
     virtual std::vector<std::shared_ptr<node>> readdir_impl() override;
-    [[nodiscard]] virtual std::shared_ptr<node> create_impl(const kpp::string&, Type type) override;
-    virtual bool resize_impl(size_t size) override;
-    virtual bool remove_impl(const vfs::node*) override;
+    [[nodiscard]] virtual node::result<std::shared_ptr<node>> create_impl(const kpp::string&, Type type) override;
+    virtual node::result<kpp::dummy_t> resize_impl(size_t size) override;
+    virtual node::result<kpp::dummy_t> remove_impl(const vfs::node*) override;
     virtual size_t size() const override;
     virtual Type type() const override;
     virtual bool is_link() const override;

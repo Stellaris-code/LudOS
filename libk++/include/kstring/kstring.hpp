@@ -222,7 +222,7 @@ kernel_string<CharType, SmallStrSize> to_hex_string(unsigned v)
 {
     return do_string_conversion<int, CharType, SmallStrSize>(v, "%x");
 }
-
+// TODO : use kpp::expected
 template <typename CharType = char, size_t SmallStrSize = 60>
 unsigned long stoul(const kernel_string<CharType, SmallStrSize>& str)
 {
@@ -258,7 +258,7 @@ unsigned long khash(const kernel_string<CharType, SmallStrSize>& str)
 
 namespace std
 {
-namespace __1
+inline namespace __1
 {
 template <typename T>
 struct hash;

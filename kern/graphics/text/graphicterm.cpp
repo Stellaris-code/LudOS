@@ -111,7 +111,7 @@ void GraphicTerm::putchar(size_t x, size_t y, TermEntry entry)
 
 void GraphicTerm::clear_line(size_t y, Color color)
 {
-    if (color == term_data().color().bg)
+    if (!m_background_path.empty() && color == term_data().color().bg)
     {
         for (size_t i { 0 }; i < m_font.glyph_height(); ++i)
         {
@@ -158,7 +158,8 @@ void GraphicTerm::update_background()
     auto bckg = kgetenv("TERM_BCKG");
     if (bckg && *bckg != m_background_path)
     {
-        if (bckg->empty())
+        m_background_path = *bckg;
+        if (m_background_path.empty())
         {
             Bitmap black(m_scr.width(), m_scr.height(), color_black);
             set_wallpaper(black);
@@ -166,7 +167,7 @@ void GraphicTerm::update_background()
             return;
         }
 
-        auto img = graphics::load_image(*bckg);
+        auto img = graphics::load_image(m_background_path);
         if (!img)
         {
             warn("Invalid terminal background path : '%s'\n", bckg->c_str());
@@ -174,7 +175,6 @@ void GraphicTerm::update_background()
         }
 
         set_wallpaper(*img);
-        m_background_path = *bckg;
     }
 }
 

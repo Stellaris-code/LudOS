@@ -53,7 +53,11 @@ kpp::optional<Bitmap> load_image(const kpp::string &path)
         return {};
     }
 
-    auto data = node.value()->read();
+    auto result = node.value()->read();
+    if (!result) return {};
+
+    auto data = std::move(result.value());
+
     if (data.empty())
     {
         return {};

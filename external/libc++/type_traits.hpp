@@ -966,7 +966,7 @@ template <class _Tp> _LIBCPP_CONSTEXPR bool is_final_v
 #endif
 
 // is_aggregate
-#if _LIBCPP_STD_VER > 14 && !defined(_LIBCPP_HAS_NO_IS_AGGREGATE)
+#if _LIBCPP_STD_VER > 14 && !defined(_LIBCPP_HAS_NO_IS_AGGREGATE) && false
 
 template <class _Tp> struct _LIBCPP_TEMPLATE_VIS
 is_aggregate : public integral_constant<bool, __is_aggregate(_Tp)> {};

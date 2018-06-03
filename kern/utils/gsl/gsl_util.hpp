@@ -17,11 +17,12 @@
 #ifndef GSL_UTIL_H
 #define GSL_UTIL_H
 
+#include <stdlib.h>
+
 #include <utils/gsl/gsl_assert.hpp> // for Expects
 
 #include <array.hpp>
 #include <stddef.h>          // for ptrdiff_t, size_t
-#include <exception.hpp>        // for exception
 #include <initializer_list.hpp> // for initializer_list
 #include <type_traits.hpp>      // for is_signed, integral_constant
 #include <utility.hpp>          // for forward
@@ -87,10 +88,6 @@ inline constexpr T narrow_cast(U&& u) noexcept
 {
     return static_cast<T>(std::forward<U>(u));
 }
-
-struct narrowing_error : public std::exception
-{
-};
 
 namespace details
 {

@@ -213,7 +213,14 @@ void install_base_commands(Shell &sh)
              return -2;
          }
 
-         auto vec = file.value()->read();
+         auto result = file.value()->read();
+         if (!result)
+         {
+             sh.error("Error reading file %s : %s\n", args[0].c_str(), result.error().to_string());
+         }
+
+         auto vec = std::move(result.value());
+
          if (vec.empty())
          {
              sh.error("Can't read file %s !\n", args[0].c_str());

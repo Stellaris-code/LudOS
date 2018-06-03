@@ -12,7 +12,7 @@
 #define _LIBCPP_CONFIG
 
 #define _LIBCPP_BUILDING_LIBRARY
-#ifdef LUDOS_USER
+#if defined(LUDOS_USER) || !__EXCEPTIONS
 #define _LIBCPP_NO_EXCEPTIONS
 #endif
 #define _LIBCPP_HAS_NO_THREADS

@@ -55,8 +55,13 @@ void install_task_commands(Shell &sh)
              return -2;
          }
 
-         auto buffer = node->read();
-         auto loader = ProcessLoader::get(buffer);
+         auto result = node->read();
+         if (!result)
+         {
+             sh.error("Can't read file %s : %s\n", args[0].c_str(), result.error().to_string());
+             return -5;
+         }
+         auto loader = ProcessLoader::get(result.value());
          if (!loader)
          {
              sh.error("File '%s' is not in an executable format\n", args[0].c_str());

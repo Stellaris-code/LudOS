@@ -58,7 +58,6 @@ public:
 */
 
 #include "__config.hpp"
-#include "exception.hpp"
 #include <stddef.h>
 #include <stdint.h>
 #ifdef _LIBCPP_NO_EXCEPTIONS
@@ -197,24 +196,6 @@ public:
     _LIBCPP_INLINE_VISIBILITY
     bool operator!=(const type_info& __arg) const _NOEXCEPT
     { return !operator==(__arg); }
-};
-
-class _LIBCPP_EXCEPTION_ABI bad_cast
-    : public exception
-{
-public:
-    bad_cast() _NOEXCEPT;
-    virtual ~bad_cast() _NOEXCEPT;
-    virtual const char* what() const _NOEXCEPT;
-};
-
-class _LIBCPP_EXCEPTION_ABI bad_typeid
-    : public exception
-{
-public:
-    bad_typeid() _NOEXCEPT;
-    virtual ~bad_typeid() _NOEXCEPT;
-    virtual const char* what() const _NOEXCEPT;
 };
 
 }  // std

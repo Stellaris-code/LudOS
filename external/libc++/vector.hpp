@@ -269,7 +269,6 @@ void swap(vector<T,Allocator>& x, vector<T,Allocator>& y)
 #include "limits.hpp"
 #include "initializer_list.hpp"
 #include "memory.hpp"
-#include "stdexcept.hpp"
 #include "algorithm.hpp"
 #include <string.h>
 #include "__split_buffer.hpp"
@@ -299,14 +298,14 @@ template <bool __b>
 void
 __vector_base_common<__b>::__throw_length_error() const
 {
-    _VSTD::__throw_length_error("vector");
+    assert(false && "vector");
 }
 
 template <bool __b>
 void
 __vector_base_common<__b>::__throw_out_of_range() const
 {
-    _VSTD::__throw_out_of_range("vector");
+    assert(false && "vector");
 }
 
 _LIBCPP_EXTERN_TEMPLATE(class _LIBCPP_EXTERN_TEMPLATE_TYPE_VIS __vector_base_common<true>)

@@ -156,7 +156,6 @@ template <class T, class Allocator>
 #include "initializer_list.hpp"
 #include "iterator.hpp"
 #include "algorithm.hpp"
-#include "stdexcept.hpp"
 
 #if !defined(_LIBCPP_HAS_NO_PRAGMA_SYSTEM_HEADER)
 #pragma GCC system_header
@@ -905,14 +904,14 @@ template <bool __b>
 void
 __deque_base_common<__b>::__throw_length_error() const
 {
-    _VSTD::__throw_length_error("deque");
+    assert(false && "deque");
 }
 
 template <bool __b>
 void
 __deque_base_common<__b>::__throw_out_of_range() const
 {
-    _VSTD::__throw_out_of_range("deque");
+    assert(false && "deque");
 }
 
 template <class _Tp, class _Allocator>

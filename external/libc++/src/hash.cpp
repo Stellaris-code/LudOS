@@ -9,7 +9,6 @@
 
 #include "__hash_table.hpp"
 #include "algorithm.hpp"
-#include "stdexcept.hpp"
 #include "type_traits.hpp"
 
 #ifdef __clang__

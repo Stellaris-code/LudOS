@@ -14,7 +14,6 @@
 #include "__config.hpp"
 #include "type_traits.hpp"
 #include "typeinfo.hpp"
-#include "exception.hpp"
 #include "memory.hpp"
 #include "tuple.hpp"
 #include "utility.hpp"
@@ -917,18 +916,6 @@ mem_fn(_Rp _Tp::* __pm) _NOEXCEPT
 //                                FUNCTION
 //==============================================================================
 
-// bad_function_call
-
-class _LIBCPP_EXCEPTION_ABI bad_function_call
-    : public exception
-{
-#ifdef _LIBCPP_ABI_BAD_FUNCTION_CALL_KEY_FUNCTION
-public:
-    virtual ~bad_function_call() _NOEXCEPT;
-
-    virtual const char* what() const _NOEXCEPT;
-#endif
-};
 
 _LIBCPP_NORETURN inline _LIBCPP_ALWAYS_INLINE
 void __throw_bad_function_call()

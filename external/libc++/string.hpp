@@ -468,7 +468,6 @@ basic_string<char32_t> operator "" s( const char32_t *str, size_t len ); // C++1
 
 #include "__config.hpp"
 #include "string_view.hpp"
-#include "iosfwd.hpp"
 #include <string.h>
 #include <stdio.h>  // For EOF.
 #include <wchar.h>
@@ -495,44 +494,13 @@ _LIBCPP_PUSH_MACROS
 
 _LIBCPP_BEGIN_NAMESPACE_STD
 
-// fpos
-
-template <class _StateT>
-class _LIBCPP_TEMPLATE_VIS fpos
-{
-private:
-    _StateT __st_;
-    streamoff __off_;
-public:
-    _LIBCPP_INLINE_VISIBILITY fpos(streamoff __off = streamoff()) : __st_(), __off_(__off) {}
-
-    _LIBCPP_INLINE_VISIBILITY operator streamoff() const {return __off_;}
-
-    _LIBCPP_INLINE_VISIBILITY _StateT state() const {return __st_;}
-    _LIBCPP_INLINE_VISIBILITY void state(_StateT __st) {__st_ = __st;}
-
-    _LIBCPP_INLINE_VISIBILITY fpos& operator+=(streamoff __off) {__off_ += __off; return *this;}
-    _LIBCPP_INLINE_VISIBILITY fpos  operator+ (streamoff __off) const {fpos __t(*this); __t += __off; return __t;}
-    _LIBCPP_INLINE_VISIBILITY fpos& operator-=(streamoff __off) {__off_ -= __off; return *this;}
-    _LIBCPP_INLINE_VISIBILITY fpos  operator- (streamoff __off) const {fpos __t(*this); __t -= __off; return __t;}
-};
-
-template <class _StateT>
-inline _LIBCPP_INLINE_VISIBILITY
-streamoff operator-(const fpos<_StateT>& __x, const fpos<_StateT>& __y)
-    {return streamoff(__x) - streamoff(__y);}
-
-template <class _StateT>
-inline _LIBCPP_INLINE_VISIBILITY
-bool operator==(const fpos<_StateT>& __x, const fpos<_StateT>& __y)
-    {return streamoff(__x) == streamoff(__y);}
-
-template <class _StateT>
-inline _LIBCPP_INLINE_VISIBILITY
-bool operator!=(const fpos<_StateT>& __x, const fpos<_StateT>& __y)
-    {return streamoff(__x) != streamoff(__y);}
-
 // basic_string
+template <class _CharT,             // for <stdexcept>
+          class _Traits = char_traits<_CharT>,
+          class _Allocator = allocator<_CharT> >
+    class _LIBCPP_TEMPLATE_VIS basic_string;
+typedef basic_string<char, char_traits<char>, allocator<char> > string;
+typedef basic_string<wchar_t, char_traits<wchar_t>, allocator<wchar_t> > wstring;
 
 template<class _CharT, class _Traits, class _Allocator>
 basic_string<_CharT, _Traits, _Allocator>
@@ -3925,115 +3893,6 @@ hash<basic_string<_CharT, _Traits, _Allocator> >::operator()(
 {
     return __do_string_hash(__val.data(), __val.data() + __val.size());
 }
-
-template<class _CharT, class _Traits, class _Allocator>
-basic_ostream<_CharT, _Traits>&
-operator<<(basic_ostream<_CharT, _Traits>& __os,
-           const basic_string<_CharT, _Traits, _Allocator>& __str);
-
-template<class _CharT, class _Traits, class _Allocator>
-basic_istream<_CharT, _Traits>&
-operator>>(basic_istream<_CharT, _Traits>& __is,
-           basic_string<_CharT, _Traits, _Allocator>& __str);
-
-template<class _CharT, class _Traits, class _Allocator>
-basic_istream<_CharT, _Traits>&
-getline(basic_istream<_CharT, _Traits>& __is,
-        basic_string<_CharT, _Traits, _Allocator>& __str, _CharT __dlm);
-
-template<class _CharT, class _Traits, class _Allocator>
-inline _LIBCPP_INLINE_VISIBILITY
-basic_istream<_CharT, _Traits>&
-getline(basic_istream<_CharT, _Traits>& __is,
-        basic_string<_CharT, _Traits, _Allocator>& __str);
-
-#ifndef _LIBCPP_CXX03_LANG
-
-template<class _CharT, class _Traits, class _Allocator>
-inline _LIBCPP_INLINE_VISIBILITY
-basic_istream<_CharT, _Traits>&
-getline(basic_istream<_CharT, _Traits>&& __is,
-        basic_string<_CharT, _Traits, _Allocator>& __str, _CharT __dlm);
-
-template<class _CharT, class _Traits, class _Allocator>
-inline _LIBCPP_INLINE_VISIBILITY
-basic_istream<_CharT, _Traits>&
-getline(basic_istream<_CharT, _Traits>&& __is,
-        basic_string<_CharT, _Traits, _Allocator>& __str);
-
-#endif  // _LIBCPP_CXX03_LANG
-
-#if _LIBCPP_DEBUG_LEVEL >= 2
-
-template<class _CharT, class _Traits, class _Allocator>
-bool
-basic_string<_CharT, _Traits, _Allocator>::__dereferenceable(const const_iterator* __i) const
-{
-    return this->data() <= _VSTD::__to_raw_pointer(__i->base()) &&
-           _VSTD::__to_raw_pointer(__i->base()) < this->data() + this->size();
-}
-
-template<class _CharT, class _Traits, class _Allocator>
-bool
-basic_string<_CharT, _Traits, _Allocator>::__decrementable(const const_iterator* __i) const
-{
-    return this->data() < _VSTD::__to_raw_pointer(__i->base()) &&
-           _VSTD::__to_raw_pointer(__i->base()) <= this->data() + this->size();
-}
-
-template<class _CharT, class _Traits, class _Allocator>
-bool
-basic_string<_CharT, _Traits, _Allocator>::__addable(const const_iterator* __i, ptrdiff_t __n) const
-{
-    const value_type* __p = _VSTD::__to_raw_pointer(__i->base()) + __n;
-    return this->data() <= __p && __p <= this->data() + this->size();
-}
-
-template<class _CharT, class _Traits, class _Allocator>
-bool
-basic_string<_CharT, _Traits, _Allocator>::__subscriptable(const const_iterator* __i, ptrdiff_t __n) const
-{
-    const value_type* __p = _VSTD::__to_raw_pointer(__i->base()) + __n;
-    return this->data() <= __p && __p < this->data() + this->size();
-}
-
-#endif  // _LIBCPP_DEBUG_LEVEL >= 2
-
-_LIBCPP_EXTERN_TEMPLATE(class _LIBCPP_EXTERN_TEMPLATE_TYPE_VIS basic_string<char>)
-_LIBCPP_EXTERN_TEMPLATE(class _LIBCPP_EXTERN_TEMPLATE_TYPE_VIS basic_string<wchar_t>)
-
-#if _LIBCPP_STD_VER > 11
-// Literal suffixes for basic_string [basic.string.literals]
-inline namespace literals
-{
-  inline namespace string_literals
-  {
-    inline _LIBCPP_INLINE_VISIBILITY
-    basic_string<char> operator "" s( const char *__str, size_t __len )
-    {
-        return basic_string<char> (__str, __len);
-    }
-
-    inline _LIBCPP_INLINE_VISIBILITY
-    basic_string<wchar_t> operator "" s( const wchar_t *__str, size_t __len )
-    {
-        return basic_string<wchar_t> (__str, __len);
-    }
-
-    inline _LIBCPP_INLINE_VISIBILITY
-    basic_string<char16_t> operator "" s( const char16_t *__str, size_t __len )
-    {
-        return basic_string<char16_t> (__str, __len);
-    }
-
-    inline _LIBCPP_INLINE_VISIBILITY
-    basic_string<char32_t> operator "" s( const char32_t *__str, size_t __len )
-    {
-        return basic_string<char32_t> (__str, __len);
-    }
-  }
-}
-#endif
 
 _LIBCPP_END_NAMESPACE_STD
 

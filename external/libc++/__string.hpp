@@ -76,8 +76,8 @@ struct _LIBCPP_TEMPLATE_VIS char_traits
 {
     typedef _CharT    char_type;
     typedef int       int_type;
-    typedef streamoff off_type;
-    typedef streampos pos_type;
+    typedef long off_type;
+    typedef long pos_type;
     typedef mbstate_t state_type;
 
     static inline void _LIBCPP_CONSTEXPR_AFTER_CXX14
@@ -200,8 +200,8 @@ struct _LIBCPP_TEMPLATE_VIS char_traits<char>
 {
     typedef char      char_type;
     typedef int       int_type;
-    typedef streamoff off_type;
-    typedef streampos pos_type;
+    typedef long off_type;
+    typedef long pos_type;
     typedef mbstate_t state_type;
 
     static inline _LIBCPP_CONSTEXPR_AFTER_CXX14
@@ -290,8 +290,8 @@ struct _LIBCPP_TEMPLATE_VIS char_traits<wchar_t>
 {
     typedef wchar_t   char_type;
     typedef wint_t    int_type;
-    typedef streamoff off_type;
-    typedef streampos pos_type;
+    typedef long off_type;
+    typedef long pos_type;
     typedef mbstate_t state_type;
 
     static inline _LIBCPP_CONSTEXPR_AFTER_CXX14
@@ -396,8 +396,8 @@ struct _LIBCPP_TEMPLATE_VIS char_traits<char16_t>
 {
     typedef char16_t       char_type;
     typedef uint16_t int_type;
-    typedef streamoff      off_type;
-    typedef u16streampos   pos_type;
+    typedef long      off_type;
+    typedef uint16_t   pos_type;
     typedef mbstate_t      state_type;
 
     static inline _LIBCPP_CONSTEXPR_AFTER_CXX14
@@ -515,8 +515,8 @@ struct _LIBCPP_TEMPLATE_VIS char_traits<char32_t>
 {
     typedef char32_t       char_type;
     typedef uint32_t int_type;
-    typedef streamoff      off_type;
-    typedef u32streampos   pos_type;
+    typedef long      off_type;
+    typedef uint32_t   pos_type;
     typedef mbstate_t      state_type;
 
     static inline _LIBCPP_CONSTEXPR_AFTER_CXX14

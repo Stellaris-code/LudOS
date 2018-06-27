@@ -262,7 +262,6 @@ void swap(vector<T,Allocator>& x, vector<T,Allocator>& y)
 */
 
 #include "__config.hpp"
-#include "iosfwd.hpp" // for forward declaration of vector
 #include "__bit_reference.hpp"
 #include "type_traits.hpp"
 #include <limits.h>
@@ -284,6 +283,10 @@ _LIBCPP_PUSH_MACROS
 #include "__debug.hpp"
 
 _LIBCPP_BEGIN_NAMESPACE_STD
+
+template<class _Tp>     class _LIBCPP_TEMPLATE_VIS allocator;
+template <class _Tp, class _Alloc = allocator<_Tp> >
+class _LIBCPP_TEMPLATE_VIS vector;
 
 template <bool>
 class __vector_base_common

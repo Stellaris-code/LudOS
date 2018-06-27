@@ -267,13 +267,7 @@ ABORT_VARIANT_VP_VP(vla_bound_not_positive);
 
 struct ubsan_float_cast_overflow_data
 {
-    // TODO: Remove this GCC 5.x compatibility after switching to GCC 6.x. The
-    //       GCC developers accidentally forgot the source location. Their
-    //       libubsan probes to see if it looks like a path, but we don't need
-    //       to maintain compatibility with multiple gcc releases. See below.
-#if !(defined(__GNUC__) && __GNUC__< 6)
     struct ubsan_source_location location;
-#endif
     struct ubsan_type_descriptor* from_type;
     struct ubsan_type_descriptor* to_type;
 };

@@ -21,7 +21,6 @@
 #include "limits.hpp"
 #include "iterator.hpp"
 #include "__functional_base.hpp"
-#include "iosfwd.hpp"
 #include "tuple.hpp"
 #include <string.h>
 #include <assert.h>
@@ -4628,12 +4627,6 @@ struct _LIBCPP_TEMPLATE_VIS hash<shared_ptr<_Tp> >
         return hash<_Tp*>()(__ptr.get());
     }
 };
-
-template<class _CharT, class _Traits, class _Yp>
-inline _LIBCPP_INLINE_VISIBILITY
-basic_ostream<_CharT, _Traits>&
-operator<<(basic_ostream<_CharT, _Traits>& __os, shared_ptr<_Yp> const& __p);
-
 
 #if !defined(_LIBCPP_HAS_NO_ATOMIC_HEADER)
 

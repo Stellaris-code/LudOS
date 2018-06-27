@@ -76,7 +76,7 @@ void Disk::set_read_only(bool val)
 
 kpp::expected<MemBuffer, DiskError> Disk::read(size_t offset, size_t size) const
 {
-    LOCK(read_lock);
+    //LOCK(read_lock);
 
     const size_t sect_size = sector_size();
 
@@ -98,7 +98,7 @@ kpp::expected<MemBuffer, DiskError> Disk::read(size_t offset, size_t size) const
 
     assert(data.size() >= offset + size);
 
-    UNLOCK(read_lock);
+    //UNLOCK(read_lock);
 
     return MemBuffer{data.begin() + offset, data.begin() + offset + size};
 }
@@ -111,7 +111,7 @@ kpp::expected<MemBuffer, DiskError> Disk::read() const
 [[nodiscard]]
 kpp::expected<kpp::dummy_t, DiskError> Disk::write_offseted_sector(size_t base, size_t byte_off, gsl::span<const uint8_t> data)
 {
-    LOCK(write_lock);
+    //LOCK(write_lock);
 
     assert((size_t)data.size() <= sector_size());
     assert(data.size() + byte_off <= disk_size());
@@ -140,7 +140,7 @@ kpp::expected<kpp::dummy_t, DiskError> Disk::write_offseted_sector(size_t base, 
         byte_off = 0;
     }
 
-    UNLOCK(write_lock);
+    //UNLOCK(write_lock);
 
     return {};
 }

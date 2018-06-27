@@ -144,7 +144,6 @@ struct node
     [[nodiscard]] result<MemBuffer> read() const { return read(0, size()); }
     [[nodiscard]] result<kpp::dummy_t> write(size_t offset, gsl::span<const uint8_t> data);
     [[nodiscard]] result<std::shared_ptr<node>> create(const kpp::string&, Type);
-    // TODO : error
     result<kpp::dummy_t> resize(size_t);
     std::vector<std::shared_ptr<node>> readdir();
     std::vector<std::shared_ptr<const node>> readdir() const;

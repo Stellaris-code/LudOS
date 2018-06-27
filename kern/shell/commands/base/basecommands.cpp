@@ -259,7 +259,7 @@ void install_base_commands(Shell &sh)
 
          kpp::string alias = args[0];
          auto toks = std::vector<kpp::string>{args.begin() + 1, args.end()};
-         panic("Implement"); // TODO ::::
+         panic("Implement"); // TODO !!!
          for (auto& tok : toks) { tok = '"' + tok + '"'; }
          kpp::string cmd = join(toks, " ");
 

@@ -20,9 +20,7 @@
 #include <utils/gsl/gsl_assert.hpp>  // for Ensures, Expects
 
 #include <algorithm.hpp>    // for forward
-#include <iosfwd.hpp>       // for ptrdiff_t, nullptr_t, ostream, size_t
 #include <memory.hpp>       // for shared_ptr, unique_ptr
-#include <system_error.hpp> // for hash
 #include <type_traits.hpp>  // for enable_if_t, is_convertible, is_assignable
 
 #if defined(_MSC_VER) && _MSC_VER < 1910
@@ -113,13 +111,6 @@ public:
 private:
     T ptr_;
 };
-
-template <class T>
-std::ostream& operator<<(std::ostream& os, const not_null<T>& val)
-{
-    os << val.get();
-    return os;
-}
 
 template <class T, class U>
 auto operator==(const not_null<T>& lhs, const not_null<U>& rhs) -> decltype(lhs.get() == rhs.get())

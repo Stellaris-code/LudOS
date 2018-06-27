@@ -371,7 +371,7 @@ void install_fs_commands(Shell &sh)
          return 0;
      }});
 
-    // TODO : do this to others
+    // TODO : do this to others (le sh.get_path)
     sh.register_command(
     {"mkdir", "creates a directory",
      "Usage : mkdir <name>",

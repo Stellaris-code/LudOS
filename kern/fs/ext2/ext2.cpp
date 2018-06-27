@@ -42,9 +42,6 @@ Ext2FS::Ext2FS(Disk &disk) : FSImpl<Ext2FS>(disk)
     // these are the only supported features
     m_superblock.optional_features = (int)ext2::OptFeatureFlags::InodeExtendedAttributes | (int)ext2::OptFeatureFlags::InodeResize;
 
-    // NOTE ???
-    (void)disk.enable_caching(false);
-
     check_superblock_backups();
 
     m_superblock.last_mount_time = Time::epoch();

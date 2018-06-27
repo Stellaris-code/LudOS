@@ -41,7 +41,7 @@ struct EnvVarChange
 
 void read_from_cmdline(const kpp::string& cmdline);
 
-kpp::optional<kpp::string> kgetenv(kpp::string s);
-void ksetenv(const kpp::string& key, kpp::string val);
+kpp::optional<kpp::string> kgetenv(const kpp::string &s);
+void ksetenv(const kpp::string& key, const kpp::string &val);
 
 #endif

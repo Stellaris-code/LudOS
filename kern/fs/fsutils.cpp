@@ -174,7 +174,7 @@ QueryResult user_find(const kpp::string &path)
     return user_find(path, Process::current());
 }
 
-inline QueryResult resolve_symlink(const std::shared_ptr<node> link)
+inline QueryResult resolve_symlink(const std::shared_ptr<node>& link)
 {
     std::shared_ptr<vfs::node> cur_node = link;
     size_t counter = 0;

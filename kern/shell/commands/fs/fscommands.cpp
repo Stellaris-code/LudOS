@@ -148,7 +148,7 @@ void install_fs_commands(Shell &sh)
              size = kpp::stoul(args[2]);
          }
 
-         auto result = node->read();
+         auto result = node->read(offset, size);
          if (!result)
          {
              sh.error("Error reading file %s : %s\n", args[0].c_str(), result.error().to_string());
@@ -392,7 +392,7 @@ void install_fs_commands(Shell &sh)
 
          if (!node->create(filename(args[0]), vfs::node::Directory))
          {
-             sh.error("Could not create directory '%s'\n", filename(args[0].c_str()));
+             sh.error("Could not create directory '%s'\n", filename(args[0].c_str()).c_str());
              return -3;
          }
 

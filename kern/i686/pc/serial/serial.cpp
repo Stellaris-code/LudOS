@@ -83,7 +83,7 @@ void set_data_length(uint16_t comport, uint8_t length)
 void set_stop_bits(uint16_t comport, bool bits)
 {
     uint8_t line_ctl = inb(comport+LINE_CTL);
-    bit_change(line_ctl, 2, bits);
+    bit_change(line_ctl, bits, 2);
     outb(comport+LINE_CTL, line_ctl);
 }
 

@@ -32,5 +32,6 @@ SOFTWARE.
 void sys_panic(user_ptr<const char> string)
 {
     panic_regs = &Process::current().arch_context->regs;
-    panic("%s", string);
+    if (string.check())
+        panic("%s", string.get());
 }

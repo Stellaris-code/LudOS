@@ -105,12 +105,12 @@ bool Controller::common_handler(BusPort port)
     return true;
 }
 
-bool Controller::int14_handler(const registers *regs)
+bool Controller::int14_handler(const registers *)
 {
     return common_handler(BusPort::Primary);
 }
 
-bool Controller::int15_handler(const registers *regs)
+bool Controller::int15_handler(const registers *)
 {
     return common_handler(BusPort::Secondary);
 }

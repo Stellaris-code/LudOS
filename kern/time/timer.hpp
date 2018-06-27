@@ -45,7 +45,8 @@ private:
         Callback() = default;
 
         Callback(uint32_t istart, uint32_t iduration, std::function<void()> icallback, bool ioneshot)
-            : start(istart), duration(iduration), callback(icallback), oneshot(ioneshot), to_be_deleted(false)
+            : start(istart), duration(iduration), callback(std::move(icallback)),
+              oneshot(ioneshot)
         {
 
         }
@@ -83,7 +84,7 @@ public:
         while (m_ticks < interval) { nop(); }
     }
 
-    static inline bool sleep_until(std::function<bool()> callback, uint32_t timeout = 0)
+    static inline bool sleep_until(const std::function<bool()>& callback, uint32_t timeout = 0)
     {
         uint32_t interval = timeout/(1000/freq());
         m_ticks = 0;
@@ -92,7 +93,7 @@ public:
         return callback();
     }
 
-    static inline bool sleep_until_int(std::function<bool()> callback, uint32_t timeout = 0)
+    static inline bool sleep_until_int(const std::function<bool()>& callback, uint32_t timeout = 0)
     {
         uint32_t interval = timeout/(1000/freq());
         m_ticks = 0;

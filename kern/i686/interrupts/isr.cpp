@@ -137,7 +137,7 @@ const registers* irq_handler(const registers* const regs)
 
 void isr::register_handler(uint8_t num, isr::isr_t handler)
 {
-    handlers[num] = handler;
+    handlers[num] = std::move(handler);
 }
 
 void isr::delete_handler(uint8_t num)

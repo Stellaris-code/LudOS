@@ -40,6 +40,6 @@ typedef volatile int spinlock_t;
         __sync_synchronize();
 #define UNLOCK_VAL(name) \
         __sync_synchronize(); \
-        *name = 0;
+        *(name) = 0;
 
 #endif // _SPINLOCK_HPP

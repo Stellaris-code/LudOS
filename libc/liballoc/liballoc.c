@@ -27,7 +27,7 @@
 #define ALIGNMENT	sizeof(uintptr_t)//4ul				///< This is the byte alignment that memory must be allocated on. IMPORTANT for GTK and other stuff.
 
 #define ALIGN_TYPE		uint32_t ///unsigned char[16] /// unsigned short
-#define ALIGN_INFO		sizeof(ALIGN_TYPE)*4	///< Alignment information is stored right before the pointer. This is the number of bytes of information stored there.
+#define ALIGN_INFO		(sizeof(ALIGN_TYPE)*4)	///< Alignment information is stored right before the pointer. This is the number of bytes of information stored there.
 
 
 #define USE_CASE1

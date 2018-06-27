@@ -30,7 +30,7 @@ const char* strstr( const char* s1, const char* s2 )
     int i, j;
     int flag = 0;
 
-    if ((s2 == NULL || s1 == NULL)) return NULL;
+    if ((s2 == nullptr || s1 == nullptr)) return nullptr;
 
     for( i = 0; s2[i] != '\0'; i++)
     {
@@ -47,5 +47,5 @@ const char* strstr( const char* s1, const char* s2 )
     }
 
     if (flag) return (s2+i);
-    else return NULL;
+    else return nullptr;
 }

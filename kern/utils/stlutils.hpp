@@ -127,7 +127,7 @@ kpp::string inline trim_left(kpp::string str)
 
 kpp::string inline trim(kpp::string str)
 {
-    return trim_right(trim_left(str));
+    return trim_right(trim_left(std::move(str)));
 }
 
 template <class ContainerT = std::vector<kpp::string>>

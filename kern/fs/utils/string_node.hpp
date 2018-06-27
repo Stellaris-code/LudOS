@@ -29,19 +29,21 @@ SOFTWARE.
 
 #include <functional.hpp>
 
+#include "utils/logging.hpp"
+
 struct string_node : public vfs::node
 {
 public:
     string_node(kpp::string name, std::function<kpp::string(size_t,size_t)> fun)
-        : m_name(name)
+        : m_name(std::move(name))
     {
-        m_callback = fun;
+        m_callback = std::move(fun);
     }
 
     string_node(kpp::string name, std::function<kpp::string()> fun)
-        : m_name(name)
+        : m_name(std::move(name))
     {
-        m_callback = [fun](size_t off, size_t size)
+        m_callback = [fun = std::move(fun)](size_t off, size_t size)
         {
             auto str = fun();
             if (off >= str.length()) return kpp::string();
@@ -50,9 +52,9 @@ public:
     }
 
     string_node(kpp::string name, kpp::string str)
-        : m_name(name)
+        : m_name(std::move(name))
     {
-        m_callback = [str](size_t off, size_t size)
+        m_callback = [str = std::move(str)](size_t off, size_t size)
         {
             if (off >= str.length()) return kpp::string();
             return str.substr(off, size);
@@ -68,7 +70,6 @@ public:
 protected:
     [[nodiscard]] virtual kpp::expected<MemBuffer, vfs::FSError> read_impl(size_t offset, size_t size) const override
     {
-        //auto substr = m_str.substr(offset, size);
         auto substr = m_callback(offset, size) + '\0';
         return MemBuffer{substr.begin(), substr.end()};
     }

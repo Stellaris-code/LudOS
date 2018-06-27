@@ -162,7 +162,7 @@ class DiskImpl : public Disk
 {
 public:
     DiskImpl() : Disk() { }
-    DiskImpl(DiskImpl&&) : Disk() {}
+    DiskImpl(DiskImpl&&) noexcept : Disk() {}
 
 public:
     template <typename... Args>
@@ -192,7 +192,7 @@ protected:
     virtual kpp::expected<kpp::dummy_t, DiskError> write_sector(size_t sector, gsl::span<const uint8_t> data) override;
 
 public:
-    MemoryDisk(uint8_t* data, size_t size, const kpp::string& name);
+    MemoryDisk(uint8_t* data, size_t size, kpp::string name);
     MemoryDisk(const uint8_t* data, size_t size, const kpp::string& name);
 
 private:

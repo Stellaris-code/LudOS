@@ -33,6 +33,7 @@ SOFTWARE.
 template <typename T>
 struct user_ptr
 {
+    // TODO : string check
     bool check(size_t size = sizeof(T))
     {
         return Memory::check_user_ptr((const void*)ptr, size);

@@ -62,9 +62,7 @@ Disk::Disk()
     (void)enable_caching(true);
 }
 
-Disk::~Disk()
-{
-}
+Disk::~Disk() = default;
 
 bool Disk::read_only() const
 {
@@ -215,8 +213,8 @@ ref_vector<Disk> Disk::disks()
     return vec;
 }
 
-MemoryDisk::MemoryDisk(uint8_t* data, size_t size, const kpp::string& name)
-    : DiskImpl<MemoryDisk>(), m_size(size), m_data(data), m_name(name)
+MemoryDisk::MemoryDisk(uint8_t* data, size_t size, kpp::string name)
+    : DiskImpl<MemoryDisk>(), m_size(size), m_data(data), m_name(std::move(name))
 {
     (void)enable_caching(false);
 }

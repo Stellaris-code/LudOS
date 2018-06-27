@@ -43,7 +43,7 @@ void read_from_cmdline(const kpp::string& cmdline)
     }
 }
 
-kpp::optional<kpp::string> kgetenv(kpp::string s)
+kpp::optional<kpp::string> kgetenv(const kpp::string& s)
 {
     if (kenv.find(s) != kenv.end())
     {
@@ -55,7 +55,7 @@ kpp::optional<kpp::string> kgetenv(kpp::string s)
     }
 }
 
-void ksetenv(const kpp::string &key, kpp::string val)
+void ksetenv(const kpp::string &key, const kpp::string& val)
 {
     kenv[key] = val;
     MessageBus::send<EnvVarChange>({key, val});

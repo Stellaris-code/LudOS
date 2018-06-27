@@ -218,7 +218,7 @@ std::vector<std::shared_ptr<tar_node> > TarFS::list_nodes()
 
 void TarFS::prune_directories_names(std::vector<std::shared_ptr<tar_node>> dirs)
 {
-    for (auto node : dirs)
+    for (const auto& node : dirs)
     {
         if (node->m_type == vfs::node::Directory)
         {

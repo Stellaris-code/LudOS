@@ -55,10 +55,10 @@ template <typename T>
 class optional
 {
 public:
-    constexpr optional() {}
+    constexpr optional() = default;
     constexpr optional(nullopt_t) {}
     constexpr optional(const optional& other) { if (other) allocate(other.value()); }
-    constexpr optional(optional&& other) { if (other) allocate(std::move(other.value())); }
+    constexpr optional(optional&& other) noexcept { if (other) allocate(std::move(other.value())); }
     template <typename U = T>
     constexpr optional(U&& val) { allocate(std::forward<U>(val)); }
 
@@ -87,7 +87,7 @@ public:
 
         return *this;
     }
-    optional& operator=(optional&& other )
+    optional& operator=(optional&& other ) noexcept
     {
         if (other && !has_value())
         {

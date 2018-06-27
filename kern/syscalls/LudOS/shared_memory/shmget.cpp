@@ -62,7 +62,7 @@ int sys_shmget(key_t key, size_t size, int shmflags)
 
         assert(!Process::current().data->shm_list.count(key));
         Process::current().data->shm_list[key].shm = shm;
-        Process::current().data->shm_list[key].v_addr = 0; // not yet mapped
+        Process::current().data->shm_list[key].v_addr = nullptr; // not yet mapped
 
         return key;
     }

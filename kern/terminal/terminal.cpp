@@ -313,7 +313,7 @@ void Terminal::set_title(kpp::u32string str, ColorPair color)
 
 void Terminal::set_title(kpp::u32string str)
 {
-    set_title(str, m_data.color());
+    set_title(std::move(str), m_data.color());
 }
 
 void Terminal::set_accept_input(bool val)

@@ -70,7 +70,8 @@ void Process::reset(gsl::span<const uint8_t> code_to_copy, size_t allocated_size
 
 void Process::init_default_fds()
 {
-    assert(data->fd_table = std::make_shared<std::vector<tasking::FDInfo>>());
+    data->fd_table = std::make_shared<std::vector<tasking::FDInfo>>();
+    assert(data->fd_table);
 
     assert(vfs::find("/dev/stdout"));
     assert(vfs::find("/dev/stdin"));

@@ -33,12 +33,12 @@ void sys_print_serial(user_ptr<const char> string)
 {
     if (!string.check()) return;
 
-    log_serial("%s", string);
+    log_serial("%s", string.get());
 }
 
 void sys_print_debug(user_ptr<const char> string)
 {
     if (!string.check()) return;
 
-    kprintf("%s", string);
+    kprintf("%s", string.get());
 }

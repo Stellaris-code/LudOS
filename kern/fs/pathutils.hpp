@@ -29,6 +29,8 @@ SOFTWARE.
 
 #include "utils/stlutils.hpp"
 
+// TODO : use string_view
+
 inline kpp::string filename(const kpp::string& path)
 {
     return tokenize(path, "/").back();

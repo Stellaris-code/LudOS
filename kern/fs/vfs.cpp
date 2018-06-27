@@ -56,7 +56,7 @@ void init()
 
     MessageBus::register_handler<ShutdownMessage>([](const ShutdownMessage&)
     {
-        for (auto ptr : mounted_nodes)
+        for (const auto& ptr : mounted_nodes)
         {
             if (!ptr.expired()) ptr.lock()->~node(); // force unmounting of mounted nodes
         }
@@ -73,16 +73,14 @@ node::node(node *parent)
     m_stat = mkstat();
 }
 
-node::~node()
-{
-}
+node::~node() = default;
 
 node::result<kpp::dummy_t> node::rename(const kpp::string &name)
 {
     // Check if no entries with the same name already exist
     if (parent())
     {
-        for (auto node : parent()->readdir())
+        for (const auto& node : parent()->readdir())
         {
             if (node->name() == name) return kpp::make_unexpected(FSError{FSError::AlreadyExists});
         }
@@ -236,7 +234,7 @@ node::result<kpp::dummy_t> vfs_root::remove_impl(const node *child)
     m_children.erase(std::remove_if(m_children.begin(), m_children.end(), [child, &found](std::shared_ptr<node> node)
     {
         return found = (node.get() == child);
-    }));
+    }), m_children.end());
 
     if (!found)
     {
@@ -252,7 +250,7 @@ symlink::symlink(kpp::string target)
 }
 
 symlink::symlink(kpp::string target, kpp::string name)
-    : m_target(target), m_linkname(name)
+    : m_target(std::move(target)), m_linkname(std::move(name))
 {
 
 }

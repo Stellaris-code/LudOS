@@ -209,7 +209,7 @@ void detail::get_ahci_ownership()
     Timer::sleep_until([&]{return !(mem->bohc & bohc_bios_busy);}, 2000); // allow the BIOS to end any operation; the spec allows for 2sec
 }
 
-bool detail::ahci_isr(const registers *reg)
+bool detail::ahci_isr(const registers *)
 {
     log(Debug, "Interrupt !!\n");
     return true;
@@ -303,7 +303,7 @@ bool detail::issue_read_command(size_t port, uint64_t sector, size_t count, uint
     flush_commands(port);
 
     // Wait for completion
-    while (1)
+    while (true)
     {
         // In some longer duration reads, it may be helpful to spin on the DPS bit
         // in the PxIS port field as well (1 << 5)
@@ -388,7 +388,7 @@ bool detail::issue_write_command(size_t port, uint64_t sector, size_t count, con
     mem->ports[port].ci = 1<<slot;	// Issue command
     flush_commands(port);
     // Wait for completion
-    while (1)
+    while (true)
     {
         // In some longer duration reads, it may be helpful to spin on the DPS bit
         // in the PxIS port field as well (1 << 5)
@@ -453,7 +453,7 @@ bool detail::issue_identify_command(size_t port, ide::identify_data* buf)
     flush_commands(port);
 
     // Wait for completion
-    while (1)
+    while (true)
     {
         // In some longer duration reads, it may be helpful to spin on the DPS bit
         // in the PxIS port field as well (1 << 5)
@@ -516,7 +516,7 @@ bool detail::issue_cache_flush_command(size_t port)
     flush_commands(port);
 
     // Wait for completion
-    while (1)
+    while (true)
     {
         // In some longer duration reads, it may be helpful to spin on the DPS bit
         // in the PxIS port field as well (1 << 5)

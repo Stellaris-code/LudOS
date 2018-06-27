@@ -44,7 +44,7 @@ void abort_impl(const char* file, size_t line, const char* fun)
     // TODO: Abnormally terminate the process as if by SIGABRT.
     printf("abort()\n");
 #endif
-    while (1) { }
+    while (true) { }
     unreachable();
 }
 
@@ -60,7 +60,7 @@ void abort(void)
     // TODO: Abnormally terminate the process as if by SIGABRT.
     printf("abort()\n");
 #endif
-    while (1) { }
+    while (true) { }
     unreachable();
 }
 
@@ -74,6 +74,6 @@ void _abort(void)
     // TODO: Abnormally terminate the process as if by SIGABRT.
     printf("abort()\n");
 #endif
-    while (1) { }
+    while (true) { }
     unreachable();
 }

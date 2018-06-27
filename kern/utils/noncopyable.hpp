@@ -32,7 +32,6 @@ public:
     NonCopyable& operator=(NonCopyable&&) = default;
     NonCopyable(NonCopyable&& other) = default;
 
-private:
     NonCopyable(const NonCopyable& other) = delete; // non construction-copyable
     NonCopyable& operator=(const NonCopyable&) = delete; // non copyable
 };

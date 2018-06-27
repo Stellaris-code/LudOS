@@ -59,13 +59,13 @@ public:
     kernel_string(size_t n, CharType c);
     template <class InputIterator>
     kernel_string(InputIterator first, InputIterator last);
-    kernel_string(kernel_string&& str);
+    kernel_string(kernel_string&& str) noexcept;
     ~kernel_string();
 
     kernel_string& operator=(const kernel_string& str);
     kernel_string& operator=(const CharType* str);
     kernel_string& operator=(CharType c);
-    kernel_string& operator=(kernel_string&& str);
+    kernel_string& operator=(kernel_string&& str) noexcept;
 
     kernel_string& assign(const kernel_string& str);
     kernel_string& assign(const kernel_string& str, size_t pos, size_t len = npos);
@@ -195,32 +195,32 @@ kernel_string<CharType, SmallStrSize> to_string(int v)
 template <typename CharType = char, size_t SmallStrSize = 60>
 kernel_string<CharType, SmallStrSize> to_string(long v)
 {
-    return do_string_conversion<int, CharType, SmallStrSize>(v, "%l");
+    return do_string_conversion<long, CharType, SmallStrSize>(v, "%l");
 }
 template <typename CharType = char, size_t SmallStrSize = 60>
 kernel_string<CharType, SmallStrSize> to_string(unsigned v)
 {
-    return do_string_conversion<int, CharType, SmallStrSize>(v, "%u");
+    return do_string_conversion<unsigned, CharType, SmallStrSize>(v, "%u");
 }
 template <typename CharType = char, size_t SmallStrSize = 60>
 kernel_string<CharType, SmallStrSize> to_string(unsigned long v)
 {
-    return do_string_conversion<int, CharType, SmallStrSize>(v, "%u");
+    return do_string_conversion<unsigned long, CharType, SmallStrSize>(v, "%u");
 }
 template <typename CharType = char, size_t SmallStrSize = 60>
 kernel_string<CharType, SmallStrSize> to_string(float v)
 {
-    return do_string_conversion<int, CharType, SmallStrSize>(v, "%f");
+    return do_string_conversion<float, CharType, SmallStrSize>(v, "%f");
 }
 template <typename CharType = char, size_t SmallStrSize = 60>
 kernel_string<CharType, SmallStrSize> to_string(double v)
 {
-    return do_string_conversion<int, CharType, SmallStrSize>(v, "%f");
+    return do_string_conversion<double, CharType, SmallStrSize>(v, "%f");
 }
 template <typename CharType = char, size_t SmallStrSize = 60>
 kernel_string<CharType, SmallStrSize> to_hex_string(unsigned v)
 {
-    return do_string_conversion<int, CharType, SmallStrSize>(v, "%x");
+    return do_string_conversion<unsigned, CharType, SmallStrSize>(v, "%x");
 }
 // TODO : use kpp::expected
 template <typename CharType = char, size_t SmallStrSize = 60>

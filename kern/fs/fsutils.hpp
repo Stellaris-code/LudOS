@@ -60,7 +60,7 @@ void traverse(const vfs::node& node, size_t indent = 0);
 void traverse(const kpp::string& path);
 
 [[nodiscard]] bool is_symlink(const vfs::node& node);
-QueryResult resolve_symlink(const std::shared_ptr<vfs::node> link);
+QueryResult resolve_symlink(const std::shared_ptr<node> &link);
 node& link_target(const vfs::node& link);
 }
 

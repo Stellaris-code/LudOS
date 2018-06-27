@@ -154,7 +154,6 @@ void print_disassembly()
     }
 }
 
-[[noreturn]]
 void panic(const char *fmt, ...)
 {
     cli();

@@ -61,7 +61,7 @@ void PciDriver::enable_bus_mastering()
 class TestDriver : public PciDriver
 {
 public:
-    virtual void init() {}
+    virtual void init() override {}
 
     virtual kpp::string driver_name() const override { return "PCI Test driver"; }
 

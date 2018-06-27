@@ -35,7 +35,7 @@ SOFTWARE.
 
 #include "time/time.hpp"
 
-void benchmark(std::function<void()> fun, const kpp::string& description, size_t repetitions = 100)
+void benchmark(const std::function<void()>& fun, const kpp::string& description, size_t repetitions = 100)
 {
     kprintf("Benchmarking function %s\n", description.c_str());
 

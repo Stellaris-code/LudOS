@@ -91,7 +91,6 @@ SOFTWARE.
 // TODO : vfs sanitize names
 // TODO : vfs canonicalize
 // TODO : process : free pages and alloc only at execute time
-// TODO : dissasemble from beggining of function
 // TODO : task switch : fpu state
 
 // ROADMAP
@@ -99,7 +98,7 @@ SOFTWARE.
 // : supprimer les includes inutiles
 // : faire une boucle de traitement de callbacks d'interruption
 // : implémenter /dev/input
-// : vfs call qui liste des properties particukières et une liste possible d'appels
+// : vfs call qui liste des properties particulières et une liste possible d'appels
 // : implémenter signaux
 // : implémenter expanding stack
 // : implémenter sigsegv

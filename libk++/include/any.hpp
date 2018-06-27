@@ -55,7 +55,7 @@ class any
 
     struct base
     {
-        virtual ~base() { }
+        virtual ~base() = default;
         virtual bool is(id) const = 0;
         virtual base *copy() const = 0;
     } *p = nullptr;
@@ -85,11 +85,11 @@ class any
     T const &dyn() const { return dynamic_cast<data<T> const&>(*p).get(); }
 
 public:
-     any() { }
+     any() = default;
     ~any() { delete p; }
 
-    any(any &&s)      : p{s.p} { s.p = nullptr; }
-    any(any const &s) : p{s.p->copy()} { }
+    any(any &&s) noexcept : p{s.p} { s.p = nullptr; }
+    any(any const &s)     : p{s.p->copy()} { }
 
     template<typename T, typename U = decay<T>, typename = none<U>>
     any(T &&x) : p{new data<U>{std::forward<T>(x)}} { }

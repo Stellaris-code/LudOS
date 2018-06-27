@@ -34,6 +34,8 @@ SOFTWARE.
 
 #include <string.h>
 
+// TODO : add support for errors
+
 void Ext2FS::umount()
 {
     m_superblock.fs_state = m_has_error;

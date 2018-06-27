@@ -44,7 +44,7 @@ void init(uint16_t comport)
     set_divisor_rate(comport, 0xc);
     set_data_length(comport, 7);
     set_parity(comport, None);
-    set_stop_bits(comport, 0);
+    set_stop_bits(comport, false);
     set_fifo(comport, 0b11000111);
 }
 

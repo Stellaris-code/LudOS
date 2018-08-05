@@ -37,6 +37,3 @@ enter_ring3:
     mov ebx, [esi+0x14]
 
     iret ;  to user land !
-
-    leave
-    ret

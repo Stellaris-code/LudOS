@@ -5,4 +5,3 @@ SET(ISA_LINKER_FLAGS "${ISA_LINKER_FLAGS}")
 SET(ISA_LINKER_FLAGS "${ISA_LINKER_FLAGS} CMakeFiles/LudOS.dir/kern/i686/pc/multiboot.asm.obj")
 
 configure_file("${PROJECT_SOURCE_DIR}/kern/i686/pc/layout.ld.in" "${PROJECT_SOURCE_DIR}/kern/i686/pc/layout.ld")
-configure_file("${PROJECT_SOURCE_DIR}/kern/i686/pc/defs.asm.in" "${PROJECT_SOURCE_DIR}/kern/i686/pc/defs.asm")

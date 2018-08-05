@@ -105,7 +105,12 @@ struct ProcessData
     std::unordered_map<unsigned int, tasking::ShmEntry> shm_list;
 #endif
 
-    std::stack<ProcessArchContext*> sig_context;
+    struct SigContext
+    {
+        ProcessArchContext* cpu_context;
+        pid_t returning_process;
+    };
+    std::stack<SigContext> sig_context;
     shared_resource<kpp::array<struct sigaction, SIGRTMAX>> sig_handlers;
 };
 

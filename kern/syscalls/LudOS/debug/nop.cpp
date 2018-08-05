@@ -32,9 +32,5 @@ SOFTWARE.
 
 void sys_syscall_nop()
 {
-    size_t curr = MemoryInfo::free();
-    static size_t last_size = curr;
-    size_t diff = last_size - curr;
 
-    log_serial("Test : delta : %d (0x%x) total %d, allocated pages : %zd\n", diff, diff, curr, Memory::allocated_physical_pages());
 }

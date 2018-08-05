@@ -33,16 +33,26 @@ void ensure(bool cond)
     if (!cond)
     {
         fprintf(stderr, "TEST FAILED :\n");
-        while (true) {}
-        exit(1);
     }
+}
+
+sig_atomic_t sig_num = 0xdeadbeef;
+extern "C" int do_ludos_syscall(uint32_t no, uint32_t args, uint32_t* arg_table);
+
+void handler(int sig)
+{
+    sig_num = sig;
+
+    print_serial("Booooooh\n");
+    printf("Signal is : %d\n", sig);
 }
 
 int main(int argc, char* argv[])
 {
-    printf("%d\n", signal(SIGTERM, SIG_IGN)); perror("1");
-    printf("%d\n", signal(SIGSTOP, SIG_IGN)); perror("1");
-    printf("%d\n", signal(SIGUSR1, SIG_IGN)); perror("1");
+    errno = EOK;
+    ensure(signal(SIGTERM, SIG_IGN) == SIG_ERR);
+    ensure(signal(SIGSTOP, SIG_IGN) == SIG_ERR);
+    ensure(signal(SIGUSR1, SIG_IGN) == SIG_ERR); ensure(errno == EINVAL);
 
     struct sigaction action, old;
     action.sa_handler = SIG_IGN;
@@ -51,6 +61,21 @@ int main(int argc, char* argv[])
     printf("%d\n", sigaction(SIGSTOP, &action, &old)); perror("1");
     printf("%d\n", sigaction(SIGUSR1, &action, &old)); perror("1");
     if (old.sa_flags == 0) printf("Should be flags 0 in old : %d\n", old.sa_flags);
+
+    errno = EOK;
+    ensure(signal(SIGUSR1, handler) != SIG_ERR); perror("1");
+
+    int esp;
+    asm volatile ("mov %%esp, %0\n":"=m"(esp):);
+    printf("Stack is : 0x%x\n", esp);
+
+    ensure(kill(0, SIGUSR1) == 0);
+
+    printf("Signal received : %d\n", sig_num);
+    print_serial("Seems okay");
+
+    volatile uint32_t* ptr = (volatile uint32_t*)0xDEADBEEF;
+    *ptr = 5; // NOLINT
 
     while (true){}
     return 0;

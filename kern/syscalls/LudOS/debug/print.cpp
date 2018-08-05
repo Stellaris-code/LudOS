@@ -29,6 +29,8 @@ SOFTWARE.
 #include "panic.hpp"
 #include "utils/user_ptr.hpp"
 
+#include "i686/pc/serial/serialdebug.hpp"
+
 void sys_print_serial(user_ptr<const char> string)
 {
     if (!string.check()) return;

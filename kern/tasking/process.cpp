@@ -45,8 +45,7 @@ SOFTWARE.
 
 #include <sys/wait.h>
 
-// Let the upper page free for argv/argc
-constexpr uintptr_t argv_virt_page = KERNEL_VIRTUAL_BASE - (1*Memory::page_size());
+extern "C" void signal_trampoline();
 
 Process::Process()
 {
@@ -77,13 +76,14 @@ void Process::init_default_fds()
     assert(vfs::find("/dev/stdin"));
     assert(vfs::find("/dev/stderr"));
 
-    assert(add_fd({vfs::find("/dev/stdin" ).value(), .read = true,  .write = false}) == 0);
-    assert(add_fd({vfs::find("/dev/stdout").value(), .read = false, .write = true }) == 1);
-    assert(add_fd({vfs::find("/dev/stderr").value(), .read = false, .write = true }) == 2);
+    add_fd({vfs::find("/dev/stdin" ).value(), .read = true,  .write = false});
+    add_fd({vfs::find("/dev/stdout").value(), .read = false, .write = true });
+    add_fd({vfs::find("/dev/stderr").value(), .read = false, .write = true });
 }
 
 void Process::init_sig_handlers()
 {
+    assert(!data->sig_handlers);
     data->sig_handlers = std::make_shared<kpp::array<struct sigaction, SIGRTMAX>>();
     for (size_t i { 0 }; i < data->sig_handlers->size(); ++i)
     {
@@ -151,14 +151,14 @@ void Process::wait_for(pid_t pid, int *wstatus)
 bool Process::check_perms(uint16_t perms, uint16_t tgt_uid, uint16_t tgt_gid, uint16_t type)
 {
     uint16_t user_flag  = (type == AccessRequestPerm::ReadRequest ? vfs::UserRead :
-                                                             type == AccessRequestPerm::WriteRequest? vfs::UserWrite:
-                                                                                               vfs::UserExec);
+                                                                    type == AccessRequestPerm::WriteRequest? vfs::UserWrite:
+                                                                                                             vfs::UserExec);
     uint16_t group_flag = (type == AccessRequestPerm::ReadRequest ? vfs::GroupRead :
-                                                             type == AccessRequestPerm::WriteRequest? vfs::GroupWrite:
-                                                                                               vfs::GroupExec);
+                                                                    type == AccessRequestPerm::WriteRequest? vfs::GroupWrite:
+                                                                                                             vfs::GroupExec);
     uint16_t other_flag = (type == AccessRequestPerm::ReadRequest ? vfs::OtherRead :
-                                                             type == AccessRequestPerm::WriteRequest? vfs::OtherWrite:
-                                                                                               vfs::OtherExec);
+                                                                    type == AccessRequestPerm::WriteRequest? vfs::OtherWrite:
+                                                                                                             vfs::OtherExec);
 
     if (data->uid == Process::root_uid)
     {
@@ -190,6 +190,34 @@ Process &Process::current()
 size_t Process::count()
 {
     return m_process_count;
+}
+
+void Process::raise(pid_t target_pid, int signal)
+{
+    auto proc = Process::by_pid(target_pid);
+    assert(proc);
+    assert(signal < proc->data->sig_handlers->size());
+
+    auto sig = proc->data->sig_handlers->at(signal);
+    switch ((intptr_t)sig.sa_handler)
+    {
+        case SIG_ACTION_IGN:
+            return;
+        case SIG_ACTION_CORE:
+        case SIG_ACTION_TERM:
+            Process::kill(target_pid, __W_STOPCODE(signal));
+            return;
+        case SIG_ACTION_STOP:
+            // TODO
+            return;
+        case SIG_ACTION_CONT:
+            // TODO
+            return;
+        default:
+            break;
+    }
+
+    proc->execute_sighandler(signal, pid);
 }
 
 void Process::kill(pid_t pid, int err_code)
@@ -302,13 +330,14 @@ void Process::map_code()
 
 void Process::map_stack()
 {
-    size_t code_page_amnt = data->stack.size() / Memory::page_size() +
+    size_t stack_page_amnt = data->stack.size() / Memory::page_size() +
             (data->stack.size()%Memory::page_size()?1:0);
 
-    for (size_t i { 0 }; i < code_page_amnt; ++i)
+    for (size_t i { 0 }; i <stack_page_amnt; ++i)
     {
-        uintptr_t phys_addr = Memory::physical_address((uint8_t*)data->stack.data() + i*Memory::page_size());
-        uint8_t* virt_addr = (uint8_t*)Memory::page(user_stack_top) - i*Memory::page_size();
+        uintptr_t phys_addr = Memory::physical_address((uint8_t*)data->stack.data()
+                                                       + (stack_page_amnt-i-1)*Memory::page_size());
+        uint8_t* virt_addr = (uint8_t*)Memory::page(user_stack_top-Memory::page_size()) - i*Memory::page_size();
 
         assert(phys_addr);
         data->mappings[(uintptr_t)virt_addr] = {phys_addr, Memory::Read|Memory::Write|Memory::User, false};
@@ -321,7 +350,13 @@ void Process::create_mappings()
     map_stack();
     if (!data->mappings.count(argv_virt_page))
     {
-        data->mappings[argv_virt_page] = {Memory::allocate_physical_page(), Memory::Read|Memory::Write|Memory::User, true};
+        data->mappings[argv_virt_page] =
+        {Memory::allocate_physical_page(), Memory::Read|Memory::Write|Memory::User, true};
+    }
+    if (!data->mappings.count(signal_trampoline_page))
+    {
+        data->mappings[signal_trampoline_page] =
+        {Memory::physical_address((void*)signal_trampoline), Memory::Read|Memory::User, false};
     }
 }
 

@@ -1,7 +1,7 @@
 /*
-user_ptr.hpp
+page_fault.hpp
 
-Copyright (c) 05 Yann BOUCHER (yann)
+Copyright (c) 03 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,37 +22,19 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef USER_PTR_HPP
-#define USER_PTR_HPP
+#ifndef PAGE_FAULT_HPP
+#define PAGE_FAULT_HPP
 
 #include <stdint.h>
-#include <assert.h>
 
-#include "mem/memmap.hpp"
-
-template <typename T>
-struct user_ptr
+struct PageFault
 {
-    // TODO : string check
-    bool check(size_t size = sizeof(T))
-    {
-        return Memory::check_user_ptr((const void*)ptr, size);
-    }
-
-    T* get()
-    {
-        assert(check());
-        return ptr;
-    }
-
-    T* as_raw()
-    {
-        return ptr;
-    }
-
-private:
-    T* ptr;
+    uintptr_t                       address;
+    enum { Kernel, User           } level;
+    enum { Protection, NonPresent } error;
+    enum { Read, Write, Execute   } type ;
 };
-static_assert(sizeof(user_ptr<void>) == sizeof(uintptr_t));
 
-#endif // USER_PTR_HPP
+void handle_page_fault(const PageFault& fault);
+
+#endif // PAGE_FAULT_HPP

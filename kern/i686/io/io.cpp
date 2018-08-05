@@ -69,6 +69,7 @@ uint32_t inl(uint16_t port)
 
 void io_wait()
 {
-    asm volatile ( "outb %%al, $0x80" : : "a"(0) );
+    asm volatile ( "outb %%al,"
+                   " $0x80" : : "a"(0) );
 }
 

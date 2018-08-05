@@ -27,61 +27,26 @@ SOFTWARE.
 
 #include "panic.hpp"
 
-#include "utils/stlutils.hpp"
+#include "mem/page_fault.hpp"
 
 bool Paging::page_fault_handler(const registers *regs)
 {
     panic_regs = regs;
 
-    kpp::string message;
+    PageFault fault;
+    fault.address = cr2();
+    fault.level = (regs->err_code & (1<<2)) ? PageFault::User : PageFault::Kernel;
+    fault.error = (regs->err_code & (1<<0)) ? PageFault::Protection : PageFault::NonPresent;
+    fault.type  = (regs->err_code & (1<<1)) ? PageFault::Write :
+                                              (regs->err_code & (1<<4)) ? PageFault::Execute
+                                                                        : PageFault::Read;
 
-    if (regs->err_code & (1<<2))
+    if (regs->err_code & (1<<3)) // reserved bit write, this should definitely never happen
     {
-        message += "unprivileged ";
-    }
-
-    if (regs->err_code & (1<<1))
-    {
-        message += "write ";
-    }
-    else if (regs->err_code & (1<<4))
-    {
-        message += "instruction fetch ";
-    }
-    else
-    {
-        message += "read ";
+        panic("Reserved paging structure bit write !\n");
     }
 
-    if (regs->err_code & (1<<3))
-    {
-        message += "in a reserved bit ";
-    }
-
-    message += "at ";
-    char buf[16];
-    ksnprintf(buf, 16, "0x%x ", cr2());
-    message += trim_zstr(buf);
-
-    if (regs->err_code & (1<<0))
-    {
-        message += "(page exists)";
-    }
-    else
-    {
-        message += "(page doesn't exist)";
-    }
-
-    message[0] = toupper(message[0]); // Capitalize
-
-    if (cr2() == 0)
-    {
-        panic("Null pointer access : %s\n", message.c_str());
-    }
-    else
-    {
-        panic("Page fault : %s\n", message.c_str());
-    }
+    handle_page_fault(fault);
 
     return false;
 }

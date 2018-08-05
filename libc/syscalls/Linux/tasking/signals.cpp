@@ -30,6 +30,7 @@ SOFTWARE.
 
 extern int common_syscall(size_t type, size_t no, ...);
 
+LINUX_SYSCALL_DEFAULT_IMPL(kill,   int, (pid_t pid, int sig), pid, sig)
 LINUX_SYSCALL_DEFAULT_IMPL(signal, sighandler_t, (int num, sighandler_t handler), num, handler)
 LINUX_SYSCALL_DEFAULT_IMPL(sigaction, int, (int num, const struct sigaction* action, struct sigaction* old), num, action, old)
 

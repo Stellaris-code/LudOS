@@ -105,7 +105,7 @@ kpp::string ata_string(T&& arr)
     }
 
     // trim_right
-    while (isspace(str.back()))
+    while (!str.empty() && isspace(str.back()))
     {
         str.pop_back();
     }

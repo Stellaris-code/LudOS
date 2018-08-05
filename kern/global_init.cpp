@@ -96,6 +96,10 @@ SOFTWARE.
 // ROADMAP
 // : supprimer la libc++ & libcxxabi
 // : supprimer les includes inutiles
+// : passer le shell et un max de trucs en userspace
+// : QueryInterface
+// : DWARF ?
+// : SVGA-II
 // : faire une boucle de traitement de callbacks d'interruption
 // : implémenter /dev/input
 // : vfs call qui liste des properties particulières et une liste possible d'appels

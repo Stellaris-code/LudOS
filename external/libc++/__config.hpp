@@ -11,11 +11,15 @@
 #ifndef _LIBCPP_CONFIG
 #define _LIBCPP_CONFIG
 
+#include <assert.h>
+
 #define _LIBCPP_BUILDING_LIBRARY
 #if defined(LUDOS_USER) || !__EXCEPTIONS
 #define _LIBCPP_NO_EXCEPTIONS
 #endif
 #define _LIBCPP_HAS_NO_THREADS
+
+#define _LIBCPP_ASSERT(x, m) assert((x) && !!(m))
 
 #if defined(_MSC_VER) && !defined(__clang__)
 #if !defined(_LIBCPP_HAS_NO_PRAGMA_SYSTEM_HEADER)

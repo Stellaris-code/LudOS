@@ -1,4 +1,4 @@
-/*
+﻿/*
 process.cpp
 
 Copyright (c) 05 Yann BOUCHER (yann)
@@ -36,18 +36,23 @@ SOFTWARE.
 #include "i686/mem/physallocator.hpp"
 #include "utils/aligned_vector.hpp"
 
-#include "syscalls/syscall_list.hpp"
-
 #include "fs/fsutils.hpp"
 #include "fs/vfs.hpp"
 
 #include "utils/membuffer.hpp"
 #include "utils/align.hpp"
 
-extern "C" [[noreturn]] void enter_ring3(const registers* regs);
+struct [[gnu::packed]] SignalTrampolineInfo
+{
+    int32_t   signal;
+    uintptr_t siginfo;
+    uintptr_t ucontext;
+    uintptr_t handler;
+    uint32_t  flags;
+};
 
-// Let the upper page free for argv/argc
-constexpr uintptr_t argv_virt_page = KERNEL_VIRTUAL_BASE - (1*Paging::page_size);
+extern "C" [[noreturn]] void enter_ring3(const registers* regs);
+extern "C" SignalTrampolineInfo signal_trampoline_info;
 
 void populate_argv(uintptr_t addr, gsl::span<const kpp::string> args)
 {
@@ -65,7 +70,7 @@ void populate_argv(uintptr_t addr, gsl::span<const kpp::string> args)
 
         std::copy(args[i].c_str(), args[i].c_str() + args[i].size() + 1, data.data() + cursor); // include null terminator
 
-        ((uint32_t*)data.data())[i] = argv_virt_page + cursor;
+        ((uint32_t*)data.data())[i] = Process::argv_virt_page + cursor;
 
         cursor += args[i].size() + 1; // again, null terminator
     }
@@ -96,6 +101,26 @@ void Process::set_args(const std::vector<kpp::string>& args)
     arch_context->regs.eax = args.size();
 }
 
+void Process::push_onto_stack(gsl::span<const uint8_t> data)
+{
+    auto current_sp = this->data->stack.size() - (user_stack_top - arch_context->regs.esp);
+    assert(current_sp - data.size() >= 0);
+
+    log_serial("It's all ogre now : 0x%x/0x%x\n", current_sp - data.size(), current_sp);
+
+    for (int i { 0 }; i < data.size(); ++i)
+    {
+        this->data->stack[current_sp - i - 1] = data[data.size() - i - 1];
+    }
+
+    arch_context->regs.esp -= data.size();
+}
+
+void Process::pop_stack(size_t size)
+{
+    arch_context->regs.esp += size;
+}
+
 void Process::wake_up(pid_t child, int err_code)
 {
     Memory::phys_write(data->waitstatus_phys, &err_code, sizeof(err_code));
@@ -105,12 +130,51 @@ void Process::wake_up(pid_t child, int err_code)
     arch_context->regs.eax = child; // set waitpid return value
 }
 
+void Process::execute_sighandler(int signal, pid_t returning_pid)
+{
+    assert(arch_context);
+    data->sig_context.push(ProcessData::SigContext{arch_context, returning_pid});
+    arch_context = new ProcessArchContext(*arch_context);
+    // keep the same stack for signal handling
+
+    auto sig = data->sig_handlers->at(signal);
+
+    if (sig.sa_flags & ~(SA_SIGINFO))
+    {
+        warn("Unsupported signal flag : 0x%x\n", sig.sa_flags);
+    }
+
+    signal_trampoline_info.signal  = signal;
+    signal_trampoline_info.flags   = sig.sa_flags;
+    signal_trampoline_info.handler = (uintptr_t)sig.sa_handler;
+
+    set_instruction_pointer(signal_trampoline_page);
+    Process::current().unswitch();
+    switch_to();
+}
+
+void Process::exit_signal()
+{
+    assert(!data->sig_context.empty());
+
+    free_arch_context();
+    arch_context = data->sig_context.top().cpu_context;
+    pid_t returning_pid = data->sig_context.top().returning_process;
+
+    data->sig_context.pop();
+
+    arch_context->regs.eax = 0; // Set the return value of kill() to 0, as success
+
+    unswitch();
+    Process::by_pid(returning_pid)->switch_to();
+}
+
 void Process::arch_init(gsl::span<const uint8_t> code_to_copy, size_t allocated_size)
 {
     assert(!arch_context);
     arch_context = new ProcessArchContext;
 
-    data->stack.resize(Paging::page_size * 2);
+    data->stack.resize(2*Paging::page_size);
 
     data->code = std::make_shared<aligned_vector<uint8_t, Memory::page_size()>>();
     data->code->resize(std::max<int>(code_to_copy.size(), allocated_size));
@@ -151,6 +215,8 @@ void Process::switch_to()
         m_current_process = this;
     }
     enter_ring3(&arch_context->regs);
+
+    __builtin_unreachable();
 }
 
 void Process::unswitch()
@@ -207,10 +273,16 @@ void Process::unmap_address_space()
 #endif
 }
 
+// TODO : remove when using std::unique_ptr
+void Process::free_arch_context()
+{
+    delete arch_context;
+    arch_context = nullptr;
+}
+
 void Process::cleanup()
 {
     release_mappings();
 
-    delete arch_context;
-    arch_context = nullptr;
+    free_arch_context();
 }

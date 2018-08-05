@@ -1510,8 +1510,7 @@ template <class _CharT, class _Traits, class _Allocator>
 void
 basic_string<_CharT, _Traits, _Allocator>::__init(const value_type* __s, size_type __sz)
 {
-    if (__sz > max_size())
-        this->__throw_length_error();
+    assert(__sz <= max_size());
     pointer __p;
     if (__sz < __min_cap)
     {
@@ -1881,8 +1880,7 @@ basic_string<_CharT, _Traits, _Allocator>::__grow_by_and_replace
      size_type __n_copy,  size_type __n_del,     size_type __n_add, const value_type* __p_new_stuff)
 {
     size_type __ms = max_size();
-    if (__delta_cap > __ms - __old_cap - 1)
-        this->__throw_length_error();
+    assert(__delta_cap <= __ms - __old_cap - 1);
     pointer __old_p = __get_pointer();
     size_type __cap = __old_cap < __ms / 2 - __alignment ?
                           __recommend(_VSTD::max(__old_cap + __delta_cap, 2 * __old_cap)) :
@@ -2309,8 +2307,8 @@ basic_string<_CharT, _Traits, _Allocator>::insert(size_type __pos, const value_t
 {
     _LIBCPP_ASSERT(__n == 0 || __s != nullptr, "string::insert received nullptr");
     size_type __sz = size();
-    if (__pos > __sz)
-        this->__throw_out_of_range();
+    assert(__pos <= __sz);
+
     size_type __cap = capacity();
     if (__cap - __sz >= __n)
     {

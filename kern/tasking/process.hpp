@@ -68,31 +68,34 @@ public:
     };
 
     static constexpr size_t root_uid = 0;
-    static constexpr size_t user_stack_top = KERNEL_VIRTUAL_BASE - (1*Memory::page_size()) - sizeof(uintptr_t);
+    // Let the upper page free for argv/argc
+    static constexpr uintptr_t argv_virt_page         = KERNEL_VIRTUAL_BASE - (1*Memory::page_size());
+    static constexpr uintptr_t signal_trampoline_page = KERNEL_VIRTUAL_BASE - (2*Memory::page_size());
+    static constexpr size_t    user_stack_top         = KERNEL_VIRTUAL_BASE - (2*Memory::page_size());
     static constexpr kpp::array<uintptr_t, 64> default_sighandler_actions
     {{
-        SIG_ACTION_TERM, // 0
-        SIG_ACTION_TERM, // SIGHUP
-        SIG_ACTION_TERM, // SIGINT
-        SIG_ACTION_CORE, // SIGQUIT
-        SIG_ACTION_CORE, // SIGILL
-        SIG_ACTION_CORE, // SIGABRT
-        SIG_ACTION_CORE, // SIGFPE
-        SIG_ACTION_TERM, // SIGKILL
-        SIG_ACTION_CORE, // SIGSEGV
-        SIG_ACTION_TERM, // SIGPIPE
-        SIG_ACTION_TERM, // SIGALRM
-        SIG_ACTION_TERM, // SIGTERM
-        SIG_ACTION_TERM, // SIGUSR1
-        SIG_ACTION_TERM, // SIGUSR2
-        SIG_ACTION_IGN , // SIGCHLD
-        SIG_ACTION_CONT, // SIGCONT
-        SIG_ACTION_STOP, // SIGSTOP
-        SIG_ACTION_STOP, // SIGTSTP
-        SIG_ACTION_STOP, // SIGTTIN
-        SIG_ACTION_STOP  // SIGTTOU
-        // The rest is filled with zeroes which are equal to SIG_ACTION_TERM
-    }};
+            SIG_ACTION_TERM, // 0
+            SIG_ACTION_TERM, // SIGHUP
+            SIG_ACTION_TERM, // SIGINT
+            SIG_ACTION_CORE, // SIGQUIT
+            SIG_ACTION_CORE, // SIGILL
+            SIG_ACTION_CORE, // SIGABRT
+            SIG_ACTION_CORE, // SIGFPE
+            SIG_ACTION_TERM, // SIGKILL
+            SIG_ACTION_CORE, // SIGSEGV
+            SIG_ACTION_TERM, // SIGPIPE
+            SIG_ACTION_TERM, // SIGALRM
+            SIG_ACTION_TERM, // SIGTERM
+            SIG_ACTION_TERM, // SIGUSR1
+            SIG_ACTION_TERM, // SIGUSR2
+            SIG_ACTION_IGN , // SIGCHLD
+            SIG_ACTION_CONT, // SIGCONT
+            SIG_ACTION_STOP, // SIGSTOP
+            SIG_ACTION_STOP, // SIGTSTP
+            SIG_ACTION_STOP, // SIGTTIN
+            SIG_ACTION_STOP  // SIGTTOU
+            // The rest is filled with zeroes which are equal to SIG_ACTION_TERM
+        }};
 
 public:
     static bool enabled();
@@ -128,6 +131,9 @@ public:
     void switch_to();
     void unswitch();
 
+    void raise(pid_t target_pid, int sig);
+    void exit_signal();
+
     bool check_perms(uint16_t perms, uint16_t tgt_uid, uint16_t tgt_gid, uint16_t type);
 
     uintptr_t allocate_pages(size_t pages);
@@ -151,6 +157,22 @@ private:
     void init_default_fds();
     void init_sig_handlers();
 
+    void push_onto_stack(gsl::span<const uint8_t> data);
+    void pop_stack(size_t size);
+
+    template <typename T>
+    void push_onto_stack(const T& val)
+    {
+        push_onto_stack(gsl::span{(const uint8_t*)&val, sizeof(T)});
+    }
+    template <typename T>
+    void pop_stack()
+    {
+        pop_stack(sizeof(T));
+    }
+
+    void execute_sighandler(int signal, pid_t returning_pid);
+
     void map_code();
     void map_stack();
 #ifdef LUDOS_HAS_SHM
@@ -163,6 +185,7 @@ private:
     void map_address_space();
     void unmap_address_space();
 
+    void free_arch_context();
     void cleanup();
     void wake_up(pid_t child, int err_code);
     void copy_allocated_pages(Process& target);

@@ -32,10 +32,10 @@ SOFTWARE.
 
 time_t sys_time(user_ptr<time_t> t_loc)
 {
-    if (t_loc.bypass() != nullptr && !t_loc.check()) return -EFAULT;
+    if (t_loc.as_raw() != nullptr && !t_loc.check()) return -EFAULT;
 
     const auto epoch = Time::epoch();
-    if (t_loc.bypass() != nullptr) *t_loc.get() = epoch;
+    if (t_loc.as_raw() != nullptr) *t_loc.get() = epoch;
 
     return epoch;
 }

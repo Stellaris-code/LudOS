@@ -31,6 +31,23 @@ SOFTWARE.
 
 #include "utils/user_ptr.hpp"
 
+int sys_kill(pid_t pid, int sig)
+{
+    auto proc = Process::by_pid(pid);
+    if (!proc)
+    {
+        return -ESRCH;
+    }
+    if (sig >= SIGRTMAX)
+    {
+        return -EINVAL;
+    }
+
+    Process::current().raise(pid, sig);
+
+    return EOK;
+}
+
 sighandler_t sys_signal(int num, user_ptr<sighandler_noptr_t> handler)
 {
     if (num < 0 || num >= SIGRTMAX || num == SIGTERM || num == SIGSTOP)
@@ -39,8 +56,8 @@ sighandler_t sys_signal(int num, user_ptr<sighandler_noptr_t> handler)
     }
 
     auto& table = *Process::current().data->sig_handlers;
-    if (handler.bypass() == SIG_DFL) table[num].sa_handler = (sighandler_t)Process::default_sighandler_actions[num];
-    else if (handler.bypass() == SIG_IGN) table[num].sa_handler = (sighandler_t)SIG_ACTION_IGN;
+    if (handler.as_raw() == SIG_DFL) table[num].sa_handler = (sighandler_t)Process::default_sighandler_actions[num];
+    else if (handler.as_raw() == SIG_IGN) table[num].sa_handler = (sighandler_t)SIG_ACTION_IGN;
     else
     {
         if (!handler.check())
@@ -51,7 +68,7 @@ sighandler_t sys_signal(int num, user_ptr<sighandler_noptr_t> handler)
         table[num].sa_handler = handler.get();
     }
 
-    return handler.bypass();
+    return handler.as_raw();
 }
 
 int sys_sigaction(int num, user_ptr<const struct sigaction> act, user_ptr<struct sigaction> oldact)
@@ -61,7 +78,7 @@ int sys_sigaction(int num, user_ptr<const struct sigaction> act, user_ptr<struct
         return -EINVAL;
     }
 
-    if (!act.check() || (oldact.bypass() != nullptr && !oldact.check()))
+    if (!act.check() || (oldact.as_raw() != nullptr && !oldact.check()))
     {
         return -EFAULT;
     }
@@ -80,4 +97,9 @@ int sys_sigaction(int num, user_ptr<const struct sigaction> act, user_ptr<struct
     }
 
     return EOK;
+}
+
+void sys_sigreturn()
+{
+    Process::current().exit_signal();
 }

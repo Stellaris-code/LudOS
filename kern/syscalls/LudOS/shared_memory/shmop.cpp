@@ -39,7 +39,7 @@ long sys_shmat(int shmid, user_ptr<const void> shmaddr, int shmflg)
 #ifndef LUDOS_HAS_SHM
     return -ENOSYS;
 #else
-    uintptr_t v_addr = (uintptr_t)shmaddr.bypass();
+    uintptr_t v_addr = (uintptr_t)shmaddr.as_raw();
 
     if (!get_shared_mem(shmid) || v_addr >= KERNEL_VIRTUAL_BASE)
     {

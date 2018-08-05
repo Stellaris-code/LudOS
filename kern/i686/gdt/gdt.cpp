@@ -83,7 +83,7 @@ void init()
     tss.trap = 0x00;
     tss.iomap = 0x00;
     tss.esp0 = (uint32_t)&kernel_stack_top;
-    tss.ss0 = 2 * sizeof(entry);
+    tss.ss0 = kernel_data_selector * sizeof(entry);
 
     flush();
 

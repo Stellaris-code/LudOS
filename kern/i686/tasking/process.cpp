@@ -42,17 +42,16 @@ SOFTWARE.
 #include "utils/membuffer.hpp"
 #include "utils/align.hpp"
 
-struct [[gnu::packed]] SignalTrampolineInfo
+struct SignalTrampolineInfo
 {
     int32_t   signal;
-    uintptr_t siginfo;
-    uintptr_t ucontext;
     uintptr_t handler;
     uint32_t  flags;
+    uint32_t  padding;
 };
+static_assert(sizeof(SignalTrampolineInfo) == 16);
 
 extern "C" [[noreturn]] void enter_ring3(const registers* regs);
-extern "C" SignalTrampolineInfo signal_trampoline_info;
 
 void populate_argv(uintptr_t addr, gsl::span<const kpp::string> args)
 {
@@ -130,7 +129,7 @@ void Process::wake_up(pid_t child, int err_code)
     arch_context->regs.eax = child; // set waitpid return value
 }
 
-void Process::execute_sighandler(int signal, pid_t returning_pid)
+void Process::execute_sighandler(int signal, pid_t returning_pid, const siginfo_t &siginfo)
 {
     assert(arch_context);
     data->sig_context.push(ProcessData::SigContext{arch_context, returning_pid});
@@ -144,12 +143,25 @@ void Process::execute_sighandler(int signal, pid_t returning_pid)
         warn("Unsupported signal flag : 0x%x\n", sig.sa_flags);
     }
 
-    signal_trampoline_info.signal  = signal;
-    signal_trampoline_info.flags   = sig.sa_flags;
-    signal_trampoline_info.handler = (uintptr_t)sig.sa_handler;
+    SignalTrampolineInfo info;
+
+    info.signal  = signal;
+    info.flags   = sig.sa_flags;
+    info.handler = (uintptr_t)sig.sa_handler;
+
+    push_onto_stack(siginfo); // siginfo_t
+    uintptr_t siginfo_addr = arch_context->regs.esp;
+
+    push_onto_stack(*data->sig_context.top().cpu_context); // ucontext_t
+    uintptr_t ucontext_addr = arch_context->regs.esp;
+
+    push_onto_stack(ucontext_addr);
+    push_onto_stack(siginfo_addr);
+    push_onto_stack(info);
 
     set_instruction_pointer(signal_trampoline_page);
-    Process::current().unswitch();
+    if (m_current_process)
+        Process::current().unswitch();
     switch_to();
 }
 
@@ -161,9 +173,10 @@ void Process::exit_signal()
     arch_context = data->sig_context.top().cpu_context;
     pid_t returning_pid = data->sig_context.top().returning_process;
 
-    data->sig_context.pop();
-
     arch_context->regs.eax = 0; // Set the return value of kill() to 0, as success
+    arch_context->regs.esp = data->sig_context.top().cpu_context->regs.esp; // restore the process' %esp register
+
+    data->sig_context.pop();
 
     unswitch();
     Process::by_pid(returning_pid)->switch_to();

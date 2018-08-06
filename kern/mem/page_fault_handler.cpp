@@ -26,6 +26,7 @@ SOFTWARE.
 #include "page_fault.hpp"
 
 #include "tasking/process.hpp"
+#include "siginfo.h"
 
 #include "utils/stlutils.hpp"
 #include "panic.hpp"
@@ -34,7 +35,13 @@ void user_space_fault(const PageFault& fault)
 {
     log_serial("User space fault for PID %d at 0x%x\n", Process::current().pid, fault.address);
     (void)fault;
-    Process::current().raise(Process::current().pid, SIGSEGV);
+
+    siginfo_t info;
+    info.si_signo = SIGSEGV;
+    info.si_code  = fault.type == PageFault::NonPresent ? SEGV_MAPERR : SEGV_ACCERR;
+    info.si_addr = (void*)fault.address;
+
+    Process::current().raise(Process::current().pid, SIGSEGV, info);
 }
 
 void kernel_page_fault(const PageFault& fault)
@@ -82,7 +89,7 @@ void kernel_page_fault(const PageFault& fault)
 
 void handle_page_fault(const PageFault& fault)
 {
-    if (fault.level == PageFault::Kernel || true)
+    if (fault.level == PageFault::Kernel)
     {
         kernel_page_fault(fault);
     }

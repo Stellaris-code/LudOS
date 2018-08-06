@@ -24,6 +24,7 @@ SOFTWARE.
 */
 
 #include <signal.h>
+#include <siginfo.h>
 #include <errno.h>
 
 #include "tasking/process.hpp"
@@ -43,7 +44,12 @@ int sys_kill(pid_t pid, int sig)
         return -EINVAL;
     }
 
-    Process::current().raise(pid, sig);
+    siginfo_t info;
+    info.si_signo = sig;
+    info.si_code = SI_USER;
+    info.si_uid = Process::current().data->uid;
+    info.si_pid = Process::current().pid;
+    Process::current().raise(pid, sig, info);
 
     return EOK;
 }
@@ -88,7 +94,7 @@ int sys_sigaction(int num, user_ptr<const struct sigaction> act, user_ptr<struct
     else if (act.get()->sa_handler == SIG_IGN) table[num].sa_handler = (sighandler_t)SIG_ACTION_IGN;
     else
     {
-        if (Memory::check_user_ptr((const void*)act.get()->sa_handler, sizeof(sighandler_t)))
+        if (!Memory::check_user_ptr((const void*)act.get()->sa_handler, sizeof(sighandler_t)))
         {
             return -EFAULT;
         }

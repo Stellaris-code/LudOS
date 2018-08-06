@@ -13,7 +13,7 @@ extern end_dtors
 _start:
     ; push argc
     ; push argv
-    push ebx
+    push ecx
     push eax
 
     ; Call ctors

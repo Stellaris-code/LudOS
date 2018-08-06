@@ -33,7 +33,13 @@ enter_ring3:
     mov fs, ax
     mov gs, ax
 
-    mov eax, [esi+0x10]
-    mov ebx, [esi+0x14]
+    mov eax, [esi+0x10] ; restore gprs
+    mov ecx, [esi+0x14]
+    mov edx, [esi+0x18]
+    mov ebx, [esi+0x1c]
+    mov ebp, [esi+0x20]
+    mov esi, [esi+0x24]
+    mov edi, [esi+0x28]
+
 
     iret ;  to user land !

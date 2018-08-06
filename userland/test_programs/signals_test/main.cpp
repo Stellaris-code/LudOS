@@ -28,15 +28,20 @@ SOFTWARE.
 #include <errno.h>
 #include <stdio.h>
 
-void ensure(bool cond)
+#include "i686/cpu/registers.hpp"
+
+#define ensure(cond) ensure_impl(cond, #cond)
+
+void ensure_impl(bool cond, const char* line)
 {
     if (!cond)
     {
-        fprintf(stderr, "TEST FAILED :\n");
+        fprintf(stderr, "TEST FAILED : %s\n", line);
     }
 }
 
-sig_atomic_t sig_num = 0xdeadbeef;
+volatile sig_atomic_t sig_num = 0xdeadbeef;
+volatile sig_atomic_t segfault_check = 0;
 extern "C" int do_ludos_syscall(uint32_t no, uint32_t args, uint32_t* arg_table);
 
 void handler(int sig)
@@ -47,35 +52,48 @@ void handler(int sig)
     printf("Signal is : %d\n", sig);
 }
 
+void segfault_handler(int, siginfo_t* siginfo, void* ucontext)
+{
+    registers* regs = (registers*)ucontext;
+
+    print_serial("We just had a segfault !!!!\n");
+    printf("At address : %p\n", siginfo->si_addr);
+    printf("eax : 0x%x,   ebx : 0x%x\n", regs->eax, regs->ebx);
+    segfault_check = 1;
+}
+
 int main(int argc, char* argv[])
 {
     errno = EOK;
-    ensure(signal(SIGTERM, SIG_IGN) == SIG_ERR);
-    ensure(signal(SIGSTOP, SIG_IGN) == SIG_ERR);
-    ensure(signal(SIGUSR1, SIG_IGN) == SIG_ERR); ensure(errno == EINVAL);
+    ensure(signal(SIGTERM, SIG_IGN) == SIG_ERR); ensure(errno == EINVAL);
+    ensure(signal(SIGSTOP, SIG_IGN) == SIG_ERR); ensure(errno == EINVAL);
+    ensure(signal(SIGUSR1, SIG_IGN) != SIG_ERR);
 
     struct sigaction action, old;
     action.sa_handler = SIG_IGN;
     old.sa_flags = 56;
-    printf("%d\n", sigaction(SIGTERM, &action, &old)); perror("1");
-    printf("%d\n", sigaction(SIGSTOP, &action, &old)); perror("1");
-    printf("%d\n", sigaction(SIGUSR1, &action, &old)); perror("1");
+    printf("%d\n", sigaction(SIGTERM, &action, &old));
+    printf("%d\n", sigaction(SIGSTOP, &action, &old));
+    printf("%d\n", sigaction(SIGUSR1, &action, &old));
     if (old.sa_flags == 0) printf("Should be flags 0 in old : %d\n", old.sa_flags);
 
     errno = EOK;
-    ensure(signal(SIGUSR1, handler) != SIG_ERR); perror("1");
+    ensure(signal(SIGUSR1, handler) != SIG_ERR);
+
+    action.sa_sigaction = segfault_handler;
+    ensure(sigaction(SIGSEGV, &action, nullptr) != -1);
 
     int esp;
     asm volatile ("mov %%esp, %0\n":"=m"(esp):);
     printf("Stack is : 0x%x\n", esp);
 
     ensure(kill(0, SIGUSR1) == 0);
-
-    printf("Signal received : %d\n", sig_num);
-    print_serial("Seems okay");
+    ensure(sig_num == SIGUSR1);
 
     volatile uint32_t* ptr = (volatile uint32_t*)0xDEADBEEF;
     *ptr = 5; // NOLINT
+
+    ensure(segfault_check == true);
 
     while (true){}
     return 0;

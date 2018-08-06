@@ -92,6 +92,8 @@ SOFTWARE.
 // TODO : vfs canonicalize
 // TODO : process : free pages and alloc only at execute time
 // TODO : task switch : fpu state
+// TODO : SIGFPE, SIGILL
+// TODO : faire un 'profiler' qui toutes les t ms regarde la callstack et détermine les fonctions les plus appellées
 
 // ROADMAP
 // : supprimer la libc++ & libcxxabi

@@ -30,9 +30,27 @@ SOFTWARE.
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
+#include <signal.h>
+#include <siginfo.h>
+
+volatile sig_atomic_t sigchld_valid = 0;
+
+void sigchld_handler(int, siginfo_t* info, void*)
+{
+    printf("SIGCHLD handler\n");
+    sigchld_valid = 1;
+
+    if (info->si_pid == getpid())    sigchld_valid = 0;
+    if (info->si_status != 0)        sigchld_valid = 0;
+    if (info->si_code != CLD_EXITED) sigchld_valid = 0;
+}
 
 int main()
 {
+    struct sigaction action;
+    action.sa_sigaction = sigchld_handler;
+    sigaction(SIGCHLD, &action, nullptr);
+
     printf("Before fork : \n");
     int ret = fork();
     if (ret < 0)
@@ -63,6 +81,8 @@ int main()
             {
                 perror("waitpid");
             }
+
+            if (!sigchld_valid) fprintf(stderr, "SIGCHLD handling invalid\n");
 
             printf("Back to parent\n");
             while (true)

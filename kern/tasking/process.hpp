@@ -131,7 +131,7 @@ public:
     void switch_to();
     void unswitch();
 
-    void raise(pid_t target_pid, int sig);
+    void raise(pid_t target_pid, int sig, const siginfo_t& siginfo);
     void exit_signal();
 
     bool check_perms(uint16_t perms, uint16_t tgt_uid, uint16_t tgt_gid, uint16_t type);
@@ -171,7 +171,7 @@ private:
         pop_stack(sizeof(T));
     }
 
-    void execute_sighandler(int signal, pid_t returning_pid);
+    void execute_sighandler(int signal, pid_t returning_pid, const siginfo_t& siginfo);
 
     void map_code();
     void map_stack();

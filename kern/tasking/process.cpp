@@ -44,6 +44,7 @@ SOFTWARE.
 #include "fs/vfs.hpp"
 
 #include <sys/wait.h>
+#include <siginfo.h>
 
 extern "C" void signal_trampoline();
 
@@ -192,7 +193,7 @@ size_t Process::count()
     return m_process_count;
 }
 
-void Process::raise(pid_t target_pid, int signal)
+void Process::raise(pid_t target_pid, int signal, const siginfo_t &siginfo)
 {
     auto proc = Process::by_pid(target_pid);
     assert(proc);
@@ -217,7 +218,7 @@ void Process::raise(pid_t target_pid, int signal)
             break;
     }
 
-    proc->execute_sighandler(signal, pid);
+    proc->execute_sighandler(signal, pid, siginfo);
 }
 
 void Process::kill(pid_t pid, int err_code)
@@ -243,14 +244,23 @@ void Process::kill(pid_t pid, int err_code)
 
     if (Process::current().pid == pid)
     {
+        Process::current().unswitch();
         m_current_process = nullptr;
     }
 
+    siginfo_t info;
+    info.si_signo = SIGCHLD;
+    info.si_code = (WIFEXITED(err_code) ? CLD_EXITED : CLD_KILLED);
+    info.si_pid = pid;
+    info.si_uid = m_processes[pid]->data->uid;
+    info.si_status = err_code;
     m_processes[pid].reset();
     --m_process_count;
     assert(!by_pid(pid));
 
     MessageBus::send(ProcessDestroyedEvent{pid, err_code});
+
+    parent.raise(parent.pid, SIGCHLD, info);
 }
 
 Process *Process::by_pid(pid_t pid)

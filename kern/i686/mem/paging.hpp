@@ -115,7 +115,7 @@ public:
     static constexpr uint32_t ram_maxpage { 1024*1023 };
 
 private:
-    static bool page_fault_handler(const registers* regs);
+    static bool page_fault_handler(registers *regs);
 
 private:
     static PageDirectory *get_page_directory();

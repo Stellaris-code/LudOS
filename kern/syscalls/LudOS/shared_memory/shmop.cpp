@@ -36,9 +36,6 @@ SOFTWARE.
 
 long sys_shmat(int shmid, user_ptr<const void> shmaddr, int shmflg)
 {
-#ifndef LUDOS_HAS_SHM
-    return -ENOSYS;
-#else
     uintptr_t v_addr = (uintptr_t)shmaddr.as_raw();
 
     if (!get_shared_mem(shmid) || v_addr >= KERNEL_VIRTUAL_BASE)
@@ -68,14 +65,10 @@ long sys_shmat(int shmid, user_ptr<const void> shmaddr, int shmflg)
     Process::current().data->shm_list.at(shmid).shm->map((void*)v_addr);
 
     return v_addr;
-#endif
 }
 
 long sys_shmdt(user_ptr<const void> shmaddr)
 {
-#ifndef LUDOS_HAS_SHM
-    return -ENOSYS;
-#else
     if (!shmaddr.check() || Memory::offset((uintptr_t)shmaddr.get()) != 0)
     {
         return -EINVAL;
@@ -88,5 +81,4 @@ long sys_shmdt(user_ptr<const void> shmaddr)
     });
 
     return 0;
-#endif
 }

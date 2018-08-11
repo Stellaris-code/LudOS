@@ -56,7 +56,7 @@ enum Exception : uint32_t
     PageFault = 14
 };
 
-using isr_t = std::function<bool(const registers* const r)>;
+using isr_t = std::function<bool(registers* const r)>;
 
 void register_handler(uint8_t num, isr_t handler);
 

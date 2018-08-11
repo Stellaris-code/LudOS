@@ -1,7 +1,7 @@
 /*
-page_fault.hpp
+interface_list.h
 
-Copyright (c) 03 Yann BOUCHER (yann)
+Copyright (c) 09 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,31 +22,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef PAGE_FAULT_HPP
-#define PAGE_FAULT_HPP
+#ifndef INTERFACE_LIST_H
+#define INTERFACE_LIST_H
 
-#include <stdint.h>
-
-#include <functional.hpp>
-
-struct PageFault
+#define ITEST_ID 0xbeef
+typedef struct __attribute__((packed))
 {
-    void*                           mcontext;
-    uintptr_t                       address;
-    enum { Kernel, User           } level;
-    enum { Protection, NonPresent } error;
-    enum { Read, Write, Execute   } type ;
-};
+    void(*test)();
+} itest;
 
-void page_fault_entry(const PageFault& fault);
-
-/*
- * Handles page fault, returns true if handled by the callback or false if not
- */
-using fault_handle = int;
-using fault_callback = std::function<bool(const PageFault&)>;
-
-fault_handle attach_fault_handler(void* v_addr, const fault_callback& handler);
-void detach_fault_handler(fault_handle hdl);
-
-#endif // PAGE_FAULT_HPP
+#endif // INTERFACE_LIST_H

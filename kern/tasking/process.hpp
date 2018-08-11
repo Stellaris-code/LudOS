@@ -28,6 +28,7 @@ SOFTWARE.
 #include "config.hpp"
 
 #include <vector.hpp>
+#include <functional.hpp>
 
 #include "mem/memmap.hpp"
 
@@ -131,6 +132,10 @@ public:
     void switch_to();
     void unswitch();
 
+    // creates a way to call the kernel by triggering a page fault
+    uintptr_t create_user_callback(const std::function<void(void *)> &callback);
+    void allocate_user_callback_page();
+
     void raise(pid_t target_pid, int sig, const siginfo_t& siginfo);
     void exit_signal();
 
@@ -175,9 +180,7 @@ private:
 
     void map_code();
     void map_stack();
-#ifdef LUDOS_HAS_SHM
     void map_shm();
-#endif
 
     void create_mappings();
     void release_mappings();

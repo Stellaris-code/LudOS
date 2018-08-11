@@ -25,6 +25,8 @@ SOFTWARE.
 
 #include "version.hpp"
 
+// TODO : always rebuild this
+
 const char *get_version_str()
 {
     return "LudOS " LUDOS_VERSION_STRING " " __DATE__ " " __TIME__ " " EXPAND_AND_QUOTE(LUDOS_ARCH);

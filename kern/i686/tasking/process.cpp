@@ -53,59 +53,10 @@ static_assert(sizeof(SignalTrampolineInfo) == 16);
 
 extern "C" [[noreturn]] void enter_ring3(const registers* regs);
 
-void populate_argv(uintptr_t addr, gsl::span<const kpp::string> args)
-{
-    // Structure:
-    // 0..n*4 : ptr array
-    // n*4..end : actual strings
-
-    gsl::span<uint8_t> data {(uint8_t*)addr, Paging::page_size};
-
-    size_t cursor = args.size() * sizeof(uintptr_t); // start after arg array;
-
-    for (size_t i { 0 }; i < args.size(); ++i)
-    {
-        assert(cursor + args[i].size() < Paging::page_size);
-
-        std::copy(args[i].c_str(), args[i].c_str() + args[i].size() + 1, data.data() + cursor); // include null terminator
-
-        ((uint32_t*)data.data())[i] = Process::argv_virt_page + cursor;
-
-        cursor += args[i].size() + 1; // again, null terminator
-    }
-
-    assert(cursor < Paging::page_size);
-}
-
-bool Process::check_args_size(const std::vector<kpp::string> &args)
-{
-    size_t tb_size { args.size()*sizeof(uintptr_t) };
-
-    for (const auto& str : args)
-    {
-        tb_size += str.size()+1; // null terminator
-    }
-
-    return tb_size < Paging::page_size;
-}
-
-void Process::set_args(const std::vector<kpp::string>& args)
-{
-    data->args = args;
-
-    auto ptr = Memory::mmap(data->mappings.at(argv_virt_page).paddr, Paging::page_size);
-    populate_argv((uintptr_t)ptr, args);
-    Memory::unmap(ptr, Paging::page_size);
-
-    arch_context->regs.eax = args.size();
-}
-
 void Process::push_onto_stack(gsl::span<const uint8_t> data)
 {
     auto current_sp = this->data->stack.size() - (user_stack_top - arch_context->regs.esp);
     assert(current_sp - data.size() >= 0);
-
-    log_serial("It's all ogre now : 0x%x/0x%x\n", current_sp - data.size(), current_sp);
 
     for (int i { 0 }; i < data.size(); ++i)
     {
@@ -221,9 +172,7 @@ void Process::switch_to()
         assert(!is_waiting());
 
         map_address_space();
-#ifdef LUDOS_HAS_SHM
         map_shm();
-#endif
 
         m_current_process = this;
     }
@@ -253,11 +202,15 @@ Process *Process::clone(Process &proc, uint32_t flags)
     new_proc->data->root = vfs::find(proc.data->root->path()).value(); assert(new_proc->data->root);
 
     new_proc->data->fd_table = std::make_shared<std::vector<tasking::FDInfo>>(*proc.data->fd_table); // noleak
-    proc.copy_allocated_pages(*new_proc); // noleak
+        proc.copy_allocated_pages(*new_proc); // noleak
+
+    // TODO : refactor this
+    new_proc->data->free_user_callback_entries = std::make_shared<std::unordered_set<uintptr_t>>(*proc.data->free_user_callback_entries);
+    new_proc->data->user_callback_list = std::make_shared<std::unordered_map<uintptr_t, std::function<void(void*)>>>(*proc.data->user_callback_list);
+    new_proc->data->user_callback_pages = std::make_shared<std::vector<std::pair<uintptr_t, fault_handle>>>(*proc.data->user_callback_pages);
+
     new_proc->data->args = proc.data->args; // noleak
-#ifdef LUDOS_HAS_SHM
     new_proc->data->shm_list = proc.data->shm_list;
-#endif
     new_proc->data->sig_handlers = std::make_shared<kpp::array<struct sigaction, SIGRTMAX>>(*proc.data->sig_handlers);
     new_proc->arch_context = new ProcessArchContext;
     *new_proc->arch_context = *proc.arch_context;

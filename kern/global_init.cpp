@@ -52,6 +52,8 @@ SOFTWARE.
 #include "utils/logging.hpp"
 #include "utils/messagebus.hpp"
 
+#include "mem/page_fault.hpp"
+
 #include "halt.hpp"
 
 #include "shell/shell.hpp"
@@ -73,8 +75,6 @@ SOFTWARE.
 
 #include "info/version.hpp"
 
-// TODO : system calls
-// TODO : user mode
 // TODO : POC calculatrice
 // TODO : windowing system avec alloc d'un canvas etc
 // TODO : Son

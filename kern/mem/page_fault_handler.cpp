@@ -27,9 +27,32 @@ SOFTWARE.
 
 #include "tasking/process.hpp"
 #include "siginfo.h"
+#include "memmap.hpp"
+
+#include <unordered_map.hpp>
 
 #include "utils/stlutils.hpp"
 #include "panic.hpp"
+
+static std::unordered_map<uintptr_t, fault_callback> handlers;
+
+fault_handle attach_fault_handler(void* v_addr, const fault_callback& handler)
+{
+    const auto page = Memory::page((uintptr_t)v_addr);
+
+    assert(handlers.count(page) == 0);
+
+    handlers[page] = handler;
+
+    return page; // the page is the handle
+}
+
+void detach_fault_handler(fault_handle hdl)
+{
+    assert(handlers.count(hdl));
+
+    handlers.erase(hdl);
+}
 
 void user_space_fault(const PageFault& fault)
 {
@@ -87,8 +110,16 @@ void kernel_page_fault(const PageFault& fault)
     }
 }
 
-void handle_page_fault(const PageFault& fault)
+void page_fault_entry(const PageFault& fault)
 {
+    if (auto handler = handlers.find(Memory::page(fault.address)); handler != handlers.end())
+    {
+        if (handler->second(fault))
+        {
+            return; // the fault was succesfully handled by the handler
+        }
+    }
+
     if (fault.level == PageFault::Kernel)
     {
         kernel_page_fault(fault);

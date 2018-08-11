@@ -149,6 +149,13 @@ struct node
     std::vector<std::shared_ptr<const node>> readdir() const;
     result<kpp::dummy_t> remove(const vfs::node* child);
 
+    virtual bool implements(int interface_id) const
+    { (void)interface_id; return false; }
+
+    // returns the sizeof of the interface type, or -1 otherwise
+    virtual int get_interface(int interface_id, void* interface) const
+    { (void)interface_id, (void)interface; return -1; }
+
     node* parent() const { return m_parent; }
     void set_parent(node* parent) { m_parent = parent; }
 

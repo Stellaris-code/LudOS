@@ -64,7 +64,7 @@ void Paging::map_page(uintptr_t p_addr, void *v_addr, uint32_t flags)
 {
     auto entry = page_entry((uintptr_t)(v_addr));
     assert(!entry->present);
-    //assert(entry->os_claimed);
+
     entry->phys_addr = p_addr >> 12;
 
     entry->write = !!(flags & Memory::Write);
@@ -72,7 +72,7 @@ void Paging::map_page(uintptr_t p_addr, void *v_addr, uint32_t flags)
     entry->wt = !!(flags & Memory::WriteThrough);
     entry->user = !!(flags & Memory::User);
 
-    entry->present = true;
+    entry->present = !(flags & Memory::Sentinel);
     entry->os_claimed = true;
 }
 

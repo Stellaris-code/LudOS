@@ -25,6 +25,4 @@ SOFTWARE.
 #ifndef CONFIG_HPP
 #define CONFIG_HPP
 
-#define LUDOS_HAS_SHM
-
 #endif // CONFIG_HPP

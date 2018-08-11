@@ -34,7 +34,7 @@ template <typename T>
 struct user_ptr
 {
     // TODO : string check
-    bool check(size_t size = sizeof(T))
+    bool check(size_t size = sizeof(T)) const
     {
         return Memory::check_user_ptr((const void*)ptr, size);
     }
@@ -45,9 +45,9 @@ struct user_ptr
         return ptr;
     }
 
-    T* as_raw()
+    uintptr_t as_raw() const
     {
-        return ptr;
+        return (uintptr_t)ptr;
     }
 
 private:

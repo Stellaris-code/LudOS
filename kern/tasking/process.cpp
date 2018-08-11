@@ -31,15 +31,14 @@ SOFTWARE.
 #include "syscalls/syscalls.hpp"
 
 #include "mem/memmap.hpp"
+#include "mem/meminfo.hpp"
+#include "mem/page_fault.hpp"
+
 #include "utils/messagebus.hpp"
 #include "utils/stlutils.hpp"
 #include "utils/memutils.hpp"
 
-#include "mem/meminfo.hpp"
-
-#ifdef LUDOS_HAS_SHM
 #include "shared_memory.hpp"
-#endif
 
 #include "fs/vfs.hpp"
 
@@ -56,6 +55,10 @@ Process::Process()
     data->root = vfs::root;
     init_default_fds();
     init_sig_handlers();
+
+    data->free_user_callback_entries = std::make_shared<std::unordered_set<uintptr_t>>();
+    data->user_callback_list = std::make_shared<std::unordered_map<uintptr_t, std::function<void(void*)>>>();
+    data->user_callback_pages = std::make_shared<std::vector<std::pair<uintptr_t, fault_handle>>>();
 }
 
 void Process::reset(gsl::span<const uint8_t> code_to_copy, size_t allocated_size)
@@ -199,6 +202,8 @@ void Process::raise(pid_t target_pid, int signal, const siginfo_t &siginfo)
     assert(proc);
     assert(signal < proc->data->sig_handlers->size());
 
+    log_serial("Sent signal %d to pid %d\n", signal, target_pid);
+
     auto sig = proc->data->sig_handlers->at(signal);
     switch ((intptr_t)sig.sa_handler)
     {
@@ -300,7 +305,7 @@ Process *Process::create(const std::vector<kpp::string>& args)
         m_processes[free_idx].reset(new Process);
     }
 
-    if (m_processes[free_idx] == nullptr) return nullptr;
+    if (m_processes[free_idx] == nullptr) return nullptr; // allocation failed ?
 
     m_processes[free_idx]->tgid = free_idx;
     m_processes[free_idx]->pid  = free_idx;
@@ -313,7 +318,6 @@ Process *Process::create(const std::vector<kpp::string>& args)
     return m_processes[free_idx].get();
 }
 
-#ifdef LUDOS_HAS_SHM
 void Process::map_shm()
 {
     for (auto pair : data->shm_list)
@@ -321,7 +325,6 @@ void Process::map_shm()
         if (pair.second.v_addr) pair.second.shm->map(pair.second.v_addr);
     }
 }
-#endif
 
 void Process::map_code()
 {
@@ -334,7 +337,7 @@ void Process::map_code()
         uint8_t* virt_addr = (uint8_t*)(i * Memory::page_size());
 
         assert(phys_addr);
-        data->mappings[(uintptr_t)virt_addr] = {phys_addr, Memory::Read|Memory::Write|Memory::User, false};
+        data->mappings[(uintptr_t)virt_addr] = {phys_addr, Memory::Read|Memory::Write|Memory::Executable|Memory::User, false};
     }
 }
 
@@ -391,6 +394,47 @@ void Process::map_address_space()
     }
 }
 
+uintptr_t Process::create_user_callback(const std::function<void(void*)> &callback)
+{
+    if (data->free_user_callback_entries->empty())
+    {
+        allocate_user_callback_page();
+    }
+    assert(!data->free_user_callback_entries->empty());
+
+    const auto address = *data->free_user_callback_entries->begin();
+    (*data->user_callback_list)[address] = callback;
+    data->free_user_callback_entries->erase(data->free_user_callback_entries->begin());
+
+    return address;
+}
+
+void Process::allocate_user_callback_page()
+{
+    auto virt_page = Memory::allocate_virtual_page(1, true);
+    Memory::map_page(0, (void*)virt_page, Memory::Sentinel|Memory::User);
+    data->mappings[(uintptr_t)virt_page] = {0, Memory::Sentinel|Memory::User, false};
+
+    // Mark these new callbacks as free
+    for (size_t i { 0 }; i < Memory::page_size(); ++i)
+    {
+        data->free_user_callback_entries->insert(virt_page+i);
+    }
+
+    auto handle = attach_fault_handler((void*)virt_page, [this](const PageFault& fault)
+    {
+        if (fault.level != PageFault::User) return false;
+        if (fault.type != PageFault::Read && fault.type != PageFault::Execute) return false;
+        if (!data->user_callback_list->count(fault.address)) return false;
+
+        data->user_callback_list->at(fault.address)(fault.mcontext);
+
+        return true;
+    });
+
+    data->user_callback_pages->emplace_back(virt_page, handle);
+}
+
 uintptr_t Process::allocate_pages(size_t pages)
 {
     uint8_t* addr = reinterpret_cast<uint8_t*>(Memory::allocate_virtual_page(pages, true));
@@ -432,25 +476,81 @@ void Process::copy_allocated_pages(Process &target)
 {
     for (const auto& pair : data->mappings)
     {
-        if (pair.second.owned)
-        {
-            target.data->mappings[pair.first] = pair.second;
-            assert(target.data->mappings[pair.first].owned);
-            target.data->mappings[pair.first].paddr = Memory::allocate_physical_page();
+        if (!pair.second.owned)
+            continue;
 
-            auto src_ptr = Memory::mmap(pair.second.paddr, Memory::page_size());
-            auto dest_ptr = Memory::mmap(target.data->mappings[pair.first].paddr, Memory::page_size());
+        target.data->mappings[pair.first] = pair.second;
+        assert(target.data->mappings[pair.first].owned);
+        target.data->mappings[pair.first].paddr = Memory::allocate_physical_page();
 
-            memcpy(dest_ptr, src_ptr, Memory::page_size());
+        auto src_ptr = Memory::mmap(pair.second.paddr, Memory::page_size());
+        auto dest_ptr = Memory::mmap(target.data->mappings[pair.first].paddr, Memory::page_size());
 
-            Memory::unmap(src_ptr, Memory::page_size());
-            Memory::unmap(dest_ptr, Memory::page_size());
-        }
+        memcpy(dest_ptr, src_ptr, Memory::page_size());
+
+        Memory::unmap(src_ptr, Memory::page_size());
+        Memory::unmap(dest_ptr, Memory::page_size());
     }
+}
+
+void populate_argv(uintptr_t addr, gsl::span<const kpp::string> args)
+{
+    // Structure:
+    // 0..n*4 : ptr array
+    // n*4..end : actual strings
+
+    gsl::span<uint8_t> data {(uint8_t*)addr, Memory::page_size()};
+
+    size_t cursor = args.size() * sizeof(uintptr_t); // start after arg array;
+
+    for (size_t i { 0 }; i < args.size(); ++i)
+    {
+        assert(cursor + args[i].size() < Memory::page_size());
+
+        std::copy(args[i].c_str(), args[i].c_str() + args[i].size() + 1, data.data() + cursor); // include null terminator
+
+        ((uint32_t*)data.data())[i] = Process::argv_virt_page + cursor;
+
+        cursor += args[i].size() + 1; // again, null terminator
+    }
+
+    assert(cursor < Memory::page_size());
+}
+
+bool Process::check_args_size(const std::vector<kpp::string> &args)
+{
+    size_t tb_size { args.size()*sizeof(uintptr_t) };
+
+    for (const auto& str : args)
+    {
+        tb_size += str.size()+1; // null terminator
+    }
+
+    return tb_size < Memory::page_size();
+}
+
+void Process::set_args(const std::vector<kpp::string>& args)
+{
+    data->args = args;
+
+    auto ptr = Memory::mmap(data->mappings.at(argv_virt_page).paddr, Memory::page_size());
+    populate_argv((uintptr_t)ptr, args);
+    Memory::unmap(ptr, Memory::page_size());
 }
 
 Process::~Process()
 {
+    // TODO : do this per fd ?
+    for (auto pair : *data->user_callback_pages)
+    {
+        detach_fault_handler(pair.second);
+    }
+
+    for (size_t fd { 0 }; fd < data->fd_table->size(); ++fd)
+    {
+        close_fd(fd);
+    }
+
     unswitch();
     cleanup();
 }

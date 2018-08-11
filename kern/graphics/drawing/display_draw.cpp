@@ -59,13 +59,15 @@ void draw_to_display_naive(const Screen &screen)
 }
 
 void draw_to_display_32rgb_nopad(const Screen &screen)
-{
-    assert(screen.width()*screen.height() >= current_video_mode().height*current_video_mode().width);
+{    
+    const auto mode = current_video_mode();
+
+    assert(screen.width()*screen.height() >= mode.height*mode.width);
 
     __builtin_prefetch(screen.data(), 0, 0);
 
-    aligned_memcpy(reinterpret_cast<void*>(current_video_mode().framebuffer_addr), screen.data(),
-                   current_video_mode().width*current_video_mode().height*current_video_mode().depth/CHAR_BIT);
+    aligned_memcpy(reinterpret_cast<void*>(mode.framebuffer_addr), screen.data(),
+                   mode.width*mode.height*mode.depth/CHAR_BIT);
 }
 
 void clear_display(Color color)

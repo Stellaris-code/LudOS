@@ -1,7 +1,7 @@
 /*
-page_fault.hpp
+main.cpp
 
-Copyright (c) 03 Yann BOUCHER (yann)
+Copyright (c) 11 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,31 +22,38 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef PAGE_FAULT_HPP
-#define PAGE_FAULT_HPP
 
 #include <stdint.h>
 
-#include <functional.hpp>
+#include <syscalls/syscall_list.hpp>
 
-struct PageFault
+#include <sys/fnctl.h>
+#include <sys/interface_list.h>
+#include <errno.h>
+#include <stdio.h>
+
+int main(int argc, char* argv[])
 {
-    void*                           mcontext;
-    uintptr_t                       address;
-    enum { Kernel, User           } level;
-    enum { Protection, NonPresent } error;
-    enum { Read, Write, Execute   } type ;
-};
+    int fd = open("/proc/interface_test", O_RDONLY, 0);
+    if (fd == -1)
+    {
+        perror("open()");
+        return 1;
+    }
 
-void page_fault_entry(const PageFault& fault);
+    itest interface;
+    int ret = get_interface(fd, ITEST_ID, &interface);
+    if (ret == -1)
+    {
+        perror("get_interface()");
+        return 2;
+    }
 
-/*
- * Handles page fault, returns true if handled by the callback or false if not
- */
-using fault_handle = int;
-using fault_callback = std::function<bool(const PageFault&)>;
+    fprintf(stderr, "address is : %p\n", interface.test);
 
-fault_handle attach_fault_handler(void* v_addr, const fault_callback& handler);
-void detach_fault_handler(fault_handle hdl);
+    interface.test();
 
-#endif // PAGE_FAULT_HPP
+    while (true) {}
+
+    return 0;
+}

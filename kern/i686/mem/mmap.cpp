@@ -71,6 +71,12 @@ void Memory::unmap_page(void *v_addr)
     Paging::unmap_page(v_addr);
 }
 
+void Memory::remap_page(uintptr_t p_addr, void *v_addr, uint32_t flags)
+{
+    Paging::unmap_page(v_addr);
+    Paging::map_page(p_addr, v_addr, flags);
+}
+
 bool Memory::is_mapped(const void *v_addr)
 {
     return Paging::is_mapped(v_addr);

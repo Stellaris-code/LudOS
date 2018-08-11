@@ -29,11 +29,14 @@ SOFTWARE.
 
 #include "mem/page_fault.hpp"
 
-bool Paging::page_fault_handler(const registers *regs)
+#include <libdisasm/libdis.h>
+
+bool Paging::page_fault_handler(registers *regs)
 {
     panic_regs = regs;
 
     PageFault fault;
+    fault.mcontext = regs;
     fault.address = cr2();
     fault.level = (regs->err_code & (1<<2)) ? PageFault::User : PageFault::Kernel;
     fault.error = (regs->err_code & (1<<0)) ? PageFault::Protection : PageFault::NonPresent;
@@ -46,7 +49,24 @@ bool Paging::page_fault_handler(const registers *regs)
         panic("Reserved paging structure bit write !\n");
     }
 
-    handle_page_fault(fault);
+    page_fault_entry(fault);
 
-    return false;
+    // if eip seems invalid, try to manually pop the stack and return
+    if (!Memory::is_mapped((unsigned char*)regs->eip))
+    {
+        uintptr_t return_eip = *(uintptr_t*)(regs->esp);
+
+        regs->eip = return_eip;
+        regs->esp += sizeof(uintptr_t);
+    }
+    else
+    {
+        // if we actually return, move eip to the next instruction
+        x86_invariant_t ins;
+        x86_invariant_disasm((unsigned char*)regs->eip, x86_max_insn_size(), &ins);
+
+        regs->eip += ins.size;
+    }
+
+    return true;
 }

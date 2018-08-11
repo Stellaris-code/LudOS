@@ -62,8 +62,8 @@ sighandler_t sys_signal(int num, user_ptr<sighandler_noptr_t> handler)
     }
 
     auto& table = *Process::current().data->sig_handlers;
-    if (handler.as_raw() == SIG_DFL) table[num].sa_handler = (sighandler_t)Process::default_sighandler_actions[num];
-    else if (handler.as_raw() == SIG_IGN) table[num].sa_handler = (sighandler_t)SIG_ACTION_IGN;
+    if (handler.as_raw() == (uintptr_t)SIG_DFL) table[num].sa_handler = (sighandler_t)Process::default_sighandler_actions[num];
+    else if (handler.as_raw() == (uintptr_t)SIG_IGN) table[num].sa_handler = (sighandler_t)SIG_ACTION_IGN;
     else
     {
         if (!handler.check())
@@ -74,7 +74,7 @@ sighandler_t sys_signal(int num, user_ptr<sighandler_noptr_t> handler)
         table[num].sa_handler = handler.get();
     }
 
-    return handler.as_raw();
+    return (sighandler_t)handler.as_raw();
 }
 
 int sys_sigaction(int num, user_ptr<const struct sigaction> act, user_ptr<struct sigaction> oldact)
@@ -84,7 +84,7 @@ int sys_sigaction(int num, user_ptr<const struct sigaction> act, user_ptr<struct
         return -EINVAL;
     }
 
-    if (!act.check() || (oldact.as_raw() != nullptr && !oldact.check()))
+    if (!act.check() || (oldact.as_raw() != (uintptr_t)nullptr && !oldact.check()))
     {
         return -EFAULT;
     }

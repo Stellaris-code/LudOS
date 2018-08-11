@@ -37,7 +37,7 @@ SOFTWARE.
 
 #include <stdio.h>
 
-isr::isr_t handlers[256] { nullptr };
+static isr::isr_t handlers[256] { nullptr };
 
 constexpr const char *exception_messages[] = {
     "Division by zero",				/* 0 */
@@ -78,7 +78,7 @@ constexpr const char *exception_messages[] = {
 #pragma GCC target ("no-sse")
 
 extern "C"
-const registers* isr_handler(const registers* const regs)
+const registers* isr_handler(registers* const regs)
 {
     // If in user mode
     if (regs->cs & 0x3) Process::current().arch_context->regs = *regs;
@@ -115,7 +115,7 @@ const registers* isr_handler(const registers* const regs)
 }
 
 extern "C"
-const registers* irq_handler(const registers* const regs)
+const registers* irq_handler(registers* const regs)
 {
     // If in user mode
     if (regs->cs & 0x3) Process::current().arch_context->regs = *regs;

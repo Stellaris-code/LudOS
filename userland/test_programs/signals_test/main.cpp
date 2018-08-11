@@ -87,7 +87,7 @@ int main(int argc, char* argv[])
     asm volatile ("mov %%esp, %0\n":"=m"(esp):);
     printf("Stack is : 0x%x\n", esp);
 
-    ensure(kill(0, SIGUSR1) == 0);
+    ensure(kill(getpid(), SIGUSR1) == 0);
     ensure(sig_num == SIGUSR1);
 
     volatile uint32_t* ptr = (volatile uint32_t*)0xDEADBEEF;

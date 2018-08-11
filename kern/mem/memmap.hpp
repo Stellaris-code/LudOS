@@ -39,7 +39,8 @@ public:
         User         = 1<<2,
         Uncached     = 1<<3,
         WriteThrough = 1<<4,
-        NoExec       = 1<<5
+        Executable   = 1<<5,
+        Sentinel     = 1<<6  // Used for custom page fault handlers, to signal an access to a page
     };
 
     static void* mmap(uintptr_t p_addr, size_t len, uint32_t flags = Read|Write);
@@ -47,6 +48,7 @@ public:
 
     static void map_page(uintptr_t p_addr, void* v_addr, uint32_t flags = Memory::Read|Memory::Write);
     static void unmap_page(void* v_addr);
+    static void remap_page(uintptr_t p_addr, void* v_addr, uint32_t flags);
 
     static bool is_mapped(const void* v_addr);
 

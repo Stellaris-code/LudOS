@@ -73,6 +73,7 @@ LUDOS_SYSCALL_DEF_COMBINED(7, uptime, uint64_t)
 LUDOS_SYSCALL_DEF_COMBINED(8, shmget, int, key_t key, size_t size, int shmflag)
 LUDOS_SYSCALL_DEF_COMBINED(9, shmat, long, int shmid, USER_PTR(const void) shmaddr, int shmflg)
 LUDOS_SYSCALL_DEF_COMBINED(10,shmdt, long, USER_PTR(const void) shmaddr)
+LUDOS_SYSCALL_DEF_COMBINED(11,get_interface, int, unsigned int fd, int interface_id, USER_PTR(void) interface)
 
 #undef LINUX_SYSCALL_DEF_COMBINED
 #undef LUDOS_SYSCALL_DEF_COMBINED

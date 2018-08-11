@@ -32,6 +32,7 @@ SOFTWARE.
 #include <optional.hpp>
 #include <vector.hpp>
 #include <unordered_map.hpp>
+#include <unordered_set.hpp>
 #include <stack.hpp>
 
 #include <kstring/kstring.hpp>
@@ -40,10 +41,9 @@ SOFTWARE.
 #include <signal.h>
 
 #include "mem/memmap.hpp"
+#include "mem/page_fault.hpp"
 
-#ifdef LUDOS_HAS_SHM
 #include "shared_memory.hpp"
-#endif
 
 #include "fdinfo.hpp"
 
@@ -60,16 +60,14 @@ struct MemoryMapping
 {
     uintptr_t paddr;
     uint32_t  flags : 31;
-    bool      owned : 1;
+    bool      owned : 1; // TODO : use an enum
 };
 
-#ifdef LUDOS_HAS_SHM
 struct ShmEntry
 {
     std::shared_ptr<SharedMemorySegment> shm;
     void* v_addr;
 };
-#endif
 }
 
 struct ProcessArchContext;
@@ -97,13 +95,15 @@ struct ProcessData
 
     shared_resource<std::vector<tasking::FDInfo>> fd_table;
 
+    shared_resource<std::unordered_set<uintptr_t>> free_user_callback_entries;
+    shared_resource<std::unordered_map<uintptr_t, std::function<void(void*)>>> user_callback_list;
+    shared_resource<std::vector<std::pair<uintptr_t, fault_handle>>>        user_callback_pages;
+
     std::unordered_map<uintptr_t, tasking::MemoryMapping> mappings;
 
     std::vector<kpp::string> args;
 
-#ifdef LUDOS_HAS_SHM
     std::unordered_map<unsigned int, tasking::ShmEntry> shm_list;
-#endif
 
     struct SigContext
     {

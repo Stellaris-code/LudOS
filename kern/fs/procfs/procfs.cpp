@@ -1,4 +1,4 @@
-/*
+﻿/*
 procfs.cpp
 
 Copyright (c) 10 Yann BOUCHER (yann)
@@ -27,6 +27,9 @@ SOFTWARE.
 
 #include "fs/fsutils.hpp"
 #include "fs/vfs.hpp"
+#include "fs/interface.hpp"
+
+#include <sys/interface_list.h>
 
 #include "tasking/process.hpp"
 
@@ -41,6 +44,28 @@ SOFTWARE.
 
 namespace procfs
 {
+
+struct interface_test : public vfs::interface_node<interface_test, vfs::ientry<itest, ITEST_ID>>
+{
+    interface_test(const kpp::string& name)
+    {
+        the_name = name;
+    }
+
+    virtual kpp::string name() const override
+    { return the_name; }
+
+    template<typename Interface>
+    static void fill_interface(Interface*)
+    {}
+
+    kpp::string the_name;
+};
+template <>
+void interface_test::fill_interface<itest>(itest* interface)
+{
+
+}
 
 struct procfs_root : public vfs::node
 {
@@ -60,6 +85,8 @@ public:
         children.emplace_back(std::make_shared<string_node>("uptime",  []{ return kpp::to_string(Time::uptime()); }));
         children.emplace_back(std::make_shared<string_node>("version", get_version_str()));
         if (Process::enabled()) children.emplace_back(std::make_shared<vfs::symlink>(kpp::to_string(Process::current().pid), "self"));
+
+        children.emplace_back(std::make_shared<interface_test>("interface_test"));
 
         return children;
     }

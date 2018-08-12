@@ -1,7 +1,7 @@
 /*
-interface_list.h
+fbdev.hpp
 
-Copyright (c) 09 Yann BOUCHER (yann)
+Copyright (c) 12 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,39 +22,34 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef INTERFACE_LIST_H
-#define INTERFACE_LIST_H
+#ifndef FBDEV_HPP
+#define FBDEV_HPP
 
-#include <stdint.h>
+#include "fs/interface.hpp"
 
-#define ITEST_ID 0xbeef
-typedef struct
+#include <sys/interface_list.h>
+
+struct fbdev_node : public vfs::interface_node<fbdev_node, vfs::ientry<ifbdev, IFBDEV_ID>>
 {
-    int(*test)(const char* str);
-} itest;
+    using interface_node::interface_node;
 
-struct FBDevMode
-{
-    uint32_t width { 0 };
-    uint32_t height { 0 };
-    uint32_t depth { 0 };
-    uint32_t bytes_per_line { 0 };
-    uint8_t  red_mask_size { 0 };
-    uint8_t  red_field_pos { 0 };
-    uint8_t  green_mask_size { 0 };
-    uint8_t  green_field_pos { 0 };
-    uint8_t  blue_mask_size { 0 };
-    uint8_t  blue_field_pos { 0 };
+    template<typename Interface>
+    void fill_interface(Interface*) const
+    {}
+
+    int get_video_modes(FBDevMode* buffer, size_t buffer_count) const;
+    int get_current_mode(FBDevMode* mode) const;
+    int switch_mode(int width, int height, int depth) const;
+    uint8_t* get_framebuffer() const;
 };
 
-#define IFBDEV_ID 0x0000
-typedef struct
+template <>
+inline void fbdev_node::fill_interface<ifbdev>(ifbdev* interface) const
 {
-    // returns the number of valid video modes
-    int(*get_video_modes)(FBDevMode* buffer, size_t buffer_count);
-    int(*get_current_mode)(FBDevMode* mode);
-    int(*switch_mode)(int width, int height, int depth);
-    uint8_t*(*get_framebuffer)();
-} ifbdev;
+    register_callback(&fbdev_node::get_video_modes, interface->get_video_modes);
+    register_callback(&fbdev_node::get_current_mode, interface->get_current_mode);
+    register_callback(&fbdev_node::switch_mode, interface->switch_mode);
+    register_callback(&fbdev_node::get_framebuffer, interface->get_framebuffer);
+}
 
-#endif // INTERFACE_LIST_H
+#endif // FBDEV_HPP

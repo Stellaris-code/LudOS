@@ -36,6 +36,8 @@ SOFTWARE.
 #include "drivers/storage/disk.hpp"
 #include "tasking/process.hpp"
 
+#include "fbdev.hpp"
+
 namespace devfs
 {
 
@@ -140,6 +142,12 @@ void init()
     stderr_node->rename("stderr");
 
     root->children.emplace_back(stderr_node);
+
+    // TODO : make it a driver
+    auto fbdev = std::make_shared<fbdev_node>(root.get());
+    fbdev->rename("fbdev");
+
+    root->children.emplace_back(fbdev);
 
     // add existing drives
     for (Disk& disk : Disk::disks())

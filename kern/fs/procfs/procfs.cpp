@@ -70,14 +70,7 @@ struct interface_test : public vfs::interface_node<interface_test, vfs::ientry<i
 template <>
 void interface_test::fill_interface<itest>(itest* interface) const
 {
-    const auto address =
-            Process::current().create_user_callback(std::function<int(const char*)>(
-    [this](const char* str)
-    {
-        return test_function(str);
-    }));
-
-    interface->test = (int(*)(const char*))address;
+    register_callback(&interface_test::test_function, interface->test);
 }
 
 struct procfs_root : public vfs::node

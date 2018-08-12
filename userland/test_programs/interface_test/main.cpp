@@ -34,26 +34,55 @@ SOFTWARE.
 
 int main(int argc, char* argv[])
 {
-    int fd = open("/proc/interface_test", O_RDONLY, 0);
-    if (fd == -1)
+    //    int fd = open("/proc/interface_test", O_RDONLY, 0);
+    //    if (fd == -1)
+    //    {
+    //        perror("open()");
+    //        return 1;
+    //    }
+
+    //    itest interface;
+    //    int ret = get_interface(fd, ITEST_ID, &interface);
+    //    if (ret == -1)
+    //    {
+    //        perror("get_interface()");
+    //        return 2;
+    //    }
+
+    //    fprintf(stderr, "address is : %p\n", interface.test);
+
+    //    ret = interface.test("working!");
+
+    //    printf("The call returned %d\n", ret);
+
+    int fbdev_fd = open("/dev/fbdev", O_RDWR, 0);
+    assert(fbdev_fd != -1);
+    ifbdev fbdev;
+
+    int fbret = get_interface(fbdev_fd, IFBDEV_ID, &fbdev);
+    assert(fbret != -1);
+
+    //    FBDevMode modes[64];
+    //    int count = fbdev.get_video_modes(modes, 64);
+
+
+    printf("Switching to 640x480x32\n");
+    fbdev.switch_mode(640, 480, 32);
+
+    FBDevMode current;
+    fbdev.get_current_mode(&current);
+    printf("Current mode : %dx%dx%d\n", current.width, current.height, current.depth);
+
+    uint8_t* fb = fbdev.get_framebuffer();
+    printf("Address : %p\n", fb);
+
+    while (true)
     {
-        perror("open()");
-        return 1;
+        for (size_t i { 0 }; i < current.bytes_per_line*current.height/4; ++i)
+        {
+            ((uint32_t*)fb)[i] = 0x0000ff; // black
+        }
     }
-
-    itest interface;
-    int ret = get_interface(fd, ITEST_ID, &interface);
-    if (ret == -1)
-    {
-        perror("get_interface()");
-        return 2;
-    }
-
-    fprintf(stderr, "address is : %p\n", interface.test);
-
-    ret = interface.test("working!");
-
-    printf("The call returned %d\n", ret);
 
     while (true) {}
 

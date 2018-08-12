@@ -131,17 +131,17 @@ void Process::do_user_callback(const std::function<int (const std::vector<uintpt
         if (len == 2)
         {
             arguments.push_back(*(uint16_t*)(esp_copy));
-            esp_copy -= 2;
+            esp_copy += 2;
         }
         else if (len == 4)
         {
             arguments.push_back(*(uint32_t*)(esp_copy));
-            esp_copy -= 4;
+            esp_copy += 4;
         }
         else if (len == 8)
         {
             arguments.push_back(*(uint64_t*)(esp_copy));
-            esp_copy -= 8;
+            esp_copy += 8;
         }
         else
         {

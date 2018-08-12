@@ -32,13 +32,12 @@ SOFTWARE.
 
 #include "color.hpp"
 
-#include "drawing/screen.hpp"
-
 namespace graphics
 {
 
 struct VideoMode
 {
+    uintptr_t phys_fb_addr { 0 };
     uintptr_t framebuffer_addr { 0 };
     uint32_t width { 0 };
     uint32_t height { 0 };
@@ -64,7 +63,7 @@ struct MonitorInfo
 };
 
 constexpr size_t max_res_pixels { 1920 * 1080 * 4 };
-
+class Screen;
 
 std::vector<VideoMode> list_video_modes();
 [[nodiscard]] kpp::optional<VideoMode> change_mode(size_t width, size_t height, size_t depth);

@@ -27,6 +27,8 @@ SOFTWARE.
 
 #include "vfs.hpp"
 
+#include "tasking/process.hpp"
+
 namespace vfs
 {
 
@@ -41,6 +43,8 @@ template <typename Derived, typename... T>
 struct interface_node : public vfs::node
 {
     static_assert (sizeof...(T) != 0, "an interface_node must have at least one interface");
+
+    using node::node;
 
     template<typename Interface>
     void fill_interface(Interface* interface) const
@@ -60,6 +64,28 @@ struct interface_node : public vfs::node
         if constexpr (sizeof...(T) == 0) return -1;
         else
         return get_interface_impl<T...>(interface_id, interface);
+    }
+
+protected:
+    template <typename Return, typename... Args>
+    void register_callback(Return(Derived::*func)(Args...) const, Return(*&callback)(Args...)) const
+    {
+        const auto address =
+                Process::current().create_user_callback(std::function<int(Args...)>(
+        [func, this](Args&&... args)
+        {
+            if constexpr (std::is_same_v<Return, void>)
+            {
+                ((Derived*)this->*(func))(args...);
+                return 0;
+            }
+            else
+            {
+                return (int)((Derived*)this->*(func))(args...);
+            }
+        }));
+
+        callback = (decltype(callback))address;
     }
 
 private:

@@ -132,6 +132,8 @@ public:
     void switch_to();
     void unswitch();
 
+    void* map_range(uintptr_t phys, size_t len);
+
     // creates a way to call the kernel by triggering a page fault
     template <typename... Args>
     uintptr_t create_user_callback(const std::function<int(Args...)>& callback);

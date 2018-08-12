@@ -394,6 +394,19 @@ void Process::map_address_space()
     }
 }
 
+void *Process::map_range(uintptr_t phys, size_t len)
+{
+    size_t page_count = len / Memory::page_size() + (len%Memory::page_size()?1:0);
+    uintptr_t virt = Memory::allocate_virtual_page(page_count, true);
+    for (size_t i { 0 }; i < page_count; ++i)
+    {
+        data->mappings[virt + Memory::page_size()*i] = {phys + Memory::page_size()*i,
+                Memory::Read|Memory::Write|Memory::WriteThrough|Memory::User, false};
+    }
+
+    return (void*)virt;
+}
+
 uintptr_t Process::create_user_callback_impl(const std::function<int(const std::vector<uintptr_t>&)> &callback, const std::vector<size_t> &arg_sizes)
 {
     if (data->user_callbacks->free_entries.empty())

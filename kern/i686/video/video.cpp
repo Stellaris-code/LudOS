@@ -58,6 +58,7 @@ VideoMode vbe_to_video_mode(const vbe::ModeInfoBlock& info)
     VIDEO_VBE3_GET(BlueMaskSize, blue_mask_size);
     VIDEO_VBE3_GET(BlueFieldPosition, blue_field_pos);
     mode.type = info.MemoryModel == vbe::MemoryModel::Text ? VideoMode::Text : VideoMode::Graphics;
+    mode.phys_fb_addr = info.PhysBasePtr;
     mode.framebuffer_addr = (uintptr_t)Memory::mmap(info.PhysBasePtr,
                                                     mode.bytes_per_line*mode.height,
                                                     Memory::Write|Memory::WriteThrough|Memory::Uncached);

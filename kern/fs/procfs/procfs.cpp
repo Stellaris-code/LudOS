@@ -56,15 +56,28 @@ struct interface_test : public vfs::interface_node<interface_test, vfs::ientry<i
     { return the_name; }
 
     template<typename Interface>
-    static void fill_interface(Interface*)
+    void fill_interface(Interface*) const
     {}
+
+    int test_function(const char* str) const
+    {
+        log_serial("Called! : %s\n", str);
+        return 42;
+    }
 
     kpp::string the_name;
 };
 template <>
-void interface_test::fill_interface<itest>(itest* interface)
+void interface_test::fill_interface<itest>(itest* interface) const
 {
+    const auto address =
+            Process::current().create_user_callback(std::function<int(const char*)>(
+    [this](const char* str)
+    {
+        return test_function(str);
+    }));
 
+    interface->test = (int(*)(const char*))address;
 }
 
 struct procfs_root : public vfs::node

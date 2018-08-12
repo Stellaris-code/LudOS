@@ -116,6 +116,47 @@ void Process::execute_sighandler(int signal, pid_t returning_pid, const siginfo_
     switch_to();
 }
 
+void Process::do_user_callback(const std::function<int (const std::vector<uintptr_t> &)> &callback, const std::vector<size_t>& arg_sizes)
+{
+    // TODO : copy_from_user
+    auto& regs = arch_context->regs;
+    uintptr_t return_address = *(uintptr_t*)(regs.esp);
+    regs.esp += sizeof(uintptr_t);
+
+    uintptr_t esp_copy = regs.esp;
+
+    std::vector<uintptr_t> arguments;
+    for (auto len : arg_sizes)
+    {
+        if (len == 2)
+        {
+            arguments.push_back(*(uint16_t*)(esp_copy));
+            esp_copy -= 2;
+        }
+        else if (len == 4)
+        {
+            arguments.push_back(*(uint32_t*)(esp_copy));
+            esp_copy -= 4;
+        }
+        else if (len == 8)
+        {
+            arguments.push_back(*(uint64_t*)(esp_copy));
+            esp_copy -= 8;
+        }
+        else
+        {
+            assert(!!"Invalid argument size");
+        }
+    }
+
+    int ret = callback(arguments);
+    regs.eax = ret;
+
+    set_instruction_pointer(return_address);
+    unswitch(); // TODO : optimizable
+    switch_to();
+}
+
 void Process::exit_signal()
 {
     assert(!data->sig_context.empty());
@@ -205,9 +246,7 @@ Process *Process::clone(Process &proc, uint32_t flags)
         proc.copy_allocated_pages(*new_proc); // noleak
 
     // TODO : refactor this
-    new_proc->data->free_user_callback_entries = std::make_shared<std::unordered_set<uintptr_t>>(*proc.data->free_user_callback_entries);
-    new_proc->data->user_callback_list = std::make_shared<std::unordered_map<uintptr_t, std::function<void(void*)>>>(*proc.data->user_callback_list);
-    new_proc->data->user_callback_pages = std::make_shared<std::vector<std::pair<uintptr_t, fault_handle>>>(*proc.data->user_callback_pages);
+    new_proc->data->user_callbacks = std::make_shared<tasking::UserCallbacks>(*proc.data->user_callbacks);
 
     new_proc->data->args = proc.data->args; // noleak
     new_proc->data->shm_list = proc.data->shm_list;

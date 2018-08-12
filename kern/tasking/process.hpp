@@ -133,7 +133,10 @@ public:
     void unswitch();
 
     // creates a way to call the kernel by triggering a page fault
-    uintptr_t create_user_callback(const std::function<void(void *)> &callback);
+    template <typename... Args>
+    uintptr_t create_user_callback(const std::function<int(Args...)>& callback);
+
+    uintptr_t create_user_callback_impl(const std::function<int(const std::vector<uintptr_t>&)> &callback, const std::vector<size_t>& arg_sizes);
     void allocate_user_callback_page();
 
     void raise(pid_t target_pid, int sig, const siginfo_t& siginfo);
@@ -178,6 +181,8 @@ private:
 
     void execute_sighandler(int signal, pid_t returning_pid, const siginfo_t& siginfo);
 
+    void do_user_callback(const std::function<int(const std::vector<uintptr_t>&)>& callback, const std::vector<size_t> &arg_sizes);
+
     void map_code();
     void map_stack();
     void map_shm();
@@ -200,5 +205,7 @@ private:
 };
 
 extern "C" void test_task();
+
+#include "process.tpp"
 
 #endif // PROCESS_HPP

@@ -47,6 +47,8 @@ SOFTWARE.
 
 extern "C" void signal_trampoline();
 
+using namespace tasking;
+
 Process::Process()
 {
     data = std::make_unique<ProcessData>();
@@ -56,9 +58,7 @@ Process::Process()
     init_default_fds();
     init_sig_handlers();
 
-    data->free_user_callback_entries = std::make_shared<std::unordered_set<uintptr_t>>();
-    data->user_callback_list = std::make_shared<std::unordered_map<uintptr_t, std::function<void(void*)>>>();
-    data->user_callback_pages = std::make_shared<std::vector<std::pair<uintptr_t, fault_handle>>>();
+    data->user_callbacks = std::make_shared<UserCallbacks>();
 }
 
 void Process::reset(gsl::span<const uint8_t> code_to_copy, size_t allocated_size)
@@ -394,17 +394,17 @@ void Process::map_address_space()
     }
 }
 
-uintptr_t Process::create_user_callback(const std::function<void(void*)> &callback)
+uintptr_t Process::create_user_callback_impl(const std::function<int(const std::vector<uintptr_t>&)> &callback, const std::vector<size_t> &arg_sizes)
 {
-    if (data->free_user_callback_entries->empty())
+    if (data->user_callbacks->free_entries.empty())
     {
         allocate_user_callback_page();
     }
-    assert(!data->free_user_callback_entries->empty());
+    assert(!data->user_callbacks->free_entries.empty());
 
-    const auto address = *data->free_user_callback_entries->begin();
-    (*data->user_callback_list)[address] = callback;
-    data->free_user_callback_entries->erase(data->free_user_callback_entries->begin());
+    const auto address = *data->user_callbacks->free_entries.begin();
+    data->user_callbacks->list[address] = {arg_sizes, callback};
+    data->user_callbacks->free_entries.erase(data->user_callbacks->free_entries.begin());
 
     return address;
 }
@@ -418,21 +418,22 @@ void Process::allocate_user_callback_page()
     // Mark these new callbacks as free
     for (size_t i { 0 }; i < Memory::page_size(); ++i)
     {
-        data->free_user_callback_entries->insert(virt_page+i);
+        data->user_callbacks->free_entries.insert(virt_page+i);
     }
 
     auto handle = attach_fault_handler((void*)virt_page, [this](const PageFault& fault)
     {
         if (fault.level != PageFault::User) return false;
         if (fault.type != PageFault::Read && fault.type != PageFault::Execute) return false;
-        if (!data->user_callback_list->count(fault.address)) return false;
+        if (!data->user_callbacks->list.count(fault.address)) return false;
 
-        data->user_callback_list->at(fault.address)(fault.mcontext);
+        auto entry = data->user_callbacks->list.at(fault.address);
+        do_user_callback(entry.callback, entry.arg_sizes);
 
         return true;
     });
 
-    data->user_callback_pages->emplace_back(virt_page, handle);
+    data->user_callbacks->pages.push_back(UserCallbacks::PageEntry{virt_page, handle});
 }
 
 uintptr_t Process::allocate_pages(size_t pages)
@@ -541,9 +542,9 @@ void Process::set_args(const std::vector<kpp::string>& args)
 Process::~Process()
 {
     // TODO : do this per fd ?
-    for (auto pair : *data->user_callback_pages)
+    for (auto entry : data->user_callbacks->pages)
     {
-        detach_fault_handler(pair.second);
+        detach_fault_handler(entry.base);
     }
 
     for (size_t fd { 0 }; fd < data->fd_table->size(); ++fd)

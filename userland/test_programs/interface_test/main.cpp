@@ -51,7 +51,9 @@ int main(int argc, char* argv[])
 
     fprintf(stderr, "address is : %p\n", interface.test);
 
-    interface.test();
+    ret = interface.test("working!");
+
+    printf("The call returned %d\n", ret);
 
     while (true) {}
 

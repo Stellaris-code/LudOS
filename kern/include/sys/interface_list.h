@@ -28,7 +28,7 @@ SOFTWARE.
 #define ITEST_ID 0xbeef
 typedef struct __attribute__((packed))
 {
-    void(*test)();
+    int(*test)(const char* str);
 } itest;
 
 #endif // INTERFACE_LIST_H

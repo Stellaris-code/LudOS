@@ -1,7 +1,7 @@
-﻿/*
-interface.cpp
+/*
+process.tpp
 
-Copyright (c) 09 Yann BOUCHER (yann)
+Copyright (c) 11 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -23,26 +23,24 @@ SOFTWARE.
 
 */
 
-#include <errno.h>
+template <typename... Args, size_t... Idx>
+void apply_vec(std::tuple<Args...>& t, const std::vector<uintptr_t>& vec, std::index_sequence<Idx...>) {
+    ((std::get<Idx>(t) = (typename std::tuple_element<Idx, std::tuple<Args...>>::type)vec[Idx]), ...);
+}
 
-#include "tasking/process.hpp"
-#include "fs/vfs.hpp"
-
-#include "utils/logging.hpp"
-
-#include "utils/user_ptr.hpp"
-
-int sys_get_interface(unsigned int fd, int interface_id, user_ptr<void> interface)
+template <typename... Args>
+uintptr_t Process::create_user_callback(const std::function<int(Args...)>& callback)
 {
-    auto entry = Process::current().get_fd(fd);
-    if (!entry) return -EBADF;
+    std::vector<size_t> arg_sizes(sizeof...(Args));
 
-    if (!interface.check()) return -EFAULT;
+    size_t i { 0 };
+    ((arg_sizes[i++] = sizeof(Args)), ...);
 
-    if (!entry->node->implements(interface_id)) return -EINVAL;
+    return create_user_callback_impl([callback](const std::vector<uintptr_t>& args)->int
+    {
+        std::tuple<Args...> tuple;
+        apply_vec(tuple, args, std::make_index_sequence<sizeof...(Args)>());
 
-    int interface_size = entry->node->get_interface(interface_id, interface.get());
-    if (interface_size == -1) return -EINVAL;
-
-    return EOK;
+        return std::apply(callback, tuple);
+    }, arg_sizes);
 }

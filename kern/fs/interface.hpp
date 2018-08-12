@@ -43,7 +43,7 @@ struct interface_node : public vfs::node
     static_assert (sizeof...(T) != 0, "an interface_node must have at least one interface");
 
     template<typename Interface>
-    static void fill_interface(Interface* interface)
+    void fill_interface(Interface* interface) const
     {
         (void)interface;
     }
@@ -78,7 +78,8 @@ private:
             return -1;
 
         memset(interface, 0, sizeof(typename First::interface_type));
-        Derived::template fill_interface((typename First::interface_type*)interface);
+        static_cast<const Derived*>(this)->fill_interface((typename First::interface_type*)interface);
+
         return sizeof(typename First::interface_type);
     }
 

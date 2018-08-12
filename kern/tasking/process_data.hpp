@@ -68,6 +68,24 @@ struct ShmEntry
     std::shared_ptr<SharedMemorySegment> shm;
     void* v_addr;
 };
+
+struct UserCallbacks
+{
+    struct CallbackEntry
+    {
+        std::vector<size_t> arg_sizes;
+        std::function<int(const std::vector<uintptr_t>&)> callback;
+    };
+    struct PageEntry
+    {
+        uintptr_t base;
+        fault_handle page_fault_handle;
+    };
+
+    std::unordered_set<uintptr_t> free_entries;
+    std::unordered_map<uintptr_t, CallbackEntry> list;
+    std::vector<PageEntry> pages;
+};
 }
 
 struct ProcessArchContext;
@@ -95,9 +113,7 @@ struct ProcessData
 
     shared_resource<std::vector<tasking::FDInfo>> fd_table;
 
-    shared_resource<std::unordered_set<uintptr_t>> free_user_callback_entries;
-    shared_resource<std::unordered_map<uintptr_t, std::function<void(void*)>>> user_callback_list;
-    shared_resource<std::vector<std::pair<uintptr_t, fault_handle>>>        user_callback_pages;
+    shared_resource<tasking::UserCallbacks> user_callbacks;
 
     std::unordered_map<uintptr_t, tasking::MemoryMapping> mappings;
 

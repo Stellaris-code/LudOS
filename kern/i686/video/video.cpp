@@ -59,9 +59,6 @@ VideoMode vbe_to_video_mode(const vbe::ModeInfoBlock& info)
     VIDEO_VBE3_GET(BlueFieldPosition, blue_field_pos);
     mode.type = info.MemoryModel == vbe::MemoryModel::Text ? VideoMode::Text : VideoMode::Graphics;
     mode.phys_fb_addr = info.PhysBasePtr;
-    mode.framebuffer_addr = (uintptr_t)Memory::mmap(info.PhysBasePtr,
-                                                    mode.bytes_per_line*mode.height,
-                                                    Memory::Write|Memory::WriteThrough|Memory::Uncached);
 
     return mode;
 }
@@ -121,9 +118,14 @@ kpp::optional<VideoMode> change_mode(size_t width, size_t height, size_t depth)
         PhysPageAllocator::mark_as_used(mode.info.PhysBasePtr,
                              mode.info.BytesPerScanLine*mode.info.YResolution);
 
-        if (current_mode.framebuffer_addr) Memory::unmap((void*)current_mode.framebuffer_addr, current_mode.bytes_per_line*current_mode.height);
+
+        if (current_mode.virt_fb_addr)
+            Memory::unmap((void*)current_mode.virt_fb_addr, current_mode.bytes_per_line*current_mode.height);
 
         current_mode = vbe_to_video_mode(mode.info);
+        current_mode.virt_fb_addr = (uintptr_t)Memory::mmap(current_mode.phys_fb_addr,
+                                                        current_mode.bytes_per_line*current_mode.height,
+                                                        Memory::Write|Memory::WriteThrough|Memory::Uncached);
 
         scr = std::make_unique<Screen>(current_mode.width, current_mode.height);
         set_display_mode(current_mode);

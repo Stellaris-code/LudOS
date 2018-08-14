@@ -30,6 +30,7 @@ SOFTWARE.
 #include <sys/interface_list.h>
 
 #include "utils/user_ptr.hpp"
+#include "utils/messagebus.hpp"
 
 struct kbdev_node : public vfs::interface_node<kbdev_node, vfs::ientry<ikbdev, IKBDEV_ID>>
 {
@@ -43,6 +44,8 @@ struct kbdev_node : public vfs::interface_node<kbdev_node, vfs::ientry<ikbdev, I
     int get_kbd_state(kbd_state*) const;
 
     size_t keyboard_id;
+    MessageBus::RAIIHandle msg_hdl;
+    bool key_state[KeyCount];
 };
 
 template <>

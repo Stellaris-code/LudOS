@@ -32,28 +32,53 @@ SOFTWARE.
 #include <errno.h>
 #include <stdio.h>
 
+int kbd_fd;
+ikbdev kbd_interface;
+kbd_state key_state;
+
+void update_key_state()
+{
+    static enum Key previous[KeyCount];
+    memcpy(previous, key_state.state, sizeof(key_state));
+
+    kbd_interface.get_kbd_state(&key_state);
+
+    for (size_t i = 0; i < KeyCount; ++i)
+    {
+        if (previous[i] != key_state.state[i])
+        {
+            fprintf(stderr, "Something changed at key %d !\n", i);
+        }
+    }
+}
+
 int main(int argc, char* argv[])
 {
-    //    int fd = open("/proc/interface_test", O_RDONLY, 0);
-    //    if (fd == -1)
-    //    {
-    //        perror("open()");
-    //        return 1;
-    //    }
+    int fd = open("/proc/interface_test", O_RDONLY, 0);
+    if (fd == -1)
+    {
+        perror("open()");
+        return 1;
+    }
 
-    //    itest interface;
-    //    int ret = get_interface(fd, ITEST_ID, &interface);
-    //    if (ret == -1)
-    //    {
-    //        perror("get_interface()");
-    //        return 2;
-    //    }
+    itest interface;
+    int ret = get_interface(fd, ITEST_ID, &interface);
+    if (ret == -1)
+    {
+        perror("get_interface()");
+        return 2;
+    }
 
-    //    fprintf(stderr, "address is : %p\n", interface.test);
+    fprintf(stderr, "address is : %p\n", interface.test);
 
-    //    ret = interface.test("working!");
+    ret = interface.test("working!");
 
-    //    printf("The call returned %d\n", ret);
+    printf("The call returned %d\n", ret);
+
+    kbd_fd = open("/dev/kbd0", O_RDONLY, 0);
+    assert(kbd_fd != -1);
+    int kbd_ret = get_interface(kbd_fd, IKBDEV_ID, &kbd_interface);
+    assert(kbd_ret != -1);
 
     int fbdev_fd = open("/dev/fbdev", O_RDWR, 0);
     assert(fbdev_fd != -1);
@@ -80,8 +105,9 @@ int main(int argc, char* argv[])
     {
         for (size_t i { 0 }; i < current.bytes_per_line*current.height/4; ++i)
         {
-            ((uint32_t*)fb)[i] = 0x0000ff; // black
+            ((uint32_t*)fb)[i] = 0x0000ff; // blue
         }
+        update_key_state();
     }
 
     while (true) {}

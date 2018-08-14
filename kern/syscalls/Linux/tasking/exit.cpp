@@ -33,7 +33,6 @@ SOFTWARE.
 
 void sys_exit(uint8_t errcode)
 {
-    log_serial("PID : %d\n", Process::current().pid);
     Process::kill(Process::current().pid, __W_EXITCODE(errcode, 0));
 
     tasking::schedule();

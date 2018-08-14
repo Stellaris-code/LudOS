@@ -82,6 +82,7 @@ kpp::expected<MemBuffer, DiskError> DiskCache::read_sector(size_t sec, size_t co
 [[nodiscard]]
 kpp::expected<kpp::dummy_t, DiskError> DiskCache::flush()
 {
+    log_serial("Cache flush\n");
     while (!m_cache.empty())
     {
         auto result = remove_entry(m_access_times.begin()->second);

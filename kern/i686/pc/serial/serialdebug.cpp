@@ -69,6 +69,7 @@ void write(uint16_t comport, const char *fmt, ...)
 
 void write(const char *fmt, ...)
 {
+    static int com_port = BDA::com1_port();
     char buf[512];
 
     va_list va;
@@ -80,7 +81,7 @@ void write(const char *fmt, ...)
 
     while (*str != '\0')
     {
-        write_serial(BDA::com1_port(), *str);
+        write_serial(com_port, *str);
         outb(0xe9, *str); // bochs
         ++str;
     }

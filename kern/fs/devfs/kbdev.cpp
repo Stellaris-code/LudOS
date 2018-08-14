@@ -27,12 +27,26 @@ SOFTWARE.
 
 #include "drivers/kbd/kbd_mappings.hpp"
 
+#include "utils/messagebus.hpp"
+#include "utils/logging.hpp"
+
 kbdev_node::kbdev_node(vfs::node *parent)
     : interface_node(parent)
 {
+    memset(key_state, false, sizeof(key_state));
 
+    msg_hdl = MessageBus::register_handler<kbd::KeyEvent>([this](const kbd::KeyEvent& event)
+    {
+        if (event.kbd_id == keyboard_id)
+        {
+            key_state[event.key] = (event.state == kbd::KeyEvent::Pressed);
+        }
+    });
 }
 
 int kbdev_node::get_kbd_state(kbd_state * state) const
 {
+    memcpy(state->state, this->key_state, sizeof(key_state));
+
+    return EOK;
 }

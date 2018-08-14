@@ -38,6 +38,7 @@ public:
 
     void decrease(S duration);
     void insert(const T& el, S sleep_duration);
+    // TODO : make find() O(1) or O(log n)
     bool find(const T& el) const;
     std::vector<T> elements() const;
 

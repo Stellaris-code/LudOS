@@ -562,9 +562,12 @@ Process::~Process()
 
     for (size_t fd { 0 }; fd < data->fd_table->size(); ++fd)
     {
-        close_fd(fd);
+        if (get_fd(fd))
+        {
+            close_fd(fd);
+        }
     }
 
-    unswitch();
+    //unswitch();
     cleanup();
 }

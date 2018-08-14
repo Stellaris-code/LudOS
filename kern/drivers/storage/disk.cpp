@@ -173,7 +173,8 @@ kpp::expected<kpp::dummy_t, DiskError> Disk::enable_caching(bool val)
         if (!result) return result;
     }
 
-    m_caching = val;
+    // TODO : investigate why enabling caching destroys performance !
+    //m_caching = val;
 
     return {};
 }

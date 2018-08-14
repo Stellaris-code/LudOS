@@ -50,7 +50,7 @@ void draw_to_display_naive(const Screen &screen)
         {
             auto color = screen[{i, j}];
             const size_t offset = i * current_video_mode().depth/CHAR_BIT + j * current_video_mode().bytes_per_line;
-            uint32_t* pixel = reinterpret_cast<uint32_t*>(current_video_mode().framebuffer_addr + offset);
+            uint32_t* pixel = reinterpret_cast<uint32_t*>(current_video_mode().virt_fb_addr + offset);
             set_pixel_field(pixel, color.r, current_video_mode().red_field_pos, current_video_mode().red_mask_size);
             set_pixel_field(pixel, color.g, current_video_mode().green_field_pos, current_video_mode().green_mask_size);
             set_pixel_field(pixel, color.b, current_video_mode().blue_field_pos, current_video_mode().blue_mask_size);
@@ -66,7 +66,7 @@ void draw_to_display_32rgb_nopad(const Screen &screen)
 
     __builtin_prefetch(screen.data(), 0, 0);
 
-    aligned_memcpy(reinterpret_cast<void*>(mode.framebuffer_addr), screen.data(),
+    aligned_memcpy(reinterpret_cast<void*>(mode.virt_fb_addr), screen.data(),
                    mode.width*mode.height*mode.depth/CHAR_BIT);
 }
 

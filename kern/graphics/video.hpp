@@ -38,7 +38,7 @@ namespace graphics
 struct VideoMode
 {
     uintptr_t phys_fb_addr { 0 };
-    uintptr_t framebuffer_addr { 0 };
+    uintptr_t virt_fb_addr { 0 };
     uint32_t width { 0 };
     uint32_t height { 0 };
     uint32_t depth { 0 };

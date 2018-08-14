@@ -1,4 +1,4 @@
-/*
+﻿/*
 scheduler.cpp
 
 Copyright (c) 29 Yann BOUCHER (yann)
@@ -45,10 +45,10 @@ void scheduler_init()
 void update_sleep_queue()
 {
     time_t current_ticks = Time::total_ticks();
-    time_t ms_duration = (current_ticks - elapsed_ticks) / (Time::clock_speed() * 1000);
+    time_t microsec_duration = (current_ticks - elapsed_ticks) / (Time::clock_speed());
     elapsed_ticks = current_ticks;
 
-    sleep_queue.decrease(ms_duration);
+    sleep_queue.decrease(microsec_duration);
 }
 
 bool process_ready(pid_t pid)
@@ -79,10 +79,10 @@ void schedule()
 
     pid_t next_pid = find_next_pid();
 
-    if (current) log_serial("Switching from PID %d to PID %d (Process count : %d)\n", current->pid, next_pid, Process::count());
+    //if (current) log_serial("Switching from PID %d to PID %d (Process count : %d)\n", current->pid, next_pid, Process::count());
 
     if (current) current->unswitch();
-    assert(Process::by_pid(next_pid)); Process::by_pid(next_pid)->switch_to();
+    Process::by_pid(next_pid)->switch_to();
 }
 
 }

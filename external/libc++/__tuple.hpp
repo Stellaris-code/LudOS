@@ -218,34 +218,6 @@ const typename tuple_element<_Ip, pair<_T1, _T2> >::type&&
 get(const pair<_T1, _T2>&&) _NOEXCEPT;
 #endif
 
-// array specializations
-
-template <class _Tp, size_t _Size> struct _LIBCPP_TEMPLATE_VIS array;
-
-template <class _Tp, size_t _Size> struct __tuple_like<array<_Tp, _Size> > : true_type {};
-
-template <size_t _Ip, class _Tp, size_t _Size>
-_LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX11
-_Tp&
-get(array<_Tp, _Size>&) _NOEXCEPT;
-
-template <size_t _Ip, class _Tp, size_t _Size>
-_LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX11
-const _Tp&
-get(const array<_Tp, _Size>&) _NOEXCEPT;
-
-#ifndef _LIBCPP_CXX03_LANG
-template <size_t _Ip, class _Tp, size_t _Size>
-_LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX11
-_Tp&&
-get(array<_Tp, _Size>&&) _NOEXCEPT;
-
-template <size_t _Ip, class _Tp, size_t _Size>
-_LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX11
-const _Tp&&
-get(const array<_Tp, _Size>&&) _NOEXCEPT;
-#endif
-
 #ifndef _LIBCPP_CXX03_LANG
 
 // __tuple_types
@@ -354,16 +326,6 @@ struct __make_tuple_types_flat<_Tuple<_Types...>, __tuple_indices<_Idx...>> {
   template <class _Tp, class _ApplyFn = __apply_cv_t<_Tp>>
   using __apply_quals = __tuple_types<
       typename _ApplyFn::template __apply<__type_pack_element<_Idx, _Types...>>...
-    >;
-};
-
-template <class _Vt, size_t _Np, size_t ..._Idx>
-struct __make_tuple_types_flat<array<_Vt, _Np>, __tuple_indices<_Idx...>> {
-  template <size_t>
-  using __value_type = _Vt;
-  template <class _Tp, class _ApplyFn = __apply_cv_t<_Tp>>
-  using __apply_quals = __tuple_types<
-      typename _ApplyFn::template __apply<__value_type<_Idx>>...
     >;
 };
 

@@ -33,10 +33,18 @@ SOFTWARE.
 #include "utils/vecutils.hpp"
 
 #include "kstring/kstrfwd.hpp"
+#include "utils/string_enum.hpp"
+
+STRING_ENUM(DriverType, Keyboard, Mouse, NIC, IDEController, Sound, Disk, Debug)
+
+struct DriverLoadedEvent
+{
+    class Driver& drv;
+};
 
 class Driver
 {
-public:
+    public:
     virtual ~Driver() = default;
 
     static void interface_init();
@@ -58,31 +66,32 @@ public:
         return vec;
     }
 
-public:
+    public:
     virtual kpp::string driver_name() const = 0;
+    virtual DriverType  type() const = 0;
 
-private:
+    private:
     static inline std::vector<std::unique_ptr<Driver>> m_drivers;
 };
 
 namespace driver::detail
 {
-    using DriverEntry = void(*)();
+using DriverEntry = void(*)();
 
-    constexpr size_t max_drivers { 0x2000 };
+constexpr size_t max_drivers { 0x2000 };
 
-    extern DriverEntry drivers[max_drivers];
-    extern DriverEntry* driver_list_ptr;
+extern DriverEntry drivers[max_drivers];
+extern DriverEntry* driver_list_ptr;
 }
 
 #define ADD_DRIVER(name) \
-__attribute__((constructor)) void _driver_init_##name() \
+    __attribute__((constructor)) void _driver_init_##name() \
 { \
     static_assert(std::is_base_of_v<Driver, name>); \
     *driver::detail::driver_list_ptr++ = [] { \
-        if (name::accept()) \
-            Driver::add_driver(std::make_unique<name>()); \
+    if (name::accept()) \
+    Driver::add_driver(std::make_unique<name>()); \
     }; \
-}
+    }
 
 #endif // DRIVER_HPP

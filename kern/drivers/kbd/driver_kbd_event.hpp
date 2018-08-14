@@ -29,6 +29,7 @@ SOFTWARE.
 
 struct DriverKbdEvent
 {
+    size_t kdb_id;
     union
     {
         uint8_t pos;

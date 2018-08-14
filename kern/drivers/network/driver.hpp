@@ -63,6 +63,9 @@ public:
 
     virtual kpp::array<uint8_t, 6> mac_address() const = 0;
 
+    virtual DriverType type() const override
+    { return DriverType::NIC; }
+
 protected:
     static void add_nic(NetworkDriver& nic);
 

@@ -41,6 +41,8 @@ public:
     void stop();
 
     virtual kpp::string driver_name() const override;
+    virtual DriverType  type() const override
+    { return DriverType::Sound; }
 
 private:
     void play_sound(uint16_t freq);

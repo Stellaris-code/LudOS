@@ -569,7 +569,7 @@ void install_fs_commands(Shell &sh)
 
          auto stat = target_node->stat();
 
-         kpp::string perm_str(6, '-');
+         kpp::string perm_str(9, '-');
          if (stat.perms & vfs::Permissions::UserRead) perm_str[0] = 'r';
          if (stat.perms & vfs::Permissions::UserWrite) perm_str[1] = 'w';
          if (stat.perms & vfs::Permissions::UserExec) perm_str[2] = 'x';

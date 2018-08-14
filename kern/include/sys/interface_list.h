@@ -27,6 +27,10 @@ SOFTWARE.
 
 #include <stdint.h>
 
+#include <drivers/kbd/keys.h>
+
+#include "utils/user_ptr.hpp"
+
 #define ITEST_ID 0xbeef
 typedef struct
 {
@@ -56,5 +60,16 @@ typedef struct
     int(*switch_mode)(int width, int height, int depth);
     uint8_t*(*get_framebuffer)();
 } ifbdev;
+
+typedef struct
+{
+    enum Key state[Key::KeyCount];
+} kbd_state;
+
+#define IKBDEV_ID 0x0001
+typedef struct
+{
+    int(*get_kbd_state)(kbd_state*);
+} ikbdev;
 
 #endif // INTERFACE_LIST_H

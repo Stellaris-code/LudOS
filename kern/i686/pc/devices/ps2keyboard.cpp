@@ -142,13 +142,14 @@ bool PS2Keyboard::isr(const registers *)
             key_state = DriverKbdEvent::Released;
         }
 
+        // TODO : inherit from keyboard driver and automatically set the kbd id
         if (last_is_e0 && e0_key_assocs[code] != 0xFF)
         {
-            MessageBus::send<DriverKbdEvent>({{e0_key_assocs[code]}, key_state});
+            MessageBus::send<DriverKbdEvent>({0, {e0_key_assocs[code]}, key_state});
         }
         else if (key_assocs[code] != 0xFF)
         {
-            MessageBus::send<DriverKbdEvent>({{key_assocs[code]}, key_state});
+            MessageBus::send<DriverKbdEvent>({0, {key_assocs[code]}, key_state});
         }
 
         last_is_e0 = false;

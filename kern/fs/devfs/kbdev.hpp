@@ -1,7 +1,7 @@
 /*
-kbd_mappings.hpp
+kbdev.hpp
 
-Copyright (c) 24 Yann BOUCHER (yann)
+Copyright (c) 13 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,44 +22,33 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef KBD_MAPPINGS_HPP
-#define KBD_MAPPINGS_HPP
+#ifndef KBDEV_HPP
+#define KBDEV_HPP
 
-#include "driver_kbd_event.hpp"
-#include "utils/messagebus.hpp"
+#include "fs/interface.hpp"
 
-#include <array.hpp>
-#include <optional.hpp>
+#include <sys/interface_list.h>
 
-#include "keys.h"
+#include "utils/user_ptr.hpp"
 
-namespace kbd
+struct kbdev_node : public vfs::interface_node<kbdev_node, vfs::ientry<ikbdev, IKBDEV_ID>>
 {
+    kbdev_node(node* parent);
 
-struct KeyEvent
-{
-    size_t kbd_id;
-    Key key;
-    enum
-    {
-        Pressed,
-        Released
-    } state;
+    template<typename Interface>
+    void fill_interface(Interface*) const
+    {}
+
+    // TODO : map pointers to user_ptr
+    int get_kbd_state(kbd_state*) const;
+
+    size_t keyboard_id;
 };
 
-using Mapping = kpp::array<Key, 256>;
-
-void install_mapping(const Mapping& mapping, size_t kbd_id);
-
-static constexpr size_t max_kbd_count = 256;
-static inline kpp::array<kpp::optional<MessageBus::Handle>, max_kbd_count> current_handle;
-
-namespace mappings
+template <>
+inline void kbdev_node::fill_interface<ikbdev>(ikbdev* interface) const
 {
-Mapping azerty();
-
+    register_callback(&kbdev_node::get_kbd_state, interface->get_kbd_state);
 }
 
-}
-
-#endif // KBD_MAPPINGS_HPP
+#endif // KBDEV_HPP

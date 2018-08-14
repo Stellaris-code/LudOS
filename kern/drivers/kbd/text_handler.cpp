@@ -42,40 +42,40 @@ void kbd::TextHandler::handle_key(const kbd::KeyEvent &e)
     if (e.state == KeyEvent::Pressed)
     {
 
-        if (e.key >= A && e.key <= Z)
+        if (e.key >= KeyA && e.key <= KeyZ)
         {
-            MessageBus::send<TextEnteredEvent>({static_cast<char32_t>(e.key - A + 'A' + (caps ? 0 : 0x20))});
+            MessageBus::send<TextEnteredEvent>({static_cast<char32_t>(e.key - KeyA + 'A' + (caps ? 0 : 0x20))});
             return;
         }
-        if (e.key >= Num0 && e.key <= Num9 && caps)
+        if (e.key >= KeyNum0 && e.key <= KeyNum9 && caps)
         {
-            MessageBus::send<TextEnteredEvent>({static_cast<char32_t>(e.key - Num0 + '0')});
+            MessageBus::send<TextEnteredEvent>({static_cast<char32_t>(e.key - KeyNum0 + '0')});
             return;
         }
-        if (e.key >= Numpad0 && e.key <= Numpad9 && numlock)
+        if (e.key >= KeyNumpad0 && e.key <= KeyNumpad9 && numlock)
         {
-            MessageBus::send<TextEnteredEvent>({static_cast<char32_t>(e.key - Numpad0 + '0')});
+            MessageBus::send<TextEnteredEvent>({static_cast<char32_t>(e.key - KeyNumpad0 + '0')});
             return;
         }
 
         switch (e.key)
         {
-        case LBracket:
+        case KeyLBracket:
             MessageBus::send<TextEnteredEvent>({static_cast<char32_t>('^')});
             return;
-        case RBracket:
+        case KeyRBracket:
             MessageBus::send<TextEnteredEvent>({static_cast<char32_t>('$')});
             return;
-        case SemiColon:
+        case KeySemiColon:
             MessageBus::send<TextEnteredEvent>({static_cast<char32_t>(caps ? '.' : ';')});
             return;
-        case Comma:
+        case KeyComma:
             MessageBus::send<TextEnteredEvent>({static_cast<char32_t>(caps ? '?' : ',')});
             return;
-        case Bang:
+        case KeyBang:
             MessageBus::send<TextEnteredEvent>({static_cast<char32_t>('!')});
             return;
-        case Quote:
+        case KeyQuote:
             if (caps)
             {
                 MessageBus::send<TextEnteredEvent>({static_cast<char32_t>('%')});
@@ -83,76 +83,76 @@ void kbd::TextHandler::handle_key(const kbd::KeyEvent &e)
             }
             else
                 break;
-        case Dash:
+        case KeyDash:
             MessageBus::send<TextEnteredEvent>({static_cast<char32_t>(alt ? ']' : ')')});
             return;
-        case Equal:
+        case KeyEqual:
             MessageBus::send<TextEnteredEvent>({static_cast<char32_t>(caps ? '+' : alt ? '}' : '=')});
             return;
-        case Tilde:
+        case KeyTilde:
             MessageBus::send<TextEnteredEvent>({static_cast<char32_t>(caps ? '~' : U'é')});
             return;
-        case BackSlash:
+        case KeyBackSlash:
             MessageBus::send<TextEnteredEvent>({static_cast<char32_t>('*')});
             return;
-        case Slash:
+        case KeySlash:
             MessageBus::send<TextEnteredEvent>({static_cast<char32_t>(caps ? '/' : ':')});
             return;
-        case Tab:
+        case KeyTab:
             MessageBus::send<TextEnteredEvent>({static_cast<char32_t>('\t')});
             return;
-        case BackSpace:
-        //case Delete:
+        case KeyBackSpace:
+        //case KeyDelete:
             MessageBus::send<TextEnteredEvent>({static_cast<char32_t>('\b')});
             return;
-        case Return:
+        case KeyReturn:
             MessageBus::send<TextEnteredEvent>({static_cast<char32_t>('\n')});
             return;
-        case Space:
+        case KeySpace:
             MessageBus::send<TextEnteredEvent>({static_cast<char32_t>(' ')});
             return;
 
-        case Add:
+        case KeyAdd:
             MessageBus::send<TextEnteredEvent>({static_cast<char32_t>('+')});
             return;
-        case Subtract:
+        case KeySubtract:
             MessageBus::send<TextEnteredEvent>({static_cast<char32_t>('-')});
             return;
-        case Multiply:
+        case KeyMultiply:
             MessageBus::send<TextEnteredEvent>({static_cast<char32_t>('*')});
             return;
-        case Divide:
+        case KeyDivide:
             MessageBus::send<TextEnteredEvent>({static_cast<char32_t>('/')});
             return;
 
-        case Num0:
+        case KeyNum0:
             MessageBus::send<TextEnteredEvent>({static_cast<char32_t>(alt ? '@' : U'à')});
             return;
-        case Num1:
+        case KeyNum1:
             MessageBus::send<TextEnteredEvent>({static_cast<char32_t>('&')});
             return;
-        case Num2:
+        case KeyNum2:
             MessageBus::send<TextEnteredEvent>({static_cast<char32_t>(alt ? '~' : U'é')});
             return;
-        case Num3:
+        case KeyNum3:
             MessageBus::send<TextEnteredEvent>({static_cast<char32_t>(alt ? '#' : '"')});
             return;
-        case Num4:
+        case KeyNum4:
             MessageBus::send<TextEnteredEvent>({static_cast<char32_t>(alt ? '{' : '\'')});
             return;
-        case Num5:
+        case KeyNum5:
             MessageBus::send<TextEnteredEvent>({static_cast<char32_t>(alt ? '[' : '(')});
             return;
-        case Num6:
+        case KeyNum6:
             MessageBus::send<TextEnteredEvent>({static_cast<char32_t>(alt ? '|' : '-')});
             return;
-        case Num7:
+        case KeyNum7:
             MessageBus::send<TextEnteredEvent>({static_cast<char32_t>(alt ? '`' : U'è')});
             return;
-        case Num8:
+        case KeyNum8:
             MessageBus::send<TextEnteredEvent>({static_cast<char32_t>(alt ? '\\' : '_')});
             return;
-        case Num9:
+        case KeyNum9:
             MessageBus::send<TextEnteredEvent>({static_cast<char32_t>(alt ? '^' : U'ç')});
             return;
 
@@ -164,35 +164,35 @@ void kbd::TextHandler::handle_key(const kbd::KeyEvent &e)
 
 void kbd::TextHandler::handle_modifiers(const kbd::KeyEvent &e)
 {
-    if (e.key == MajLock && e.state == kbd::KeyEvent::Pressed)
+    if (e.key == KeyMajLock && e.state == kbd::KeyEvent::Pressed)
     {
         capslock = !capslock;
     }
-    else if (e.key == LShift)
+    else if (e.key == KeyLShift)
     {
         lshift = e.state == kbd::KeyEvent::Pressed;
     }
-    else if (e.key == RShift)
+    else if (e.key == KeyRShift)
     {
         rshift = e.state == kbd::KeyEvent::Pressed;
     }
-    else if (e.key == NumLock && e.state == kbd::KeyEvent::Pressed)
+    else if (e.key == KeyNumLock && e.state == kbd::KeyEvent::Pressed)
     {
         numlock = !numlock;
     }
-    else if (e.key == LAlt)
+    else if (e.key == KeyLAlt)
     {
         lalt = e.state == kbd::KeyEvent::Pressed;
     }
-    else if (e.key == RAlt)
+    else if (e.key == KeyRAlt)
     {
         ralt = e.state == kbd::KeyEvent::Pressed;
     }
-    else if (e.key == LControl)
+    else if (e.key == KeyLControl)
     {
         lctrl = e.state == kbd::KeyEvent::Pressed;
     }
-    else if (e.key == RControl)
+    else if (e.key == KeyRControl)
     {
         rctrl = e.state == kbd::KeyEvent::Pressed;
     }

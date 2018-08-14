@@ -797,11 +797,6 @@ public:
         tuple(allocator_arg_t, const _Alloc&, const tuple&) _NOEXCEPT {}
     template <class _Up>
     _LIBCPP_INLINE_VISIBILITY
-        tuple(array<_Up, 0>) _NOEXCEPT {}
-    template <class _Alloc, class _Up>
-    _LIBCPP_INLINE_VISIBILITY
-        tuple(allocator_arg_t, const _Alloc&, array<_Up, 0>) _NOEXCEPT {}
-    _LIBCPP_INLINE_VISIBILITY
     void swap(tuple&) _NOEXCEPT {}
 };
 

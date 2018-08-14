@@ -34,7 +34,8 @@ namespace kpp
 template <typename T, size_t Len>
 struct array
 {
-public:
+    T m_arr[Len];
+
     using value_type = T;
     using reference = T&;
     using const_reference = const T&;
@@ -48,34 +49,31 @@ public:
     constexpr size_t size() const { return Len; }
     constexpr bool empty() const { return size() == 0; }
 
-    T* begin() { return data(); }
-    const T* begin() const { return data(); }
+    constexpr T* begin() { return data(); }
+    constexpr const T* begin() const { return data(); }
 
-    T* end() { return data() + size(); }
-    const T* end() const { return data() + size(); }
+    constexpr T* end() { return data() + size(); }
+    constexpr const T* end() const { return data() + size(); }
 
-    T* data() { return m_arr; }
-    const T* data() const { return m_arr; }
+    constexpr T* data() { return m_arr; }
+    constexpr const T* data() const { return m_arr; }
 
-    T& operator[](size_t idx) { return data()[idx]; }
-    const T& operator[](size_t idx) const { return data()[idx]; }
+    constexpr T& operator[](size_t idx) { return data()[idx]; }
+    constexpr const T& operator[](size_t idx) const { return data()[idx]; }
 
-    T& at(size_t idx) { assert(idx < size());  return data()[idx]; }
-    const T& ad(size_t idx) const { assert(idx < size()); return data()[idx]; }
+    constexpr T& at(size_t idx) { assert(idx < size());  return data()[idx]; }
+    constexpr const T& ad(size_t idx) const { assert(idx < size()); return data()[idx]; }
 
-    T& front() { return (*this)[0]; }
-    const T& front() const { return (*this)[0]; }
+    constexpr T& front() { return (*this)[0]; }
+    constexpr const T& front() const { return (*this)[0]; }
 
-    T& back() { return (*this)[size()-1]; }
-    const T& back() const { return (*this)[size()-1]; }
+    constexpr T& back() { return (*this)[size()-1]; }
+    constexpr const T& back() const { return (*this)[size()-1]; }
 
-    void fill (const T& value)
+    constexpr void fill (const T& value)
     {
         for (auto& el : *this) { el = value; }
     }
-
-public:
-    T m_arr[Len];
 };
 
 }

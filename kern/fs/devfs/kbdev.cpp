@@ -1,7 +1,7 @@
 /*
-kbd_mappings.hpp
+kbdev.cpp
 
-Copyright (c) 24 Yann BOUCHER (yann)
+Copyright (c) 13 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,44 +22,17 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef KBD_MAPPINGS_HPP
-#define KBD_MAPPINGS_HPP
 
-#include "driver_kbd_event.hpp"
-#include "utils/messagebus.hpp"
+#include "kbdev.hpp"
 
-#include <array.hpp>
-#include <optional.hpp>
+#include "drivers/kbd/kbd_mappings.hpp"
 
-#include "keys.h"
-
-namespace kbd
+kbdev_node::kbdev_node(vfs::node *parent)
+    : interface_node(parent)
 {
-
-struct KeyEvent
-{
-    size_t kbd_id;
-    Key key;
-    enum
-    {
-        Pressed,
-        Released
-    } state;
-};
-
-using Mapping = kpp::array<Key, 256>;
-
-void install_mapping(const Mapping& mapping, size_t kbd_id);
-
-static constexpr size_t max_kbd_count = 256;
-static inline kpp::array<kpp::optional<MessageBus::Handle>, max_kbd_count> current_handle;
-
-namespace mappings
-{
-Mapping azerty();
 
 }
 
+int kbdev_node::get_kbd_state(kbd_state * state) const
+{
 }
-
-#endif // KBD_MAPPINGS_HPP

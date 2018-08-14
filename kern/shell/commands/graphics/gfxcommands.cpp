@@ -70,7 +70,7 @@ void install_gfx_commands(Shell &sh)
 
          auto handl = MessageBus::register_handler<kbd::KeyEvent>([&escape](const kbd::KeyEvent& e)
          {
-             if (e.state == kbd::KeyEvent::Pressed && e.key == kbd::Escape)
+             if (e.state == kbd::KeyEvent::Pressed && e.key == KeyEscape)
              {
                  escape = true;
              }

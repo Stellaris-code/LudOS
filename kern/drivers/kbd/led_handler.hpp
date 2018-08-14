@@ -37,6 +37,7 @@ enum class LEDState : uint8_t
 
 struct LEDChangeEvent
 {
+    size_t kbd_id;
     LEDState num_led { LEDState::Ignore };
     LEDState caps_led { LEDState::Ignore };
     LEDState scroll_led { LEDState::Ignore };
@@ -48,28 +49,29 @@ inline void install_led_handler()
 {
     MessageBus::register_handler<KeyEvent>([](const KeyEvent& e)
     {
-        static bool caps_led { false };
-        static bool num_led { false };
-        static bool scroll_led { false };
+        static bool caps_led[max_kbd_count] { false };
+        static bool num_led[max_kbd_count] { false };
+        static bool scroll_led[max_kbd_count] { false };
 
         LEDChangeEvent leds;
+        leds.kbd_id = e.kbd_id;
 
         if (e.state == KeyEvent::Pressed)
         {
 
             switch (e.key)
             {
-            case kbd::MajLock:
-                caps_led = !caps_led;
-                leds.caps_led = caps_led ? LEDState::On : LEDState::Off;
+            case KeyMajLock:
+                caps_led[e.kbd_id] = !caps_led[e.kbd_id];
+                leds.caps_led = caps_led[e.kbd_id] ? LEDState::On : LEDState::Off;
                 break;
-            case kbd::NumLock:
-                num_led = !num_led;
-                leds.num_led = num_led ? LEDState::On : LEDState::Off;
+            case KeyNumLock:
+                num_led[e.kbd_id] = !num_led[e.kbd_id];
+                leds.num_led = num_led[e.kbd_id] ? LEDState::On : LEDState::Off;
                 break;
-            case kbd::ScrollLock:
-                scroll_led = !scroll_led;
-                leds.scroll_led = scroll_led ? LEDState::On : LEDState::Off;
+            case KeyScrollLock:
+                scroll_led[e.kbd_id] = !scroll_led[e.kbd_id];
+                leds.scroll_led = scroll_led[e.kbd_id] ? LEDState::On : LEDState::Off;
                 break;
             }
 

@@ -58,7 +58,7 @@ Shell::Shell()
     {
         if (e.state == kbd::KeyEvent::Pressed)
         {
-            if (e.key == kbd::Up && m_waiting_input)
+            if (e.key == KeyUp && m_waiting_input)
             {
                 term().clear_input();
 
@@ -75,7 +75,7 @@ Shell::Shell()
                 }
                 term().force_redraw_input();
             }
-            if (e.key == kbd::Down && m_waiting_input)
+            if (e.key == KeyDown && m_waiting_input)
             {
                 term().clear_input();
 
@@ -94,7 +94,7 @@ Shell::Shell()
                 }
                 term().force_redraw_input();
             }
-            if (e.key == kbd::Tab && m_waiting_input)
+            if (e.key == KeyTab && m_waiting_input)
             {
                 if (m_matches.empty())
                 {

@@ -28,6 +28,7 @@ SOFTWARE.
 #include "fs/vfs.hpp"
 
 class Disk;
+class Driver;
 
 namespace vfs
 {
@@ -38,8 +39,8 @@ namespace devfs
 {
 struct disk_file : public vfs::node
 {
-    disk_file(Disk& disk, const kpp::string& node_name)
-        : m_disk(disk)
+    disk_file(node* parent, Disk& disk, const kpp::string& node_name)
+        : vfs::node(parent), m_disk(disk)
     {
         m_name = node_name;
     }
@@ -61,6 +62,7 @@ void init();
 namespace detail
 {
 void add_drive(Disk& disk);
+void handle_new_driver(Driver& drv);
 }
 }
 

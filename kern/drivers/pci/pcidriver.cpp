@@ -64,6 +64,8 @@ public:
     virtual void init() override {}
 
     virtual kpp::string driver_name() const override { return "PCI Test driver"; }
+    virtual DriverType  type() const override
+    { return DriverType::Debug; }
 
     static bool accept(const pci::PciDevice& dev)
     {

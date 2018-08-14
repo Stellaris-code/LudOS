@@ -94,6 +94,7 @@ SOFTWARE.
 // TODO : task switch : fpu state
 // TODO : SIGFPE, SIGILL
 // TODO : faire un 'profiler' qui toutes les t ms regarde la callstack et détermine les fonctions les plus appellées
+// TODO : passer tout ce qui est VBE en un driver qui expose le noeud 'fbdev'
 
 // ROADMAP
 // : supprimer la libc++ & libcxxabi
@@ -141,7 +142,7 @@ void global_init()
 
     power::init_power_management();
 
-    kbd::install_mapping(kbd::mappings::azerty());
+    kbd::install_mapping(kbd::mappings::azerty(), 0);
     kbd::TextHandler::init();
     kbd::install_led_handler();
 
@@ -155,32 +156,32 @@ void global_init()
     {
         if (e.state == kbd::KeyEvent::Pressed)
         {
-            if (e.key == kbd::PageUp)
+            if (e.key == KeyPageUp)
             {
                 term().scroll_history(-10);
             }
-            else if (e.key == kbd::PageDown)
+            else if (e.key == KeyPageDown)
             {
                 term().scroll_history(+10);
             }
-            else if (e.key == kbd::Right)
+            else if (e.key == KeyRight)
             {
                 term().move_cursor(+1);
             }
-            else if (e.key == kbd::Left)
+            else if (e.key == KeyLeft)
             {
                 term().move_cursor(-1);
             }
-            else if (e.key == kbd::Delete && Keyboard::ctrl() && Keyboard::alt())
+            else if (e.key == KeyDelete && Keyboard::ctrl() && Keyboard::alt())
             {
                 MessageBus::send(ResetMessage{});
             }
-            else if (e.key == kbd::Delete)
+            else if (e.key == KeyDelete)
             {
                 term().forward_delete();
                 term().force_redraw_input();
             }
-            else if (e.key == kbd::P && Keyboard::ctrl() && Keyboard::alt())
+            else if (e.key == KeyP && Keyboard::ctrl() && Keyboard::alt())
             {
                 panic("Panic key pressed\n");
             }
@@ -223,8 +224,8 @@ void global_init()
         panic("Cannot install initrd!\n");
     }
 
-    MessageBus::send<kbd::KeyEvent>(kbd::KeyEvent{kbd::NumLock, kbd::KeyEvent::Pressed});
-    MessageBus::send<kbd::KeyEvent>(kbd::KeyEvent{kbd::NumLock, kbd::KeyEvent::Released});
+    MessageBus::send<kbd::KeyEvent>(kbd::KeyEvent{0, KeyNumLock, kbd::KeyEvent::Pressed});
+    MessageBus::send<kbd::KeyEvent>(kbd::KeyEvent{0, KeyNumLock, kbd::KeyEvent::Released});
 
     Shell sh;
     sh.params.prompt = ESC_BG(13,132,203) "  LudOS " ESC_POP_COLOR ESC_BG(78,154,6) ESC_FG(13,132,203) "▶" ESC_POP_COLOR " :{path}> " ESC_POP_COLOR

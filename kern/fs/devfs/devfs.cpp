@@ -30,13 +30,17 @@ SOFTWARE.
 
 #include <deque.hpp>
 
-#include "utils/messagebus.hpp"
+#include "drivers/driver.hpp"
 #include "drivers/kbd/keyboard.hpp"
-#include "utils/nop.hpp"
 #include "drivers/storage/disk.hpp"
+
 #include "tasking/process.hpp"
 
+#include "utils/messagebus.hpp"
+#include "utils/nop.hpp"
+
 #include "fbdev.hpp"
+#include "kbdev.hpp"
 
 namespace devfs
 {
@@ -155,10 +159,42 @@ void init()
         detail::add_drive(disk);
     }
 
+    for (Driver& drv : Driver::list())
+    {
+        detail::handle_new_driver(drv);
+    }
+
     MessageBus::register_handler<DiskFoundEvent>([](const DiskFoundEvent& ev)
     {
         detail::add_drive(ev.disk);
     });
+
+    MessageBus::register_handler<DriverLoadedEvent>([](const DriverLoadedEvent& ev)
+    {
+        detail::handle_new_driver(ev.drv);
+    });
+}
+
+size_t disk_file::size() const { return m_disk.disk_size(); }
+
+kpp::expected<MemBuffer, vfs::FSError> disk_file::read_impl(size_t offset, size_t size) const
+{
+    auto result = m_disk.read(offset, size);
+    if (!result)
+    {
+        return kpp::make_unexpected(vfs::FSError{vfs::FSError::ReadError, {result.error().type}});
+    }
+    return std::move(result.value());
+}
+
+kpp::expected<kpp::dummy_t, vfs::FSError> disk_file::write_impl(size_t offset, gsl::span<const uint8_t> data)
+{
+    auto result = m_disk.write(offset, data);
+    if (!result)
+    {
+        return kpp::make_unexpected(vfs::FSError{vfs::FSError::WriteError, {result.error().type}});
+    }
+    return {};
 }
 
 namespace detail
@@ -221,31 +257,21 @@ void add_drive(Disk &disk)
 {
     kpp::string name = drive_label(disk);
 
-    auto node = std::make_shared<disk_file>(disk, name);
+    auto node = std::make_shared<disk_file>(root.get(), disk, name);
     root->children.emplace_back(node);
 }
+
+void handle_new_driver(Driver &drv)
+{
+    if (drv.type() == DriverType::Keyboard)
+    {
+        static int last_keyboard_id = 0;
+        auto kb_node = std::make_shared<kbdev_node>(root.get());
+        kb_node->rename("kbd" + kpp::to_string(last_keyboard_id++));
+        root->children.emplace_back(kb_node);
+    }
 }
 
-size_t disk_file::size() const { return m_disk.disk_size(); }
-
-kpp::expected<MemBuffer, vfs::FSError> disk_file::read_impl(size_t offset, size_t size) const
-{
-    auto result = m_disk.read(offset, size);
-    if (!result)
-    {
-        return kpp::make_unexpected(vfs::FSError{vfs::FSError::ReadError, {result.error().type}});
-    }
-    return std::move(result.value());
-}
-
-kpp::expected<kpp::dummy_t, vfs::FSError> disk_file::write_impl(size_t offset, gsl::span<const uint8_t> data)
-{
-    auto result = m_disk.write(offset, data);
-    if (!result)
-    {
-        return kpp::make_unexpected(vfs::FSError{vfs::FSError::WriteError, {result.error().type}});
-    }
-    return {};
 }
 
 }

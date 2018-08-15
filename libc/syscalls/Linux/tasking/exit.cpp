@@ -27,11 +27,13 @@ SOFTWARE.
 
 #include <stdlib.h>
 
-extern int common_syscall(size_t type, size_t no, ...);
+#include "syscall.h"
+
+
 
 void exit(uint8_t errcode)
 {
-    common_syscall(1, SYS_exit, errcode);
+    DO_LINUX_SYSCALL(SYS_exit, 1, errcode);
 
     __builtin_unreachable();
     abort(); // shouldn't return !!

@@ -25,10 +25,12 @@ SOFTWARE.
 #ifndef SYSCALL_DEFS_HPP
 #define SYSCALL_DEFS_HPP
 
-#define LINUX_SYSCALL_DEFAULT_IMPL(name, ret, args, ...) \
+#include "syscall.h"
+
+#define LINUX_SYSCALL_DEFAULT_IMPL(name, cnt, ret, args, ...) \
     ret name args \
     { \
-        auto ret_val = common_syscall(1, SYS_##name, ##__VA_ARGS__); \
+        auto ret_val = DO_LINUX_SYSCALL(SYS_##name, cnt, ##__VA_ARGS__); \
  \
         if (ret_val < 0) \
         { \
@@ -41,10 +43,10 @@ SOFTWARE.
         } \
     }
 
-#define LUDOS_SYSCALL_DEFAULT_IMPL(name, ret, args, ...) \
+#define LUDOS_SYSCALL_DEFAULT_IMPL(name, cnt, ret, args, ...) \
     ret name args \
     { \
-        auto ret_val = common_syscall(0, SYS_##name, ##__VA_ARGS__); \
+        auto ret_val = DO_LUDOS_SYSCALL(SYS_##name, cnt, ##__VA_ARGS__); \
  \
         if (ret_val < 0) \
         { \

@@ -27,11 +27,13 @@ SOFTWARE.
 
 #include "syscalls/syscall_list.hpp"
 
-extern int common_syscall(size_t type, size_t no, ...);
+#include "syscall.h"
+
+
 
 int alloc_pages(int pages)
 {
-    auto addr = common_syscall(0, SYS_alloc_pages, pages);
+    auto addr = DO_LUDOS_SYSCALL(SYS_alloc_pages, 1, pages);
     if (addr == 0)
     {
         errno = ENOMEM;
@@ -42,7 +44,7 @@ int alloc_pages(int pages)
 
 int free_pages(uintptr_t ptr, int pages)
 {
-    common_syscall(0, SYS_free_pages, (uintptr_t)ptr, pages);
+    DO_LUDOS_SYSCALL(SYS_free_pages, 2, ptr, pages);
 
     return 0;
 }

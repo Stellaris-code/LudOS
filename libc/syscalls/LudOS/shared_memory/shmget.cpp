@@ -28,11 +28,13 @@ SOFTWARE.
 
 #include "syscalls/syscall_list.hpp"
 
-extern int common_syscall(size_t type, size_t no, ...);
+#include "syscall.h"
+
+
 
 int shmget(key_t key, size_t size, int shmflags)
 {
-    auto ret = common_syscall(0, SYS_shmget, key, size, shmflags);
+    auto ret = DO_LUDOS_SYSCALL(SYS_shmget, 3, key, size, shmflags);
     if (ret < 0)
     {
         errno = -ret;

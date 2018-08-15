@@ -25,18 +25,13 @@ SOFTWARE.
 #ifndef SYSCALL_H
 #define SYSCALL_H
 
-#if defined(__is_libk) && !defined(LIBK_SYSCALL_IMPL)
-#error This header should only be included by user programs !
-#endif
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include <stdint.h>
-
-int syscall(size_t no, ...);
-int ludos_syscall(size_t no, ...);
+#ifdef ARCH_i686
+#include "arch/i686/do_syscall.h"
+#endif
 
 #ifdef __cplusplus
 }

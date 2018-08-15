@@ -54,7 +54,6 @@ SOFTWARE.
 #define DETAIL_LUDOS_ID 0
 #define DETAIL_LINUX_ID 1
 
-extern int common_syscall(size_t type, size_t no, ...);
 
 #define syscall(num, ...) common_syscall(1, num, __VA_ARGS__)
 #define ludos_syscall(num, ...) common_syscall(0, num, __VA_ARGS__)

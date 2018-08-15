@@ -28,11 +28,13 @@ SOFTWARE.
 #include <stdint.h>
 #include <errno.h>
 
-extern int common_syscall(size_t type, size_t no, ...);
+#include "syscall.h"
+
+
 
 int execve(const char* path, const char* argv[], const char* envp[])
 {
-    auto ret = common_syscall(1, SYS_execve, path, argv, envp);
+    auto ret = DO_LINUX_SYSCALL(SYS_execve, 3, path, argv, envp);
     if (ret < 0)
     {
         errno = -ret;

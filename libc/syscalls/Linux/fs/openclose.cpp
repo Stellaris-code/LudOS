@@ -27,7 +27,7 @@ SOFTWARE.
 
 #include <errno.h>
 
-extern int common_syscall(size_t type, size_t no, ...);
 
-LINUX_SYSCALL_DEFAULT_IMPL(open, int, (const char* path, int flags, int mode), path, flags, mode)
-LINUX_SYSCALL_DEFAULT_IMPL(close, int, (unsigned int fd), fd)
+
+LINUX_SYSCALL_DEFAULT_IMPL(open, 3, int, (const char* path, int flags, int mode), path, flags, mode)
+LINUX_SYSCALL_DEFAULT_IMPL(close, 1, int, (unsigned int fd), fd)

@@ -25,11 +25,13 @@ SOFTWARE.
 
 #include "syscalls/syscalls.hpp"
 
+#include <syscall.h>
+
 #include <errno.h>
 
-extern int common_syscall(size_t type, size_t no, ...);
+
 
 void syscall_nop()
 {
-    common_syscall(0, SYS_syscall_nop);
+    DO_LUDOS_SYSCALL(SYS_syscall_nop, 0);
 }

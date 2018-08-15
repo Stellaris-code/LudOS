@@ -128,8 +128,6 @@ syscall_common_stub:
     mov fs, ax
     mov gs, ax
 
-
-    mov [esp_save], esp
     ; Push stack pointer
     push esp
 
@@ -140,7 +138,7 @@ syscall_common_stub:
     call syscall_handler
     ; Set stack pointer to returned value
 
-    mov esp, [esp_save]
+    mov esp, eax
 
     ; Restore segments
     pop gs
@@ -278,7 +276,3 @@ irq_common_stub:
 
     ; Restore rest
     iret
-
-section .bss
-align 4
-esp_save: resd 1

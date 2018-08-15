@@ -27,11 +27,13 @@ SOFTWARE.
 
 #include "syscalls/syscall_list.hpp"
 
-extern int common_syscall(size_t type, size_t no, ...);
+#include "syscall.h"
+
+
 
 long shmat(int shmid, const void* shmaddr, int shmflg)
 {
-    auto ret = common_syscall(0, SYS_shmat, shmid, shmaddr, shmflg);
+    auto ret = DO_LUDOS_SYSCALL(SYS_shmat, 3, shmid, shmaddr, shmflg);
     if (ret < 0)
     {
         errno = -ret;
@@ -43,7 +45,7 @@ long shmat(int shmid, const void* shmaddr, int shmflg)
 
 long shmdt(const void* shmaddr)
 {
-    auto ret = common_syscall(0, SYS_shmdt, shmaddr);
+    auto ret = DO_LUDOS_SYSCALL(SYS_shmdt, 1, shmaddr);
     if (ret < 0)
     {
         errno = -ret;

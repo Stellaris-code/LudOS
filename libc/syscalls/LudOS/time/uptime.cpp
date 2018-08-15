@@ -27,9 +27,11 @@ SOFTWARE.
 
 #include <errno.h>
 
-extern int common_syscall(size_t type, size_t no, ...);
+#include "syscall.h"
+
+
 
 uint64_t uptime()
 {
-    return common_syscall(0, SYS_uptime);
+    return DO_LUDOS_SYSCALL(SYS_uptime, 0);
 }

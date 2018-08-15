@@ -25,14 +25,16 @@ SOFTWARE.
 
 #include "syscalls/syscalls.hpp"
 
-extern int common_syscall(size_t type, size_t no, ...);
+#include "syscall.h"
+
+
 
 int getpid()
 {
-    return common_syscall(1, SYS_getpid);
+    return DO_LINUX_SYSCALL(SYS_getpid, 0);
 }
 
 int gettid()
 {
-    return common_syscall(1, SYS_gettid);
+    return DO_LINUX_SYSCALL(SYS_gettid, 0);
 }

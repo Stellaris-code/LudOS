@@ -1,7 +1,7 @@
 /*
-sleep.cpp
+pp_utils.h
 
-Copyright (c) 31 Yann BOUCHER (yann)
+Copyright (c) 15 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,15 +22,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#include "syscalls/syscall_list.hpp"
+#ifndef PP_UTILS_H
+#define PP_UTILS_H
 
-#include <stdint.h>
+// Source : https://stackoverflow.com/questions/2124339/c-preprocessor-va-args-number-of-arguments
+#define COUNT_ARGS(...) COUNT_ARGS_(,##__VA_ARGS__,6,5,4,3,2,1,0)
+#define COUNT_ARGS_(z,a,b,c,d,e,f,cnt,...) cnt
 
-#include "syscall.h"
-
-
-
-int nanosleep(const struct timespec *req, struct timespec *rem)
-{
-    return -DO_LINUX_SYSCALL(SYS_nanosleep, 2, req, rem);
-}
+#endif // PP_UTILS_H

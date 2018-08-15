@@ -32,8 +32,6 @@ SOFTWARE.
 constexpr uint8_t linux_syscall_int = 0x80;
 constexpr uint8_t ludos_syscall_int = 0x70;
 
-extern volatile bool processing_syscall;
-
 void init_syscalls();
 
 #define LUDOS_SYSCALL_DEF_USER(...)

@@ -28,4 +28,4 @@ SOFTWARE.
 
 #include "errno.h"
 
-LINUX_SYSCALL_DEFAULT_IMPL(time, time_t, (time_t* t_loc), t_loc)
+LINUX_SYSCALL_DEFAULT_IMPL(time, 1, time_t, (time_t* t_loc), t_loc)

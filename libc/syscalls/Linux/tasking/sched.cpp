@@ -26,9 +26,11 @@ SOFTWARE.
 
 #include <errno.h>
 
-extern int common_syscall(size_t type, size_t no, ...);
+#include "syscall.h"
+
+
 
 void sched_yield()
 {
-    common_syscall(1, SYS_sched_yield);
+    DO_LINUX_SYSCALL(SYS_sched_yield, 0);
 }

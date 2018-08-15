@@ -27,11 +27,11 @@ SOFTWARE.
 
 #include <errno.h>
 
-extern int common_syscall(size_t type, size_t no, ...);
+#include "syscall.h"
 
 int print_serial(const char* string)
 {
-    auto return_val = common_syscall(0, SYS_print_serial, string);
+    auto return_val = DO_LUDOS_SYSCALL(SYS_print_serial, 1, string);
     if (return_val != EOK)
     {
         errno = return_val;
@@ -45,7 +45,7 @@ int print_serial(const char* string)
 
 int print_debug(const char* string)
 {
-    auto return_val = common_syscall(0, SYS_print_debug, string);
+    auto return_val = DO_LUDOS_SYSCALL(SYS_print_debug, 1, string);
     if (return_val != EOK)
     {
         errno = return_val;
@@ -59,7 +59,7 @@ int print_debug(const char* string)
 
 int panic(const char* string)
 {
-    auto return_val = common_syscall(0, SYS_panic, string);
+    auto return_val = DO_LUDOS_SYSCALL(SYS_panic, 1, string);
     if (return_val != EOK)
     {
         errno = return_val;

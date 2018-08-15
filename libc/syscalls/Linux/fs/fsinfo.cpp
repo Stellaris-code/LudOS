@@ -28,6 +28,4 @@ SOFTWARE.
 
 #include <errno.h>
 
-extern int common_syscall(size_t type, size_t no, ...);
-
-LINUX_SYSCALL_DEFAULT_IMPL(getcwd, int, (char* buf, unsigned long size), buf, size)
+LINUX_SYSCALL_DEFAULT_IMPL(getcwd, 2, int, (char* buf, unsigned long size), buf, size)

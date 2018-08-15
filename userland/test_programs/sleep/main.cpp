@@ -37,8 +37,31 @@ timespec req =
     .tv_nsec = 0
 };
 
+inline uint64_t total_ticks()
+{
+    uint64_t ret;
+    asm volatile ( "rdtsc" : "=A"(ret) );
+    return ret;
+}
+
 int main()
 {
+    uint64_t sum = 0;
+    const size_t iterations = 1;
+    for (size_t i { 0 }; i < iterations; ++i)
+    {
+        uint64_t ticks = total_ticks();
+#if 0
+        asm volatile ("mov $6, %%eax\n"
+                      "int $0x70"
+                      :::"eax");
+#else
+        syscall_nop();
+#endif
+        uint64_t diff = total_ticks() - ticks;
+        sum += diff;
+    }
+    printf("Syscall overhead : %llu\n", sum/iterations);
 
     printf("Before fork : \n");
     int ret = fork();

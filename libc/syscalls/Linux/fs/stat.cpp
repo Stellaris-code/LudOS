@@ -28,6 +28,6 @@ SOFTWARE.
 #include <sys/stat.h>
 #include <errno.h>
 
-extern int common_syscall(size_t type, size_t no, ...);
 
-LINUX_SYSCALL_DEFAULT_IMPL(stat, int, (const char* path, struct stat* ptr), path, ptr)
+
+LINUX_SYSCALL_DEFAULT_IMPL(stat, 2, int, (const char* path, struct stat* ptr), path, ptr)

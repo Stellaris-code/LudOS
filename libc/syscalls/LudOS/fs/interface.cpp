@@ -28,7 +28,7 @@ SOFTWARE.
 
 #include <errno.h>
 
-extern int common_syscall(size_t type, size_t no, ...);
 
-LUDOS_SYSCALL_DEFAULT_IMPL(get_interface,   int, (unsigned int fd, int interface_id, void* interface)
+
+LUDOS_SYSCALL_DEFAULT_IMPL(get_interface, 3, int, (unsigned int fd, int interface_id, void* interface)
                            , fd, interface_id, interface)

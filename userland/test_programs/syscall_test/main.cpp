@@ -36,17 +36,17 @@ SOFTWARE.
 
 void __attribute__((constructor)) init()
 {
-    common_syscall(0, 2, "bouh!\n");
+    print_debug("bouh!\n");
 }
 
 void __attribute__((constructor)) init2()
 {
-    common_syscall(0, 2, "bouh2!\n");
+    print_debug("bouh2!\n");
 }
 
 void __attribute__((destructor)) tini()
 {
-    common_syscall(0, 2, "goodbye!\n");
+    print_debug("goodbye!\n");
 }
 
 int main(int argc, char* argv[])

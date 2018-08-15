@@ -31,39 +31,28 @@ SOFTWARE.
 #include "i686/tasking/process.hpp"
 #include "utils/align.hpp"
 
-extern "C" uint32_t __attribute__((force_align_arg_pointer)) syscall_handler(registers* const regs)
+extern "C" const registers* __attribute__((force_align_arg_pointer)) syscall_handler(registers* const regs)
 {
-    processing_syscall = true;
+    auto& process = Process::current();
 
-    Process::current().arch_context->regs = *regs;
-    Process::current().arch_context->fpu_state = FPU::save();
+    process.arch_context->regs = *regs;
+    process.arch_context->fpu_state = FPU::save();
 
     uint32_t ret = ENOSYS;
 
+    auto& table = (regs->int_no == ludos_syscall_int ? ludos_syscall_table :
+                                                       linux_syscall_table);
     if (regs->eax >= max_syscalls)
     {
         ret = ENOSYS;
-        return ret;
+        goto exit;
     }
 
-    switch (regs->int_no)
-    {
-        case ludos_syscall_int:
-            ret = ludos_syscall_table[regs->eax].ptr(regs);
-            break;
+    ret = table[regs->eax].ptr(regs);
 
-        case linux_syscall_int:
-            ret = linux_syscall_table[regs->eax].ptr(regs);
-            break;
-
-        default:
-            err("Invalid syscall interrupt number : 0x%x, pid %d\n", regs->int_no, Process::current().pid);
-            ret = ENOSYS;
-            return ret;
-    }
-
-    FPU::load(Process::current().arch_context->fpu_state);
+exit:
+    FPU::load(process.arch_context->fpu_state);
     regs->eax = ret;
-    processing_syscall = false;
-    return ret;
+
+    return regs;
 }

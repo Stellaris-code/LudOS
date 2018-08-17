@@ -193,21 +193,15 @@ std::vector<std::shared_ptr<node> > node::readdir()
         list.emplace_back(parent_dir);
     }
 
-    update_access_time();
+    //update_access_time();
 
     return list;
 }
 
 std::vector<std::shared_ptr<const node> > node::readdir() const
 {
-    std::vector<std::shared_ptr<const node>> vec;
-
-    for (auto el : const_cast<node*>(this)->readdir())
-    {
-        vec.emplace_back(el);
-    }
-
-    return vec;
+    auto res = const_cast<node*>(this)->readdir();
+    return std::move(*(std::vector<std::shared_ptr<const node>>*)(&res));
 }
 
 node::result<kpp::dummy_t> node::remove(const node *child)

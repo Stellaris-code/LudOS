@@ -76,13 +76,13 @@ void Process::init_default_fds()
     data->fd_table = std::make_shared<std::vector<tasking::FDInfo>>();
     assert(data->fd_table);
 
-    assert(vfs::find("/dev/stdout"));
-    assert(vfs::find("/dev/stdin"));
-    assert(vfs::find("/dev/stderr"));
+    static auto stdin_node = vfs::find("/dev/stdin" ).value();
+    static auto stdout_node = vfs::find("/dev/stdout" ).value();
+    static auto stderr_node = vfs::find("/dev/stderr" ).value();
 
-    add_fd({vfs::find("/dev/stdin" ).value(), .read = true,  .write = false});
-    add_fd({vfs::find("/dev/stdout").value(), .read = false, .write = true });
-    add_fd({vfs::find("/dev/stderr").value(), .read = false, .write = true });
+    add_fd({stdin_node, .read = true,  .write = false});
+    add_fd({stdout_node, .read = false, .write = true });
+    add_fd({stderr_node, .read = false, .write = true });
 }
 
 void Process::init_sig_handlers()
@@ -265,7 +265,7 @@ void Process::kill(pid_t pid, int err_code)
 
     MessageBus::send(ProcessDestroyedEvent{pid, err_code});
 
-    parent.raise(parent.pid, SIGCHLD, info);
+    //parent.raise(parent.pid, SIGCHLD, info);
 }
 
 Process *Process::by_pid(pid_t pid)
@@ -500,7 +500,7 @@ void Process::copy_allocated_pages(Process &target)
         auto src_ptr = Memory::mmap(pair.second.paddr, Memory::page_size());
         auto dest_ptr = Memory::mmap(target.data->mappings[pair.first].paddr, Memory::page_size());
 
-        memcpy(dest_ptr, src_ptr, Memory::page_size());
+        aligned_memcpy(dest_ptr, src_ptr, Memory::page_size());
 
         Memory::unmap(src_ptr, Memory::page_size());
         Memory::unmap(dest_ptr, Memory::page_size());

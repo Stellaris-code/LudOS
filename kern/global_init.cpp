@@ -52,6 +52,11 @@ SOFTWARE.
 #include "utils/logging.hpp"
 #include "utils/messagebus.hpp"
 
+// TODO : remove these includes
+#include "utils/demangle.hpp"
+#include "stack-trace.hpp"
+#include "fs/fsutils.hpp"
+
 #include "mem/page_fault.hpp"
 
 #include "halt.hpp"
@@ -88,27 +93,22 @@ SOFTWARE.
 // TODO : VirtIO drivers
 // TODO : BASIC interpreter
 // TODO : cache bu sec/count pair ?
-// TODO : vfs sanitize names
-// TODO : vfs canonicalize
 // TODO : process : free pages and alloc only at execute time
-// TODO : task switch : fpu state
 // TODO : SIGFPE, SIGILL
 // TODO : faire un 'profiler' qui toutes les t ms regarde la callstack et détermine les fonctions les plus appellées
 // TODO : passer tout ce qui est VBE en un driver qui expose le noeud 'fbdev'
 
 // ROADMAP
+// : TODO : faire en sorte que rtc::get_time() ne soit appelé qu'une seule fois
+// : TODO : optimiser vfs::find, il est lent à mourir actuellement !
 // : supprimer la libc++ & libcxxabi
 // : supprimer les includes inutiles
 // : passer le shell et un max de trucs en userspace
-// : QueryInterface
 // : DWARF ?
 // : SVGA-II
 // : faire une boucle de traitement de callbacks d'interruption
 // : implémenter /dev/input
-// : vfs call qui liste des properties particulières et une liste possible d'appels
-// : implémenter signaux
 // : implémenter expanding stack
-// : implémenter sigsegv
 
 /**********************************/
 // BUGS
@@ -245,6 +245,25 @@ void global_init()
     tasking::scheduler_init();
 
     sh.command("run /initrd/init.sh");
+
+//    Timer::register_callback(100, []
+//    {
+//        auto trace = trace_stack(nullptr, 0);
+//        if (trace.size() <= 6) return;
+
+//        log_serial("\n------------------\n");
+//        const auto& frame = trace[6];
+//        {
+//            if (frame.sym_info)
+//            {
+//                log_serial("#%d   0x%x in %s\n", 0, frame.address, demangle(frame.sym_info->name));
+//            }
+//        }
+//    }, false);
+//    while (true)
+//    {
+//        auto node = vfs::find("/dev/stdin");
+//    }
 
     sh.run();
 }

@@ -34,15 +34,20 @@ struct [[gnu::packed]] stack_frame
     uintptr_t return_addr;
 };
 
-std::vector<uintptr_t> trace_stack(void *addr, size_t frames)
+std::vector<TraceEntry> trace_stack(void *addr, size_t frames)
 {
-    std::vector<uintptr_t> trace;
+    std::vector<TraceEntry> trace;
 
     stack_frame* fp = (stack_frame*)(addr ?: __builtin_frame_address(0));
 
     for(size_t i = 0; (frames != 0 ? i < frames : true) && fp && Memory::is_mapped(fp) && fp->return_addr; i++)
     {
-        trace.emplace_back(reinterpret_cast<uintptr_t>(fp->return_addr));
+        kpp::optional<elf::SymbolInfo> symbol;
+        if (auto fun = elf::kernel_symbol_table.get_function(fp->return_addr); fun)
+        {
+            symbol = *fun;
+        }
+        trace.emplace_back(TraceEntry{reinterpret_cast<uintptr_t>(fp->return_addr), std::move(symbol)});
         fp = fp->previous;
     }
 

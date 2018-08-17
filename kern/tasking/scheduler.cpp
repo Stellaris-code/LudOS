@@ -63,10 +63,7 @@ pid_t find_next_pid()
     do
     {
         next_pid = (next_pid + 1) % Process::count();
-    } while (!process_ready(next_pid));
-
-    assert(Process::by_pid(next_pid));
-    assert(process_ready(next_pid));
+    } while (!Process::by_pid(next_pid) || !process_ready(next_pid));
 
     return next_pid;
 }

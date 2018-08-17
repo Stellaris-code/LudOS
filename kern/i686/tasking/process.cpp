@@ -227,6 +227,8 @@ void Process::unswitch()
     unmap_address_space();
 }
 
+#include "utils/messagebus.hpp"
+
 Process *Process::clone(Process &proc, uint32_t flags)
 {
     auto new_proc = Process::create(proc.data->args);
@@ -264,8 +266,8 @@ Process *Process::clone(Process &proc, uint32_t flags)
 
 void Process::unmap_address_space()
 {
-#if 1
-    Paging::unmap_user_space();
+#if 0
+    Paging::unmap_user_space(); // reloading all the page tables is really costly, not the right solution
 #else
     for (const auto& pair : data->mappings)
     {

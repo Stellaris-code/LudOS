@@ -230,6 +230,7 @@ loop:
 
 bool Paging::release_virtual_page(uintptr_t v_addr, size_t number, ReleaseFlags flags)
 {
+#if 1
     auto entry = page_entry(v_addr);
     for (size_t i { 0 }; i < number; ++i)
     {
@@ -240,6 +241,14 @@ bool Paging::release_virtual_page(uintptr_t v_addr, size_t number, ReleaseFlags 
         entry[i].os_claimed = false;
         asm volatile ("invlpg (%0)"::"r"(reinterpret_cast<uint8_t*>(v_addr) + i*page_size) : "memory");
     }
+#else
+    auto base = page_entry(v_addr);
+    memset(base, 0, number*sizeof(PTEntry));
+    for (size_t i { 0 }; i < number; ++i)
+    {
+        asm volatile ("invlpg (%0)"::"r"(reinterpret_cast<uint8_t*>(v_addr) + i*page_size) : "memory");
+    }
+#endif
 
     return true;
 }

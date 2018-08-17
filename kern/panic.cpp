@@ -51,18 +51,18 @@ SOFTWARE.
 const registers* panic_regs = nullptr;
 bool panic_use_exception_frame = false;
 
-std::vector<uintptr_t> exception_stack_frame;
+std::vector<TraceEntry> exception_stack_frame;
 
 extern "C" void isr_common_stub();
 extern "C" void irq_common_stub();
 
-size_t trace_offset(const std::vector<uintptr_t>& trace)
+size_t trace_offset(const std::vector<TraceEntry>& trace)
 {
     size_t offset = 0;
 #ifdef ARCH_i686
     while (offset < trace.size() &&
-           trace[offset] != (uintptr_t)&isr_common_stub + 31 &&
-           trace[offset] != (uintptr_t)&irq_common_stub + 31)
+           trace[offset].address != (uintptr_t)&isr_common_stub + 31 &&
+           trace[offset].address != (uintptr_t)&irq_common_stub + 31)
     {
         ++offset;
     }
@@ -87,18 +87,17 @@ void print_stack_symbols()
     // Discard the first function call to kmain, saves space
     for (size_t i = trace_offset(trace), cnt = 1; i < trace.size(); ++i, ++cnt)
     {
-        if (auto fun = elf::kernel_symbol_table.get_function(trace[i]); fun)
+        if (trace[i].sym_info)
         {
-            auto symbol = *fun;
-            kprintf("#%d   0x%x in %s", cnt, trace[i], demangle(symbol.name));
+            kprintf("#%d   0x%x in %s", cnt, trace[i].address, demangle(trace[i].sym_info->name));
         }
-        else if (trace[i] < KERNEL_VIRTUAL_BASE)
+        else if (trace[i].address < KERNEL_VIRTUAL_BASE)
         {
-            kprintf("#%d    0x%x in <userspace>", cnt, trace[i]);
+            kprintf("#%d    0x%x in <userspace>", cnt, trace[i].address);
         }
         else
         {
-            kprintf("#%d    0x%x in ????", cnt, trace[i]);
+            kprintf("#%d    0x%x in ????", cnt, trace[i].address);
         }
 
         if (i < trace.size()-1)

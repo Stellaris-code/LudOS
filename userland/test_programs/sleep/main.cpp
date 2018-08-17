@@ -46,8 +46,9 @@ inline uint64_t total_ticks()
 
 int main()
 {
+#if 0
     uint64_t sum = 0;
-    const size_t iterations = 1;
+    const size_t iterations = 100;
     for (size_t i { 0 }; i < iterations; ++i)
     {
         uint64_t ticks = total_ticks();
@@ -56,12 +57,18 @@ int main()
                       "int $0x70"
                       :::"eax");
 #else
-        syscall_nop();
+        if (fork() == 0) exit(0);
 #endif
         uint64_t diff = total_ticks() - ticks;
         sum += diff;
+        //sched_yield(); // to kill the child
     }
-    printf("Syscall overhead : %llu\n", sum/iterations);
+    char buf[60];
+    snprintf(buf, 60, "Syscall overhead : %llu\n", sum/iterations);
+    print_serial(buf);
+    while (true);
+
+#endif
 
     printf("Before fork : \n");
     int ret = fork();

@@ -28,7 +28,15 @@ SOFTWARE.
 #include <stdint.h>
 #include <vector.hpp>
 
+#include "elf/symbol_table.hpp"
+
+struct TraceEntry
+{
+    uintptr_t address;
+    kpp::optional<elf::SymbolInfo> sym_info;
+};
+
 // if frames == 0, print until no more frames are available
-std::vector<uintptr_t> trace_stack(void* addr, size_t frames);
+std::vector<TraceEntry> trace_stack(void* addr, size_t frames);
 
 #endif // STACKTRACE_HPP

@@ -78,12 +78,13 @@ Date from_unix(size_t epoch)
         {
             if (dayno < days_in_months[m] + (m == 1 && leap_year(y) ? 1 : 0))
             {
-                date.month = (m + 1) % 12 + 1;
-                break;
+                date.month = m + 1;
+                goto out;
             }
             dayno -= days_in_months[m] + (m == 1 && leap_year(y) ? 1 : 0);
         }
     }
+    out:
 
     date.mday = dayno + 1;
 
@@ -113,11 +114,6 @@ size_t to_unix(const Date &date)
     }
 
     return epoch;
-}
-
-size_t epoch()
-{
-    return to_unix(get_time_of_day());
 }
 
 const char* to_string(const Date &date)

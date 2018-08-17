@@ -100,7 +100,7 @@ SOFTWARE.
 
 // ROADMAP
 // : TODO : faire en sorte que rtc::get_time() ne soit appelé qu'une seule fois
-// : TODO : optimiser vfs::find, il est lent à mourir actuellement !
+// : TODO : optimiser vfs::find, il est lent à mourir actuellement ! (voir point au dessus)
 // : supprimer la libc++ & libcxxabi
 // : supprimer les includes inutiles
 // : passer le shell et un max de trucs en userspace

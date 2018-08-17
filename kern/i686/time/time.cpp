@@ -24,6 +24,7 @@ SOFTWARE.
 */
 
 #include "time/time.hpp"
+#include "time/timer.hpp"
 
 #include "i686/cpu/cpuinfo.hpp"
 #include "i686/pc/devices/rtc.hpp"
@@ -55,9 +56,18 @@ double uptime()
     return ticks / (double(clock_speed()) * 1'000'000.0); // MHz -> Hz
 }
 
+size_t epoch()
+{
+    static auto boot_date = Time::to_unix(rtc::get_time());
+    static auto boot_ticks = Timer::ticks();
+
+
+    return boot_date + (Timer::ticks() - boot_ticks)/Timer::freq();
+}
+
 Date get_time_of_day()
 {
-    return rtc::get_time();
+    return from_unix(epoch());
 }
 
 }

@@ -77,8 +77,6 @@ inline void wait_update()
 
 inline Time::Date get_time()
 {
-    // TODO :
-    //return Time::Date{};
     uint8_t century = 0;
     uint8_t last_second;
     uint8_t last_minute;

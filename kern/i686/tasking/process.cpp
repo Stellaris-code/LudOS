@@ -266,7 +266,7 @@ Process *Process::clone(Process &proc, uint32_t flags)
 
 void Process::unmap_address_space()
 {
-#if 0
+#if 1
     Paging::unmap_user_space(); // reloading all the page tables is really costly, not the right solution
 #else
     for (const auto& pair : data->mappings)

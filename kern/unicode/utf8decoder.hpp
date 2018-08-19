@@ -53,6 +53,6 @@ private:
     char32_t m_current { 0 };
 };
 
-kpp::u32string u8_decode(const kpp::string& str);
+kpp::u32string u8_decode(kpp::string_view str);
 
 #endif // UTF8DECODER_HPP

@@ -42,6 +42,8 @@ void ensure_impl(bool cond, const char* line)
 
 volatile sig_atomic_t sig_num = 0xdeadbeef;
 volatile sig_atomic_t segfault_check = 0;
+volatile sig_atomic_t intdiv_check = 0;
+volatile sig_atomic_t illop_check = 0;
 extern "C" int do_ludos_syscall(uint32_t no, uint32_t args, uint32_t* arg_table);
 
 void handler(int sig)
@@ -62,8 +64,33 @@ void segfault_handler(int, siginfo_t* siginfo, void* ucontext)
     segfault_check = 1;
 }
 
+void intdiv_handler(int, siginfo_t*, void* ucontext)
+{
+    print_debug("Intdiv !\n");
+    registers* regs = (registers*)ucontext;
+    regs->eip += 2; // TODO : !!
+
+    intdiv_check = 1;
+}
+void illop_handler(int, siginfo_t*, void* ucontext)
+{
+    print_debug("Illop !\n");
+    registers* regs = (registers*)ucontext;
+    regs->eip += 1;
+
+    illop_check = 1;
+}
+
 int main(int argc, char* argv[])
 {
+    signal(SIGFPE, (sighandler_t)intdiv_handler);
+    signal(SIGILL, (sighandler_t)illop_handler);
+
+    //asm volatile ("div %0"::"a"(0));
+    //ensure(intdiv_check == 1);
+    //asm volatile ("ud2");
+    //ensure(illop_check == 1);
+
     errno = EOK;
     ensure(signal(SIGTERM, SIG_IGN) == SIG_ERR); ensure(errno == EINVAL);
     ensure(signal(SIGSTOP, SIG_IGN) == SIG_ERR); ensure(errno == EINVAL);

@@ -235,7 +235,7 @@ void install_base_commands(Shell &sh)
          auto commands = tokenize(c_str, "\n");
          for (const auto& cmd : commands)
          {
-             if (int rc = sh.command(cmd); rc != 0)
+             if (int rc = sh.command(cmd.to_string()); rc != 0)
              {
                  sh.pwd = old_pwd;
                  return rc;

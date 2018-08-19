@@ -112,7 +112,7 @@ int sys_execve(user_ptr<const char> path, user_ptr<user_ptr<const char>> argv, u
         loader->load(*process);
 
         process->set_args(args);
-        process->data->name = filename(proc_name);
+        process->data->name = filename(proc_name).to_string();
     }
 
     // Force scope deletion, otherwise it will never be called

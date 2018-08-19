@@ -29,14 +29,12 @@ SOFTWARE.
 
 #include "utils/stlutils.hpp"
 
-// TODO : use string_view
-
-inline kpp::string filename(const kpp::string& path)
+inline kpp::string_view filename(kpp::string_view path)
 {
     return tokenize(path, "/").back();
 }
 
-inline kpp::string stem(const kpp::string& path)
+inline kpp::string stem(kpp::string_view path)
 {
     auto file = filename(path);
     auto toks = tokenize(file, ".");
@@ -44,25 +42,25 @@ inline kpp::string stem(const kpp::string& path)
     return join(toks, ".");
 }
 
-inline kpp::string extension(const kpp::string& path)
+inline kpp::string_view extension(kpp::string_view path)
 {
     auto file = filename(path);
     return tokenize(file, ".").back();
 }
 
-inline kpp::string parent_path(const kpp::string& path)
+inline kpp::string parent_path(kpp::string_view path)
 {
     auto toks = tokenize(path, "/");
     toks.pop_back(); // remove file
     return join(toks, "/") + "/";
 }
 
-inline std::vector<kpp::string> dir_list(const kpp::string& path)
+inline std::vector<kpp::string_view> dir_list(kpp::string_view path)
 {
     return tokenize(parent_path(path), "/", true);
 }
 
-inline std::vector<kpp::string> path_list(const kpp::string& path)
+inline std::vector<kpp::string_view> path_list(kpp::string_view path)
 {
     return tokenize(path, "/", true);
 }

@@ -169,7 +169,7 @@ protected:
     { return kpp::make_unexpected(FSError{FSError::Unknown}); }
     virtual std::vector<std::shared_ptr<node>> readdir_impl() { return {}; }
     [[nodiscard]] virtual result<std::shared_ptr<node>> create_impl(const kpp::string&, Type) { return nullptr; }
-    [[nodiscard]] virtual result<kpp::dummy_t> rename_impl(const kpp::string&) {}
+    [[nodiscard]] virtual result<kpp::dummy_t> rename_impl(const kpp::string&) { return {}; }
     [[nodiscard]] virtual result<kpp::dummy_t> remove_impl(const vfs::node*)
     { return kpp::make_unexpected(FSError{FSError::Unknown}); }
 

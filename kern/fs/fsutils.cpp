@@ -67,7 +67,6 @@ kpp::expected<std::shared_ptr<node>, FSError> find(const kpp::string& path, std:
         auto v = cur_node->readdir();
         for (const auto& child : v)
         {
-            assert(child);
             if (child->name() == dirs[i])
             {
                 cur_node = child;

@@ -85,7 +85,7 @@ void install_task_commands(Shell &sh)
          }
 
          process->data->pwd = sh.pwd;
-         process->data->name = filename(program_args[0]);
+         process->data->name = filename(program_args[0]).to_string();
          process->switch_to();
 
          return 0;

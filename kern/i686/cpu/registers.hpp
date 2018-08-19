@@ -85,6 +85,10 @@ inline uint32_t cr4()
     return out;
 }
 
+inline bool user_mode(const registers* regs)
+{
+    return regs->cs & 0x3;
+}
 
 void dump(const registers* regs);
 

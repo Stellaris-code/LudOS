@@ -1,7 +1,7 @@
 /*
-framebuffer_draw.hpp
+traps.hpp
 
-Copyright (c) 02 Yann BOUCHER (yann)
+Copyright (c) 18 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,23 +22,40 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef FRAMEBUFFER_DRAW_HPP
-#define FRAMEBUFFER_DRAW_HPP
+#ifndef TRAPS_HPP
+#define TRAPS_HPP
 
-#include "graphics/color.hpp"
+#include <stdint.h>
 
-#include <vector.hpp>
-#include <optional.hpp>
-#include "graphics/video.hpp"
-#include "screen.hpp"
-
-namespace graphics
+namespace traps
 {
 
-void set_display_mode(const VideoMode& mode);
-void draw_to_display(const Screen& scr);
-void clear_display(Color color = 0);
+struct FPError
+{
+    enum Type
+    {
+        IntDivByZero
+    };
+    Type type;
+    uintptr_t address;
+};
+
+struct IllegalOpError
+{
+    enum Type
+    {
+        IllOpcode
+    };
+    Type type;
+    uintptr_t address;
+};
+
+void fp_error (const FPError& error);
+void ill_error(const IllegalOpError& error);
+
+
+void init();
 
 }
 
-#endif // FRAMEBUFFER_DRAW_HPP
+#endif // TRAPS_HPP

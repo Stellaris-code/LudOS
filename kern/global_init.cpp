@@ -56,6 +56,7 @@ SOFTWARE.
 #include "utils/demangle.hpp"
 #include "stack-trace.hpp"
 #include "fs/fsutils.hpp"
+#include "kstring/kstring_view.hpp"
 
 #include "mem/page_fault.hpp"
 
@@ -94,13 +95,11 @@ SOFTWARE.
 // TODO : BASIC interpreter
 // TODO : cache bu sec/count pair ?
 // TODO : process : free pages and alloc only at execute time
-// TODO : SIGFPE, SIGILL
 // TODO : faire un 'profiler' qui toutes les t ms regarde la callstack et détermine les fonctions les plus appellées
 // TODO : passer tout ce qui est VBE en un driver qui expose le noeud 'fbdev'
+// TODO : restore ucontext_t* modified by signal handlers
 
 // ROADMAP
-// : TODO : faire en sorte que rtc::get_time() ne soit appelé qu'une seule fois
-// : TODO : optimiser vfs::find, il est lent à mourir actuellement ! (voir point au dessus)
 // : supprimer la libc++ & libcxxabi
 // : supprimer les includes inutiles
 // : passer le shell et un max de trucs en userspace
@@ -246,24 +245,23 @@ void global_init()
 
     sh.command("run /initrd/init.sh");
 
-//    Timer::register_callback(100, []
-//    {
-//        auto trace = trace_stack(nullptr, 0);
-//        if (trace.size() <= 6) return;
+#if 0
+    Timer::register_callback(100, []
+    {
+        auto trace = trace_stack(nullptr, 0);
+        if (trace.size() <= 6) return;
 
-//        log_serial("\n------------------\n");
-//        const auto& frame = trace[6];
-//        {
-//            if (frame.sym_info)
-//            {
-//                log_serial("#%d   0x%x in %s\n", 0, frame.address, demangle(frame.sym_info->name));
-//            }
-//        }
-//    }, false);
-//    while (true)
-//    {
-//        auto node = vfs::find("/dev/stdin");
-//    }
+        log_serial("\n------------------\n");
+        for (size_t i = 6; i == 6; ++i)
+        {
+            const auto& frame = trace[i];
+            if (frame.sym_info)
+            {
+                log_serial("#%d   0x%x in %s\n", 0, frame.address, demangle(frame.sym_info->name));
+            }
+        }
+    }, false);
+#endif
 
     sh.run();
 }

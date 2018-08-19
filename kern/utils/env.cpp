@@ -37,7 +37,7 @@ void read_from_cmdline(const kpp::string& cmdline)
 
     for (const auto& entry : tokenize(cmdline, " ", true))
     {
-        auto values = tokenize(entry, "=");
+        auto values = tokenize<std::vector<kpp::string>>(entry, "=");
         if (values.size() == 1) values.emplace_back("");
         ksetenv(values[0], values[1]);
     }

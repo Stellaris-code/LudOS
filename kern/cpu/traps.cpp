@@ -1,7 +1,7 @@
 /*
-framebuffer_draw.hpp
+traps.cpp
 
-Copyright (c) 02 Yann BOUCHER (yann)
+Copyright (c) 18 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,23 +22,48 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef FRAMEBUFFER_DRAW_HPP
-#define FRAMEBUFFER_DRAW_HPP
 
-#include "graphics/color.hpp"
+#include "cpu/traps.hpp"
 
-#include <vector.hpp>
-#include <optional.hpp>
-#include "graphics/video.hpp"
-#include "screen.hpp"
+#include "panic.hpp"
 
-namespace graphics
+#include "tasking/process.hpp"
+#include "siginfo.h"
+
+namespace traps
 {
 
-void set_display_mode(const VideoMode& mode);
-void draw_to_display(const Screen& scr);
-void clear_display(Color color = 0);
+void fp_error(const FPError& error)
+{
+    siginfo_t sig;
+    sig.si_signo = SIGFPE;
+    switch (error.type)
+    {
+        case FPError::IntDivByZero:
+            sig.si_code = FPE_INTDIV;
+    }
+    sig.si_addr = (void*)error.address;
 
+    Process::current().raise(Process::current().pid, SIGFPE, sig);
+
+    panic("FP Error!\n");
 }
 
-#endif // FRAMEBUFFER_DRAW_HPP
+void ill_error(const IllegalOpError& error)
+{
+    siginfo_t sig;
+    sig.si_signo = SIGILL;
+    switch (error.type)
+    {
+        case IllegalOpError::IllOpcode:
+            sig.si_code = ILL_ILLOPC;
+    }
+    sig.si_addr = (void*)error.address;
+
+    Process::current().raise(Process::current().pid, SIGILL, sig);
+
+    panic("Illegal opcode Error!\n");
+}
+
+
+}

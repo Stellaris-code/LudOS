@@ -83,7 +83,7 @@ const registers* isr_handler(registers* const regs)
     // If in user mode
     if (regs->cs & 0x3) Process::current().arch_context->regs = *regs;
 
-    if (auto handl = handlers[regs->int_no]; handl)
+    if (auto handl = handlers[regs->int_no])
     {
         if (handl(regs)) return regs;
     }
@@ -107,8 +107,6 @@ const registers* isr_handler(registers* const regs)
 
         panic_regs = regs;
         panic("Unhandeld interrupt 0x%x (type : '%s')\n", regs->int_no, exception_messages[regs->int_no]);
-
-
     }
 
     return regs;
@@ -121,7 +119,7 @@ const registers* irq_handler(registers* const regs)
     if (regs->cs & 0x3) Process::current().arch_context->regs = *regs;
 
     pic::send_eoi(regs->int_no-31);
-    if (auto handl = handlers[regs->int_no]; handl)
+    if (auto handl = handlers[regs->int_no])
     {
         handl(regs);
     }

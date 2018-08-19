@@ -1,7 +1,7 @@
 /*
-framebuffer_draw.hpp
+traps.cpp
 
-Copyright (c) 02 Yann BOUCHER (yann)
+Copyright (c) 18 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,23 +22,35 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#ifndef FRAMEBUFFER_DRAW_HPP
-#define FRAMEBUFFER_DRAW_HPP
 
-#include "graphics/color.hpp"
+#include "cpu/traps.hpp"
 
-#include <vector.hpp>
-#include <optional.hpp>
-#include "graphics/video.hpp"
-#include "screen.hpp"
+#include "i686/interrupts/isr.hpp"
 
-namespace graphics
+namespace traps
 {
 
-void set_display_mode(const VideoMode& mode);
-void draw_to_display(const Screen& scr);
-void clear_display(Color color = 0);
+void init()
+{
+    isr::register_handler(isr::DivByZero, [](registers* const regs)->bool
+    {
+        if (!user_mode(regs))
+            return false;
 
+        fp_error(FPError{FPError::IntDivByZero, regs->eip});
+
+        return true;
+    });
+
+    isr::register_handler(isr::InvalidOpcode, [](registers* const regs)->bool
+    {
+        if (!user_mode(regs))
+            return false;
+
+        ill_error(IllegalOpError{IllegalOpError::IllOpcode, regs->eip});
+
+        return true;
+    });
 }
 
-#endif // FRAMEBUFFER_DRAW_HPP
+}

@@ -267,6 +267,7 @@ void handle_new_driver(Driver &drv)
     {
         static int last_keyboard_id = 0;
         auto kb_node = std::make_shared<kbdev_node>(root.get());
+        kb_node->keyboard_id = last_keyboard_id;
         kb_node->rename("kbd" + kpp::to_string(last_keyboard_id++));
         root->children.emplace_back(kb_node);
     }

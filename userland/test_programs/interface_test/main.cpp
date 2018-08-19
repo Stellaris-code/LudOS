@@ -39,7 +39,7 @@ kbd_state key_state;
 void update_key_state()
 {
     static enum Key previous[KeyCount];
-    memcpy(previous, key_state.state, sizeof(key_state));
+    memcpy(previous, key_state.state, sizeof(key_state.state));
 
     kbd_interface.get_kbd_state(&key_state);
 
@@ -47,7 +47,10 @@ void update_key_state()
     {
         if (previous[i] != key_state.state[i])
         {
-            fprintf(stderr, "Something changed at key %d !\n", i);
+            if (i >= KeyA && i <= KeyZ)
+            {
+                fprintf(stderr, "Pressed key %c !\n", 'a' + i - KeyA);
+            }
         }
     }
 }

@@ -315,7 +315,8 @@ bool operator==(const kernel_string<CharType, SmallStrSize> &lhs, const kernel_s
 {
     if (lhs.size() != rhs.size()) return false;
 
-    for (size_t i { 0 }; i < lhs.size(); ++i)
+    // since we often compare paths, which often differ by the end, start comparing by the end of the strings
+    for (size_t i { lhs.size() }; i-- > 0;)
     {
         if (lhs[i] != rhs[i]) return false;
     }

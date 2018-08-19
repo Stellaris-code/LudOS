@@ -89,6 +89,7 @@ kpp::expected<kpp::dummy_t, DiskError> DiskCache::flush()
         if (!result)
             return kpp::make_unexpected(result.error());
     }
+    return {};
 }
 
 [[nodiscard]]

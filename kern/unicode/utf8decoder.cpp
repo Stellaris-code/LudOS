@@ -27,6 +27,7 @@ SOFTWARE.
 
 #include <array.hpp>
 #include <kstring/kstring.hpp>
+#include <kstring/kstring_view.hpp>
 
 #include "utils/logging.hpp"
 
@@ -133,7 +134,7 @@ size_t UTF8Decoder::get_length(uint8_t first_byte)
     return l;
 }
 
-kpp::u32string u8_decode(const kpp::string &str)
+kpp::u32string u8_decode(kpp::string_view str)
 {
     kpp::u32string kresult;
     UTF8Decoder decoder;

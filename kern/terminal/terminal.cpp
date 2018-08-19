@@ -418,7 +418,7 @@ void Terminal::reset()
 
 void Terminal::process_escape_code()
 {
-    auto param_list = tokenize(m_escape_sequence, ";");
+    auto param_list = tokenize<std::vector<kpp::string>>(m_escape_sequence, ";");
 
     if (param_list.empty()) return;
 

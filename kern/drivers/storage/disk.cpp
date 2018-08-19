@@ -162,6 +162,8 @@ kpp::expected<kpp::dummy_t, DiskError> Disk::write(size_t offset, gsl::span<cons
         if (!result) return result;
         offset -= sect_size;
     }
+
+    return {};
 }
 
 [[nodiscard]]

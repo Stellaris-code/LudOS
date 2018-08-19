@@ -31,6 +31,8 @@ SOFTWARE.
 namespace graphics
 {
 
+extern void (*draw_to_display_callback)(const Screen& screen);
+
 inline void set_pixel_field(uint32_t* src, uint32_t dst, int pos, int len)
 {
     uint32_t mask = (1u << len) - 1;
@@ -62,11 +64,9 @@ void draw_to_display_32rgb_nopad(const Screen &screen)
 {    
     const auto mode = current_video_mode();
 
-    assert(screen.width()*screen.height() >= mode.height*mode.width);
-
     __builtin_prefetch(screen.data(), 0, 0);
 
-    aligned_memcpy(reinterpret_cast<void*>(mode.virt_fb_addr), screen.data(),
+    aligned_memcpy((void*)(mode.virt_fb_addr), screen.data(),
                    mode.width*mode.height*mode.depth/CHAR_BIT);
 }
 
@@ -99,11 +99,16 @@ void set_display_mode(const VideoMode &mode)
         }
         else
         {
-            draw_to_display = draw_to_display_32rgb_nopad;
+            draw_to_display_callback = draw_to_display_32rgb_nopad;
         }
     }
 }
 
-void (*draw_to_display)(const Screen& screen) = draw_to_display_naive;
+void (*draw_to_display_callback)(const Screen& screen) = draw_to_display_naive;
+
+void draw_to_display(const Screen &scr)
+{
+    draw_to_display_callback(scr);
+}
 
 }

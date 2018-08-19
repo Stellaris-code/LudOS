@@ -29,11 +29,9 @@ SOFTWARE.
 
 #include "multiboot/multiboot_kern.hpp"
 
+#include "cpu/traps.hpp"
 #include "devices/pic.hpp"
 #include "devices/pit.hpp"
-#include "devices/speaker.hpp"
-#include "devices/ps2keyboard.hpp"
-#include "devices/ps2mouse.hpp"
 #include "i686/fpu/fpu.hpp"
 #include "i686/interrupts/idt.hpp"
 #include "i686/interrupts/isr.hpp"
@@ -229,6 +227,8 @@ void init(uint32_t magic, const multiboot_info_t* mbd_info)
         panic("No SSE support on this CPU\nThis kernel was built with SSE support, halting\n");
 #endif
     }
+
+    traps::init();
 
     log(Info, "Kernel end : %p\n", &kernel_physical_end);
 

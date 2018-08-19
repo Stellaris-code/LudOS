@@ -390,7 +390,7 @@ void install_fs_commands(Shell &sh)
              return -3;
          }
 
-         if (!node->create(filename(args[0]), vfs::node::Directory))
+         if (!node->create(filename(args[0]).to_string(), vfs::node::Directory))
          {
              sh.error("Could not create directory '%s'\n", filename(args[0].c_str()).c_str());
              return -3;

@@ -34,6 +34,9 @@ class kernel_string;
 using string = kernel_string<char, 60>;
 using u16string = kernel_string<char16_t, 60>;
 using u32string = kernel_string<char32_t, 60>;
+template <typename CharType>
+class basic_string_view;
+using string_view = basic_string_view<char>;
 }
 
 #endif // KSTRFWD_HPP

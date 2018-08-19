@@ -51,8 +51,11 @@ namespace isr
 
 enum Exception : uint32_t
 {
+    DivByZero = 0,
     Breakpoint = 3,
+    InvalidOpcode = 6,
     DoubleFault = 8,
+    GPF         = 13,
     PageFault = 14
 };
 

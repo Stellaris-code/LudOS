@@ -327,7 +327,12 @@ bool tar_node::is_link() const
 
 kpp::string tar_node::name() const
 {
-    return filename(m_name);
+    if (tokenize(m_name, "/").empty())
+    {
+        // TODO : investigate this ! !?
+        return "";
+    }
+    return filename(m_name).to_string();
 }
 
 ADD_FS(TarFS)

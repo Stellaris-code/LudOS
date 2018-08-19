@@ -113,7 +113,7 @@ void install_gfx_commands(Shell &sh)
              return -2;
          }
 
-         if (!graphics::change_mode(kpp::stoul(toks[0]), kpp::stoul(toks[1]), kpp::stoul(toks[2])))
+         if (!graphics::change_mode(kpp::stoul(toks[0].to_string()), kpp::stoul(toks[1].to_string()), kpp::stoul(toks[2].to_string())))
          {
              sh.error("Can't set mode %s\n", args[0].c_str());
              return -2;

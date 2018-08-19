@@ -46,7 +46,7 @@ void cowsay(kpp::string str, size_t cowsay_width)
 
     // remove newlines
     str.erase(std::remove_if(str.begin(), str.end(), [](char c){return c == '\n';}), str.end());
-    str = trim_right(str);
+    str = trim_right(str).to_string();
 
     size_t lines = str.size()/cowsay_width + (str.size()%cowsay_width?1:0);
 

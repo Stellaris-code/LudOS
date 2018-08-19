@@ -183,6 +183,10 @@ std::vector<std::shared_ptr<node> > node::readdir()
     auto list = (m_mounted_node ? m_mounted_node->readdir_impl() : readdir_impl());
 
     auto cur_dir = std::make_shared<symlink>(path(), ".");
+    if (!find(cur_dir->target()))
+    {
+        log_serial("It is '%s'\n", cur_dir->target().c_str());
+    }
 
     list.emplace_back(cur_dir);
 
@@ -238,7 +242,7 @@ node::result<kpp::dummy_t> vfs_root::remove_impl(const node *child)
 }
 
 symlink::symlink(kpp::string target)
-    : m_target(target), m_linkname(filename(target))
+    : m_target(std::move(target)), m_linkname(filename(target))
 {
 
 }

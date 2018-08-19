@@ -155,9 +155,9 @@ int Shell::command(const kpp::string &command)
     const auto cmd = tokens[0];
     auto args = std::vector<kpp::string>(tokens.begin() + 1, tokens.end());
 
-    if (m_commands.find(cmd) != m_commands.end())
+    if (m_commands.find(cmd.to_string()) != m_commands.end())
     {
-        return m_commands[cmd].callback(args);
+        return m_commands[cmd.to_string()].callback(args);
     }
 
     error("Unknown command '%s'\n", cmd.c_str());
@@ -216,7 +216,7 @@ void Shell::autocomplete()
     {
         for (const auto& pair : m_commands)
         {
-            if (strtolower(pair.first).substr(0, toks.back().size()) == strtolower(toks.back()) && pair.first != toks.back())
+            if (strtolower(pair.first).substr(0, toks.back().size()) == strtolower(toks.back().to_string()) && pair.first != toks.back())
             {
                 m_matches.emplace_back(pair.first);
             }
@@ -226,7 +226,7 @@ void Shell::autocomplete()
     {
         for (const auto& node : pwd->readdir())
         {
-            if (toks.size() <= 1 || strtolower(node->name()).substr(0, toks.back().size()) == strtolower(toks.back()))
+            if (toks.size() <= 1 || strtolower(node->name()).substr(0, toks.back().size()) == strtolower(toks.back().to_string()))
             {
                 m_matches.emplace_back(node->name());
             }
@@ -252,15 +252,15 @@ kpp::string Shell::prompt() const
 // TODO : coulouring : bad command/argument/quotes
 void Shell::update_coloring()
 {
-    auto toks = quote_tokenize(term().input());
-
     kpp::string input = term().input();
+
+    auto toks = quote_tokenize(input);
 
     if (toks.empty()) return;
 
     auto cmd = toks[0];
 
-    if (m_commands.find(cmd) != m_commands.end())
+    if (m_commands.find(cmd.to_string()) != m_commands.end())
     {
         term().set_input_color(0, u8_decode(cmd).size(), {graphics::color_green, term_data().color().bg});
     }

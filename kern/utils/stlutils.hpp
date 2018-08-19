@@ -31,29 +31,30 @@ SOFTWARE.
 #include <utils/gsl/gsl_span.hpp>
 
 #include <kstring/kstring.hpp>
+#include <kstring/kstring_view.hpp>
 
 #include <ctype.h>
 
-template <class ContainerT = std::vector<kpp::string>>
-inline ContainerT tokenize(const kpp::string& str, const kpp::string& delimiters = " ", bool trimEmpty = false)
+template <class ContainerT = std::vector<kpp::string_view>>
+inline ContainerT tokenize(kpp::string_view str, const kpp::string& delimiters = " ", bool trimEmpty = false)
 {
     ContainerT tokens;
+    tokens.reserve(str.size());
 
-    kpp::string::size_type pos, lastPos = 0, length = str.length();
+    kpp::string_view::size_type pos, lastPos = 0, length = str.length();
 
     using value_type = typename ContainerT::value_type;
 
-    while(lastPos < length + 1)
+    while(lastPos < length)
     {
         pos = str.find_first_of(delimiters, lastPos);
-        if(pos == kpp::string::npos)
+        if(pos == kpp::string_view::npos)
         {
             pos = length;
         }
 
         if(pos != lastPos || !trimEmpty)
-            tokens.push_back(value_type(str.data()+lastPos,
-                                        pos-lastPos ));
+            tokens.push_back(value_type(str.substr(lastPos, pos-lastPos)));
 
         lastPos = pos + 1;
     }
@@ -85,10 +86,10 @@ inline kpp::string join(const Container& cont, const kpp::string& join_str)
     kpp::string result;
     for (int i { 0 }; i < int(cont.size())-1; ++i)
     {
-        result += cont[i];
+        result += kpp::string(cont[i]);
         result += join_str;
     }
-    result += cont.back();
+    result += kpp::string(cont.back());
 
     return result;
 }
@@ -107,31 +108,31 @@ kpp::string inline trim_zstr(const kpp::string& str)
     return kpp::string(str.c_str(), strlen(str.c_str()));
 }
 
-kpp::string inline trim_right(kpp::string str)
+kpp::string_view inline trim_right(kpp::string_view str)
 {
     while (!str.empty() && isspace(str.back()))
     {
-        str.pop_back();
+        str.remove_suffix(1);
     }
     return str;
 }
 
-kpp::string inline trim_left(kpp::string str)
+kpp::string_view inline trim_left(kpp::string_view str)
 {
     while (!str.empty() && isspace(str.front()))
     {
-        str.erase(0, 1);
+        str.remove_prefix(1);
     }
     return str;
 }
 
-kpp::string inline trim(kpp::string str)
+kpp::string_view inline trim(kpp::string_view str)
 {
-    return trim_right(trim_left(std::move(str)));
+    return trim_right(trim_left(str));
 }
 
-template <class ContainerT = std::vector<kpp::string>>
-inline ContainerT quote_tokenize(const kpp::string& str)
+template <class ContainerT = std::vector<kpp::string_view>>
+inline ContainerT quote_tokenize(kpp::string_view str)
 {
     auto tokens = tokenize(str, "\"");
 
@@ -141,7 +142,7 @@ inline ContainerT quote_tokenize(const kpp::string& str)
     {
         bool is_in_quotes = i % 2;
 
-        kpp::string el = tokens[i];
+        auto el = tokens[i];
 
         if (!is_in_quotes)
         {
@@ -282,7 +283,7 @@ inline kpp::string format(const kpp::string& format, const std::vector<std::pair
             in_param = true;
         }
 
-        result += tok;
+        result += tok.to_string();
     }
 
     return result;

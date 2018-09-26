@@ -27,9 +27,10 @@ SOFTWARE.
 
 #include <stdio.h>
 
+#include "utils/kmsgbus.hpp"
+
 #include "terminal/terminal.hpp"
 
-#include "utils/messagebus.hpp"
 #include "utils/stlutils.hpp"
 
 #include "unicode/utf8decoder.hpp"
@@ -48,13 +49,13 @@ Shell::Shell()
 
     pwd = vfs::root;
 
-    m_input_handle = MessageBus::register_handler<TermInputEvent>([this](const TermInputEvent& e)
+    m_input_handle = kmsgbus.register_handler<TermInputEvent>([this](const TermInputEvent& e)
     {
         m_input = e.line;
         m_waiting_input = false;
     });
 
-    m_key_handle   = MessageBus::register_handler<kbd::KeyEvent>([this](const kbd::KeyEvent& e)
+    m_key_handle   = kmsgbus.register_handler<kbd::KeyEvent>([this](const kbd::KeyEvent& e)
     {
         if (e.state == kbd::KeyEvent::Pressed)
         {
@@ -168,7 +169,7 @@ void Shell::show_prompt()
 {
     kprintf("%s", prompt().c_str());
     term().switch_to_input();
-    term().force_redraw();
+    term().force_redraw(); // TODO
 }
 
 kpp::string Shell::read_input()

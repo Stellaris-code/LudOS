@@ -60,6 +60,8 @@ struct MonitorInfo
 {
     size_t width;
     size_t height;
+    size_t phys_width;
+    size_t phys_height;
 };
 
 constexpr size_t max_res_pixels { 1920 * 1080 * 4 };

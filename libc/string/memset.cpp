@@ -70,9 +70,18 @@ void* memsetl(void* bufptr, uint32_t value, size_t size)
 void * _repmovsb_memset(void * dest, uint8_t val, size_t n) {
     int d0, d1;
     asm volatile (
-                "rep; stosb;"
+                "rep stosb"
                 : "=&c" (d0), "=&D" (d1)
                 : "0" (n), "a" (val), "1" (dest)
+                : "memory");
+    return dest;
+}
+void * _repmovsl_memset(void * dest, uint32_t val, size_t n) {
+    int d0, d1;
+    asm volatile (
+                "rep stosl"
+                : "=&c" (d0), "=&D" (d1)
+                : "0" (n/4), "a" (val), "1" (dest)
                 : "memory");
     return dest;
 }

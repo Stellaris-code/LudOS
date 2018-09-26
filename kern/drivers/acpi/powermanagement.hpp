@@ -98,8 +98,8 @@ inline void shutdown()
 
 inline bool init()
 {
-    MessageBus::register_handler<ResetMessage>([](const ResetMessage&){power::reset();}, MessageBus::Last);
-    MessageBus::register_handler<ShutdownMessage>([](const ShutdownMessage&){power::shutdown();}, MessageBus::Last);
+    kmsgbus.register_handler<ResetMessage>([](const ResetMessage&){power::reset();}, kmsgbus.Last);
+    kmsgbus.register_handler<ShutdownMessage>([](const ShutdownMessage&){power::shutdown();}, kmsgbus.Last);
 
     return true;
 }

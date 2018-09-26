@@ -211,7 +211,7 @@ VideoMode closest_mode(const std::vector<VideoMode> &modes, size_t width, size_t
 
 bool set_mode(uint16_t mode)
 {
-    mode |= UseLFB | ClearDisplay;
+    mode |= UseLFB;
 
     auto state = emuInt10h(0x4F02, mode, 0, 0, 0);
     const auto& emu = state.cpu_state.emu;

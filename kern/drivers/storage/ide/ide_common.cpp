@@ -1,4 +1,4 @@
-/*
+﻿/*
 ide_common.cpp
 
 Copyright (c) 29 Yann BOUCHER (yann)
@@ -36,122 +36,165 @@ SOFTWARE.
 namespace ide
 {
 
-void select(uint16_t port, uint8_t type, uint64_t block, uint16_t count)
+const char* to_string(BusPort bus_port)
 {
-    outb(port + 6, 0x40 | type);
-
-    outb(port + 2, (count >> 8) & 0xFF);
-
-    outb(port + 3, (block >> 24) & 0xFF);
-    outb(port + 4, (block >> 32) & 0xFF);
-    outb(port + 5, (block >> 40) & 0xFF);
-
-    outb(port + 2, count & 0xFF);
-
-    outb(port + 3, block & 0xFF);
-    outb(port + 4, (block >> 8) & 0xFF);
-    outb(port + 5, (block >> 16) & 0xFF);
-
-    // 400ns
-    for (size_t i { 0 }; i < 5; ++i)
+    if (bus_port == Primary)
     {
-        inb(port + 6);
+        return "Primary";
+    }
+    else if (bus_port == Secondary)
+    {
+        return "Secondary";
+    }
+    else if (bus_port == Third)
+    {
+        return "Third";
+    }
+    else
+    {
+        return "Fourth";
     }
 }
 
-kpp::optional<identify_data> identify(uint16_t port, uint8_t type)
+void wait_400ns(const ata_device& dev)
 {
-    select(port, type == Master ? 0xA0 : 0xB0, 0, 0);
-
-    outb(port + 7, 0xEC);
-
-    const char* port_name;
-    if (port == Primary)
+    for (size_t i { 0 }; i < 4; ++i)
     {
-        port_name = "Primary";
+        inb(dev.control_base + ATA_ALT_STATUS);
     }
-    else if (port == Secondary)
+}
+
+void select(const ata_device& dev, uint64_t block, uint16_t count)
+{
+    outb(dev.io_base + ATA_SELECT, 0x40 | dev.type);
+
+    outb(dev.io_base + ATA_SECCOUNT, (count >> 8) & 0xFF);
+
+    outb(dev.io_base + ATA_LBALO, (block >> 24) & 0xFF);
+    outb(dev.io_base + ATA_LBAMID, (block >> 32) & 0xFF);
+    outb(dev.io_base + ATA_LBAHI, (block >> 40) & 0xFF);
+
+    outb(dev.io_base + ATA_SECCOUNT, count & 0xFF);
+
+    outb(dev.io_base + ATA_LBALO, block & 0xFF);
+    outb(dev.io_base + ATA_LBAMID, (block >> 8) & 0xFF);
+    outb(dev.io_base + ATA_LBAHI, (block >> 16) & 0xFF);
+
+    wait_400ns(dev);
+}
+
+kpp::optional<identify_data> identify(const ata_device& dev)
+{
+    if (inb(dev.io_base + 7) == 0xFF)
     {
-        port_name = "Secondary";
-    }
-    else if (port == Third)
-    {
-        port_name = "Third";
-    }
-    else
-    {
-        port_name = "Fourth";
-    }
-
-    uint8_t status = inb(port + 7);
-    if (status)
-    {
-
-        poll(port);
-        do
-        {
-            status = inb(port + 7);
-            if(status & 0x01)
-            {
-                log(Debug, "ATA %s%s has ERR set. Disabled.\n", port_name, type==Master?" master":" slave");
-                return {};
-            }
-        } while(!(status & 0x08));
-
-        log(Debug, "ATA %s%s is online.\n", port_name, type==Master?" master":" slave");
-
-        kpp::array<uint16_t, 256> buffer;
-
-        poll(port);
-
-        for(size_t i = 0; i<256; i++)
-        {
-            buffer[i] = inw(port + 0);
-        }
-
-        identify_data* id_data;
-        id_data = reinterpret_cast<identify_data*>(buffer.data());
-
-        log(Debug, "Firmware : %s, model : %s\n", ata_string(id_data->firmware).c_str(), ata_string(id_data->model).c_str());
-
-        return *id_data;
-    }
-    else
-    {
-        log(Debug, "ATA %s%s doesn't exist.\n", port_name, type==Master?" master":" slave");
-
+        log(Notice, "Tried to identify an inexistent io port\n");
         return {};
     }
-}
 
-void poll(uint16_t port)
-{
-    size_t max_iters { 0x10000 };
-    while (!(inb(port + 7) & 0x08) && max_iters-- > 0) { nop(); }
-}
+    const char* port_str = to_string(dev.port);
+    const char* type_str = dev.type==Master?"master":"slave";
 
-void poll_bsy(uint16_t port)
-{
-    size_t max_iters { 0x10000 };
-    while ((inb(port + 7) & 0x80) && max_iters-- > 0) { nop(); }
-}
+    poll_bsy(dev);
 
-bool flush(uint16_t port)
-{
-    poll_bsy(port);
-    poll(port);
+    outb(dev.io_base + ATA_FEATURES, 0);
+    outb(dev.control_base + ATA_DEVCTRL, 0);
 
-    outb(port + 7, 0xEA);
+    outb(dev.io_base + ATA_SELECT, (dev.type == Master ? 0xA0 : 0xB0)); // select
 
-    poll_bsy(port);
-    poll(port);
+    wait_400ns(dev);
 
-    if (error_set(port))
+    outb(dev.io_base + ATA_CMD, ata_identify); // TODO : send_cmd
+    uint8_t status = inb(dev.io_base + ATA_STATUS);
+
+    if (status == 0)
     {
-        bool stat = !error_set(port);
+        log(Debug, "ATA %s %s doesn't exist.\n", port_str, type_str);
+        return {};
+    }
+
+    status = poll_bsy(dev);
+
+    size_t max_iter = 0x10000;
+    while(!(status & ATA_DRQ) && max_iter-- > 0)
+    {
+        status = inb(dev.io_base + ATA_STATUS);
+        if(status & ATA_ERR)
+        {
+            log(Debug, "ATA %s %s has ERR set. Disabled.\n", port_str, type_str);
+            return {};
+        }
+    }
+    if (max_iter == 0)
+    {
+        log(Debug, "Timed out\n");
+        return {};
+    }
+
+    log(Info, "ATA %s %s is online.\n", port_str, type_str);
+
+    kpp::array<uint16_t, 256> buffer;
+
+#if 1
+    for(size_t i = 0; i<256; i++)
+    {
+        buffer[i] = inw(dev.io_base + ATA_DATA);
+    }
+#else
+    insw(dev.io_base + 0, buffer.data(), 256);
+#endif
+
+    identify_data* id_data = (identify_data*)buffer.data();
+
+    if ((id_data->flags & (1<<15)) != 0)
+    {
+        log(Notice, "Invalid identify data on ATA %s %s\n", port_str, type_str);
+        return {};
+    }
+
+    if (id_data->sector_size != 0 || id_data->sectors_28 == 0xFF || id_data->sectors_48 == 0xFF)
+    {
+        log(Notice, "Identify data looks invalid on ATA %s %s\n", port_str, type_str);
+        return {};
+    }
+
+    log(Info, "Firmware : %s, model : %s\n", ata_string(id_data->firmware).c_str(), ata_string(id_data->model).c_str());
+    log(Info, "Sector size : %d, sectors (48) : %d / sectors (28) : %d\n", id_data->sector_size, id_data->sectors_48, id_data->sectors_28);
+
+    return *id_data;
+}
+
+uint8_t poll(const ata_device& dev)
+{
+    size_t max_iters { 0x10000 };
+    uint8_t status;
+    while (!(status = (inb(dev.control_base + ATA_ALT_STATUS)) & ATA_DRQ) && --max_iters > 0) { nop(); }
+    return status;
+}
+
+uint8_t poll_bsy(const ata_device& dev)
+{
+    size_t max_iters { 0x10000 };
+    uint8_t status;
+    while ((status = (inb(dev.control_base + ATA_ALT_STATUS)) & ATA_BSY) && --max_iters > 0) { nop(); }
+    return status;
+}
+
+bool flush(const ata_device& dev)
+{
+    poll_bsy(dev);
+    poll(dev);
+
+    outb(dev.io_base + ATA_CMD, ata_flush_ext);
+
+    poll_bsy(dev);
+    poll(dev);
+
+    if (error_set(dev))
+    {
+        bool stat = !error_set(dev);
         if (!stat)
         {
-            clear_error(port);
+            clear_error(dev);
 
             return stat;
         }
@@ -160,34 +203,36 @@ bool flush(uint16_t port)
     return true;
 }
 
-bool error_set(uint16_t port)
+bool error_set(const ata_device& dev)
 {
-    return bit_check(status_register(port), 0) || bit_check(status_register(port), 5);
+    const uint8_t status = status_register(dev);
+    return bit_check(status, 0) || bit_check(status, 5);
 }
 
-void clear_error(uint16_t port)
+void clear_error(const ata_device& dev)
 {
-    outb(port + 7, 0x00); // nop
+    outb(dev.io_base + ATA_CMD, ata_nop);
 }
 
-uint8_t error_register(uint16_t port)
+uint8_t error_register(const ata_device& dev)
 {
-    return inb(port + 1);
+    return inb(dev.io_base + ATA_ERR);
 }
 
-uint8_t status_register(uint16_t port)
+uint8_t status_register(const ata_device& dev)
 {
-    return inb(port + 7);
+    return inb(dev.io_base + ATA_STATUS);
 }
 
-uint8_t drive_register(uint16_t port)
+uint8_t drive_register(const ata_device& dev)
 {
-    return inb(port + 6);
+    return inb(dev.io_base + ATA_SELECT);
 }
 
-DiskError::Type get_error(uint16_t port)
+DiskError::Type get_error(const ata_device& dev)
 {
-    auto err = error_register(port);
+    auto err = inb(dev.io_base + ATA_ERR);
+    log(Debug, "ATA error : 0x%x\n", err);
     if (err & ATA_ER_BBK)
     {
         return DiskError::BadSector;
@@ -202,24 +247,81 @@ DiskError::Type get_error(uint16_t port)
     }
     else
     {
+        warn("Unknown ATA error on port 0x%x : 0x%x\n", dev.port, err);
         return DiskError::Unknown;
     }
 }
 
-void cache_flush(uint16_t port, uint8_t type)
+void cache_flush(const ata_device& dev)
 {
-    select(port, type == Master ? 0xA0 : 0xB0, 0, 0);
+    select(dev, 0, 0);
 
-    outb(port + 7, 0xEA);
+    outb(dev.port + ATA_CMD, ata_flush_ext);
 
-    poll_bsy(port);
+    poll_bsy(dev);
 }
 
-IDEDisk::IDEDisk(uint16_t port, uint8_t type)
+bool detect(const ata_device& dev)
+{
+    outb(dev.control_base + ATA_DEVCTRL, 0); // clear control byte
+
+    if (inb(dev.io_base + ATA_STATUS) == 0xFF)
+    {
+        log(Notice, "No ATA device on port 0x%x\n", dev.io_base);
+        return false;
+    }
+
+    soft_reset(dev);
+    wait_400ns(dev);
+
+    outb(dev.io_base + ATA_SELECT, dev.type == Master ? 0xA0 : 0xB0);
+    wait_400ns(dev);
+
+    poll_bsy(dev);
+
+    uint8_t lba_lo = inb(dev.io_base + ATA_LBAMID);
+    uint8_t lba_hi = inb(dev.io_base + ATA_LBAHI);
+
+#if 1
+    // test if a disk is present by writing to the CHS registers
+    outb(dev.io_base + ATA_LBALO, 0x80); // magic constants, no meaning
+    outb(dev.io_base + ATA_LBAMID, 0x81);
+    outb(dev.io_base + ATA_SECCOUNT, 0x8b);
+    if (inb(dev.io_base + ATA_LBALO) != 0x80)
+    {
+        log(Notice, "No disk present on port 0x%x\n", dev.io_base);
+        return false;
+    }
+#endif
+
+    if ((lba_lo == 0 && lba_hi == 0) || (lba_lo == 0x3c && lba_hi == 0xc3))
+    {
+        return true;
+    }
+    else if (lba_lo == 0x14 && lba_hi == 0xeb)
+    {
+        log(Notice, "ATA is an ATAPI device, ignoring (lba lo 0x%x, hi 0x%x)\n", lba_lo, lba_hi);
+        return false;
+    }
+    else
+    {
+        log(Notice, "ATA is not an ATA device, ignoring (lba lo 0x%x, hi 0x%x)\n", lba_lo, lba_hi);
+        return false;
+    }
+}
+
+void soft_reset(const ata_device& dev)
+{
+    outb(dev.control_base + ATA_DEVCTRL, 0x4); // send RST command
+    wait_400ns(dev);
+    outb(dev.control_base + ATA_DEVCTRL, 0x0); // clear RST bit
+    wait_400ns(dev);
+}
+
+IDEDisk::IDEDisk(const ata_device& dev)
     : ::DiskImpl<IDEDisk>()
 {
-    m_port = port;
-    m_type = type;
+    m_dev = dev;
 }
 
 size_t IDEDisk::disk_size() const
@@ -248,17 +350,17 @@ kpp::string IDEDisk::drive_name() const
 
 void IDEDisk::update_id_data() const
 {
-    m_id_data = identify(m_port, m_type);
+    m_id_data = identify(m_dev);
 
     if (!m_id_data)
     {
-        warn("IDE PIO disk 0x%x/0x%x returned invalid identify data\n", m_port, m_type);
+        warn("IDE PIO disk 0x%x/0x%x returned invalid identify data\n", m_dev.io_base, m_dev.type);
     }
 }
 
 void IDEDisk::flush_hardware_cache()
 {
-    cache_flush(m_port, m_type);
+    cache_flush(m_dev);
 }
 
 }

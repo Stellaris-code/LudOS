@@ -27,7 +27,8 @@ SOFTWARE.
 
 #include "drivers/kbd/kbd_mappings.hpp"
 
-#include "utils/messagebus.hpp"
+#include "utils/kmsgbus.hpp"
+
 #include "utils/logging.hpp"
 
 kbdev_node::kbdev_node(vfs::node *parent)
@@ -35,7 +36,7 @@ kbdev_node::kbdev_node(vfs::node *parent)
 {
     memset(key_state, false, sizeof(key_state));
 
-    msg_hdl = MessageBus::register_handler<kbd::KeyEvent>([this](const kbd::KeyEvent& event)
+    msg_hdl = kmsgbus.register_handler<kbd::KeyEvent>([this](const kbd::KeyEvent& event)
     {
         if (event.kbd_id == keyboard_id)
         {

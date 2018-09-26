@@ -50,11 +50,11 @@ SOFTWARE.
 #include "graphics/text/graphicterm.hpp"
 
 #include "utils/logging.hpp"
-#include "utils/messagebus.hpp"
+#include "utils/env.hpp"
 
 // TODO : remove these includes
 #include "utils/demangle.hpp"
-#include "stack-trace.hpp"
+#include "debug/stack-trace.hpp"
 #include "fs/fsutils.hpp"
 #include "kstring/kstring_view.hpp"
 
@@ -98,6 +98,7 @@ SOFTWARE.
 // TODO : faire un 'profiler' qui toutes les t ms regarde la callstack et détermine les fonctions les plus appellées
 // TODO : passer tout ce qui est VBE en un driver qui expose le noeud 'fbdev'
 // TODO : restore ucontext_t* modified by signal handlers
+// TODO : optimized page copy function
 
 // ROADMAP
 // : supprimer la libc++ & libcxxabi
@@ -111,7 +112,6 @@ SOFTWARE.
 
 /**********************************/
 // BUGS
-// * BUG : IDE PIO seems to be not working, investigate this
 /**********************************/
 
 /**********************************/
@@ -145,13 +145,13 @@ void global_init()
     kbd::TextHandler::init();
     kbd::install_led_handler();
 
-    MessageBus::register_handler<kbd::TextEnteredEvent>([](const kbd::TextEnteredEvent& e)
+    kmsgbus.register_handler<kbd::TextEnteredEvent>([](const kbd::TextEnteredEvent& e)
     {
         term().add_input(e.c);
         term().force_redraw_input();
     });
 
-    MessageBus::register_handler<kbd::KeyEvent>([](const kbd::KeyEvent& e)
+    kmsgbus.register_handler<kbd::KeyEvent>([](const kbd::KeyEvent& e)
     {
         if (e.state == kbd::KeyEvent::Pressed)
         {
@@ -173,7 +173,7 @@ void global_init()
             }
             else if (e.key == KeyDelete && Keyboard::ctrl() && Keyboard::alt())
             {
-                MessageBus::send(ResetMessage{});
+                kmsgbus.send(ResetMessage{});
             }
             else if (e.key == KeyDelete)
             {
@@ -189,7 +189,7 @@ void global_init()
 
     Mouse::init();
 
-    MessageBus::register_handler<MouseScrollEvent>([](const MouseScrollEvent& e)
+    kmsgbus.register_handler<MouseScrollEvent>([](const MouseScrollEvent& e)
     {
         if (e.wheel>0)
         {
@@ -208,13 +208,23 @@ void global_init()
     procfs::init();
 
     log(Info, "Available drives : %zd\n", Disk::disks().size());
+    if (!kgetenv("rw"))
+    {
+        for (auto& disk : Disk::disks())
+        {
+            disk.get().set_read_only(true);
+        }
+    }
 
 #if 1
     // Detect disk partitions
-    size_t disk_amnt = Disk::disks().size();
-    for (size_t disk { 0 }; disk < disk_amnt; ++disk)
+    if (!kgetenv("nopart"))
     {
-        mbr::read_partitions(Disk::disks()[disk]);
+        size_t disk_amnt = Disk::disks().size();
+        for (size_t disk { 0 }; disk < disk_amnt; ++disk)
+        {
+            mbr::read_partitions(Disk::disks()[disk]);
+        }
     }
 #endif
 
@@ -223,8 +233,8 @@ void global_init()
         panic("Cannot install initrd!\n");
     }
 
-    MessageBus::send<kbd::KeyEvent>(kbd::KeyEvent{0, KeyNumLock, kbd::KeyEvent::Pressed});
-    MessageBus::send<kbd::KeyEvent>(kbd::KeyEvent{0, KeyNumLock, kbd::KeyEvent::Released});
+    kmsgbus.send<kbd::KeyEvent>(kbd::KeyEvent{0, KeyNumLock, kbd::KeyEvent::Pressed});
+    kmsgbus.send<kbd::KeyEvent>(kbd::KeyEvent{0, KeyNumLock, kbd::KeyEvent::Released});
 
     Shell sh;
     sh.params.prompt = ESC_BG(13,132,203) "  LudOS " ESC_POP_COLOR ESC_BG(78,154,6) ESC_FG(13,132,203) "▶" ESC_POP_COLOR " :{path}> " ESC_POP_COLOR
@@ -252,7 +262,7 @@ void global_init()
         if (trace.size() <= 6) return;
 
         log_serial("\n------------------\n");
-        for (size_t i = 6; i == 6; ++i)
+        for (size_t i = 0; i <= 6; ++i)
         {
             const auto& frame = trace[i];
             if (frame.sym_info)

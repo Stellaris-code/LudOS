@@ -25,27 +25,27 @@ SOFTWARE.
 
 #include "mouse.hpp"
 
-#include "utils/messagebus.hpp"
+#include "utils/kmsgbus.hpp"
 
 #include "halt.hpp"
 
 void Mouse::init()
 {
-    MessageBus::register_handler<MousePacket>([](const MousePacket& e)
+    kmsgbus.register_handler<MousePacket>([](const MousePacket& e)
     {
         if (e.x != 0 || e.y != 0)
         {
-            MessageBus::send<MouseMoveEvent>({e.x, e.y});
+            kmsgbus.send<MouseMoveEvent>({e.x, e.y});
         }
 
         if (e.wheel != 0)
         {
-            MessageBus::send<MouseScrollEvent>({e.wheel});
+            kmsgbus.send<MouseScrollEvent>({e.wheel});
         }
 
         if (e.left_button || e.mid_button || e.right_button || e.button_4 || e.button_5)
         {
-            MessageBus::send<MouseClickEvent>({e.left_button, e.mid_button, e.right_button, e.button_4, e.button_5});
+            kmsgbus.send<MouseClickEvent>({e.left_button, e.mid_button, e.right_button, e.button_4, e.button_5});
         }
 
         left_pressed = e.left_button;

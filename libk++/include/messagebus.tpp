@@ -1,7 +1,8 @@
-/*
-font.cpp
 
-Copyright (c) 19 Yann BOUCHER (yann)
+/*
+messagebus.tpp
+
+Copyright (c) 23 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -23,37 +24,39 @@ SOFTWARE.
 
 */
 
-#include "font.hpp"
+#include "messagebus.hpp"
 
-namespace graphics
-{
+#include <types/typeid.hpp>
 
-const Glyph &Font::get(char32_t c) const
+template <typename T>
+MessageBus::Handle MessageBus::register_handler(std::function<void(const T&)> handler, Priority prio)
 {
-#if 1
-    if (c < m_font_cache.size() && m_font_cache[c])
+    handlers[kpp::type_id<T>()].push_back(Entry{[handler](const void* obj) { handler(*((const T*)obj)); }, prio});
+    return {this, kpp::type_id<T>(), --handlers[kpp::type_id<T>()].end()};
+}
+
+template <typename T>
+size_t MessageBus::send(const T& event)
+{
+    size_t counter { 0 };
+    std::list<Entry> late_callbacks;
+    for (const auto& callback : handlers[kpp::type_id<T>()])
     {
-        return *m_font_cache[c];
-    }
-    else
-    {
-        if (c < m_font_cache.size())
+        ++counter;
+        if (callback.priority == Priority::Last)
         {
-            m_font_cache[c] = std::make_unique<Glyph>(read_glyph(c));
-            return *m_font_cache[c];
+            late_callbacks.emplace_back(callback);
         }
         else
         {
-            log_serial("Character 0x%x (%c) isn't in cache\n", c, c);
-            assert(false && "fix this");
-            static Glyph g = read_glyph(c);
-            return g;
+            callback.handler(&event);
         }
     }
-#else
-    static Glyph g = read_glyph(c);
-    return g;
-#endif
-}
 
+    for (const auto& late_callback : late_callbacks)
+    {
+        late_callback.handler(&event);
+    }
+
+    return counter;
 }

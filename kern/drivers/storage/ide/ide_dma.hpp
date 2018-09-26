@@ -25,6 +25,8 @@ SOFTWARE.
 #ifndef IDE_DMA_HPP
 #define IDE_DMA_HPP
 
+#include <kstring/kstring_view.hpp>
+
 #include "drivers/storage/disk.hpp"
 #include "drivers/pci/pcidriver.hpp"
 
@@ -44,19 +46,23 @@ public:
 
     virtual void init() override;
 
-    virtual kpp::string driver_name() const override { return "PCI IDE Controller"; }
+    virtual kpp::string_view driver_name() const override { return "PCI IDE Controller"; }
     virtual DriverType  type() const override { return DriverType::IDEController; }
 
 private:
+    ata_device mk_dev(BusPort bus, DriveType type)
+    { return {bus, type, io_base(bus), control_io_base(bus)}; }
+
     bool int14_handler(const registers* regs);
     bool int15_handler(const registers* regs);
-    bool common_handler(BusPort port);
+    bool common_handler(const ata_device& dev);
 
     std::vector<std::pair<uint16_t, uint8_t> > scan();
 
-    void send_command(BusPort bus, DriveType type, uint8_t command, bool read, size_t block, size_t count, gsl::span<const uint8_t> data);
+    void send_command(const ata_device& dev, uint8_t command, bool read, size_t block, size_t count, gsl::span<const uint8_t> data);
     
     uint16_t io_base(BusPort bus);
+    uint16_t control_io_base(BusPort bus);
     
     void prepare_prdt(BusPort bus, gsl::span<const uint8_t> data);
     
@@ -64,6 +70,10 @@ private:
     void send_status_byte(BusPort bus, uint8_t val);
     void send_command_byte(BusPort bus, uint8_t val);
     void send_prdt(BusPort bus);
+
+private:
+    bool m_primary_compatibility { false };
+    bool m_secondary_compatibility { false };
 };
 
 class Disk : public IDEDisk
@@ -82,6 +92,15 @@ protected:
     virtual kpp::expected<MemBuffer, DiskError> read_sector(size_t sector, size_t count) const override;
     [[nodiscard]]
     virtual kpp::expected<kpp::dummy_t, DiskError> write_sector(size_t sector, gsl::span<const uint8_t> data) override;
+
+private:
+    enum class RWAction
+    {
+        Read,
+        Write
+    };
+    [[nodiscard]]
+    kpp::expected<kpp::dummy_t, DiskError> do_read_write(size_t sector, gsl::span<const uint8_t> data, RWAction action) const;
 
 private:
     Controller& m_cont;

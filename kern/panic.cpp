@@ -32,13 +32,15 @@ SOFTWARE.
 #include "utils/demangle.hpp"
 #include "utils/nop.hpp"
 #include "utils/stlutils.hpp"
-#include "stack-trace.hpp"
+
+#include "debug/stack-trace.hpp"
+#include "debug/dissasembly.hpp"
+
 #include "elf/symbol_table.hpp"
 #include "mem/memmap.hpp"
 #include "drivers/sound/beep.hpp"
 
 #include "terminal/terminal.hpp"
-#include "dissasembly.hpp"
 
 #ifdef ARCH_i686
 #include "i686/pc/devices/speaker.hpp"
@@ -55,6 +57,7 @@ std::vector<TraceEntry> exception_stack_frame;
 
 extern "C" void isr_common_stub();
 extern "C" void irq_common_stub();
+extern "C" void kmain();
 
 size_t trace_offset(const std::vector<TraceEntry>& trace)
 {
@@ -62,7 +65,8 @@ size_t trace_offset(const std::vector<TraceEntry>& trace)
 #ifdef ARCH_i686
     while (offset < trace.size() &&
            trace[offset].address != (uintptr_t)&isr_common_stub + 31 &&
-           trace[offset].address != (uintptr_t)&irq_common_stub + 31)
+           trace[offset].address != (uintptr_t)&irq_common_stub + 31 &&
+           (trace[offset].sym_info ? trace[offset].sym_info->offset != (uintptr_t)&panic : true))
     {
         ++offset;
     }
@@ -87,8 +91,14 @@ void print_stack_symbols()
     // Discard the first function call to kmain, saves space
     for (size_t i = trace_offset(trace), cnt = 1; i < trace.size(); ++i, ++cnt)
     {
+
         if (trace[i].sym_info)
         {
+            if (trace[i].sym_info->offset == (uintptr_t)kmain)
+            {
+                kprintf("\n"); break; // it's pointless to show stacktrace after kmain
+            }
+
             kprintf("#%d   0x%x in %s", cnt, trace[i].address, demangle(trace[i].sym_info->name));
         }
         else if (trace[i].address < KERNEL_VIRTUAL_BASE)
@@ -100,7 +110,7 @@ void print_stack_symbols()
             kprintf("#%d    0x%x in ????", cnt, trace[i].address);
         }
 
-        if (i < trace.size()-1)
+        if (i < trace.size()-1) // don't print a newline after the last entry, wastes space otherwise
         {
             kprintf("\n");
         }
@@ -118,12 +128,15 @@ void print_disassembly()
 
     kprintf("Disassembly : \n");
 
-    constexpr size_t dump_len = 7;
+    size_t dump_len = 7;
 
     auto func_base = elf::kernel_symbol_table.get_function(panic_regs->eip);
     const uint8_t* base_ip;
     if (!func_base)
+    {
         base_ip = (uint8_t*)panic_regs->eip;
+        dump_len /= 2; // show half as much data in this case
+    }
     else
     {
         base_ip = (uint8_t*)elf::kernel_symbol_table.get_function(panic_regs->eip)->offset;

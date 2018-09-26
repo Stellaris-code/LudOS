@@ -27,10 +27,11 @@ SOFTWARE.
 
 #include <typeinfo.hpp>
 
+#include "utils/kmsgbus.hpp"
+
 #include "pathutils.hpp"
 
 #include "utils/nop.hpp"
-#include "utils/messagebus.hpp"
 #include "utils/logging.hpp"
 
 #include "fsutils.hpp"
@@ -54,14 +55,14 @@ void init()
 {
     root = std::make_shared<vfs_root>();
 
-    MessageBus::register_handler<ShutdownMessage>([](const ShutdownMessage&)
+    kmsgbus.register_handler<ShutdownMessage>([](const ShutdownMessage&)
     {
         for (const auto& ptr : mounted_nodes)
         {
             if (!ptr.expired()) ptr.lock()->~node(); // force unmounting of mounted nodes
         }
 
-        MessageBus::send(SyncDisksCache{});
+        kmsgbus.send(SyncDisksCache{});
     });
 
     log(Info, "VFS initialized.\n");

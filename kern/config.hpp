@@ -25,4 +25,6 @@ SOFTWARE.
 #ifndef CONFIG_HPP
 #define CONFIG_HPP
 
+#define USE_MTRRS
+
 #endif // CONFIG_HPP

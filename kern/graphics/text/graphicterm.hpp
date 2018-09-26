@@ -25,6 +25,10 @@ SOFTWARE.
 #ifndef GRAPHICTERM_HPP
 #define GRAPHICTERM_HPP
 
+#include <vector.hpp>
+
+#include "utils/kmsgbus.hpp"
+
 #include "terminal/terminal.hpp"
 
 #include "graphics/fonts/font.hpp"
@@ -33,7 +37,6 @@ SOFTWARE.
 
 #include "time/timer.hpp"
 
-#include "utils/messagebus.hpp"
 
 namespace graphics
 {
@@ -52,7 +55,8 @@ public:
 private:
     virtual void move_cursor(size_t x, size_t y) override;
     virtual void putchar(size_t x, size_t y, TermEntry entry) override;
-    virtual void clear_line(size_t y, Color color) override;
+    virtual void clear_line(size_t y, Color color, size_t size) override;
+    virtual void clear_screen(graphics::Color color) override;
     virtual void draw_impl() override;
     virtual void disable_impl() override;
 
@@ -64,6 +68,8 @@ private:
 private:
     Screen& m_scr;
     const Font& m_font;
+    const size_t m_glyph_height;
+    const size_t m_glyph_width;
 
     volatile bool m_show_cursor { false };
     PointU m_cursor_pos { 0, 0 };
@@ -72,6 +78,7 @@ private:
     kpp::string m_background_path;
     Timer::CallbackHandle m_callback;
     MessageBus::RAIIHandle m_msg_handle;
+    std::vector<size_t> m_dirty_offset_per_line;
 };
 
 }

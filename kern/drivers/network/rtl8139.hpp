@@ -25,6 +25,8 @@ SOFTWARE.
 #ifndef RTL8139_HPP
 #define RTL8139_HPP
 
+#include <kstring/kstring_view.hpp>
+
 #include "drivers/pci/pcidriver.hpp"
 #include "drivers/network/driver.hpp"
 
@@ -37,7 +39,7 @@ public:
 
     static bool accept(const pci::PciDevice& dev);
 
-    virtual kpp::string driver_name() const override { return "Realtek RTL8139"; }
+    virtual kpp::string_view driver_name() const override { return "Realtek RTL8139"; }
 
 private:
     void power_on();

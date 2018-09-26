@@ -25,9 +25,9 @@ SOFTWARE.
 
 #include "beep.hpp"
 
-#include "utils/messagebus.hpp"
+#include "utils/kmsgbus.hpp"
 
 void beep(size_t milliseconds)
 {
-    MessageBus::send<BeepMessage>({milliseconds});
+    kmsgbus.send<BeepMessage>({milliseconds});
 }

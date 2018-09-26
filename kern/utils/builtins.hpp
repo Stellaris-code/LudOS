@@ -25,12 +25,6 @@ SOFTWARE.
 #ifndef BUILTINS_HPP
 #define BUILTINS_HPP
 
-#ifdef __cplusplus
-[[noreturn]]
-#endif
-inline void unreachable()
-{
-    __builtin_unreachable();
-}
+#define unreachable() __builtin_unreachable()
 
 #endif // BUILTINS_HPP

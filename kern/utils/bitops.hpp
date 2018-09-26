@@ -54,7 +54,7 @@ inline bool bit_check(T val, size_t pos)
 template <typename T>
 inline void bit_change(T& val, bool bit, size_t pos)
 {
-    val ^= (-bit ^ val) & (1 << pos);
+    val ^= (-bit ^ val) & (T(1) << pos);
 }
 
 #endif // BITOPS_HPP

@@ -61,7 +61,6 @@ size_t epoch()
     static auto boot_date = Time::to_unix(rtc::get_time());
     static auto boot_ticks = Timer::ticks();
 
-
     return boot_date + (Timer::ticks() - boot_ticks)/Timer::freq();
 }
 

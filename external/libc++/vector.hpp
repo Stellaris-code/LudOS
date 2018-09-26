@@ -629,7 +629,7 @@ public:
     const_reverse_iterator crend()   const _NOEXCEPT
         {return rend();}
 
-    _LIBCPP_INLINE_VISIBILITY
+    inline
     size_type size() const _NOEXCEPT
         {return static_cast<size_type>(this->__end_ - this->__begin_);}
     _LIBCPP_INLINE_VISIBILITY
@@ -642,8 +642,8 @@ public:
     void reserve(size_type __n);
     void shrink_to_fit() _NOEXCEPT;
 
-    _LIBCPP_INLINE_VISIBILITY reference       operator[](size_type __n);
-    _LIBCPP_INLINE_VISIBILITY const_reference operator[](size_type __n) const;
+    inline reference       operator[](size_type __n);
+    inline const_reference operator[](size_type __n) const;
     reference       at(size_type __n);
     const_reference at(size_type __n) const;
 
@@ -1486,7 +1486,7 @@ vector<_Tp, _Allocator>::end() const _NOEXCEPT
 }
 
 template <class _Tp, class _Allocator>
-inline _LIBCPP_INLINE_VISIBILITY
+inline
 typename vector<_Tp, _Allocator>::reference
 vector<_Tp, _Allocator>::operator[](size_type __n)
 {

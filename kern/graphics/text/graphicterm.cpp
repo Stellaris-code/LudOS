@@ -35,13 +35,25 @@ SOFTWARE.
 #include "graphics/fonts/psf.hpp"
 #include "utils/env.hpp"
 
+#define DIRECT_RENDER
+
+#ifdef DIRECT_RENDER
+#define FB_PTR() (Color*)current_video_mode().virt_fb_addr
+#else
+#define FB_PTR() m_scr.data()
+#endif
+
+
 namespace graphics
 {
 
+Color* buf_ptr;
+
 GraphicTerm::GraphicTerm(Screen &scr, TerminalData &data, const Font &font)
-    : Terminal(scr.width() / font.glyph_width(), scr.height() / font.glyph_height(), data), m_scr(scr), m_font(font)
+    : Terminal(scr.width() / font.glyph_width(), scr.height() / font.glyph_height(), data), m_scr(scr), m_font(font),
+      m_glyph_height(font.glyph_height()), m_glyph_width(font.glyph_width())
 {
-    m_cursor_bitmap.resize(1, font.glyph_height(), false, graphics::color_white);
+    m_cursor_bitmap.resize(1, m_glyph_height, false, graphics::color_white);
 
     m_callback = Timer::register_callback(600, [this]
     {
@@ -58,10 +70,12 @@ GraphicTerm::GraphicTerm(Screen &scr, TerminalData &data, const Font &font)
 
     update_background();
 
-    m_msg_handle = MessageBus::register_handler<EnvVarChange>([this](const EnvVarChange& msg)
+    m_msg_handle = kmsgbus.register_handler<EnvVarChange>([this](const EnvVarChange& msg)
     {
         if (msg.key == "TERM_BCKG") update_background();
     });
+
+    buf_ptr = (Color*)current_video_mode().virt_fb_addr;
 }
 
 GraphicTerm::~GraphicTerm()
@@ -90,41 +104,65 @@ void GraphicTerm::set_wallpaper(const Bitmap &bitmap)
 
 void GraphicTerm::move_cursor(size_t x, size_t y)
 {
-    m_cursor_pos = {x*m_font.glyph_width(), y*m_font.glyph_height()};
+    m_cursor_pos = {x*m_glyph_width, y*m_glyph_height};
 }
 
 void GraphicTerm::putchar(size_t x, size_t y, TermEntry entry)
 {
+    buf_ptr = FB_PTR();
+
     const auto& bitmap = m_font.get(entry.c).bitmap;
 
     if (entry.pair.bg.rgb() != color_black.rgb())
     {
-        m_scr.blit(bitmap, {x*m_font.glyph_width(), y*m_font.glyph_height()},
+       blit(buf_ptr, m_scr.width(), m_scr.height(), bitmap, {x*m_glyph_width, y*m_glyph_height},
                    entry.pair.fg, entry.pair.bg);
     }
     else
     {
-        m_scr.blit(bitmap, {x*m_font.glyph_width(), y*m_font.glyph_height()},
+       blit(buf_ptr, m_scr.width(), m_scr.height(), bitmap, {x*m_glyph_width, y*m_glyph_height},
                    entry.pair.fg);
     }
 }
 
-void GraphicTerm::clear_line(size_t y, Color color)
+void GraphicTerm::clear_line(size_t y, Color color, size_t size)
 {
+    buf_ptr = FB_PTR();
+
     if (!m_background_path.empty() && color == term_data().color().bg)
     {
-        for (size_t i { 0 }; i < m_font.glyph_height(); ++i)
+        for (size_t i { 0 }; i < m_glyph_height; ++i)
         {
-            aligned_memcpy(m_scr.data() + (y*m_font.glyph_height() + i)*m_scr.width(),
-                           m_background.data() + (y*m_font.glyph_height() + i)*m_scr.width(),
-                           m_scr.width()*sizeof(Color));
+            memcpyl(buf_ptr + (y*m_glyph_height + i)*m_scr.width(),
+                           m_background.data() + (y*m_glyph_height + i)*m_scr.width(),
+                           (size*m_glyph_width)*sizeof(Color));
         }
     }
     else
     {
-        aligned_memsetl(m_scr.data() + y*m_scr.width()*m_font.glyph_height(),
-                        color.rgba(), m_scr.width()*m_font.glyph_height()*
-                        sizeof(Color));
+        for (size_t i { 0 }; i < m_glyph_height; ++i)
+        {
+            memsetl(buf_ptr + (y*m_glyph_height + i)*m_scr.width(),
+                            color.rgba(),
+                           (size*m_glyph_width)*sizeof(Color));
+        }
+    }
+}
+
+void GraphicTerm::clear_screen(Color color)
+{
+    buf_ptr = FB_PTR();
+
+    if (!m_background_path.empty() && color == term_data().color().bg)
+    {
+        memcpyl(buf_ptr,
+                       m_background.data(),
+                       (m_scr.height()*m_scr.width())*sizeof(Color));
+    }
+    else
+    {
+        memsetl(buf_ptr,
+                        color.rgba(), (m_scr.height()*m_scr.width())*sizeof(Color));
     }
 }
 
@@ -132,7 +170,9 @@ void GraphicTerm::draw_impl()
 {
     redraw_cursor();
 
+#ifndef DIRECT_RENDER
     graphics::draw_to_display(m_scr);
+#endif
 }
 
 void GraphicTerm::disable_impl()
@@ -142,14 +182,16 @@ void GraphicTerm::disable_impl()
 
 void GraphicTerm::redraw_cursor()
 {
+    buf_ptr = FB_PTR();
+
     if (m_show_cursor)
     {
-        m_scr.blit(m_cursor_bitmap, m_cursor_pos, term_data().color().fg);
+        blit(buf_ptr, m_scr.width(), m_scr.height(), m_cursor_bitmap, m_cursor_pos, term_data().color().fg);
     }
     else
     {
         auto bckg_bitmap = m_background.copy_rect(m_cursor_pos, {m_cursor_bitmap.width(), m_cursor_bitmap.height()});
-        m_scr.blit(bckg_bitmap, m_cursor_pos);
+        blit(buf_ptr, m_scr.width(), m_scr.height(), bckg_bitmap, m_cursor_pos);
     }
 }
 
@@ -175,6 +217,7 @@ void GraphicTerm::update_background()
         }
 
         set_wallpaper(*img);
+        clear_screen(term_data().color().bg);
     }
 }
 

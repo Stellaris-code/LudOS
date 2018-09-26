@@ -26,6 +26,8 @@ SOFTWARE.
 #include "process.hpp"
 #include "process_data.hpp"
 
+#include "utils/kmsgbus.hpp"
+
 #include "fs/fsutils.hpp"
 
 #include "syscalls/syscalls.hpp"
@@ -34,7 +36,6 @@ SOFTWARE.
 #include "mem/meminfo.hpp"
 #include "mem/page_fault.hpp"
 
-#include "utils/messagebus.hpp"
 #include "utils/stlutils.hpp"
 #include "utils/memutils.hpp"
 
@@ -263,7 +264,7 @@ void Process::kill(pid_t pid, int err_code)
     --m_process_count;
     assert(!by_pid(pid));
 
-    MessageBus::send(ProcessDestroyedEvent{pid, err_code});
+    kmsgbus.send(ProcessDestroyedEvent{pid, err_code});
 
     //parent.raise(parent.pid, SIGCHLD, info);
 }
@@ -313,7 +314,7 @@ Process *Process::create(const std::vector<kpp::string>& args)
 
     ++m_process_count;
 
-    MessageBus::send(ProcessCreatedEvent{free_idx});
+    kmsgbus.send(ProcessCreatedEvent{free_idx});
 
     return m_processes[free_idx].get();
 }

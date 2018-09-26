@@ -41,13 +41,17 @@ void init_emu_mem()
 {
     const size_t len = 0x100000;
 
+#if 0
     emu_mem = reinterpret_cast<uint8_t*>(kmalloc(len));
 
     auto addr = Memory::mmap(0x0, len, Memory::Read);
     memcpy(emu_mem, addr, len);
     Memory::unmap(addr, len);
+#else
+    emu_mem = (uint8_t*)Memory::mmap(0x0, len, Memory::Read|Memory::Write);
+#endif
 
-    log(Info, "Initialized x86 emulator memory\n");
+    log(Debug, "Initialized x86 emulator memory\n");
 }
 
 unsigned alternate_vm_memio(x86emu_t *emu, uint32_t addr, uint32_t *val, uint32_t type)
@@ -57,11 +61,11 @@ unsigned alternate_vm_memio(x86emu_t *emu, uint32_t addr, uint32_t *val, uint32_
     uint32_t bits = type & 0xFF;
     type &= ~0xFF;
 
-    mem->invalid = 0;
     if (addr >= 0x100000)
     {
-        panic("Out of bounds ! \n");
+        return mem->invalid = 1;
     }
+    mem->invalid = 0;
 
     switch(type)
     {
@@ -168,7 +172,7 @@ RealModeState emuInt10h(uint16_t ax, uint16_t bx, uint16_t cx, uint16_t dx, uint
     emu->x86.R_IP = 0x7C00;
 
     *reinterpret_cast<uint8_t*>(emu_mem + 0x7C00) = 0x90;    // nop
-    *reinterpret_cast<uint8_t*>(emu_mem + 0x7C01) =  0xF4;   // hlt
+    *reinterpret_cast<uint8_t*>(emu_mem + 0x7C01) = 0xF4;    // hlt
 
     emu->x86.R_AX = ax;
     emu->x86.R_BX = bx;

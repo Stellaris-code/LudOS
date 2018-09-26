@@ -2645,7 +2645,7 @@ min(const _Tp& __a, const _Tp& __b, _Compare __comp)
 }
 
 template <class _Tp>
-inline _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX11
+inline _LIBCPP_CONSTEXPR_AFTER_CXX11
 const _Tp&
 min(const _Tp& __a, const _Tp& __b)
 {

@@ -6,6 +6,8 @@ set -e
 
 cd ..
  
+rm -rf isodir/boot/*
+ 
 mkdir -p isodir
 mkdir -p isodir/boot
 mkdir -p isodir/boot/grub
@@ -17,8 +19,6 @@ cp build/bin/stripped.bin isodir/boot/stripped.bin
 cp build/bin/initrd.tar isodir/boot/initrd.tar
 
 cat > isodir/boot/grub/grub.cfg << EOF
-insmod fat
-insmod iso9660
 menuentry "LudOS" {
 	multiboot /boot/LudOS.bin loglevel=debug
 	module    /boot/initrd.tar initrd

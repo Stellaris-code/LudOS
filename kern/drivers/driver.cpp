@@ -26,9 +26,9 @@ SOFTWARE.
 #include "driver.hpp"
 
 #include <stdint.h>
+#include "utils/kmsgbus.hpp"
 
 #include "utils/logging.hpp"
-#include "utils/messagebus.hpp"
 
 extern "C" int start_driver_ctors;
 extern "C" int end_driver_ctors;
@@ -59,5 +59,5 @@ ref_vector<Driver> Driver::list()
 void Driver::add_driver(std::unique_ptr<Driver>&& driver)
 {
     m_drivers.emplace_back(std::move(driver));
-    MessageBus::send(DriverLoadedEvent{*m_drivers.back()});
+    kmsgbus.send(DriverLoadedEvent{*m_drivers.back()});
 }

@@ -31,6 +31,7 @@ SOFTWARE.
 #include <memory.hpp>
 
 #include "utils/vecutils.hpp"
+#include "utils/logging.hpp"
 
 #include "kstring/kstrfwd.hpp"
 #include "utils/string_enum.hpp"
@@ -60,14 +61,15 @@ class Driver
         for (const auto& driver : m_drivers)
         {
             T* ptr = dynamic_cast<T*>(driver.get());
-            if (ptr) vec.emplace_back(*ptr);
+            if (ptr)
+                vec.emplace_back(*ptr);
         }
 
         return vec;
     }
 
     public:
-    virtual kpp::string driver_name() const = 0;
+    virtual kpp::string_view driver_name() const = 0;
     virtual DriverType  type() const = 0;
 
     private:

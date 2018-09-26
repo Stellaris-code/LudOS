@@ -25,6 +25,8 @@ SOFTWARE.
 #ifndef SHELL_HPP
 #define SHELL_HPP
 
+#include "utils/kmsgbus.hpp"
+
 #include <deque.hpp>
 #include <unordered_map.hpp>
 #include <functional.hpp>
@@ -32,7 +34,6 @@ SOFTWARE.
 #include <kstring/kstring.hpp>
 
 #include "utils/circularbuffer.hpp"
-#include "utils/messagebus.hpp"
 
 namespace vfs
 {

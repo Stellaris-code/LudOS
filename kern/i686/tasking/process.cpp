@@ -227,8 +227,6 @@ void Process::unswitch()
     unmap_address_space();
 }
 
-#include "utils/messagebus.hpp"
-
 Process *Process::clone(Process &proc, uint32_t flags)
 {
     auto new_proc = Process::create(proc.data->args);

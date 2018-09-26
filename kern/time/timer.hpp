@@ -80,24 +80,41 @@ public:
     static inline void sleep(uint32_t time)
     {
         uint32_t interval = time/(1000/freq());
-        m_ticks = 0;
-        while (m_ticks < interval) { nop(); }
+        uint32_t start = m_ticks;
+        while ((m_ticks - start) < interval) { wait_for_interrupts(); }
     }
 
     static inline bool sleep_until(const std::function<bool()>& callback, uint32_t timeout = 0)
     {
         uint32_t interval = timeout/(1000/freq());
-        m_ticks = 0;
-        while (!callback() && (timeout == 0 || m_ticks < interval)) { nop(); }
+        uint32_t start = m_ticks;
+        if (timeout == 0)
+        {
+            while (!callback()) { nop(); }
+        }
+        else
+        {
+            while (!callback() && (m_ticks - start) < interval) { nop(); }
+        }
 
         return callback();
     }
 
     static inline bool sleep_until_int(const std::function<bool()>& callback, uint32_t timeout = 0)
     {
+        // if the condition is already true, don't wait for an inexistent interrupt
+        if (callback()) return true;
+
         uint32_t interval = timeout/(1000/freq());
-        m_ticks = 0;
-        while (!callback() && (timeout == 0 || m_ticks < interval)) { wait_for_interrupts(); }
+        int32_t start = m_ticks;
+        if (timeout == 0)
+        {
+            while (!callback()) { wait_for_interrupts(); }
+        }
+        else
+        {
+            while (!callback() && (m_ticks - start) < interval) { wait_for_interrupts(); }
+        }
 
         return callback();
     }
@@ -138,7 +155,7 @@ protected:
     {
         ++m_ticks;
         // do not always check, it is costly
-        if ((m_ticks % 8) == 0) handle_callbacks();
+        if ((m_ticks % 64) == 0) handle_callbacks();
     }
 
 private:
@@ -163,7 +180,7 @@ private:
 
 private:
     static inline std::list<Callback> m_callbacks;
-    static inline uint32_t m_ticks { 0 };
+    static inline volatile uint32_t m_ticks { 0 };
     static inline uint32_t m_freq { 0 };
 };
 

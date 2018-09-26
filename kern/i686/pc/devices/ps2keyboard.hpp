@@ -46,7 +46,7 @@ public:
     void set_leds(uint8_t leds);
     void toggle_led(uint8_t led, bool value);
 
-    virtual kpp::string driver_name() const override;
+    virtual kpp::string_view driver_name() const override;
     virtual DriverType  type() const override
     { return DriverType::Keyboard; }
 

@@ -112,4 +112,12 @@ void clear_mask(uint8_t irq)
     outb(port, value);
 }
 
+uint16_t get_mask()
+{
+    uint8_t master = inb(PIC_MASTER_DATA);
+    uint8_t slave  = inb(PIC_SLAVE_DATA);
+
+    return master | (slave << 8);
+}
+
 }

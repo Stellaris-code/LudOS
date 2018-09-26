@@ -26,10 +26,10 @@ SOFTWARE.
 #define KBD_MAPPINGS_HPP
 
 #include "driver_kbd_event.hpp"
-#include "utils/messagebus.hpp"
 
 #include <array.hpp>
 #include <optional.hpp>
+#include "utils/kmsgbus.hpp"
 
 #include "keys.h"
 

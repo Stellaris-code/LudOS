@@ -110,6 +110,7 @@ public:
 
 private:
     void set_entry_at(TermEntry entry, size_t x, size_t y, bool absolute = false);
+    void clear_line_before_write(size_t y, graphics::Color color, size_t size);
     void new_line();
     void add_line_to_history();
     void check_pos();
@@ -119,12 +120,13 @@ private:
 
 private:
     virtual void move_cursor(size_t x, size_t y) = 0;
-    virtual void clear_line(size_t y, graphics::Color color) = 0;
+    virtual void clear_line(size_t y, graphics::Color color, size_t size) = 0;
+    virtual void clear_screen(graphics::Color color);
     virtual void putchar(size_t x, size_t y, TermEntry entry) = 0;
     virtual void draw_impl() = 0;
     virtual void disable_impl() = 0;
 
-private:
+protected:
     size_t m_cursor_x { 0 };
     size_t m_cursor_y { 0 };
 
@@ -144,6 +146,7 @@ private:
     kpp::string m_escape_sequence;
 
     std::vector<TermEntry> m_cur_line;
+    std::vector<size_t> m_dirty_width_per_line;
 
     UTF8Decoder m_decoder;
 

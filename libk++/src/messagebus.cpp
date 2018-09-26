@@ -1,7 +1,7 @@
 /*
-font.cpp
+messagebus.cpp
 
-Copyright (c) 19 Yann BOUCHER (yann)
+Copyright (c) 23 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -23,37 +23,9 @@ SOFTWARE.
 
 */
 
-#include "font.hpp"
+#include "messagebus.hpp"
 
-namespace graphics
+void MessageBus::remove_handler(const MessageBus::Handle &handle)
 {
-
-const Glyph &Font::get(char32_t c) const
-{
-#if 1
-    if (c < m_font_cache.size() && m_font_cache[c])
-    {
-        return *m_font_cache[c];
-    }
-    else
-    {
-        if (c < m_font_cache.size())
-        {
-            m_font_cache[c] = std::make_unique<Glyph>(read_glyph(c));
-            return *m_font_cache[c];
-        }
-        else
-        {
-            log_serial("Character 0x%x (%c) isn't in cache\n", c, c);
-            assert(false && "fix this");
-            static Glyph g = read_glyph(c);
-            return g;
-        }
-    }
-#else
-    static Glyph g = read_glyph(c);
-    return g;
-#endif
-}
-
+    handlers[std::get<1>(handle)].erase(std::get<2>(handle));
 }

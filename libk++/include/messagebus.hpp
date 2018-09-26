@@ -36,7 +36,7 @@ class MessageBus
 {
 public:
     struct Entry;
-    using Handle = std::pair<kpp::type_id_t, std::list<Entry>::const_iterator>;
+    using Handle = std::tuple<MessageBus*, kpp::type_id_t, std::list<Entry>::const_iterator>;
 
 public:
     enum Priority
@@ -46,13 +46,13 @@ public:
     };
 
     template <typename T>
-    static Handle register_handler(std::function<void(const T&)> handler, Priority prio = Normal);
+    Handle register_handler(std::function<void(const T&)> handler, Priority prio = Normal);
 
-    static void remove_handler(const Handle& handle);
+    void remove_handler(const Handle& handle);
 
     // Returns the number of listeners who received the message
     template <typename T>
-    static size_t send(const T& event);
+    size_t send(const T& event);
 
 public:
     struct RAIIHandle
@@ -60,7 +60,7 @@ public:
         RAIIHandle() = default;
         ~RAIIHandle()
         {
-            if (handle) remove_handler(*handle);
+            if (handle) std::get<0>(*handle)->remove_handler(*handle);
         }
         RAIIHandle(const Handle& ihandle)
         {
@@ -83,7 +83,7 @@ public:
     };
 
 private:
-    static inline std::unordered_map<kpp::type_id_t, std::list<Entry>> handlers;
+    std::unordered_map<kpp::type_id_t, std::list<Entry>> handlers;
 };
 
 #include "messagebus.tpp"

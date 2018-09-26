@@ -40,7 +40,7 @@ public:
     void beep_(uint32_t time, uint16_t freq = 1000);
     void stop();
 
-    virtual kpp::string driver_name() const override;
+    virtual kpp::string_view driver_name() const override;
     virtual DriverType  type() const override
     { return DriverType::Sound; }
 

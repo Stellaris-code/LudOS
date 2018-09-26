@@ -85,6 +85,23 @@ inline uint32_t cr4()
     return out;
 }
 
+inline void write_cr0(uint32_t val)
+{
+    __asm__ __volatile__("mov %[var], %%cr0" : : [var] "r" (val) : "memory");
+}
+inline void write_cr2(uint32_t val)
+{
+    __asm__ __volatile__("mov %[var], %%cr2" : : [var] "r" (val) : "memory");
+}
+inline void write_cr3(uint32_t val)
+{
+    __asm__ __volatile__("mov %[var], %%cr3" : : [var] "r" (val) : "memory");
+}
+inline void write_cr4(uint32_t val)
+{
+    __asm__ __volatile__("mov %[var], %%cr4" : : [var] "r" (val) : "memory");
+}
+
 inline bool user_mode(const registers* regs)
 {
     return regs->cs & 0x3;

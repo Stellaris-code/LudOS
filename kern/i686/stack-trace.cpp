@@ -23,7 +23,7 @@ SOFTWARE.
 
 */
 
-#include "stack-trace.hpp"
+#include "debug/stack-trace.hpp"
 
 #include "utils/logging.hpp"
 #include "mem/memmap.hpp"
@@ -43,7 +43,7 @@ std::vector<TraceEntry> trace_stack(void *addr, size_t frames)
     for(size_t i = 0; (frames != 0 ? i < frames : true) && fp && Memory::is_mapped(fp) && fp->return_addr; i++)
     {
         kpp::optional<elf::SymbolInfo> symbol;
-        if (auto fun = elf::kernel_symbol_table.get_function(fp->return_addr); fun)
+        if (auto fun = elf::kernel_symbol_table.get_function(fp->return_addr))
         {
             symbol = *fun;
         }

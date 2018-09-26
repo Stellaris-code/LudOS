@@ -27,52 +27,89 @@ SOFTWARE.
 
 #include "pci_vendors.hpp"
 
+#include "io.hpp"
+
 #include "utils/logging.hpp"
 
 std::vector<pci::PciDevice> pci::devices;
 
-uint16_t pci::read_reg(uint16_t bus, uint16_t slot, uint16_t func, uint16_t offset)
+inline uint32_t devaddr(uint16_t bus, uint16_t slot, uint16_t func, uint16_t offset)
 {
-    uint32_t address = static_cast<uint32_t>((bus << 16) | (slot << 11) |
-                                  (func << 8) | (offset & 0xfc) | 0x80000000u);
-
-    /* write out the address */
-    outl(0xCF8, address);
-    /* read in the data */
-    /* (offset & 2) * 8) = 0 will choose the first word of the 32 bits register */
-    auto tmp = ((inl(0xCFC) >> ((offset & 2) * 8)) & 0xffff);
-    if (offset % 2)
-    {
-        tmp >>= 8;
-    }
-    return (tmp);
+    return (uint32_t)(bus  << 16) | (uint32_t)(slot   << 11 ) |
+           (uint32_t)(func << 8 ) | (uint32_t)(offset & ~0x3) | 0x80000000u;
 }
 
-void pci::write_reg(uint16_t bus, uint16_t slot, uint16_t func, uint16_t offset, uint16_t val)
+uint32_t pci::read32(uint16_t bus, uint16_t slot, uint16_t func, uint16_t offset)
 {
-    uint32_t address = static_cast<uint32_t>((bus << 16) | (slot << 11) |
-                                  (func << 8) | (offset & 0xfc) | 0x80000000u);
+    assert((offset & 0x3) == 0); // only aligned accesses
 
-    /* write out the address */
-    outl(0xCF8, address);
-    //FIXME
+    outl(0xCF8, devaddr(bus, slot, func, offset));
 
-    outl(0xCFC + (offset&0x2), val);
+    return inl(0xCFC);
 }
+
+uint16_t pci::read16(uint16_t bus, uint16_t slot, uint16_t func, uint16_t offset)
+{
+    assert((offset % 0x1) == 0); // only aligned accesses
+
+    uint32_t val = read32(bus, slot, func, offset & ~0x3);
+    if (offset & 0x3) return val & 0xFFFF;
+    else              return val >> 16;
+}
+
+uint8_t pci::read8(uint16_t bus, uint16_t slot, uint16_t func, uint16_t offset)
+{
+    uint32_t val = read32(bus, slot, func, offset & ~0x3);
+    return (val >> 8*(offset&0x3)) & 0xFF;
+}
+
+void pci::write32(uint16_t bus, uint16_t slot, uint16_t func, uint16_t offset, uint32_t val)
+{
+    assert((offset & 0x3) == 0);
+
+    outl(0xCF8, devaddr(bus, slot, func, offset));
+
+    outl(0xCFC, val);
+}
+
+void pci::write16(uint16_t bus, uint16_t slot, uint16_t func, uint16_t offset, uint16_t val)
+{
+    assert((offset & 0x1) == 0);
+
+    uint32_t src_val = read32(bus, slot, func, offset & ~0x3);
+    uint32_t mask    = (0x0000FFFF << 8*(offset&0x3));
+    src_val &= mask;
+    src_val |= (val << (16 - 8*(offset&0x3)));
+
+    write32(bus, slot, func, offset & ~0x3, src_val);
+}
+
+void pci::write8(uint16_t bus, uint16_t slot, uint16_t func, uint16_t offset, uint8_t val)
+{
+    assert((offset & 0x1) == 0);
+
+    uint32_t src_val = read32(bus, slot, func, offset & ~0x3);
+    uint32_t mask    = (0x000000FF << 8*(offset&0x3));
+    src_val &= mask;
+    src_val |= (val << (32 - 8*(offset&0x3)));
+
+    write32(bus, slot, func, offset & ~0x3, src_val);
+}
+
 
 uint16_t pci::device_id(uint16_t bus, uint16_t slot, uint16_t func)
 {
-    return read_reg(bus, slot, func, 2);
+    return read16(bus, slot, func, 0);
 }
 
 uint16_t pci::vendor_id(uint16_t bus, uint16_t slot, uint16_t func)
 {
-    return read_reg(bus, slot, func, 0);
+    return read16(bus, slot, func, 2);
 }
 
 uint8_t pci::header_type(uint16_t bus, uint16_t slot, uint16_t func)
 {
-    return read_reg(bus, slot, func, 14) & 0xFF;
+    return read8(bus, slot, func, 0xD);
 }
 
 void pci::check_device(uint8_t bus, uint8_t device)
@@ -116,28 +153,27 @@ void pci::scan()
 
 uint8_t pci::base_class(uint16_t bus, uint16_t slot, uint16_t func)
 {
-    return read_reg(bus, slot, func, 11);
+    return read8(bus, slot, func, 0x8);
 }
 
 uint8_t pci::sub_class(uint16_t bus, uint16_t slot, uint16_t func)
 {
-    return read_reg(bus, slot, func, 10);
+    return read8(bus, slot, func, 0x9);
 }
-
 
 uint8_t pci::prog_if(uint16_t bus, uint16_t slot, uint16_t func)
 {
-    return read_reg(bus, slot, func, 9);
+    return read8(bus, slot, func, 0xA);
 }
 
 pci::PciDevice pci::get_dev(uint16_t bus, uint16_t slot, uint16_t func)
 {
     PciDevice dev;
-    for (size_t i { 0 }; i < sizeof(dev); ++i)
+    for (size_t i { 0 }; i < sizeof(dev) / sizeof(uint32_t); ++i)
     {
-        uint8_t byte = read_reg(bus, slot, func, i);
+        uint32_t dword = read32(bus, slot, func, i*sizeof(uint32_t));
 
-        reinterpret_cast<uint8_t*>(&dev)[i] = byte;
+        reinterpret_cast<uint32_t*>(&dev)[i] = dword;
     }
 
     dev.bus = bus;
@@ -179,7 +215,7 @@ std::vector<pci::PciDevice> pci::find_devices(uint8_t class_code, uint8_t sub_cl
 
 uint64_t pci::get_bar_val(const pci::PciDevice& dev, size_t bar_idx)
 {
-    if (bar_idx > 6) return 0;
+    assert(bar_idx <= 6);
 
     auto type = bar_type(dev.bar[bar_idx]);
 
@@ -193,7 +229,15 @@ uint64_t pci::get_bar_val(const pci::PciDevice& dev, size_t bar_idx)
             return dev.bar[bar_idx] & 0xFFFFFFF0;
         case BARType::Mem64:
             return (dev.bar[bar_idx] & 0xFFFFFFF0) + (uint64_t(dev.bar[bar_idx+1] & 0xFFFFFFFF) << 32);
+        case BARType::Invalid:
+            assert(false);
     }
 
     return 0;
+}
+
+uint8_t get_irq(const pci::PciDevice &dev)
+{
+    // TODO : IO APIC
+    return dev.int_line;
 }

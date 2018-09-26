@@ -49,7 +49,10 @@ void install_base_commands(Shell &sh)
      "nothing to say here",
      [](const std::vector<kpp::string>&)
      {
-         puts("Called test");
+         term().clear();
+         kprintf("aaa\n");
+         kprintf("bbbbbbbbb\n");
+         kprintf("cc\n");
          return 0;
      }});
 

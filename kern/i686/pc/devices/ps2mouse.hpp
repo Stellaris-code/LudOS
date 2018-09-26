@@ -42,7 +42,7 @@ public:
 
     void set_sample_rate(uint8_t rate);
 
-    virtual kpp::string driver_name() const override;
+    virtual kpp::string_view driver_name() const override;
     virtual DriverType  type() const override
     { return DriverType::Mouse; }
 

@@ -43,6 +43,11 @@ public:
         Sentinel     = 1<<6  // Used for custom page fault handlers, to signal an access to a page
     };
 
+    enum CachingType
+    {
+
+    };
+
     static void* mmap(uintptr_t p_addr, size_t len, uint32_t flags = Read|Write);
     static void unmap(void* v_addr, size_t len);
 

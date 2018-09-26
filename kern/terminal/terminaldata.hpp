@@ -49,7 +49,7 @@ public:
 
     void add_line(const std::vector<TermEntry>& entry);
 
-    std::vector<std::vector<std::reference_wrapper<const TermEntry>> > get_screen(size_t width, size_t height, size_t offset) const;
+    std::vector<std::vector<TermEntry> > get_screen(size_t width, size_t height, size_t offset) const;
 
     void set_entry(size_t x, size_t y, TermEntry entry);
 

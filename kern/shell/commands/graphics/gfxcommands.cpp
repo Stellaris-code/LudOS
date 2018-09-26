@@ -25,6 +25,8 @@ SOFTWARE.
 
 #include "gfxcommands.hpp"
 
+#include "utils/kmsgbus.hpp"
+
 #include "shell/shell.hpp"
 #include "fs/vfs.hpp"
 #include "graphics/drawing/image_loader.hpp"
@@ -34,11 +36,51 @@ SOFTWARE.
 #include "graphics/fonts/font.hpp"
 #include "graphics/fonts/psf.hpp"
 #include "terminal/terminal.hpp"
-#include "utils/messagebus.hpp"
+
+#include "time/time.hpp"
+
 #include "utils/nop.hpp"
 #include "utils/stlutils.hpp"
 #include "utils/crc32.hpp"
 #include "drivers/kbd/kbd_mappings.hpp"
+
+void console_perf_test()
+{
+   static const char letters[] =
+      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+   const int iters = 10;
+   char *buf;
+
+   size_t width = term().width();
+   size_t height = term().height();
+
+   buf = (char*)kmalloc(width * height);
+
+   if (!buf) {
+      kprintf("Out of memory\n");
+      return;
+   }
+
+   for (int i = 0; i < width * height; i++) {
+      buf[i] = letters[i % (sizeof(letters) - 1)];
+   }
+   buf[width * height - 1] = '\n';
+
+   uint64_t start = Time::total_ticks();
+
+   for (int i = 0; i < iters; i++) {
+      term().write(buf, width * height);
+   }
+
+   uint64_t end = Time::total_ticks();
+   unsigned long long c = (end - start) / iters;
+
+   kprintf("Term size: %d rows x %d cols\n", width, height);
+   kprintf("Screen redraw:       %10llu cycles\n", c);
+   kprintf("Avg. character cost: %10llu cycles\n", c / (width * height));
+   kfree(buf);
+}
 
 void install_gfx_commands(Shell &sh)
 {
@@ -68,7 +110,7 @@ void install_gfx_commands(Shell &sh)
 
          bool escape { false };
 
-         auto handl = MessageBus::register_handler<kbd::KeyEvent>([&escape](const kbd::KeyEvent& e)
+         auto handl = kmsgbus.register_handler<kbd::KeyEvent>([&escape](const kbd::KeyEvent& e)
          {
              if (e.state == kbd::KeyEvent::Pressed && e.key == KeyEscape)
              {
@@ -81,7 +123,7 @@ void install_gfx_commands(Shell &sh)
              nop();
          }
 
-         MessageBus::remove_handler(handl);
+         kmsgbus.remove_handler(handl);
 
          graphics::clear_display(graphics::color_black);
 
@@ -158,6 +200,67 @@ void install_gfx_commands(Shell &sh)
 
          graphics::clear_display(graphics::color_black);
          create_term<graphics::GraphicTerm>(*graphics::screen(), term_data(), fonts.back());
+
+         return 0;
+     }});
+
+    sh.register_command(
+    {"drawtest", "tests fb performance",
+     "drawtest",
+     [](const std::vector<kpp::string>&)
+     {
+         const size_t iters = 1024;
+
+         graphics::Screen screen_blue(graphics::current_video_mode().width, graphics::current_video_mode().height);
+         memsetl(screen_blue.data(), graphics::color_blue.rgb(), screen_blue.width()*screen_blue.height()*4);
+
+         graphics::Screen screen_red(graphics::current_video_mode().width, graphics::current_video_mode().height);
+         memsetl(screen_red.data(), graphics::color_red.rgb(), screen_red.width()*screen_red.height()*4);
+
+         term().disable();
+
+         uint64_t start_ticks = Time::total_ticks();
+         for (size_t i { 0 }; i < iters; ++i)
+         {
+             graphics::draw_to_display(i % 2 ? screen_blue : screen_red);
+         }
+         uint64_t delta = (Time::total_ticks() - start_ticks) / iters;
+
+         kprintf("---- clocks per pixel : %llu\n", delta/(graphics::current_video_mode().height*
+         graphics::current_video_mode().bytes_per_line));
+         kprintf("---- clocks per 32 pixels : %llu\n", delta*32/(graphics::current_video_mode().height*
+         graphics::current_video_mode().bytes_per_line));
+
+         term().enable();
+         term().force_redraw();
+         return 0;
+     }});
+
+    sh.register_command(
+    {"scrolltest", "tests scroll",
+     "scrolltest",
+     [](const std::vector<kpp::string>&)
+     {
+         const size_t iters = 1024;
+
+         uint64_t start_ticks = Time::total_ticks();
+         for (size_t i { 0 }; i < iters; ++i)
+         {
+             kprintf("Line %d\n", i);
+         }
+         uint64_t delta = (Time::total_ticks() - start_ticks) / iters;
+
+         kprintf("---- clocks per line : %llu\n", delta);
+
+         return 0;
+     }});
+
+    sh.register_command(
+    {"termtest", "tests term",
+     "termtest",
+     [](const std::vector<kpp::string>&)
+     {
+         console_perf_test();
 
          return 0;
      }});

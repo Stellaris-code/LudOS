@@ -25,11 +25,11 @@ SOFTWARE.
 
 #include "text_handler.hpp"
 
-#include "utils/messagebus.hpp"
+#include "utils/kmsgbus.hpp"
 
 void kbd::TextHandler::init()
 {
-    MessageBus::register_handler<kbd::KeyEvent>(&handle_key);
+    kmsgbus.register_handler<kbd::KeyEvent>(&handle_key);
 }
 
 void kbd::TextHandler::handle_key(const kbd::KeyEvent &e)
@@ -44,116 +44,116 @@ void kbd::TextHandler::handle_key(const kbd::KeyEvent &e)
 
         if (e.key >= KeyA && e.key <= KeyZ)
         {
-            MessageBus::send<TextEnteredEvent>({static_cast<char32_t>(e.key - KeyA + 'A' + (caps ? 0 : 0x20))});
+            kmsgbus.send<TextEnteredEvent>({static_cast<char32_t>(e.key - KeyA + 'A' + (caps ? 0 : 0x20))});
             return;
         }
         if (e.key >= KeyNum0 && e.key <= KeyNum9 && caps)
         {
-            MessageBus::send<TextEnteredEvent>({static_cast<char32_t>(e.key - KeyNum0 + '0')});
+            kmsgbus.send<TextEnteredEvent>({static_cast<char32_t>(e.key - KeyNum0 + '0')});
             return;
         }
         if (e.key >= KeyNumpad0 && e.key <= KeyNumpad9 && numlock)
         {
-            MessageBus::send<TextEnteredEvent>({static_cast<char32_t>(e.key - KeyNumpad0 + '0')});
+            kmsgbus.send<TextEnteredEvent>({static_cast<char32_t>(e.key - KeyNumpad0 + '0')});
             return;
         }
 
         switch (e.key)
         {
         case KeyLBracket:
-            MessageBus::send<TextEnteredEvent>({static_cast<char32_t>('^')});
+            kmsgbus.send<TextEnteredEvent>({static_cast<char32_t>('^')});
             return;
         case KeyRBracket:
-            MessageBus::send<TextEnteredEvent>({static_cast<char32_t>('$')});
+            kmsgbus.send<TextEnteredEvent>({static_cast<char32_t>('$')});
             return;
         case KeySemiColon:
-            MessageBus::send<TextEnteredEvent>({static_cast<char32_t>(caps ? '.' : ';')});
+            kmsgbus.send<TextEnteredEvent>({static_cast<char32_t>(caps ? '.' : ';')});
             return;
         case KeyComma:
-            MessageBus::send<TextEnteredEvent>({static_cast<char32_t>(caps ? '?' : ',')});
+            kmsgbus.send<TextEnteredEvent>({static_cast<char32_t>(caps ? '?' : ',')});
             return;
         case KeyBang:
-            MessageBus::send<TextEnteredEvent>({static_cast<char32_t>('!')});
+            kmsgbus.send<TextEnteredEvent>({static_cast<char32_t>('!')});
             return;
         case KeyQuote:
             if (caps)
             {
-                MessageBus::send<TextEnteredEvent>({static_cast<char32_t>('%')});
+                kmsgbus.send<TextEnteredEvent>({static_cast<char32_t>('%')});
                 return;
             }
             else
                 break;
         case KeyDash:
-            MessageBus::send<TextEnteredEvent>({static_cast<char32_t>(alt ? ']' : ')')});
+            kmsgbus.send<TextEnteredEvent>({static_cast<char32_t>(alt ? ']' : ')')});
             return;
         case KeyEqual:
-            MessageBus::send<TextEnteredEvent>({static_cast<char32_t>(caps ? '+' : alt ? '}' : '=')});
+            kmsgbus.send<TextEnteredEvent>({static_cast<char32_t>(caps ? '+' : alt ? '}' : '=')});
             return;
         case KeyTilde:
-            MessageBus::send<TextEnteredEvent>({static_cast<char32_t>(caps ? '~' : U'é')});
+            kmsgbus.send<TextEnteredEvent>({static_cast<char32_t>(caps ? '~' : U'é')});
             return;
         case KeyBackSlash:
-            MessageBus::send<TextEnteredEvent>({static_cast<char32_t>('*')});
+            kmsgbus.send<TextEnteredEvent>({static_cast<char32_t>('*')});
             return;
         case KeySlash:
-            MessageBus::send<TextEnteredEvent>({static_cast<char32_t>(caps ? '/' : ':')});
+            kmsgbus.send<TextEnteredEvent>({static_cast<char32_t>(caps ? '/' : ':')});
             return;
         case KeyTab:
-            MessageBus::send<TextEnteredEvent>({static_cast<char32_t>('\t')});
+            kmsgbus.send<TextEnteredEvent>({static_cast<char32_t>('\t')});
             return;
         case KeyBackSpace:
         //case KeyDelete:
-            MessageBus::send<TextEnteredEvent>({static_cast<char32_t>('\b')});
+            kmsgbus.send<TextEnteredEvent>({static_cast<char32_t>('\b')});
             return;
         case KeyReturn:
-            MessageBus::send<TextEnteredEvent>({static_cast<char32_t>('\n')});
+            kmsgbus.send<TextEnteredEvent>({static_cast<char32_t>('\n')});
             return;
         case KeySpace:
-            MessageBus::send<TextEnteredEvent>({static_cast<char32_t>(' ')});
+            kmsgbus.send<TextEnteredEvent>({static_cast<char32_t>(' ')});
             return;
 
         case KeyAdd:
-            MessageBus::send<TextEnteredEvent>({static_cast<char32_t>('+')});
+            kmsgbus.send<TextEnteredEvent>({static_cast<char32_t>('+')});
             return;
         case KeySubtract:
-            MessageBus::send<TextEnteredEvent>({static_cast<char32_t>('-')});
+            kmsgbus.send<TextEnteredEvent>({static_cast<char32_t>('-')});
             return;
         case KeyMultiply:
-            MessageBus::send<TextEnteredEvent>({static_cast<char32_t>('*')});
+            kmsgbus.send<TextEnteredEvent>({static_cast<char32_t>('*')});
             return;
         case KeyDivide:
-            MessageBus::send<TextEnteredEvent>({static_cast<char32_t>('/')});
+            kmsgbus.send<TextEnteredEvent>({static_cast<char32_t>('/')});
             return;
 
         case KeyNum0:
-            MessageBus::send<TextEnteredEvent>({static_cast<char32_t>(alt ? '@' : U'à')});
+            kmsgbus.send<TextEnteredEvent>({static_cast<char32_t>(alt ? '@' : U'à')});
             return;
         case KeyNum1:
-            MessageBus::send<TextEnteredEvent>({static_cast<char32_t>('&')});
+            kmsgbus.send<TextEnteredEvent>({static_cast<char32_t>('&')});
             return;
         case KeyNum2:
-            MessageBus::send<TextEnteredEvent>({static_cast<char32_t>(alt ? '~' : U'é')});
+            kmsgbus.send<TextEnteredEvent>({static_cast<char32_t>(alt ? '~' : U'é')});
             return;
         case KeyNum3:
-            MessageBus::send<TextEnteredEvent>({static_cast<char32_t>(alt ? '#' : '"')});
+            kmsgbus.send<TextEnteredEvent>({static_cast<char32_t>(alt ? '#' : '"')});
             return;
         case KeyNum4:
-            MessageBus::send<TextEnteredEvent>({static_cast<char32_t>(alt ? '{' : '\'')});
+            kmsgbus.send<TextEnteredEvent>({static_cast<char32_t>(alt ? '{' : '\'')});
             return;
         case KeyNum5:
-            MessageBus::send<TextEnteredEvent>({static_cast<char32_t>(alt ? '[' : '(')});
+            kmsgbus.send<TextEnteredEvent>({static_cast<char32_t>(alt ? '[' : '(')});
             return;
         case KeyNum6:
-            MessageBus::send<TextEnteredEvent>({static_cast<char32_t>(alt ? '|' : '-')});
+            kmsgbus.send<TextEnteredEvent>({static_cast<char32_t>(alt ? '|' : '-')});
             return;
         case KeyNum7:
-            MessageBus::send<TextEnteredEvent>({static_cast<char32_t>(alt ? '`' : U'è')});
+            kmsgbus.send<TextEnteredEvent>({static_cast<char32_t>(alt ? '`' : U'è')});
             return;
         case KeyNum8:
-            MessageBus::send<TextEnteredEvent>({static_cast<char32_t>(alt ? '\\' : '_')});
+            kmsgbus.send<TextEnteredEvent>({static_cast<char32_t>(alt ? '\\' : '_')});
             return;
         case KeyNum9:
-            MessageBus::send<TextEnteredEvent>({static_cast<char32_t>(alt ? '^' : U'ç')});
+            kmsgbus.send<TextEnteredEvent>({static_cast<char32_t>(alt ? '^' : U'ç')});
             return;
 
         default:

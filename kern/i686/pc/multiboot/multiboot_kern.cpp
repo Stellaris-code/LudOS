@@ -69,7 +69,6 @@ void parse_mem()
         MultibootMeminfo::mmap_addr = (multiboot_mmap_entry*)Memory::mmap(info->mmap_addr, info->mmap_length);
         MultibootMeminfo::mmap_length = info->mmap_length;
     }
-    asm volatile ("xchgw %bx, %bx\n");
     MemoryInfo::available_bytes = MultibootMeminfo::total_memory();
 }
 

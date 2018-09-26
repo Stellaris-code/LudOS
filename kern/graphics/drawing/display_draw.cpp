@@ -26,7 +26,7 @@ SOFTWARE.
 #include "display_draw.hpp"
 
 #include "utils/logging.hpp"
-#include "io.hpp"
+#include "utils/env.hpp"
 
 namespace graphics
 {
@@ -64,9 +64,7 @@ void draw_to_display_32rgb_nopad(const Screen &screen)
 {    
     const auto mode = current_video_mode();
 
-    __builtin_prefetch(screen.data(), 0, 0);
-
-    aligned_memcpy((void*)(mode.virt_fb_addr), screen.data(),
+    memcpyl((void*)(mode.virt_fb_addr), screen.data(),
                    mode.width*mode.height*mode.depth/CHAR_BIT);
 }
 
@@ -97,7 +95,7 @@ void set_display_mode(const VideoMode &mode)
         {
             warn("There is padding for this video mode, not enabling fast 32rgb draw\n");
         }
-        else
+        else if (!kgetenv("no_fast_draw"))
         {
             draw_to_display_callback = draw_to_display_32rgb_nopad;
         }

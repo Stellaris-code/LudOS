@@ -78,14 +78,16 @@ graphics::MonitorInfo to_monitor_info(const EDIDInfo &info)
             break;
     }
 
-    log_serial("data : 0x%x\n", info.standard_timings[0]);
+    log_serial("edid timing data : 0x%x\n", info.standard_timings[0]);
 
     size_t mon_width = size_t((info.standard_timings[0]&0xFF)+31)*8;
     size_t mon_height = mon_width*ratio.second/ratio.first;
 
     return graphics::MonitorInfo{
         .width = mon_width,
-        .height = mon_height
+        .height = mon_height,
+        .phys_width = info.max_honz_size,
+        .phys_height = info.max_vert_size
     };
 }
 

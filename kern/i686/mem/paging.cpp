@@ -33,6 +33,7 @@ SOFTWARE.
 #include "utils/bitops.hpp"
 
 #include "i686/interrupts/isr.hpp"
+#include "i686/cpu/asmops.hpp"
 
 #include "physallocator.hpp"
 
@@ -51,9 +52,8 @@ void Paging::init()
     uint32_t cr4_var = cr4();
     bit_clear(cr4_var, 4); // disable 4MB pages
 
-    asm volatile ("mov %0, %%cr3\n"
-                  "mov %1, %%cr4\n"
-                  "\n"::"r"(pd_addr), "r"(cr4_var));
+    write_cr3(pd_addr);
+    write_cr4(cr4_var);
 
     m_initialized = true;
 
@@ -129,8 +129,7 @@ void Paging::unmap_user_space()
 {
     aligned_memsetl(page_entry(0), 0, (KERNEL_VIRTUAL_BASE >> 12)*sizeof(PTEntry));
     // Reload the page tables
-    asm volatile ("mov %cr3, %eax\n"
-                  "mov %eax, %cr3\n");
+    write_cr3(cr3());
 }
 
 void Paging::create_paging_info(PagingInformation &info)
@@ -239,7 +238,8 @@ bool Paging::release_virtual_page(uintptr_t v_addr, size_t number, ReleaseFlags 
         assert(flags == FreePage);
         entry[i].present = false;
         entry[i].os_claimed = false;
-        asm volatile ("invlpg (%0)"::"r"(reinterpret_cast<uint8_t*>(v_addr) + i*page_size) : "memory");
+
+        invlpg(v_addr + i*page_size);
     }
 #else
     auto base = page_entry(v_addr);

@@ -51,13 +51,13 @@ void TextTerminal::putchar(size_t x, size_t y, TermEntry entry)
                                                                               graphics::vga::color_to_vga(entry.pair.bg)));
 }
 
-void TextTerminal::clear_line(size_t y, graphics::Color color)
+void TextTerminal::clear_line(size_t y, graphics::Color color, size_t size)
 {
     assert(y < 25);
 
     auto fb = reinterpret_cast<uint16_t*>(m_fb);
     memsetw(fb + y*80, graphics::vga::entry(' ', graphics::vga::entry_color(graphics::vga::color_to_vga(color),
-                                                                            graphics::vga::color_to_vga(color))), 80 * sizeof(uint16_t));
+                                graphics::vga::color_to_vga(color))), size * sizeof(uint16_t));
 }
 
 void TextTerminal::draw_impl()

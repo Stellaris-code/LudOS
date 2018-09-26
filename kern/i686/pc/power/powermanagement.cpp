@@ -25,13 +25,14 @@ SOFTWARE.
 
 #include "power/powermanagement.hpp"
 
+#include "utils/kmsgbus.hpp"
+
 #include "io.hpp"
 #include "halt.hpp"
 #include "terminal/terminal.hpp"
 #include "utils/env.hpp"
 #include "utils/defs.hpp"
 #include "utils/logging.hpp"
-#include "utils/messagebus.hpp"
 
 #ifdef USES_ACPI
 #include "drivers/acpi/powermanagement.hpp"
@@ -103,8 +104,8 @@ void init_power_management()
 #ifdef USES_ACPI
     acpi::power::init();
 #else
-    MessageBus::register_handler<ResetMessage>([](const ResetMessage&){reset();}, MessageBus::Last);
-    MessageBus::register_handler<ShutdownMessage>([](const ShutdownMessage&){shutdown();}, MessageBus::Last);
+    kmsgbus.register_handler<ResetMessage>([](const ResetMessage&){reset();}, kmsgbus.Last);
+    kmsgbus.register_handler<ShutdownMessage>([](const ShutdownMessage&){shutdown();}, kmsgbus.Last);
 
 #endif
 

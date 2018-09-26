@@ -1182,7 +1182,7 @@ public:
 #endif
 
     // function capacity:
-    _LIBCPP_INLINE_VISIBILITY
+    inline
         _LIBCPP_EXPLICIT operator bool() const _NOEXCEPT {return __f_;}
 
     // deleted overloads close possible hole in the type system

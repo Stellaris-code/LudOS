@@ -25,7 +25,7 @@ SOFTWARE.
 
 #include "pcidriver.hpp"
 
-#include <kstring/kstring.hpp>
+#include <kstring/kstring_view.hpp>
 
 #include "pci.hpp"
 #include "utils/logging.hpp"
@@ -53,9 +53,15 @@ void PciDriver::interface_init()
 
 void PciDriver::enable_bus_mastering()
 {
-    auto reg = pci::read_reg(m_dev.bus, m_dev.slot, m_dev.func, pci::Reg::Command);
+    auto reg = pci::read16(m_dev.bus, m_dev.slot, m_dev.func, pci::Reg::Command);
     reg |= 0b100; // set bit 2
-    pci::write_reg(m_dev.bus, m_dev.slot, m_dev.func, pci::Reg::Command, reg);
+    pci::write16(m_dev.bus, m_dev.slot, m_dev.func, pci::Reg::Command, reg);
+}
+void PciDriver::enable_io_space()
+{
+    auto reg = pci::read16(m_dev.bus, m_dev.slot, m_dev.func, pci::Reg::Command);
+    reg |= 0b1; // set bit 0
+    pci::write16(m_dev.bus, m_dev.slot, m_dev.func, pci::Reg::Command, reg);
 }
 
 class TestDriver : public PciDriver
@@ -63,7 +69,7 @@ class TestDriver : public PciDriver
 public:
     virtual void init() override {}
 
-    virtual kpp::string driver_name() const override { return "PCI Test driver"; }
+    virtual kpp::string_view driver_name() const override { return "PCI Test driver"; }
     virtual DriverType  type() const override
     { return DriverType::Debug; }
 

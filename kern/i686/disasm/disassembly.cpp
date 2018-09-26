@@ -23,7 +23,7 @@ SOFTWARE.
 
 */
 
-#include "dissasembly.hpp"
+#include "debug/dissasembly.hpp"
 
 #include "libdis.h"
 

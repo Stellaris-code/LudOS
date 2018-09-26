@@ -28,10 +28,11 @@ SOFTWARE.
 #include <ctype.h>
 #include <memory.hpp>
 
+#include "utils/kmsgbus.hpp"
+
 #include "nullterm.hpp"
 
 #include "utils/logging.hpp"
-#include "utils/messagebus.hpp"
 #include "utils/stlutils.hpp"
 #include "unicode/utf32decoder.hpp"
 
@@ -45,6 +46,7 @@ std::unique_ptr<TerminalData> current_termdata;
 Terminal::Terminal(size_t iwidth, size_t iheight, TerminalData &data)
     : m_width(iwidth), m_height(iheight), m_data(data)
 {
+    m_dirty_width_per_line.resize(iheight, 0);
 }
 
 void Terminal::put_char(char32_t c)
@@ -119,7 +121,6 @@ void Terminal::put_char(char32_t c)
     }
     else
     {
-        check_pos();
         set_entry_at({c, m_data.color()}, m_cursor_x, m_cursor_y);
         if (m_cursor_x < width()-1) m_cur_line.insert(m_cur_line.begin() + m_cursor_x, {c, m_data.color()});
         else    m_cur_line.push_back({c, m_data.color()});
@@ -146,7 +147,7 @@ void Terminal::clear_input()
         if (m_cursor_x > 0) --m_cursor_x;
     }
 
-    force_redraw();
+    force_redraw_input();
 }
 
 void Terminal::set_input(const kpp::string &str)
@@ -161,7 +162,7 @@ void Terminal::set_input(const kpp::string &str)
 
     write_string(str.c_str());
 
-    force_redraw();
+    force_redraw_input();
 }
 
 void Terminal::switch_to_input()
@@ -214,8 +215,11 @@ void Terminal::clear(ColorPair color)
 
     for (size_t i { 0 }; i < true_height(); ++i)
     {
-        clear_line(i, color.bg);
+        clear_line(i, color.bg, width());
     }
+
+    for (auto& dirty_width : m_dirty_width_per_line)
+        dirty_width = width();
 
     m_dirty = true;
     draw();
@@ -259,16 +263,16 @@ void Terminal::show_history(int page)
 
         auto screen = m_data.get_screen(width(), height(), page);
 
-        for (size_t i { 0 }; i < screen.size(); ++i)
+        const auto color = m_data.color().bg;
+
+        for (size_t i { 0 }; (i + m_data.title_height) < true_height() && i < screen.size(); ++i)
         {
-            clear_line(std::min(i + m_data.title_height, true_height()-1), m_data.color().bg);
+            clear_line_before_write(i + m_data.title_height, color, screen[i].size());
             for (size_t j { 0 }; j < screen[i].size(); ++j)
             {
-                set_entry_at(screen[i][j], j, std::min(i, height()-1));
+                set_entry_at(screen[i][j], j, i);
             }
         }
-
-        clear_line(true_height()-1, m_data.color().bg);
 
         force_redraw_input();
     }
@@ -300,7 +304,7 @@ void Terminal::set_title(kpp::u32string str, ColorPair color)
 
     for (size_t j { 0 }; j < m_data.title_height; ++j)
     {
-        clear_line(j, color.bg);
+        clear_line(j, color.bg, width());
     }
 
     for (size_t i { 0 }; i < str.size(); ++i)
@@ -346,11 +350,21 @@ void Terminal::set_input_color(size_t pos, size_t sz, ColorPair color)
 
 void Terminal::set_entry_at(TermEntry entry, size_t x, size_t y, bool absolute)
 {
-    if (m_enabled)
+    if (m_enabled && y < height())
     {
         putchar(x, y + (absolute ? 0 : m_data.title_height), entry);
         m_dirty = true;
     }
+}
+
+void Terminal::clear_line_before_write(size_t y, graphics::Color color, size_t size)
+{
+    const size_t dirty_width = m_dirty_width_per_line[y];
+    const size_t width_to_clear = std::max(size, dirty_width);
+
+    clear_line(y, color, width_to_clear);
+
+    m_dirty_width_per_line[y] = size;
 }
 
 void Terminal::new_line()
@@ -373,16 +387,13 @@ void Terminal::new_line()
         TermInputEvent ev;
         ev.line = input();
 
-        MessageBus::send(ev);
+        kmsgbus.send(ev);
+
+        m_dirty_width_per_line[m_cursor_y] = 0;
     }
 
-    for (size_t i { 0 }; m_cursor_x + i < width(); ++i)
-    {
-        set_entry_at({' ', m_data.color()}, m_cursor_x + i, m_cursor_y);
-    }
+    clear_line(m_cursor_y, m_data.color().bg, width());
     m_cur_line.clear();
-
-    force_redraw();
 }
 
 void Terminal::add_line_to_history()
@@ -442,6 +453,14 @@ void Terminal::process_escape_code()
     }
 }
 
+void Terminal::clear_screen(graphics::Color color)
+{
+    for (size_t i { 0 }; i < height(); ++i)
+    {
+        clear_line(i, color, width());
+    }
+}
+
 void Terminal::resize(size_t iwidth, size_t iheight)
 {
     assert(iwidth && iheight);
@@ -450,6 +469,8 @@ void Terminal::resize(size_t iwidth, size_t iheight)
 
     m_width = iwidth;
     m_height = iheight;
+
+    m_dirty_width_per_line.resize(iheight, width()); // clear again
 
     set_title(m_data.title_str, m_data.title_color);
 
@@ -488,7 +509,8 @@ void Terminal::force_redraw_input()
 {
     check_pos();
 
-    clear_line(std::min(m_cursor_y + m_data.title_height, true_height()-1), m_data.color().bg);
+    clear_line(std::min(m_cursor_y + m_data.title_height, true_height()-1), m_data.color().bg,
+               width());
 
     for (size_t i { 0 }; i < std::min(m_cur_line.size(), width()); ++i)
     {

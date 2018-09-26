@@ -42,6 +42,7 @@ public:
 
 protected:
     void enable_bus_mastering();
+    void enable_io_space();
 
 protected:
     pci::PciDevice m_dev;

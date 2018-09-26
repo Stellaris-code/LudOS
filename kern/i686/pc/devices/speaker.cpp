@@ -25,22 +25,23 @@ SOFTWARE.
 
 #include "speaker.hpp"
 
-#include <kstring/kstring.hpp>
+#include <kstring/kstring_view.hpp>
+
+#include "utils/kmsgbus.hpp"
 
 #include "io.hpp"
 #include "pit.hpp"
 #include "time/timer.hpp"
 
-#include "utils/messagebus.hpp"
-
 #include "drivers/sound/beep.hpp"
 
 Speaker::Speaker()
 {
-    MessageBus::register_handler<BeepMessage>([this](const BeepMessage& msg)
+    kmsgbus.register_handler<BeepMessage>([this](const BeepMessage& msg)
     {
         beep_(msg.milliseconds);
     });
+    log(Debug, "PC Speaked initialized\n");
 }
 
 void Speaker::beep_(uint32_t time, uint16_t freq)
@@ -67,7 +68,7 @@ void Speaker::stop()
     outb(0x61, tmp);
 }
 
-kpp::string Speaker::driver_name() const
+kpp::string_view Speaker::driver_name() const
 {
     return "PC Speaker";
 }

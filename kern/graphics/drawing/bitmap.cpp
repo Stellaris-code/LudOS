@@ -103,4 +103,68 @@ void Bitmap::color_blend(const Color &white, const Color &transparent)
         }
     }
 }
+
+void blit(Color* buf, size_t buf_width, size_t buf_height, const Bitmap &bitmap, const PointU &pos)
+{
+    //    assert(bitmap.width() + pos.x <= width());
+    //    assert(bitmap.height()+ pos.y <= height());
+
+    size_t blit_width = std::min(bitmap.width(), buf_width - pos.x);
+    size_t blit_height = std::min(bitmap.height(), buf_height - pos.y);
+
+#if 0
+    for (size_t i { 0 }; i < bitmap.width(); ++i)
+    {
+        for (size_t j { 0 }; j < bitmap.height(); ++j)
+        {
+            (*this)[{i + pos.x, j + pos.y}] = bitmap[{i, j}];
+        }
+    }
+#else
+    for (size_t j { 0 }; j < blit_height; ++j)
+    {
+        memcpyl(buf + (j+pos.y) * buf_width + (pos.x), bitmap.data() + (j*bitmap.width()),
+                blit_width*sizeof(Color));
+    }
+#endif
+}
+
+#pragma GCC push_options
+#pragma GCC optimize ("O3,tree-vectorize,omit-frame-pointer")
+#pragma GCC target ("sse2")
+void blit(Color* buf, size_t buf_width, size_t buf_height, const Bitmap &bitmap, const PointU &pos, const Color &white)
+{
+    (void)buf_height;
+    for (size_t j { 0 }; j < bitmap.height(); ++j)
+    {
+        const size_t y_off = (j + pos.y)*buf_width;
+
+        for (size_t i { 0 }; i < bitmap.width(); ++i)
+        {
+            const auto& bmp = bitmap[{i, j}];
+            if (bmp.a != 0) buf[y_off + i+pos.x] = (bmp == color_white ? white : bmp);
+        }
+    }
+}
+#pragma GCC pop_options
+
+#pragma GCC push_options
+#pragma GCC optimize ("O3,tree-vectorize,omit-frame-pointer")
+#pragma GCC target ("sse2")
+void blit(Color* buf, size_t buf_width, size_t buf_height, const Bitmap &bitmap, const PointU &pos, const Color &white, const Color &transparent)
+{
+    (void)buf_height;
+    for (size_t j { 0 }; j < bitmap.height(); ++j)
+    {
+        const size_t y_off = (j + pos.y)*buf_width;
+
+        for (size_t i { 0 }; i < bitmap.width(); ++i)
+        {
+            const auto& bmp = bitmap[{i, j}];
+            buf[y_off + i+pos.x] = (bmp.a == 0 ? transparent :
+                                                    bmp == color_white ? white : bmp);
+        }
+    }
+}
+#pragma GCC pop_options
 }

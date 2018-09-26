@@ -1,4 +1,4 @@
-/*
+﻿/*
 ide_pio.cpp
 
 Copyright (c) 15 Yann BOUCHER (yann)
@@ -35,22 +35,29 @@ SOFTWARE.
 
 #include <array.hpp>
 
-bool ide::pio::detail::read_one(uint16_t port, uint8_t type, uint64_t block, uint16_t *buf)
+bool ide::pio::detail::read_one(const ata_device &dev, uint64_t block, uint16_t *buf)
 {
-    select(port, type, block, 1);
-    outb(port + 7, 0x24);
+    select(dev, block, 1);
+    outb(dev.io_base + ATA_CMD, 0x24);
 
-    poll_bsy(port);
-   //poll(port);
+    poll_bsy(dev);
+//   poll(port);
 
+#if 0
     insw(port + 0, buf, 256);
-
-    if (error_set(port))
+#else
+    for (size_t i { 0 }; i < 256; ++i)
     {
-        bool stat = !error_set(port);
+        *buf++ = inw(dev.io_base + ATA_DATA);
+    }
+#endif
+
+    if (error_set(dev))
+    {
+        bool stat = !error_set(dev);
         if (!stat)
         {
-            clear_error(port);
+            clear_error(dev);
 
             return stat;
         }
@@ -60,35 +67,52 @@ bool ide::pio::detail::read_one(uint16_t port, uint8_t type, uint64_t block, uin
 }
 
 
-bool ide::pio::detail::write_one(uint16_t port, uint8_t type, uint64_t block, const uint16_t *buf)
+bool ide::pio::detail::write_one(const ata_device& dev, uint64_t block, const uint16_t *buf)
 {
-    select(port, type, block, 1);
+    select(dev, block, 1);
 
-    outb(port + 7, 0x34);
+    outb(dev.io_base + ATA_CMD, 0x34);
 
-    poll_bsy(port);
+    poll_bsy(dev);
 
 #if 0
     outsw(port + 0, buf, 256);
 #else
     for (size_t i { 0 }; i < 256; ++i)
     {
-        outw(port + 0, *buf++);
+        outw(dev.io_base + ATA_CMD, *buf++);
     }
 #endif
 
-    if (error_set(port))
+    if (error_set(dev))
     {
-        bool stat = !error_set(port);
+        bool stat = !error_set(dev);
         if (!stat)
         {
-            clear_error(port);
+            clear_error(dev);
 
             return stat;
         }
     }
 
-    return flush(port);
+    return flush(dev);
+}
+
+uint16_t control_port(ide::BusPort port)
+{
+    switch (port)
+    {
+        case ide::Primary:
+            return 0x3F6;
+        case ide::Secondary:
+            return 0x376;
+        case ide::Third:
+            return 0x3E6;
+        case ide::Fourth:
+            return 0x366;
+        default:
+            assert(false);
+    }
 }
 
 
@@ -98,9 +122,10 @@ void ide::pio::init()
     {
         for (auto type : {Master, Slave})
         {
-            if (identify(bus, type))
+            ata_device dev = {bus, type, (uint16_t)bus, control_port(bus)};
+            if (identify(dev))
             {
-                ide::pio::Disk::create_disk(bus, type);
+                ide::pio::Disk::create_disk(dev);
             }
         }
     }
@@ -116,7 +141,7 @@ std::vector<std::pair<ide::BusPort, ide::DriveType>> ide::pio::scan()
     {
         for (auto type : {Master, Slave})
         {
-            if (identify(bus, type))
+            if (identify({bus, type, (uint16_t)bus, control_port(bus)}))
             {
                 result.emplace_back(bus, type);
             }
@@ -126,22 +151,22 @@ std::vector<std::pair<ide::BusPort, ide::DriveType>> ide::pio::scan()
 }
 
 
-bool ide::pio::read(uint16_t port, uint8_t type, uint64_t block, size_t count, uint16_t *buf)
+bool ide::pio::read(const ata_device& dev, uint64_t block, size_t count, uint16_t *buf)
 {
     for (size_t i { 0 }; i < count; ++i)
     {
-        if (!detail::read_one(port, type, block + i, buf)) return false;
+        if (!detail::read_one(dev, block + i, buf)) return false;
         buf += 256;
     }
 
     return true;
 }
 
-bool ide::pio::write(uint16_t port, uint8_t type, uint64_t block, size_t count, const uint16_t *buf)
+bool ide::pio::write(const ata_device& dev, uint64_t block, size_t count, const uint16_t *buf)
 {
     for (size_t i { 0 }; i < count; ++i)
     {
-        if (!detail::write_one(port, type, block + i, buf)) return false;
+        if (!detail::write_one(dev, block + i, buf)) return false;
         buf += 256;
     }
     return true;
@@ -151,13 +176,13 @@ bool ide::pio::write(uint16_t port, uint8_t type, uint64_t block, size_t count, 
 kpp::expected<MemBuffer, DiskError> ide::pio::Disk::read_sector(size_t sector, size_t count) const
 {
     MemBuffer data(count * sector_size());
-    if (ide::pio::read(m_port, m_type, sector, count, (uint16_t*)data.data()))
+    if (ide::pio::read(m_dev, sector, count, (uint16_t*)data.data()))
     {
         return std::move(data);
     }
     else
     {
-        return kpp::make_unexpected(DiskError{get_error(m_port)});
+        return kpp::make_unexpected(DiskError{get_error(m_dev)});
     }
 }
 
@@ -166,15 +191,15 @@ kpp::expected<kpp::dummy_t, DiskError> ide::pio::Disk::write_sector(size_t secto
 {
     const size_t count = data.size() / sector_size() + (data.size()%sector_size()?1:0);
 
-    if (!ide::pio::write(m_port, m_type, sector, count, (const uint16_t*)data.data()))
+    if (!ide::pio::write(m_dev, sector, count, (const uint16_t*)data.data()))
     {
-        return kpp::make_unexpected(DiskError{get_error(m_port)});
+        return kpp::make_unexpected(DiskError{get_error(m_dev)});
     }
 
     return {};
 }
 
-ide::pio::Disk::Disk(BusPort port, DriveType type)
-    : IDEDisk(port, type)
+ide::pio::Disk::Disk(const ata_device &dev)
+    : IDEDisk(dev)
 {
 }

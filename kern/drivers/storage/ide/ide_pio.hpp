@@ -40,15 +40,15 @@ namespace ide::pio
 
 void init();
 
-[[nodiscard]] bool read(uint16_t port, uint8_t type, uint64_t block, size_t count, uint16_t* buf);
-[[nodiscard]] bool write(uint16_t port, uint8_t type, uint64_t block, size_t count, const uint16_t* buf);
+[[nodiscard]] bool read(const ata_device& dev, uint64_t block, size_t count, uint16_t* buf);
+[[nodiscard]] bool write(const ata_device& dev, uint64_t block, size_t count, const uint16_t* buf);
 
 std::vector<std::pair<BusPort, DriveType>> scan();
 
 class Disk : public IDEDisk
 {
 public:
-    Disk(BusPort port, DriveType type);
+    Disk(const ata_device& dev);
 
     template <typename... Args>
     static Disk& create_disk(Args&&... args)
@@ -65,8 +65,8 @@ protected:
 
 namespace detail
 {
-bool read_one(uint16_t port, uint8_t type, uint64_t block, uint16_t* buf);
-bool write_one(uint16_t port, uint8_t type, uint64_t block, const uint16_t* buf);
+bool read_one(const ata_device& dev, uint64_t block, uint16_t* buf);
+bool write_one(const ata_device& dev, uint64_t block, const uint16_t* buf);
 }
 }
 

@@ -42,6 +42,24 @@ SOFTWARE.
 #define ATA_ER_TK0NF    0x02    // Track 0 not found
 #define ATA_ER_AMNF     0x01    // No address mark
 
+#define ATA_ERR         0x01
+#define ATA_DRQ         0x08
+#define ATA_BSY         0x80
+
+#define ATA_DATA        0x00
+#define ATA_ERROR       0x01
+#define ATA_FEATURES    0x01
+#define ATA_SECCOUNT    0x02
+#define ATA_LBALO       0x03
+#define ATA_LBAMID      0x04
+#define ATA_LBAHI       0x05
+#define ATA_SELECT      0x06
+#define ATA_STATUS      0x07
+#define ATA_CMD         0x07
+
+#define ATA_ALT_STATUS  0x00
+#define ATA_DEVCTRL     0x00
+
 namespace ide
 {
 
@@ -67,7 +85,9 @@ struct [[gnu::packed]] identify_data
     uint16_t phys_log_size; // 106
     uint16_t unused8[10]; // 116
     uint32_t sector_size; // 118
-    uint16_t unused9[137];
+    uint16_t unused9[136];
+    uint8_t checksum_validity;
+    uint8_t checksum;
 };
 
 static_assert(sizeof(identify_data) == 512);
@@ -86,10 +106,19 @@ enum BusPort : uint16_t
     Fourth = 0x168
 };
 
+struct ata_device
+{
+    BusPort port;
+    DriveType type;
+    uint16_t io_base;
+    uint16_t control_base;
+};
+
 static constexpr uint32_t ata_read_dma_ex = 0x25;
 static constexpr uint32_t ata_write_dma_ex = 0x35;
 static constexpr uint32_t ata_identify = 0xEC;
 static constexpr uint32_t ata_flush_ext = 0xEA;
+static constexpr uint32_t ata_nop = 0x00;
 
 template <typename T>
 kpp::string ata_string(T&& arr)
@@ -112,24 +141,27 @@ kpp::string ata_string(T&& arr)
     return str;
 }
 
-uint8_t error_register(uint16_t port);
-uint8_t status_register(uint16_t port);
-uint8_t drive_register(uint16_t port);
-DiskError::Type get_error(uint16_t port);
-void poll(uint16_t port);
-void poll_bsy(uint16_t port);
-bool flush(uint16_t port);
-bool error_set(uint16_t port);
-void clear_error(uint16_t port);
-void cache_flush(uint16_t port, uint8_t type);
+uint8_t error_register(const ata_device& dev);
+uint8_t status_register(const ata_device& dev);
+uint8_t drive_register(const ata_device& dev);
+DiskError::Type get_error(const ata_device& dev);
+uint8_t poll(const ata_device& dev);
+uint8_t poll_bsy(const ata_device& dev);
+bool flush(const ata_device& dev);
+bool error_set(const ata_device& dev);
+void clear_error(const ata_device& dev);
+void cache_flush(const ata_device& dev);
+void wait_400ns(const ata_device& dev);
+void soft_reset(const ata_device& dev);
 
-void select(uint16_t port, uint8_t type, uint64_t block, uint16_t count);
-kpp::optional<identify_data> identify(uint16_t port, uint8_t type);
+void select(const ata_device& dev, uint64_t block, uint16_t count);
+bool detect(const ata_device& dev);
+kpp::optional<identify_data> identify(const ata_device& dev);
 
 class IDEDisk : public ::DiskImpl<IDEDisk>
 {
 public:
-    IDEDisk(uint16_t port, uint8_t type);
+    IDEDisk(const ata_device& dev);
 
     virtual size_t disk_size() const override;
     virtual size_t sector_size() const override;
@@ -147,8 +179,7 @@ protected:
     void update_id_data() const;
 
 protected:
-    uint16_t m_port;
-    uint8_t m_type;
+    ata_device m_dev;
     mutable kpp::optional<identify_data> m_id_data;
 };
 

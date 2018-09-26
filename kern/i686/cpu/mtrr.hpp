@@ -38,14 +38,26 @@ enum Type : uint8_t
     WB = 0x06
 };
 
+struct VariableMTRR
+{
+    uint64_t base;
+    uint64_t mask;
+};
+
 bool available();
+bool enabled();
 bool supports_write_combining();
 uint8_t available_variable_ranges();
+bool range_enabled(size_t id);
+VariableMTRR get_range(size_t id);
 
 void set_mtrrs_enabled(bool val);
 void set_fixed_mtrrs_enabled(bool val);
 
 int set_variable_mtrr(uint64_t base_addr, uint64_t size, Type type);
+
+void prepare_set();
+void post_set();
 }
 
 #endif // MTRR_HPP

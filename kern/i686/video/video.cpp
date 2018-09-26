@@ -1,4 +1,4 @@
-/*
+﻿/*
 video.cpp
 
 Copyright (c) 02 Yann BOUCHER (yann)
@@ -32,6 +32,9 @@ SOFTWARE.
 #include "terminal/terminal.hpp"
 #include "i686/cpu/mtrr.hpp"
 #include "i686/mem/physallocator.hpp"
+
+#include "config.hpp"
+#include "utils/env.hpp"
 
 #include "graphics/drawing/display_draw.hpp"
 
@@ -108,12 +111,19 @@ kpp::optional<VideoMode> change_mode(size_t width, size_t height, size_t depth)
     {
         reset_term();
 
-        if (mtrr::available() && mtrr::available_variable_ranges()>0 && mtrr::supports_write_combining())
+        // TODO : Use PAT instead
+#ifdef USE_MTRRS
+        if (!kgetenv("no_fb_mtrr") && mtrr::enabled() && mtrr::available_variable_ranges()>0 && mtrr::supports_write_combining())
         {
-            mtrr::set_variable_mtrr(mode.info.PhysBasePtr,
+            log(Debug, "Setting variable MTRR for video framebuffer at 0x%x\n", mode.info.PhysBasePtr);
+            if (mtrr::set_variable_mtrr(mode.info.PhysBasePtr,
                                     mode.info.BytesPerScanLine*mode.info.YResolution,
-                                    mtrr::WC);
+                                    mtrr::WC) < 0)
+            {
+                log(Notice, "Couldn't set fb variable MTRR\n");
+            }
         }
+#endif
 
         PhysPageAllocator::mark_as_used(mode.info.PhysBasePtr,
                              mode.info.BytesPerScanLine*mode.info.YResolution);
@@ -125,13 +135,14 @@ kpp::optional<VideoMode> change_mode(size_t width, size_t height, size_t depth)
         current_mode = vbe_to_video_mode(mode.info);
         current_mode.virt_fb_addr = (uintptr_t)Memory::mmap(current_mode.phys_fb_addr,
                                                         current_mode.bytes_per_line*current_mode.height,
-                                                        Memory::Write|Memory::WriteThrough|Memory::Uncached);
+                                                        Memory::Write);
 
         scr = std::make_unique<Screen>(current_mode.width, current_mode.height);
         set_display_mode(current_mode);
 
         auto mon_info = monitor_info();
-        if (mon_info) log_serial("Moninfo : %dx%d\n", mon_info->width, mon_info->height);
+        if (mon_info) log(Debug, "Moninfo : %dx%d, %dcm/%dcm\n", mon_info->width, mon_info->height,
+                                                                 mon_info->phys_width, mon_info->phys_height);
 
         return current_mode;
     }
@@ -153,7 +164,7 @@ Screen *screen()
 
 kpp::optional<MonitorInfo> monitor_info()
 {
-    if (auto edid = EDID::get(); edid)
+    if (auto edid = EDID::get())
     {
         return EDID::to_monitor_info(*edid);
     }

@@ -26,10 +26,11 @@ SOFTWARE.
 #include "disk.hpp"
 
 #include <vector.hpp>
+#include "utils/kmsgbus.hpp"
 
 #include "utils/stlutils.hpp"
-#include "utils/messagebus.hpp"
 #include "utils/memutils.hpp"
+#include "utils/env.hpp"
 
 #include "power/powermanagement.hpp"
 #include "time/timer.hpp"
@@ -40,7 +41,7 @@ DECLARE_LOCK(write_lock);
 
 void Disk::system_init()
 {
-    MessageBus::register_handler<SyncDisksCache>([](const SyncDisksCache&)
+    kmsgbus.register_handler<SyncDisksCache>([](const SyncDisksCache&)
     {
         for (Disk& disk : disks())
         {
@@ -50,16 +51,16 @@ void Disk::system_init()
         }
     });
 
-    MessageBus::register_handler<ShutdownMessage>([](const ShutdownMessage&)
+    kmsgbus.register_handler<ShutdownMessage>([](const ShutdownMessage&)
     {
-        MessageBus::send(SyncDisksCache{});
+        kmsgbus.send(SyncDisksCache{});
     });
 }
 
 Disk::Disk()
     : m_cache(*this)
 {
-    (void)enable_caching(true);
+    if (!kgetenv("no_caching")) (void)enable_caching(true);
 }
 
 Disk::~Disk() = default;
@@ -84,6 +85,12 @@ kpp::expected<MemBuffer, DiskError> Disk::read(size_t offset, size_t size) const
     const size_t count = ((offset+size)/sect_size + ((offset+size)%sect_size?1:0))
             - (offset/sect_size + (offset%sect_size?1:0))
             + ((offset+size)%sect_size?1:0);
+
+    if (count > disk_size()/sector_size() + (disk_size()%sector_size()?1:0))
+    {
+        panic("Count : %d/%d; off/size: %d/%d\n", count, disk_size()/sector_size() + (disk_size()%sector_size()?1:0),
+              offset, size);
+    }
 
     assert(count <= disk_size()/sector_size() + (disk_size()%sector_size()?1:0));
 
@@ -147,7 +154,7 @@ kpp::expected<kpp::dummy_t, DiskError> Disk::write_offseted_sector(size_t base, 
 
 kpp::expected<kpp::dummy_t, DiskError> Disk::write(size_t offset, gsl::span<const uint8_t> data)
 {
-    if (read_only()) return {};
+    if (read_only()) return kpp::make_unexpected(DiskError{DiskError::ReadOnly});
 
     const size_t sect_size = sector_size();
 
@@ -200,6 +207,7 @@ kpp::expected<MemBuffer, DiskError> Disk::read_cache_sector(size_t sector, size_
 [[nodiscard]]
 kpp::expected<kpp::dummy_t, DiskError> Disk::write_cache_sector(size_t sector, gsl::span<const uint8_t> data)
 {
+    if (read_only()) return kpp::make_unexpected(DiskError{DiskError::ReadOnly});
 
     if (m_caching) return m_cache.write_sector(sector, data);
     else return write_sector(sector, data);
@@ -257,6 +265,7 @@ kpp::expected<kpp::dummy_t, DiskError> MemoryDisk::write_sector(size_t sector, g
 DiskSlice::DiskSlice(Disk &disk, size_t offset, size_t size)
     : DiskImpl<DiskSlice>(), m_base_disk(disk), m_offset(offset), m_size(size)
 {
+    set_read_only(disk.read_only());
 }
 
 kpp::expected<MemBuffer, DiskError> DiskSlice::read_sector(size_t sector, size_t count) const

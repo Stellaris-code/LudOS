@@ -26,7 +26,9 @@ SOFTWARE.
 #include "ps2mouse.hpp"
 
 #include <stdint.h>
-#include <kstring/kstring.hpp>
+#include <kstring/kstring_view.hpp>
+
+#include "utils/kmsgbus.hpp"
 
 #include "drivers/mouse/mouse.hpp"
 
@@ -34,7 +36,6 @@ SOFTWARE.
 #include "pic.hpp"
 #include "ps2controller.hpp"
 #include "io.hpp"
-#include "utils/messagebus.hpp"
 
 #include "utils/logging.hpp"
 
@@ -123,7 +124,7 @@ bool PS2Mouse::isr(const registers *regs)
             !(packet.z == -8 && (static_cast<int16_t>(packet.y_sign-static_cast<int16_t>(packet.y)) == 90
                                  || static_cast<int16_t>(packet.y_sign-static_cast<int16_t>(packet.y)) == 91))) // it oftens indicate a broken packet, dunno why
     {
-        MessageBus::send<MousePacket>({static_cast<int16_t>(packet.x_sign-static_cast<int16_t>(packet.x)), static_cast<int16_t>(packet.y_sign-static_cast<int16_t>(packet.y)),
+        kmsgbus.send<MousePacket>({static_cast<int16_t>(packet.x_sign-static_cast<int16_t>(packet.x)), static_cast<int16_t>(packet.y_sign-static_cast<int16_t>(packet.y)),
                                        static_cast<int16_t>(packet.z), static_cast<bool>(packet.left_but), static_cast<bool>(packet.mid_but), static_cast<bool>(packet.right_but),
                                        static_cast<bool>(packet.but_4), static_cast<bool>(packet.but_5)});
     }
@@ -219,7 +220,7 @@ void PS2Mouse::set_sample_rate(uint8_t rate)
     if (read() != 0xFA) return;
 }
 
-kpp::string PS2Mouse::driver_name() const
+kpp::string_view PS2Mouse::driver_name() const
 {
     return "PS/2 Mouse";
 }

@@ -1,7 +1,7 @@
 /*
-messagebus.cpp
+kmsgbus.cpp
 
-Copyright (c) 23 Yann BOUCHER (yann)
+Copyright (c) 24 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -23,9 +23,6 @@ SOFTWARE.
 
 */
 
-#include "messagebus.hpp"
+#include "kmsgbus.hpp"
 
-void MessageBus::remove_handler(const MessageBus::Handle &handle)
-{
-    handlers[handle.first].erase(handle.second);
-}
+MessageBus kmsgbus;

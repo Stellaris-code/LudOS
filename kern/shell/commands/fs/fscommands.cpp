@@ -280,17 +280,18 @@ void install_fs_commands(Shell &sh)
              size = kpp::stoul(args[2]);
          }
 
-         auto result = node->read();
+         auto result = node->read(offset, size);
          if (!result)
          {
              sh.error("Error reading file %s : %s\n", args[0].c_str(), result.error().to_string());
+             return -3;
          }
 
          auto data  = std::move(result.value());
 
          if (data.empty())
          {
-             sh.error("cannot read file : '%s'\n", path.c_str());
+             sh.error("Cannot read file : '%s'\n", path.c_str());
              return -3;
          }
 
@@ -325,9 +326,10 @@ void install_fs_commands(Shell &sh)
          size_t offset = 0;
          if (args.size() >= 3) offset = kpp::stoul(args[2]);
 
-         if (!node->write(offset, {(uint8_t*)data.data(), (int)data.size()}))
+         auto result = node->write(offset, {(uint8_t*)data.data(), (int)data.size()});
+         if (!result)
          {
-             sh.error("cannot write to file : '%s'\n", path.c_str());
+             sh.error("Cannot write to file : '%s' (%s)\n", path.c_str(), result.error().to_string());
              return -3;
          }
 
@@ -367,7 +369,7 @@ void install_fs_commands(Shell &sh)
      "Usage : sync",
      [](const std::vector<kpp::string>&)
      {
-         MessageBus::send(SyncDisksCache{});
+         kmsgbus.send(SyncDisksCache{});
          return 0;
      }});
 

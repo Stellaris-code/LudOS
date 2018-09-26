@@ -1,7 +1,7 @@
 /*
-to_remove.cpp
+kmsgbus.hpp
 
-Copyright (c) 18 Yann BOUCHER (yann)
+Copyright (c) 24 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,5 +22,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
+#ifndef KMSGBUS_HPP
+#define KMSGBUS_HPP
 
-#include "kstring/kstring.hpp"
+#include <messagebus.hpp>
+
+extern MessageBus kmsgbus;
+
+#endif // KMSGBUS_HPP

@@ -29,8 +29,6 @@ SOFTWARE.
 
 #include <vector.hpp>
 
-#include "io.hpp"
-
 namespace pci
 {
 
@@ -71,6 +69,7 @@ struct [[gnu::packed]] PciDevice
     uint16_t bus;
     uint16_t slot;
     uint16_t func;
+    uint16_t pad;
 };
 
 
@@ -87,8 +86,8 @@ enum Reg
 {
     DevID = 0,
     VenID = 2,
-    Status = 6,
-    Command = 4
+    Status = 4,
+    Command = 6
 };
 
 inline BARType bar_type(uint32_t bar)
@@ -97,15 +96,15 @@ inline BARType bar_type(uint32_t bar)
     {
         return BARType::IO16;
     }
-    if ((bar & 0b110) == 0)
+    if ((bar & 0b110)>>1 == 0)
     {
         return BARType::Mem32;
     }
-    if ((bar & 0b110) == 1)
+    if ((bar & 0b110)>>1 == 1)
     {
         return BARType::Mem16;
     }
-    if ((bar & 0b110) == 2)
+    if ((bar & 0b110)>>1 == 2)
     {
         return BARType::Mem64;
     }
@@ -115,8 +114,12 @@ inline BARType bar_type(uint32_t bar)
 
 uint64_t get_bar_val(const pci::PciDevice& dev, size_t bar_idx);
 
-uint16_t read_reg(uint16_t bus, uint16_t slot, uint16_t func, uint16_t offset);
-void write_reg(uint16_t bus, uint16_t slot, uint16_t func, uint16_t offset, uint16_t val);
+uint32_t read32 (uint16_t bus, uint16_t slot, uint16_t func, uint16_t offset);
+uint16_t read16 (uint16_t bus, uint16_t slot, uint16_t func, uint16_t offset);
+uint8_t  read8  (uint16_t bus, uint16_t slot, uint16_t func, uint16_t offset);
+void     write32(uint16_t bus, uint16_t slot, uint16_t func, uint16_t offset, uint32_t val);
+void     write16(uint16_t bus, uint16_t slot, uint16_t func, uint16_t offset, uint16_t val);
+void     write8(uint16_t bus, uint16_t slot, uint16_t func, uint16_t offset, uint8_t val);
 
 uint16_t device_id(uint16_t bus, uint16_t slot, uint16_t func);
 uint16_t vendor_id(uint16_t bus, uint16_t slot, uint16_t func);
@@ -129,6 +132,8 @@ void check_device(uint8_t bus, uint8_t device);
 void check_function(uint8_t bus, uint8_t device, uint8_t function);
 
 PciDevice get_dev(uint16_t bus, uint16_t slot, uint16_t func);
+
+uint8_t get_irq(const pci::PciDevice& dev);
 
 void scan();
 

@@ -39,14 +39,17 @@ inline bool has_msrs()
 
 inline uint64_t read_msr(uint32_t msr_id)
 {
-    uint64_t msr_value;
-    asm volatile ( "rdmsr" : "=A" (msr_value) : "c" (msr_id) );
-    return msr_value;
+    uint32_t low;
+    uint32_t high;
+    __asm__ __volatile__ ("rdmsr" : "=a"(low), "=d"(high) : "c"(msr_id));
+    return (uint64_t) low << 0 | (uint64_t) high << 32;
 }
 
 inline void write_msr(uint32_t msr_id, uint64_t msr_value)
 {
-    asm volatile ( "wrmsr" : : "c" (msr_id), "A" (msr_value) );
+    uint32_t edx = msr_value >> 32;
+    uint32_t eax = msr_value & 0xffffffff;
+    __asm__ __volatile__("wrmsr" :: "c"(msr_id), "d"(edx), "a"(eax));
 }
 
 #endif // MSR_HPP

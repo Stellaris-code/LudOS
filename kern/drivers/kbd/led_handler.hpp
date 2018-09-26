@@ -26,7 +26,8 @@ SOFTWARE.
 #define LED_HANDLER_HPP
 
 #include "kbd_mappings.hpp"
-#include "utils/messagebus.hpp"
+
+#include "utils/kmsgbus.hpp"
 
 enum class LEDState : uint8_t
 {
@@ -47,7 +48,7 @@ namespace kbd
 {
 inline void install_led_handler()
 {
-    MessageBus::register_handler<KeyEvent>([](const KeyEvent& e)
+    kmsgbus.register_handler<KeyEvent>([](const KeyEvent& e)
     {
         static bool caps_led[max_kbd_count] { false };
         static bool num_led[max_kbd_count] { false };
@@ -75,7 +76,7 @@ inline void install_led_handler()
                 break;
             }
 
-            MessageBus::send(leds);
+            kmsgbus.send(leds);
 
         }
     });

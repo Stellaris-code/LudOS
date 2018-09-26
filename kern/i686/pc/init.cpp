@@ -78,6 +78,8 @@ SOFTWARE.
 #include "utils/defs.hpp"
 #include "utils/memutils.hpp"
 
+#include "config.hpp"
+
 #include "drivers/pci/pcidriver.hpp"
 
 extern "C" multiboot_header mbd;
@@ -247,12 +249,35 @@ void init(uint32_t magic, const multiboot_info_t* mbd_info)
     log(Info, "CPU clock speed : ~%llu MHz\n", clock_speed());
     detect_cpu();
 
+#ifdef USE_MTRRS
     if (mtrr::available() && mtrr::available_variable_ranges()>0)
     {
-        log(Info, "MTRRs available\n");
-        mtrr::set_mtrrs_enabled(true);
-        mtrr::set_fixed_mtrrs_enabled(false);
+        log(Debug, "MTRRs available\n");
+        if (mtrr::enabled())
+        {
+            log(Debug, "MTRRs already enabled by BIOS\n");
+        }
+        else
+        {
+            mtrr::set_mtrrs_enabled(true);
+            log(Debug, "Enabled MTRRs\n");
+        }
+        log(Debug, "Active variable MTRR ranges : (total : %d)\n", mtrr::available_variable_ranges());
+        for (size_t i { 0 }; i < mtrr::available_variable_ranges(); ++i)
+        {
+            if (!mtrr::range_enabled(i)) continue;
+
+            auto range = mtrr::get_range(i);
+            log(Debug, "\tBase : 0x%x, Mask : 0x%x\n", range.base, range.mask);
+        }
+        if (mtrr::supports_write_combining())
+            log(Debug, "Supports write-combining caching\n");
     }
+    else
+    {
+        log(Debug, "No MTRRs on this cpu\n");
+    }
+#endif
 
     init_emu_mem();
 
@@ -270,10 +295,12 @@ void init(uint32_t magic, const multiboot_info_t* mbd_info)
     pci::scan();
 
     Driver::interface_init();
+
     PciDriver::interface_init();
 
     if (!ahci::init() && Driver::get_drivers<ide::dma::Controller>().empty())
     {
+        log(Notice, "Fallback to IDE PIO mode\n");
         ide::pio::init();
     }
 }

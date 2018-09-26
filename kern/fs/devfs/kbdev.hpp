@@ -29,8 +29,9 @@ SOFTWARE.
 
 #include <sys/interface_list.h>
 
+#include "utils/kmsgbus.hpp"
+
 #include "utils/user_ptr.hpp"
-#include "utils/messagebus.hpp"
 
 struct kbdev_node : public vfs::interface_node<kbdev_node, vfs::ientry<ikbdev, IKBDEV_ID>>
 {

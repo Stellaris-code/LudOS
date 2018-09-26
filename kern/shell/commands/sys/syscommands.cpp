@@ -25,7 +25,11 @@ SOFTWARE.
 
 #include "syscommands.hpp"
 
+#include <kstring/kstring_view.hpp>
+
 #include "utils/memutils.hpp"
+
+#include "utils/kmsgbus.hpp"
 
 #include "shell/shell.hpp"
 #include "mem/meminfo.hpp"
@@ -34,7 +38,6 @@ SOFTWARE.
 #include "drivers/pci/pci.hpp"
 #include "drivers/pci/pci_vendors.hpp"
 #include "drivers/driver.hpp"
-#include "utils/messagebus.hpp"
 
 void install_sys_commands(Shell &sh)
 {
@@ -65,7 +68,7 @@ void install_sys_commands(Shell &sh)
      "Usage : 'halt'",
      [](const std::vector<kpp::string>&)
      {
-         MessageBus::send(ShutdownMessage{});
+         kmsgbus.send(ShutdownMessage{});
          return 0;
      }});
 
@@ -74,7 +77,7 @@ void install_sys_commands(Shell &sh)
      "Usage : 'reboot'",
      [](const std::vector<kpp::string>&)
      {
-         MessageBus::send(ResetMessage{});
+         kmsgbus.send(ResetMessage{});
          return 0;
      }});
 

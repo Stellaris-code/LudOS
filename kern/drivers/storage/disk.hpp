@@ -28,8 +28,9 @@ SOFTWARE.
 #include <kstring/kstring.hpp>
 #include <expected.hpp>
 
+#include "utils/kmsgbus.hpp"
+
 #include "utils/vecutils.hpp"
-#include "utils/messagebus.hpp"
 #include "utils/noncopyable.hpp"
 #include "utils/membuffer.hpp"
 
@@ -170,7 +171,7 @@ public:
     {
         static_assert(std::is_base_of_v<Disk, Derived>);
         Disk::m_disks.emplace_back(std::make_unique<Derived>(std::forward<Args>(args)...));
-        MessageBus::send<DiskFoundEvent>({Disk::disks().back()});
+        kmsgbus.send<DiskFoundEvent>({Disk::disks().back()});
         return static_cast<Derived&>(Disk::disks().back().get());
     }
 };

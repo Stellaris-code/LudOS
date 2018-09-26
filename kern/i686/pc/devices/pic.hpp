@@ -106,6 +106,7 @@ void init();
 void send_eoi(uint8_t irq);
 void set_mask(uint8_t irq);
 void clear_mask(uint8_t irq);
+uint16_t get_mask();
 }
 
 #endif // PIC_HPP

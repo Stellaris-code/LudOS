@@ -99,7 +99,7 @@ _aligned_memcpy_sse2 (void * __restrict v_to, const void * __restrict v_from, si
 
     for(i = 0; i < len / 128; i++)
     {
-        __builtin_prefetch(from, 0, 0);
+        __builtin_prefetch(from+056, 0, 0);
 
         __asm__ __volatile__ (
                     "movdqa (%0), %%xmm0\n"
@@ -122,6 +122,9 @@ _aligned_memcpy_sse2 (void * __restrict v_to, const void * __restrict v_from, si
         from += 128;
         to += 128;
     }
+
+    if (len & 127)
+        _naive_memcpy(to, from, len & 127);
 
     return to;
 }

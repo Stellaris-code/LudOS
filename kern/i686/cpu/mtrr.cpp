@@ -25,10 +25,16 @@ SOFTWARE.
 
 #include "mtrr.hpp"
 
+#include <assert.h>
+
 #include "utils/logging.hpp"
 #include "utils/bitops.hpp"
+#include "utils/env.hpp"
 
 #include "msr.hpp"
+#include "i686/interrupts/interrupts.hpp"
+#include "registers.hpp"
+#include "asmops.hpp"
 #include "cpuid.hpp"
 
 constexpr uint32_t msr_mtrrcap = 0xFE;
@@ -116,13 +122,104 @@ int set_variable_mtrr(uint64_t base_addr, uint64_t size, Type type)
         return -1;
     }
 
+    // next pow of two
+    size--;
+    size |= size >> 1;
+    size |= size >> 2;
+    size |= size >> 4;
+    size |= size >> 8;
+    size |= size >> 16;
+    size++;
+
     uint64_t base = ((base_addr >> base_shift) << base_shift) | type;
-    uint64_t mask = (((~(size - 1) & ((1ull<<max_phys_addr())-1)) >> base_shift) << base_shift) | valid_flag;
+    uint64_t mask = (((-size & ((1ull<<max_phys_addr())-1)) >> base_shift) << base_shift) | valid_flag;
+
+    prepare_set();
 
     write_msr(msr_mtrr_physbase(free_mtrr), base);
     write_msr(msr_mtrr_physmask(free_mtrr), mask);
 
+    post_set();
+
+    assert(read_msr(msr_mtrr_physbase(free_mtrr)) == base);
+    assert(read_msr(msr_mtrr_physmask(free_mtrr)) == mask);
+
+
     return free_mtrr;
+}
+
+bool enabled()
+{
+    return available() && bit_check(read_msr(msr_def_type), 11);
+}
+
+VariableMTRR get_range(size_t id)
+{
+    assert(range_enabled(id));
+    uint64_t mask = read_msr(msr_mtrr_physmask(id));
+    uint64_t base = read_msr(msr_mtrr_physbase(id));
+
+    return {base, mask};
+}
+
+bool range_enabled(size_t id)
+{
+    if (id < available_variable_ranges()) return false;
+    uint64_t mask = read_msr(msr_mtrr_physmask(id));
+    if (!(mask & valid_flag))
+    {
+        return false;
+    }
+
+    return true;
+}
+
+static uint32_t saved_cr4;
+static uint64_t saved_mtrr_state;
+void prepare_set()
+{
+    cli();
+
+    uint32_t reg_cr0 = cr0();
+    bit_set  (reg_cr0, 30);  // Cache-disable
+    bit_clear(reg_cr0, 29);  // NW
+
+    write_cr0(reg_cr0);
+    wbinvd();
+
+    uint32_t reg_cr4 = cr4();
+    saved_cr4 = reg_cr4;
+    if (bit_check(reg_cr4, 7)) // PGE bit
+    {
+        bit_clear(reg_cr4, 7);
+        write_cr4(reg_cr4); // Flush TLBs
+    }
+    else
+    {
+        write_cr3(cr3()); // Flush TLBs
+    }
+
+    uint64_t mtrr_state = read_msr(msr_def_type);
+    saved_mtrr_state = mtrr_state;
+    bit_clear(mtrr_state, 11); // disable MTRRs
+    write_msr(msr_def_type, mtrr_state);
+}
+
+void post_set()
+{
+    write_msr(msr_def_type, saved_mtrr_state); // restore state
+    write_cr3(cr3()); // Flush TLBs
+
+    if (!kgetenv("nocache"))
+    {
+        uint32_t reg_cr0 = cr0();
+        bit_clear(reg_cr0, 30); // enable caches
+        write_cr0(reg_cr0);
+    }
+
+    write_cr4(saved_cr4);
+
+    sti();
 }
 
 }

@@ -34,17 +34,20 @@ void TerminalData::add_line(const std::vector<TermEntry> &entry)
     m_buffer.add(entry);
 }
 
-std::vector<std::vector<std::reference_wrapper<const TermEntry> > > TerminalData::get_screen(size_t width, size_t height, size_t offset) const
+std::vector<std::vector<TermEntry> > TerminalData::get_screen(size_t width, size_t height, size_t offset) const
 {
-    std::vector<std::vector<std::reference_wrapper<const TermEntry>>> vec;
+    std::vector<std::vector<TermEntry>> vec;
+    vec.reserve(height*2);
 
     const size_t bound = std::min(height + offset, m_buffer.size());
 
     for (size_t i { offset }; i < bound && vec.size() < height; ++i)
     {
-        std::vector<std::reference_wrapper<const TermEntry>> line;
-
         const auto& entry = m_buffer.get_entry(i);
+
+        std::vector<TermEntry> line;
+        line.reserve(entry.size());
+
         for (size_t j { 0 }; j < entry.size(); ++j)
         {
             line.emplace_back(entry[j]);

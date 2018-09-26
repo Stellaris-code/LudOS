@@ -25,12 +25,12 @@ SOFTWARE.
 
 #include "ps2keyboard.hpp"
 
-#include <kstring/kstring.hpp>
+#include <kstring/kstring_view.hpp>
+#include "utils/kmsgbus.hpp"
 
 #include "i686/interrupts/isr.hpp"
 #include "i686/pc/devices/pic.hpp"
 
-#include "utils/messagebus.hpp"
 #include "drivers/kbd/driver_kbd_event.hpp"
 #include "drivers/kbd/led_handler.hpp"
 #include "ps2controller.hpp"
@@ -68,7 +68,7 @@ PS2Keyboard::PS2Keyboard()
 
     enable();
 
-    MessageBus::register_handler<LEDChangeEvent>([this](const LEDChangeEvent& e)
+    kmsgbus.register_handler<LEDChangeEvent>([this](const LEDChangeEvent& e)
     {
         if (e.caps_led != LEDState::Ignore)
         {
@@ -86,7 +86,7 @@ PS2Keyboard::PS2Keyboard()
 
     set_leds(0);
 
-    log(Info, "Keyboard driver initialized\n");
+    log(Info, "PS/2 Keyboard driver initialized\n");
 }
 
 void PS2Keyboard::enable()
@@ -111,13 +111,13 @@ void PS2Keyboard::set_leds(uint8_t leds)
 
 void PS2Keyboard::toggle_led(uint8_t led, bool value)
 {
-    leds &= ~led;         // clear
+    leds &= ~led;                      // clear
     leds |=  led & (value ? 0xFF : 0); // set to val
 
     set_leds(leds);
 }
 
-kpp::string PS2Keyboard::driver_name() const
+kpp::string_view PS2Keyboard::driver_name() const
 {
     return "PS/2 Keyboard";
 }
@@ -145,11 +145,11 @@ bool PS2Keyboard::isr(const registers *)
         // TODO : inherit from keyboard driver and automatically set the kbd id
         if (last_is_e0 && e0_key_assocs[code] != 0xFF)
         {
-            MessageBus::send<DriverKbdEvent>({0, {e0_key_assocs[code]}, key_state});
+            kmsgbus.send<DriverKbdEvent>({0, {e0_key_assocs[code]}, key_state});
         }
         else if (key_assocs[code] != 0xFF)
         {
-            MessageBus::send<DriverKbdEvent>({0, {key_assocs[code]}, key_state});
+            kmsgbus.send<DriverKbdEvent>({0, {key_assocs[code]}, key_state});
         }
 
         last_is_e0 = false;

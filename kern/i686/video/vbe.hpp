@@ -147,7 +147,7 @@ enum MemoryModel : uint8_t
 enum Modebits : uint16_t
 {
     UseLFB = (1<<14),
-    ClearDisplay = (1<<15)
+    DontClearDisplay = (1<<15)
 };
 
 struct VideoMode

@@ -25,9 +25,10 @@ SOFTWARE.
 
 #include "env.hpp"
 
+#include "utils/kmsgbus.hpp"
+
 #include "utils/stlutils.hpp"
 #include "utils/logging.hpp"
-#include "utils/messagebus.hpp"
 
 std::unordered_map<kpp::string, kpp::string> kenv;
 
@@ -58,5 +59,5 @@ kpp::optional<kpp::string> kgetenv(const kpp::string& s)
 void ksetenv(const kpp::string &key, const kpp::string& val)
 {
     kenv[key] = val;
-    MessageBus::send<EnvVarChange>({key, val});
+    kmsgbus.send<EnvVarChange>({key, val});
 }

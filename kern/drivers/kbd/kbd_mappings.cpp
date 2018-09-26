@@ -29,14 +29,14 @@ void kbd::install_mapping(const kbd::Mapping &mapping, size_t kbd_id)
 {
     if (current_handle[kbd_id])
     {
-        MessageBus::remove_handler(current_handle[kbd_id].value());
+        kmsgbus.remove_handler(current_handle[kbd_id].value());
     }
 
-    MessageBus::register_handler<DriverKbdEvent>([mapping, kbd_id](const DriverKbdEvent& e)
+    kmsgbus.register_handler<DriverKbdEvent>([mapping, kbd_id](const DriverKbdEvent& e)
     {
         if (e.kdb_id == kbd_id && mapping[e.pos])
         {
-            MessageBus::send<KeyEvent>({e.kdb_id, mapping[e.pos], e.state == DriverKbdEvent::Pressed ? KeyEvent::Pressed : KeyEvent::Released});
+            kmsgbus.send<KeyEvent>({e.kdb_id, mapping[e.pos], e.state == DriverKbdEvent::Pressed ? KeyEvent::Pressed : KeyEvent::Released});
         }
     });
 }

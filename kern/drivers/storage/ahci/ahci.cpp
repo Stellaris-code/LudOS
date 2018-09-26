@@ -79,7 +79,7 @@ bool init()
         {
             detail::init_port(i);
             auto type = detail::get_port_type(i);
-            if (type != detail::PortType::Null) ++port_count;
+            if (type == detail::PortType::SATA) ++port_count;
             log(Info, "   Port %u, type %s\n", i, type == detail::PortType::SATA ? "SATA" :
                                                                                    type == detail::PortType::SATAPI ? "SATAPI" :
                                                                                                                       type == detail::PortType::SEMB ? "SEMB" :
@@ -195,7 +195,7 @@ detail::HBAMem *detail::get_hbamem_ptr()
 
     auto bar = pci::get_bar_val(ahci_con, 5);
 
-    return reinterpret_cast<HBAMem*>(Memory::mmap(bar, 0x1100, Memory::Read|Memory::Write|Memory::Uncached|Memory::WriteThrough));
+    return reinterpret_cast<HBAMem*>(Memory::mmap(bar, 0x1100, Memory::Read|Memory::Write|Memory::Uncached));
 }
 
 void detail::get_ahci_ownership()
@@ -544,7 +544,7 @@ void detail::init_interface()
 {
     for (size_t port { 0 }; port < sizeof(mem->pi)*CHAR_BIT; ++port)
     {
-        if (bit_check(mem->pi, port) && detail::get_port_type(port) != PortType::Null)
+        if (bit_check(mem->pi, port) && detail::get_port_type(port) == PortType::SATA)
         {
             ahci::Disk::create_disk(port);
         }

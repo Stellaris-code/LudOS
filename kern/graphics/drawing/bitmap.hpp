@@ -77,6 +77,11 @@ private:
     std::vector<Color> m_data;
 };
 
+void blit(Color* buffer, size_t buf_width, size_t buf_height, const Bitmap& bmp, const PointU& pos);
+void blit(Color* buffer, size_t buf_width, size_t buf_height, const Bitmap &bitmap, const PointU &pos, const Color& white);
+void blit(Color* buffer, size_t buf_width, size_t buf_height, const Bitmap &bitmap, const PointU &pos, const Color& white, const Color& transparent);
+
+
 }
 
 #endif // BITMAP_HPP

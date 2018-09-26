@@ -34,6 +34,8 @@ SOFTWARE.
 
 #include "ide_common.hpp"
 
+#include "drivers/sound/beep.hpp"
+
 #include "utils/nop.hpp"
 
 namespace ide::dma
@@ -61,45 +63,87 @@ constexpr int status_ok = -1;
 
 bool Controller::accept(const pci::PciDevice &dev)
 {
-    return dev.classCode == 0x1 && dev.subclass == 0x1;
+    if (dev.classCode != 0x1 || dev.subclass != 0x1)
+        return false;
+
+    bool can_bus_master = dev.progIF & 0x80;
+    if (can_bus_master)
+        return true;
+    else
+        return false;
 }
 
 void Controller::init()
 {
+    enable_io_space();
     enable_bus_mastering();
+    auto reg = pci::read16(m_dev.bus, m_dev.slot, m_dev.func, pci::Reg::Command);
+    reg &= 0xfbff; // enable interrupts
+    pci::write16(m_dev.bus, m_dev.slot, m_dev.func, pci::Reg::Command, reg);
+
+    m_dev = pci::get_dev(m_dev.bus, m_dev.slot, m_dev.func); // re-read info
+
+    assert(pci::bar_type(m_dev.bar[4]) == pci::BARType::IO16);
+
+    log(Debug, "ATA DMA PCI bus mastering enabled on PCI address 0x%x:0x%x:0x%x\n", m_dev.bus, m_dev.slot, m_dev.func);
+    log(Debug, "Programming interface bits : %08b (cmd : %08b)\n", m_dev.progIF, m_dev.command);
+
+    m_primary_compatibility = !(m_dev.progIF & (1<<0));
+    m_primary_compatibility = !(m_dev.progIF & (1<<2));
+
+    if (m_primary_compatibility)
+        isr::register_handler(IRQ14, [this](const registers* r){return int14_handler(r);});
+    if (m_secondary_compatibility)
+        isr::register_handler(IRQ15, [this](const registers* r){return int15_handler(r);});
+
+    log(Debug, "PCI Interrupt : %d\n", m_dev.int_line);
+
+    if ((!m_primary_compatibility || !m_secondary_compatibility) && m_dev.int_line != 0)
+    {
+        isr::register_handler(IRQ0 + m_dev.int_line, [](const registers*)
+        {
+            log(Debug, "Booh it was called !\n");
+            return true;
+        });
+    }
 
     for (auto pair : scan())
     {
         ide::dma::Disk::create_disk(*this, (BusPort)pair.first, (DriveType)pair.second);
+        log(Debug, "Created ATA DMA disk on 0x%x 0x%x\n", io_base((BusPort)pair.first), pair.second);
     }
-
-    isr::register_handler(IRQ14, [this](const registers* r){return int14_handler(r);});
-    isr::register_handler(IRQ15, [this](const registers* r){return int15_handler(r);});
 }
 
-bool Controller::common_handler(BusPort port)
+bool Controller::common_handler(const ata_device& dev)
 {
-    auto status = status_byte(port);
+    auto status = status_byte(dev.port);
 
-    if (status_byte(port) & (1<<2))
+    //log(Debug, "Received PCI ATA IRQ on port 0x%x, status 0x%x\n", dev.port, status);
+
+    if (status & (1<<2))
     {
-        bool slave = drive_register(port) & (1<<4);
+        bool slave = drive_register(dev) & (1<<4);
 
-        raised_ints[port==BusPort::Primary][slave] = true;
-
-        send_command_byte(port, 0); // clear start/stop bit
-
-        if (status & (1<<1))
+        if ((status & (1<<0)) == 0) // last PRDT used up
         {
-            drive_status[port==BusPort::Primary][slave] = get_error(port);
-        }
-        else
-        {
-            drive_status[port==BusPort::Primary][slave] = status_ok;
+            raised_ints[dev.port==BusPort::Primary][slave] = true;
+
+            send_command_byte(dev.port, 0); // clear start/stop bit
+
+            if (status & (1<<1))
+            {
+                DiskError::Type error = get_error(dev);
+                drive_status[dev.port==BusPort::Primary][slave] = error;
+                warn("IDE DMA Error on port 0x%x, error 0x%x\n", dev.port, error);
+            }
+            else
+            {
+                drive_status[dev.port==BusPort::Primary][slave] = status_ok;
+            }
         }
 
         bit_clear(status, 0); bit_clear(status, 1); // clear error and interrupt bits
-        send_status_byte(port, status);
+        send_status_byte(dev.port, status);
     }
 
     return true;
@@ -107,66 +151,94 @@ bool Controller::common_handler(BusPort port)
 
 bool Controller::int14_handler(const registers *)
 {
-    return common_handler(BusPort::Primary);
+    return common_handler(mk_dev(BusPort::Primary, (DriveType)0));
 }
 
 bool Controller::int15_handler(const registers *)
 {
-    return common_handler(BusPort::Secondary);
+    return common_handler(mk_dev(BusPort::Secondary, (DriveType)0));
 }
 
 std::vector<std::pair<uint16_t, uint8_t> > Controller::scan()
 {
     std::vector<std::pair<uint16_t, uint8_t>> result;
 
-    for (auto bus : {Primary, Secondary, Third, Fourth})
+    for (auto bus : {Primary, Secondary})
     {
-        for (auto type : {Master, Slave})
+        for (auto type : {Slave, Master})
         {
-            if (identify(io_base(bus), type))
+            auto dev = mk_dev(bus, type);
+            if (detect(dev) && identify(dev))
             {
                 result.emplace_back(bus, type);
             }
         }
     }
+
     return result;
 }
 
-void Controller::send_command(BusPort bus, DriveType type, uint8_t command, bool read, size_t block, size_t count, gsl::span<const uint8_t> data)
+void Controller::send_command(const ata_device &dev, uint8_t command, bool read, size_t block, size_t count, gsl::span<const uint8_t> data)
 {
-    auto status = status_byte(bus);
+    auto status = status_byte(dev.port);
     bit_clear(status, 0); bit_clear(status, 1); // clear error and interrupt bits
-    send_status_byte(bus, status);
+    send_status_byte(dev.port, status);
 
-    send_command_byte(bus, (!(read)&1) << 3); // set operation direction
+    send_command_byte(dev.port, (!(read)&1) << 3); // set operation direction
 
-    prepare_prdt(bus, data);
+    prepare_prdt(dev.port, data);
 
-    select(io_base(bus), type, block, count);
+    select(dev, block, count);
 
-    outb(io_base(bus) + 7, command);
+    outb(dev.io_base + 7, command);
 
     //assert(interrupts_enabled());
     sti();
 
-    send_command_byte(bus, ((read&1) << 3) | 0b1); // set start bit
+    send_command_byte(dev.port, ((read&1) << 3) | 0b1); // set start bit
 }
 
 uint16_t Controller::io_base(BusPort bus)
 {
     if (bus == BusPort::Primary)
     {
-        auto port = pci::get_bar_val(m_dev, 0);
-        if (port == 0 || port == 1) port = 0x1F0;
+        if (m_primary_compatibility || m_dev.bar[0] == 0 || m_dev.bar[0] == 1)
+            return 0x1F0;
 
-        return port;
+        assert(pci::bar_type(m_dev.bar[0]) == pci::BARType::IO16);
+
+        return pci::get_bar_val(m_dev, 0);
     }
     else
     {
-        auto port = pci::get_bar_val(m_dev, 2);
-        if (port == 0 || port == 1) port = 0x170;
+        if (m_secondary_compatibility || m_dev.bar[2] == 0 || m_dev.bar[2] == 1)
+            return 0x170;
 
-        return port;
+        assert(pci::bar_type(m_dev.bar[2]) == pci::BARType::IO16);
+
+        return pci::get_bar_val(m_dev, 2);
+    }
+}
+
+uint16_t Controller::control_io_base(BusPort bus)
+{
+    if (bus == BusPort::Primary)
+    {
+        if (m_primary_compatibility || m_dev.bar[1] == 0 || m_dev.bar[1] == 1)
+            return 0x3F6;
+
+        assert(pci::bar_type(m_dev.bar[1]) == pci::BARType::IO16);
+
+        return pci::get_bar_val(m_dev, 1);
+    }
+    else
+    {
+        if (m_secondary_compatibility || m_dev.bar[3] == 0 || m_dev.bar[3] == 1)
+            return 0x376;
+
+        assert(pci::bar_type(m_dev.bar[3]) == pci::BARType::IO16);
+
+        return pci::get_bar_val(m_dev, 3);
     }
 }
 
@@ -177,14 +249,10 @@ void Controller::prepare_prdt(BusPort bus, gsl::span<const uint8_t> data)
     uintptr_t begin = (uintptr_t)data.data();
     uintptr_t end = begin + data.size();
 
-    //log_serial("From : 0x%x, to 0x%x\n", begin, end);
-
     for (size_t pg = begin; pg < end; pg += Memory::page_size())
     {
         size_t addr = Memory::physical_address((void*)pg);
         size_t size = Memory::page(pg) == Memory::page(end) ? Memory::offset(end) - Memory::offset(pg) : Memory::page_size() - Memory::offset(addr);
-
-        //log_serial("Addr : 0x%x, Size : 0x%x\n", addr, size);
 
         pg = Memory::page(pg);
 
@@ -229,24 +297,24 @@ void Controller::send_prdt(BusPort bus)
 }
 
 Disk::Disk(Controller& controller, BusPort port, DriveType type)
-    : IDEDisk(port, type), m_cont(controller)
+    : IDEDisk(controller.mk_dev(port, type)), m_cont(controller)
 {
 
 }
 
-// TODO : unify
-
 [[nodiscard]]
-kpp::expected<MemBuffer, DiskError> Disk::read_sector(size_t sector, size_t count) const
+kpp::expected<kpp::dummy_t, DiskError> Disk::do_read_write(size_t sector, gsl::span<const uint8_t> data, RWAction action) const
 {
-    volatile auto& int_status = raised_ints[m_port==BusPort::Primary][m_type==DriveType::Slave];
+    const size_t count = data.size() / sector_size() + (data.size()%sector_size()?1:0);
+
+    volatile auto& int_status = raised_ints[m_dev.port==BusPort::Primary][m_dev.type==DriveType::Slave];
 
     int_status = false;
 
-    (void)status_register(m_port); // read status port to reset drive
+    (void)ide::status_register(m_dev); // read status port to reset drive
 
-    MemBuffer data(sector_size()*count);
-    m_cont.send_command((BusPort)m_port, (DriveType)m_type, ata_read_dma_ex, true, sector, count, data);
+    m_cont.send_command(m_dev, ata_read_dma_ex, action == RWAction::Read,
+                        sector, count, data);
 
     if (!Timer::sleep_until_int([&int_status]{return int_status;}, 2000))
     {
@@ -255,12 +323,23 @@ kpp::expected<MemBuffer, DiskError> Disk::read_sector(size_t sector, size_t coun
 
     int_status = false;
 
-    auto status = drive_status[m_port==BusPort::Primary][m_type==DriveType::Slave];
+    auto status = drive_status[m_dev.port==BusPort::Primary][m_dev.type==DriveType::Slave];
 
     if (status != status_ok)
     {
         return kpp::make_unexpected(DiskError{(DiskError::Type)status});
     }
+
+    return {};
+}
+
+[[nodiscard]]
+kpp::expected<MemBuffer, DiskError> Disk::read_sector(size_t sector, size_t count) const
+{
+    MemBuffer data(sector_size()*count);
+
+    if (auto result = do_read_write(sector, data, RWAction::Read); !result)
+        return kpp::make_unexpected(result.error());
 
     return std::move(data);
 }
@@ -271,29 +350,8 @@ kpp::expected<kpp::dummy_t, DiskError> Disk::write_sector(size_t sector, gsl::sp
     assert(data.size() % sector_size() == 0);
     assert(sector <= m_id_data->sectors_48);
 
-    volatile auto& int_status = raised_ints[m_port==BusPort::Primary][m_type==DriveType::Slave];
-
-    int_status = false;
-
-    (void)status_register(m_port); // read status port to reset drive
-
-    size_t count = data.size() / sector_size() + (data.size()%sector_size()?1:0);
-
-    m_cont.send_command((BusPort)m_port, (DriveType)m_type, ata_write_dma_ex, false, sector, count, data);
-
-    if (!Timer::sleep_until_int([&int_status]{return int_status;}, 2000))
-    {
-        return kpp::make_unexpected(DiskError{DiskError::TimeOut});
-    }
-
-    int_status = false;
-
-    auto status = drive_status[m_port==BusPort::Primary][m_type==DriveType::Slave];
-
-    if (status != status_ok)
-    {
-        return kpp::make_unexpected(DiskError{(DiskError::Type)status});
-    }
+    if (auto result = do_read_write(sector, data, RWAction::Write); !result)
+        return kpp::make_unexpected(result.error());
 
     return {};
 }

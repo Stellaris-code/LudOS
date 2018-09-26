@@ -30,13 +30,14 @@ SOFTWARE.
 
 #include <deque.hpp>
 
+#include "utils/kmsgbus.hpp"
+
 #include "drivers/driver.hpp"
 #include "drivers/kbd/keyboard.hpp"
 #include "drivers/storage/disk.hpp"
 
 #include "tasking/process.hpp"
 
-#include "utils/messagebus.hpp"
 #include "utils/nop.hpp"
 
 #include "fbdev.hpp"
@@ -77,7 +78,7 @@ public:
     stdin_file(node* parent = nullptr)
         : node(parent)
     {
-        m_handl = MessageBus::register_handler<kbd::TextEnteredEvent>([this](const kbd::TextEnteredEvent& e)
+        m_handl = kmsgbus.register_handler<kbd::TextEnteredEvent>([this](const kbd::TextEnteredEvent& e)
         {
             if (Process::enabled())
             {
@@ -164,12 +165,12 @@ void init()
         detail::handle_new_driver(drv);
     }
 
-    MessageBus::register_handler<DiskFoundEvent>([](const DiskFoundEvent& ev)
+    kmsgbus.register_handler<DiskFoundEvent>([](const DiskFoundEvent& ev)
     {
         detail::add_drive(ev.disk);
     });
 
-    MessageBus::register_handler<DriverLoadedEvent>([](const DriverLoadedEvent& ev)
+    kmsgbus.register_handler<DriverLoadedEvent>([](const DriverLoadedEvent& ev)
     {
         detail::handle_new_driver(ev.drv);
     });

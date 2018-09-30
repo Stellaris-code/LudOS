@@ -1,20 +1,12 @@
 global update_registers
 extern handle_registers_request
 
-get_eip: mov eax, [esp]
-         ret
-
 update_registers:
-    mov eax, [esp]
-
     push ss
-    push eax
+    push 0 ; esp
     pushfd
     push cs
-
-    mov [old_eax], eax
-    call get_eip
-    push eax
+    push 0 ; eip
 
     ; int_no, err_code
     push dword 0
@@ -27,7 +19,7 @@ update_registers:
     push ebx
     push edx
     push ecx
-    push dword [old_eax]
+    push eax
 
     ; Store segments
     push ds
@@ -41,32 +33,7 @@ update_registers:
     call handle_registers_request
     ; Set stack pointer to returned value
     mov esp, eax
-    ; Restore segments
-    pop ebx
-    pop ebx
-    pop ebx
-    pop ebx
-
-    ; Restore general purpose
-    pop ebx
-    pop ebx
-    pop ebx
-    pop ebx
-    pop ebx
-    pop ebx
-    pop ebx
-
-    ; int_no, err_code
-    pop ebx
-    pop ebx
-
-    pop ebx
-    pop ebx
-    pop ebx
-    pop ebx
-    pop ebx
+    ; Restore esp
+    add esp, 72
 
     ret
-
-align 4
-old_eax:    dd 0

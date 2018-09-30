@@ -32,6 +32,7 @@ SOFTWARE.
 #include <sys/wait.h>
 
 #include "i686/gdt/gdt.hpp"
+#include "i686/tasking/tss.hpp"
 #include "i686/interrupts/interrupts.hpp"
 #include "i686/mem/physallocator.hpp"
 #include "utils/aligned_vector.hpp"
@@ -51,7 +52,8 @@ struct SignalTrampolineInfo
 };
 static_assert(sizeof(SignalTrampolineInfo) == 16);
 
-extern "C" [[noreturn]] void enter_ring3(const registers* regs);
+extern "C" [[noreturn]] void do_switch_inter(const registers* regs);
+extern "C" [[noreturn]] void do_switch_same(const registers* regs);
 
 void Process::push_onto_stack(gsl::span<const uint8_t> data)
 {
@@ -174,12 +176,34 @@ void Process::exit_signal()
     Process::by_pid(returning_pid)->switch_to();
 }
 
+void Process::set_exec_level(Process::ExecLevel lvl)
+{
+    auto& regs = arch_context->regs;
+
+    auto code_selector = (lvl == Process::User ? gdt::user_code_selector : gdt::kernel_code_selector);
+    auto data_selector = (lvl == Process::User ? gdt::user_data_selector : gdt::kernel_data_selector);
+    regs.cs = code_selector*0x8 | (lvl == Process::User ? 0x3 : 0x0);
+    regs.ds = regs.es = regs.fs = regs.gs = regs.ss =
+            data_selector*0x8 | (lvl == Process::User ? 0x3 : 0x0);
+    if (lvl == Process::User)
+    {
+        regs.eflags |= 0b11000000000000; // IOPL = 3
+    }
+    else
+    {
+        regs.eflags &= ~0b11000000000000; // IOPL = 0;
+        regs.esp = data->kernel_stack_ptr;
+    }
+}
+
 void Process::arch_init(gsl::span<const uint8_t> code_to_copy, size_t allocated_size)
 {
     assert(!arch_context);
     arch_context = new ProcessArchContext;
 
     data->stack.resize(2*Paging::page_size);
+    data->kernel_stack.resize(2*Paging::page_size);
+    data->kernel_stack_ptr = (uintptr_t)(data->kernel_stack.data() + data->kernel_stack.size());
 
     data->code = std::make_shared<aligned_vector<uint8_t, Memory::page_size()>>();
     data->code->resize(std::max<int>(code_to_copy.size(), allocated_size));
@@ -192,10 +216,11 @@ void Process::arch_init(gsl::span<const uint8_t> code_to_copy, size_t allocated_
     regs.eax = data->args.size();
     regs.ecx = argv_virt_page;
     regs.esp = user_stack_top;
-    regs.cs = gdt::user_code_selector*0x8 | 0x3;
-    regs.ds = regs.es = regs.fs = regs.gs = regs.ss = gdt::user_data_selector*0x8 | 0x3;
+    regs.eflags |= 0b1000000000; // enable IF
 
     arch_context->regs = regs;
+
+    set_exec_level(Process::User);
 
     create_mappings();
 
@@ -210,14 +235,30 @@ void Process::set_instruction_pointer(unsigned int value)
 void Process::switch_to()
 {
     {
+        if (m_current_process &&
+                (m_current_process->arch_context->regs.cs & 0x3) == 0) // if previous task was in ring 0
+        {
+            m_current_process->data->kernel_stack_ptr = m_current_process->arch_context->regs.esp;
+        }
+
         assert(!is_waiting());
 
         map_address_space();
         map_shm();
 
         m_current_process = this;
+
+        tss.esp0 = data->kernel_stack_ptr;
+        arch_context->regs.eflags |= 0b1000000000; // enable IF
     }
-    enter_ring3(&arch_context->regs);
+    if ((m_current_process->arch_context->regs.cs & 0x3) == 0)
+    {
+        do_switch_same(&arch_context->regs);
+    }
+    else
+    {
+        do_switch_inter(&arch_context->regs);
+    }
 
     __builtin_unreachable();
 }
@@ -234,6 +275,8 @@ Process *Process::clone(Process &proc, uint32_t flags)
 
     new_proc->data->code = std::make_shared<aligned_vector<uint8_t, Memory::page_size()>>(*proc.data->code); // noleak ? :(
     new_proc->data->stack = proc.data->stack; // noleak
+    new_proc->data->kernel_stack = proc.data->kernel_stack;
+    new_proc->data->kernel_stack_ptr = proc.data->kernel_stack_ptr;
     new_proc->data->name = proc.data->name + "_child"; // noleak
     new_proc->data->uid = proc.data->uid;
     new_proc->data->gid = proc.data->gid;
@@ -243,7 +286,7 @@ Process *Process::clone(Process &proc, uint32_t flags)
     new_proc->data->root = vfs::find(proc.data->root->path()).value(); assert(new_proc->data->root);
 
     new_proc->data->fd_table = std::make_shared<std::vector<tasking::FDInfo>>(*proc.data->fd_table); // noleak
-        proc.copy_allocated_pages(*new_proc); // noleak
+    proc.copy_allocated_pages(*new_proc); // noleak
 
     // TODO : refactor this
     new_proc->data->user_callbacks = std::make_shared<tasking::UserCallbacks>(*proc.data->user_callbacks);

@@ -80,8 +80,7 @@ constexpr const char *exception_messages[] = {
 extern "C"
 const registers* isr_handler(registers* const regs)
 {
-    // If in user mode
-    if (regs->cs & 0x3) Process::current().arch_context->regs = *regs;
+    if (Process::enabled()) Process::current().arch_context->regs = *regs;
 
     if (auto handl = handlers[regs->int_no])
     {

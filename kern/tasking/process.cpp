@@ -59,10 +59,10 @@ Process::Process()
     init_default_fds();
     init_sig_handlers();
 
-    data->user_callbacks = std::make_shared<UserCallbacks>();
+    data->user_callbacks = std::make_shared<tasking::UserCallbacks>();
 }
 
-void Process::reset(gsl::span<const uint8_t> code_to_copy, size_t allocated_size)
+void Process::load_user_code(gsl::span<const uint8_t> code_to_copy, size_t allocated_size)
 {
     if (arch_context)
     {
@@ -266,7 +266,7 @@ void Process::kill(pid_t pid, int err_code)
 
     kmsgbus.send(ProcessDestroyedEvent{pid, err_code});
 
-    //parent.raise(parent.pid, SIGCHLD, info);
+    parent.raise(parent.pid, SIGCHLD, info);
 }
 
 Process *Process::by_pid(pid_t pid)
@@ -317,6 +317,16 @@ Process *Process::create(const std::vector<kpp::string>& args)
     kmsgbus.send(ProcessCreatedEvent{free_idx});
 
     return m_processes[free_idx].get();
+}
+
+Process *Process::create_kernel_task(void (*procedure)())
+{
+    auto proc = Process::create({});
+    proc->arch_init({}, 0);
+    proc->set_exec_level(Process::Kernel);
+    proc->set_instruction_pointer((uintptr_t)procedure);
+
+    return proc;
 }
 
 void Process::map_shm()

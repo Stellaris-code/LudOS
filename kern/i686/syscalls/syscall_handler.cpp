@@ -33,6 +33,8 @@ SOFTWARE.
 
 extern "C" const registers* __attribute__((force_align_arg_pointer)) syscall_handler(registers* const regs)
 {
+    assert(regs->cs & 0x3); // ensure it was called from user mode
+
     auto& process = Process::current();
 
     process.arch_context->regs = *regs;

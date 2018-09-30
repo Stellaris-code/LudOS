@@ -90,12 +90,15 @@ struct UserCallbacks
 
 struct ProcessArchContext;
 
+// Don't forget to update clone() when adding fields !
 struct ProcessData
 {
     template <typename T>
     using shared_resource = std::shared_ptr<T>;
 
     aligned_vector<uint8_t, Memory::page_size()> stack; // stack is never shared
+    aligned_vector<uint8_t, Memory::page_size()> kernel_stack;
+    uintptr_t kernel_stack_ptr;
     shared_resource<aligned_vector<uint8_t, Memory::page_size()>> code;
 
     kpp::string name { "<INVALID>" };

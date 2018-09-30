@@ -103,6 +103,13 @@ kpp::optional<identify_data> identify(const ata_device& dev)
 
     wait_400ns(dev);
 
+    poll_bsy(dev);
+    if (error_set(dev))
+    {
+        log(Debug, "Error set on select\n");
+        return {};
+    }
+
     outb(dev.io_base + ATA_CMD, ata_identify); // TODO : send_cmd
     uint8_t status = inb(dev.io_base + ATA_STATUS);
 

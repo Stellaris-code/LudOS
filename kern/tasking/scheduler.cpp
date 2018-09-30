@@ -69,6 +69,7 @@ pid_t find_next_pid()
 void schedule()
 {
     Process* current = (Process::enabled() ? &Process::current() : nullptr);
+    if (current) current->unswitch();
 
     update_sleep_queue();
 
@@ -76,7 +77,6 @@ void schedule()
 
     //if (current) log_serial("Switching from PID %d to PID %d (Process count : %d)\n", current->pid, next_pid, Process::count());
 
-    if (current) current->unswitch();
     Process::by_pid(next_pid)->switch_to();
 }
 

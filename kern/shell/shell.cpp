@@ -195,7 +195,7 @@ void Shell::process(const kpp::string &in)
     int rc = command(in);
     if (rc != 0)
     {
-        error("Command '%s' returned with exit code %d\n", in.c_str(), rc);
+        error("Command '%s' returned with exit code %d (0x%x)\n", in.c_str(), rc, rc);
     }
 }
 

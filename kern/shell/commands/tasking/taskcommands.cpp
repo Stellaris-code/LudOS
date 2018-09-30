@@ -33,6 +33,9 @@ SOFTWARE.
 #include "tasking/process.hpp"
 #include "tasking/process_data.hpp"
 #include "tasking/loaders/process_loader.hpp"
+#include "tasking/scheduler.hpp"
+
+#include <sys/wait.h>
 
 void install_task_commands(Shell &sh)
 {
@@ -86,8 +89,14 @@ void install_task_commands(Shell &sh)
 
          process->data->pwd = sh.pwd;
          process->data->name = filename(program_args[0]).to_string();
-         process->switch_to();
+         process->parent = Process::current().pid;
 
-         return 0;
+         Process::current().data->children.emplace_back(process->pid);
+
+         int status = 0xdeadbeef;
+         Process::current().wait_for(process->pid, &status);
+         tasking::kernel_yield();
+
+         return WEXITSTATUS(status);
      }});
 }

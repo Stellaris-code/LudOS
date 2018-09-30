@@ -1,4 +1,4 @@
-/*
+﻿/*
 global_init.cpp
 
 Copyright (c) 12 Yann BOUCHER (yann)
@@ -99,6 +99,8 @@ SOFTWARE.
 // TODO : passer tout ce qui est VBE en un driver qui expose le noeud 'fbdev'
 // TODO : restore ucontext_t* modified by signal handlers
 // TODO : optimized page copy function
+// TODO : faire en sorte qu'un process puisse aussi bien tourner en kernel mode (changer enter_ring3 par jump_to_exec ou qqchose)
+// TODO : kernel stack par process
 
 // ROADMAP
 // : supprimer la libc++ & libcxxabi
@@ -129,14 +131,33 @@ SOFTWARE.
 // * don't forget about fpu state
 /**********************************/
 
+void test1()
+{
+    int esp;
+    uint8_t val = 0;
+    while (true)
+    {
+        asm volatile ("movl %%esp, %0":"=m"(esp):);
+        kprintf("Hi ! %d (esp : 0x%x)\n", val, esp);
+        ++val;
+        tasking::kernel_yield();
+    }
+}
+void test2()
+{
+    int esp;
+    uint8_t val = 0;
+    while (true)
+    {
+        asm volatile ("movl %%esp, %0":"=m"(esp):);
+        kprintf("Hello 2! %d (esp : 0x%x)\n", val, esp);
+        ++val;
+        tasking::kernel_yield();
+    }
+}
+
 void global_init()
 {
-    int register esp asm("esp");
-    if ((esp & 0xF) != 0 && false)
-    {
-        panic("Stack is not aligned on a 16-byte boundary !");
-    }
-
     beep(200);
 
     power::init_power_management();
@@ -236,16 +257,6 @@ void global_init()
     kmsgbus.send<kbd::KeyEvent>(kbd::KeyEvent{0, KeyNumLock, kbd::KeyEvent::Pressed});
     kmsgbus.send<kbd::KeyEvent>(kbd::KeyEvent{0, KeyNumLock, kbd::KeyEvent::Released});
 
-    Shell sh;
-    sh.params.prompt = ESC_BG(13,132,203) "  LudOS " ESC_POP_COLOR ESC_BG(78,154,6) ESC_FG(13,132,203) "▶" ESC_POP_COLOR " :{path}> " ESC_POP_COLOR
-            ESC_FG(78,154,6) "▶" ESC_POP_COLOR " ";
-    install_base_commands(sh);
-    install_sys_commands(sh);
-    install_fs_commands(sh);
-    install_gfx_commands(sh);
-    install_net_commands(sh);
-    install_task_commands(sh);
-
     MemBuffer buf(512*16);
     MemoryDisk::create_disk(buf.data(), buf.size(), "scratch");
 
@@ -253,7 +264,26 @@ void global_init()
 
     tasking::scheduler_init();
 
-    sh.command("run /initrd/init.sh");
+//    auto task1 = Process::create_kernel_task(test1);
+//    auto task2 = Process::create_kernel_task(test2);
+//    task1->switch_to();
+
+    auto init_task = Process::create_kernel_task([]()
+    {
+        Shell sh;
+        sh.params.prompt = ESC_BG(13,132,203) "  LudOS " ESC_POP_COLOR ESC_BG(78,154,6) ESC_FG(13,132,203) "▶" ESC_POP_COLOR " :{path}> " ESC_POP_COLOR
+                ESC_FG(78,154,6) "▶" ESC_POP_COLOR " ";
+        install_base_commands(sh);
+        install_sys_commands(sh);
+        install_fs_commands(sh);
+        install_gfx_commands(sh);
+        install_net_commands(sh);
+        install_task_commands(sh);
+
+        sh.command("run /initrd/init.sh");
+        sh.run();
+    });
+    init_task->switch_to();
 
 #if 0
     Timer::register_callback(100, []
@@ -272,6 +302,4 @@ void global_init()
         }
     }, false);
 #endif
-
-    sh.run();
 }

@@ -60,12 +60,16 @@ struct ProcessData;
 class Process : NonCopyable
 {
 public:
-
     enum AccessRequestPerm : uint16_t
     {
         ReadRequest,
         WriteRequest,
         ExecRequest
+    };
+    enum ExecLevel
+    {
+        User,
+        Kernel
     };
 
     static constexpr size_t root_uid = 0;
@@ -102,6 +106,7 @@ public:
     static bool enabled();
 
     static Process* create(const std::vector<kpp::string> &args);
+    static Process* create_kernel_task(void(*procedure)());
     static Process* clone(Process& proc, uint32_t flags = 0);
     static Process& current();
     static size_t   count();
@@ -117,7 +122,8 @@ public:
 
     ~Process();
 
-    void reset(gsl::span<const uint8_t> code_to_copy, size_t allocated_size = 0);
+    void load_user_code(gsl::span<const uint8_t> code_to_copy, size_t allocated_size = 0);
+    void set_exec_level(ExecLevel lvl);
     void set_instruction_pointer(unsigned int value);
 
     void set_args(const std::vector<kpp::string> &args);

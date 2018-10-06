@@ -1,4 +1,4 @@
-/*
+﻿/*
 panic.cpp
 
 Copyright (c) 29 Yann BOUCHER (yann)
@@ -139,7 +139,7 @@ void print_disassembly()
     }
     else
     {
-        base_ip = (uint8_t*)elf::kernel_symbol_table.get_function(panic_regs->eip)->offset;
+        base_ip = (uint8_t*)func_base->offset;
         const uint8_t* target_ip = (uint8_t*)panic_regs->eip;
         while (next_ins(base_ip, dump_len/2) < target_ip)
         {

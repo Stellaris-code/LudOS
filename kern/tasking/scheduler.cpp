@@ -68,14 +68,14 @@ pid_t find_next_pid()
 
 void schedule()
 {
-    Process* current = (Process::enabled() ? &Process::current() : nullptr);
-    if (current) current->unswitch();
+    // FIXME : not proper wording ("active"?)
+    if (Process::enabled()) Process::current().unswitch();
 
     update_sleep_queue();
 
     pid_t next_pid = find_next_pid();
 
-    //if (current) log_serial("Switching from PID %d to PID %d (Process count : %d)\n", current->pid, next_pid, Process::count());
+    //log_serial("Switching from PID %d to PID %d (Process count : %d)\n", Process::current().pid, next_pid, Process::count());
 
     Process::by_pid(next_pid)->switch_to();
 }

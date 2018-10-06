@@ -188,7 +188,7 @@ int main(int argc, char* argv[])
     res = open("ShittyShell/", O_RDONLY, 0);
     ensure(res == -1 && errno == ENOTDIR);
 
-    fork_test();
+    //fork_test();
 
     uint64_t total_test_ticks = 0;
 

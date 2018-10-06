@@ -180,6 +180,10 @@ MemBuffer Ext2FS::read_block(size_t number) const
 {
     assert(number < m_superblock.block_count);
     auto vec = m_disk.read(number * block_size(), block_size());
+    if (!vec)
+    {
+        panic("ext2fs read err : %s\n", vec.error().to_string());
+    }
 
     // TODO
     return std::move(vec.value());

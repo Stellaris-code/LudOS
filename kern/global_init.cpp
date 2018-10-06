@@ -25,9 +25,6 @@ SOFTWARE.
 
 #include "global_init.hpp"
 
-#include "fs/vfs.hpp"
-#include "fs/devfs/devfs.hpp"
-#include "fs/procfs/procfs.hpp"
 #include "fs/fs.hpp"
 #include "fs/mbr/mbr.hpp"
 #include "fs/pathutils.hpp"
@@ -73,7 +70,6 @@ SOFTWARE.
 #include "time/time.hpp"
 #include "time/timer.hpp"
 
-#include "syscalls/syscalls.hpp"
 #include "tasking/process.hpp"
 #include "tasking/scheduler.hpp"
 
@@ -99,8 +95,7 @@ SOFTWARE.
 // TODO : passer tout ce qui est VBE en un driver qui expose le noeud 'fbdev'
 // TODO : restore ucontext_t* modified by signal handlers
 // TODO : optimized page copy function
-// TODO : faire en sorte qu'un process puisse aussi bien tourner en kernel mode (changer enter_ring3 par jump_to_exec ou qqchose)
-// TODO : kernel stack par process
+// TODO : mettre une page sentinelle après chaque stack de chaque processus
 
 // ROADMAP
 // : supprimer la libc++ & libcxxabi
@@ -158,6 +153,7 @@ void test2()
 
 void global_init()
 {
+
     beep(200);
 
     power::init_power_management();
@@ -224,10 +220,6 @@ void global_init()
 
     Disk::system_init();
 
-    vfs::init();
-    devfs::init();
-    procfs::init();
-
     log(Info, "Available drives : %zd\n", Disk::disks().size());
     if (!kgetenv("rw"))
     {
@@ -260,30 +252,22 @@ void global_init()
     MemBuffer buf(512*16);
     MemoryDisk::create_disk(buf.data(), buf.size(), "scratch");
 
-    init_syscalls();
+    //    auto task1 = Process::create_kernel_task(test1);
+    //    auto task2 = Process::create_kernel_task(test2);
+    //    task1->switch_to();
 
-    tasking::scheduler_init();
+    Shell sh;
+    sh.params.prompt = ESC_BG(13,132,203) "  LudOS " ESC_POP_COLOR ESC_BG(78,154,6) ESC_FG(13,132,203) "▶" ESC_POP_COLOR " :{path}> " ESC_POP_COLOR
+            ESC_FG(78,154,6) "▶" ESC_POP_COLOR " ";
+    install_base_commands(sh);
+    install_sys_commands(sh);
+    install_fs_commands(sh);
+    install_gfx_commands(sh);
+    install_net_commands(sh);
+    install_task_commands(sh);
 
-//    auto task1 = Process::create_kernel_task(test1);
-//    auto task2 = Process::create_kernel_task(test2);
-//    task1->switch_to();
-
-    auto init_task = Process::create_kernel_task([]()
-    {
-        Shell sh;
-        sh.params.prompt = ESC_BG(13,132,203) "  LudOS " ESC_POP_COLOR ESC_BG(78,154,6) ESC_FG(13,132,203) "▶" ESC_POP_COLOR " :{path}> " ESC_POP_COLOR
-                ESC_FG(78,154,6) "▶" ESC_POP_COLOR " ";
-        install_base_commands(sh);
-        install_sys_commands(sh);
-        install_fs_commands(sh);
-        install_gfx_commands(sh);
-        install_net_commands(sh);
-        install_task_commands(sh);
-
-        sh.command("run /initrd/init.sh");
-        sh.run();
-    });
-    init_task->switch_to();
+    sh.command("run /initrd/init.sh");
+    sh.run();
 
 #if 0
     Timer::register_callback(100, []

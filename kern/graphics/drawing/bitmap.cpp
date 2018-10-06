@@ -52,8 +52,10 @@ void Bitmap::resize(size_t width, size_t height, bool keep_ratio, Color color)
 
         m_data.resize(width*height);
 
+        asm volatile ("cli\n");
         stbir_resize_uint8(reinterpret_cast<const uint8_t*>(copy.data()), m_width, m_height, 0,
                            reinterpret_cast<uint8_t*>(m_data.data()), width, height, 0, 4);
+        asm volatile ("sti\n");
     }
 
     m_width = width;

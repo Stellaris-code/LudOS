@@ -142,7 +142,7 @@ void Process::close_fd(size_t fd)
 
 bool Process::is_waiting() const
 {
-    return data->waiting_pid.has_value();
+    return blocked || data->waiting_pid.has_value();
 }
 
 void Process::wait_for(pid_t pid, int *wstatus)

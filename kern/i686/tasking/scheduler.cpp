@@ -35,14 +35,16 @@ extern "C" registers kernel_yield_regs = {};
 static uintptr_t eip;
 static uintptr_t esp;
 
+extern "C" [[noreturn]] void do_switch_same(const registers* regs);
+
 extern "C"
 void do_kernel_yield()
 {
-//    esp = (uintptr_t)__builtin_frame_address(0);
-//    eip = (uintptr_t)__builtin_extract_return_addr(__builtin_return_address(0));
+    //    esp = (uintptr_t)__builtin_frame_address(0);
+    //    eip = (uintptr_t)__builtin_extract_return_addr(__builtin_return_address(0));
 
-//    kernel_yield_regs.eip = eip;
-//    kernel_yield_regs.esp = esp + sizeof(uintptr_t)*2; // minus the return address and ebp
+    //    kernel_yield_regs.eip = eip;
+    //    kernel_yield_regs.esp = esp + sizeof(uintptr_t)*2; // minus the return address and ebp
 
     Process::current().arch_context->regs = kernel_yield_regs;
     Process::current().data->kernel_stack_ptr = kernel_yield_regs.esp;

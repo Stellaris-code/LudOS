@@ -135,6 +135,10 @@ public:
     bool is_waiting() const;
     void wait_for(pid_t pid, int* wstatus);
 
+    void block() { blocked = true; }
+    void unblock() { blocked = false; }
+    bool is_blocked() const { return blocked; }
+
     void switch_to();
     void unswitch();
 
@@ -162,6 +166,7 @@ public:
     pid_t pid { 0 };
     pid_t tgid { 0 };
     pid_t parent { 0 };
+    bool blocked { false };
     std::unique_ptr<ProcessData> data;
     ProcessArchContext* arch_context { nullptr };
 

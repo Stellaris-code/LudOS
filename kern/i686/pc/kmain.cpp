@@ -30,15 +30,12 @@ SOFTWARE.
 #include "utils/defs.hpp"
 
 #include "i686/pc/init.hpp"
-#include "global_init.hpp"
 #include "halt.hpp"
 
 extern "C"
 void kmain(uint32_t magic, const multiboot_info_t* mbd_info)
 {
     i686::pc::init(magic, mbd_info);
-
-    global_init();
 
     halt();
 }

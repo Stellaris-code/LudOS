@@ -108,7 +108,7 @@ void install_gfx_commands(Shell &sh)
          graphics::screen()->blit(*img, {0, 0});
          graphics::draw_to_display(*graphics::screen());
 
-         bool escape { false };
+         volatile bool escape { false };
 
          auto handl = kmsgbus.register_handler<kbd::KeyEvent>([&escape](const kbd::KeyEvent& e)
          {
@@ -128,7 +128,7 @@ void install_gfx_commands(Shell &sh)
          graphics::clear_display(graphics::color_black);
 
          term().enable();
-         term().force_redraw();
+         //term().force_redraw();
 
          return 0;
      }});

@@ -202,8 +202,9 @@ void Process::arch_init(gsl::span<const uint8_t> code_to_copy, size_t allocated_
     arch_context = new ProcessArchContext;
 
     data->stack.resize(2*Paging::page_size);
-    data->kernel_stack.resize(2*Paging::page_size);
-    data->kernel_stack_ptr = (uintptr_t)(data->kernel_stack.data() + data->kernel_stack.size());
+    data->kernel_stack.resize(16*Paging::page_size);
+    // kernel esp+4 must be 16-bit aligned on function entry
+    data->kernel_stack_ptr = (uintptr_t)(data->kernel_stack.data() + data->kernel_stack.size()) - sizeof(uintptr_t);
 
     data->code = std::make_shared<aligned_vector<uint8_t, Memory::page_size()>>();
     data->code->resize(std::max<int>(code_to_copy.size(), allocated_size));
@@ -251,6 +252,7 @@ void Process::switch_to()
         tss.esp0 = data->kernel_stack_ptr;
         arch_context->regs.eflags |= 0b1000000000; // enable IF
     }
+
     if ((m_current_process->arch_context->regs.cs & 0x3) == 0)
     {
         do_switch_same(&arch_context->regs);

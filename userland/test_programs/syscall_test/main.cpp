@@ -86,7 +86,7 @@ int main(int argc, char* argv[])
 
     printf("%s\n", process_info.c_str());
 
-    const char path[] = "/initrd/init.sh";
+    const char path[] = "/home/test.txt";
     int fd = open(path, O_RDONLY, 0);
     printf("Opening '%s', return : %d, error : %s\n", path, fd, strerror(errno));
     std::vector<uint8_t> data(40);

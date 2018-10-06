@@ -25,7 +25,7 @@ save_registers:
     pushfd
         mov eax, [esp] ; eflags
         mov [kernel_yield_regs+0x3c], eax
-    add esp, 8 ; pushfd: 4; account for the return address: 4
+    lea esp, [esp+0x8] ; pushfd: 4; account for the return address: 4
     mov [kernel_yield_regs+0x40], esp
     mov [kernel_yield_regs+0x44], ss
 

@@ -25,15 +25,17 @@ SOFTWARE.
 
 #include <stdint.h>
 #include <stdio.h>
-
-long exit(uint8_t code);
+#include <syscalls/syscall_list.hpp>
 
 int main()
 {
-//    asm volatile ("mov $0, %eax\n"
-//                  "div %eax");
-
-    printf("Booh\n");
+    while (true)
+    {
+        asm volatile ("\n"
+                      "mov $0x6, %eax\n"
+                      "int $0x70\n"
+                      ""); // syscall_nop
+    }
 
     return -25;
 }

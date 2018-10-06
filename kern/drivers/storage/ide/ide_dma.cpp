@@ -32,6 +32,9 @@ SOFTWARE.
 #include "time/timer.hpp"
 #include "i686/interrupts/interrupts.hpp"
 
+#include "tasking/process.hpp"
+#include "tasking/scheduler.hpp"
+
 #include "ide_common.hpp"
 
 #include "drivers/sound/beep.hpp"
@@ -58,6 +61,7 @@ volatile bool secondary_master_int { false };
 volatile bool secondary_slave_int { false };
 
 volatile bool raised_ints[2][2] { {false, false}, {false, false} };
+Process*      waiting_processes[2][2];
 int drive_status[2][2];
 constexpr int status_ok = -1;
 
@@ -126,7 +130,11 @@ bool Controller::common_handler(const ata_device& dev)
 
         if ((status & (1<<0)) == 0) // last PRDT used up
         {
+            auto* process = waiting_processes[dev.port==BusPort::Primary][slave];
+            //            assert(process);
+            //            assert(process->is_blocked());
             raised_ints[dev.port==BusPort::Primary][slave] = true;
+            if (process) process->unblock();
 
             send_command_byte(dev.port, 0); // clear start/stop bit
 
@@ -309,6 +317,8 @@ kpp::expected<kpp::dummy_t, DiskError> Disk::do_read_write(size_t sector, gsl::s
 
     volatile auto& int_status = raised_ints[m_dev.port==BusPort::Primary][m_dev.type==DriveType::Slave];
 
+    waiting_processes[m_dev.port==BusPort::Primary][m_dev.type==DriveType::Slave] = &Process::current();
+
     int_status = false;
 
     (void)ide::status_register(m_dev); // read status port to reset drive
@@ -316,10 +326,16 @@ kpp::expected<kpp::dummy_t, DiskError> Disk::do_read_write(size_t sector, gsl::s
     m_cont.send_command(m_dev, ata_read_dma_ex, action == RWAction::Read,
                         sector, count, data);
 
-    if (!Timer::sleep_until_int([&int_status]{return int_status;}, 2000))
-    {
-        return kpp::make_unexpected(DiskError{DiskError::TimeOut});
-    }
+//    if (!int_status)
+//    {
+//        Process::current().block();
+//        tasking::kernel_yield();
+//    }
+
+            if (!Timer::sleep_until([&int_status]{return int_status;}))
+            {
+                return kpp::make_unexpected(DiskError{DiskError::TimeOut});
+            }
 
     int_status = false;
 

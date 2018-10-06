@@ -55,6 +55,7 @@ public:
     static void unmap_page(void* v_addr);
     static void remap_page(uintptr_t p_addr, void* v_addr, uint32_t flags);
 
+    // TODO : add size field
     static bool is_mapped(const void* v_addr);
 
     static bool check_user_ptr(const void *v_addr, size_t size);

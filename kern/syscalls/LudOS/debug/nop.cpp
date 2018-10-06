@@ -30,7 +30,8 @@ SOFTWARE.
 
 #include "utils/logging.hpp"
 
+#include "tasking/scheduler.hpp"
+
 void sys_syscall_nop()
 {
-
 }

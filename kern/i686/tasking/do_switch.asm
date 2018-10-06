@@ -65,12 +65,10 @@ do_switch_same:
 
     mov esi, [esi+0x24]
 
-    push dword [ret_eip] ; push return address
-
     push dword [saved_eflags]
     popfd ; restore flags
 
-    ret ; jump to execution
+    jmp [ret_eip] ; jump to execution
 
 section .bss
 saved_eflags: resd 2

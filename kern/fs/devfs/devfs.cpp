@@ -80,7 +80,7 @@ public:
     {
         m_handl = kmsgbus.register_handler<kbd::TextEnteredEvent>([this](const kbd::TextEnteredEvent& e)
         {
-            if (Process::enabled())
+            if (Process::current().pid != 0)
             {
                 m_input_buffer.push_back(e.c);
             }

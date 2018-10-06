@@ -53,6 +53,10 @@ SOFTWARE.
 #include "drivers/storage/ide/ide_dma.hpp"
 #include "drivers/storage/ahci/ahci.hpp"
 
+#include "fs/vfs.hpp"
+#include "fs/devfs/devfs.hpp"
+#include "fs/procfs/procfs.hpp"
+
 #if USES_ACPICA
 #include "drivers/acpi/acpi_init.hpp"
 #include "drivers/acpi/powermanagement.hpp"
@@ -61,7 +65,9 @@ SOFTWARE.
 #include "drivers/driver.hpp"
 #include "drivers/pci/pcidriver.hpp"
 
+#include "syscalls/syscalls.hpp"
 #include "tasking/process.hpp"
+#include "tasking/scheduler.hpp"
 
 #include "graphics/vga.hpp"
 
@@ -81,6 +87,8 @@ SOFTWARE.
 #include "config.hpp"
 
 #include "drivers/pci/pcidriver.hpp"
+
+#include "global_init.hpp"
 
 extern "C" multiboot_header mbd;
 extern "C" int kernel_physical_end;
@@ -121,10 +129,8 @@ inline void early_abort(const char* str)
 void call_ctors()
 {
     uint32_t* ctor = (uint32_t*)&start_ctors;
-    //ctor += 1;
     while (ctor < (uint32_t*)&end_ctors)
     {
-        //serial::debug::write("ctor %p (%p)\n", ctor, &end_ctors);
         ((void(*)())*ctor)();
         ++ctor;
     }
@@ -145,18 +151,32 @@ void early_init()
 }
 #pragma GCC pop_options
 
+extern "C" void call_panic()
+{
+    log_serial("bad stack !\n");
+    halt();
+}
+
+extern "C" void check_stack();
+
+asm ("check_stack:"
+            "pushl %ebp\n"
+            "movl %esp, %ebp\n"
+            "subl $8, %esp\n"
+            "testl $0xF, %esp\n"
+            "je chk_exit\n"
+            "call call_panic\n"
+            "chk_exit: leave\n"
+            "ret\n");
+
 namespace i686
 {
 namespace pc
 {
+void init_task_entry();
+
 void init(uint32_t magic, const multiboot_info_t* mbd_info)
 {
-    int register esp asm("esp");
-    if ((esp & 0xF) != 0 && false)
-    {
-        early_abort("Stack is not aligned on a 16-byte boundary !");
-    }
-
     early_init();
 
     early_print("Booting LudOS...");
@@ -164,7 +184,7 @@ void init(uint32_t magic, const multiboot_info_t* mbd_info)
     serial::debug::init(BDA::com1_port());
     serial::debug::write("Serial COM1 : Booting LudOS v%d...\n", 1);
 
-    call_ctors(); // it is now safe to call global constructors
+    call_ctors();
 
     gdt::init();
 
@@ -181,8 +201,6 @@ void init(uint32_t magic, const multiboot_info_t* mbd_info)
     MultibootMeminfo::init_alloc_bitmap();
 
     uint64_t framebuffer_addr = bit_check(mbd_info->flags, 12) ? mbd_info->framebuffer_addr : 0xB8000;
-
-    serial::debug::write("Framebuffer address : 0x%x\n", framebuffer_addr);
 
     init_printf(nullptr, [](void*, char c){putchar(c);});
 
@@ -232,8 +250,6 @@ void init(uint32_t magic, const multiboot_info_t* mbd_info)
 
     traps::init();
 
-    log(Info, "Kernel end : %p\n", &kernel_physical_end);
-
     kernel_cmdline = multiboot::parse_cmdline();
     read_from_cmdline(kernel_cmdline);
     read_logging_config();
@@ -281,6 +297,31 @@ void init(uint32_t magic, const multiboot_info_t* mbd_info)
 
     init_emu_mem();
 
+    vfs::init();
+    devfs::init();
+    procfs::init();
+
+    init_syscalls();
+
+    tasking::scheduler_init();
+
+    auto idle_task = Process::create_kernel_task([]()
+    {
+        while (true)
+        {
+            wait_for_interrupts();
+            tasking::schedule();
+        }
+    });
+    (void)idle_task;
+
+    auto init_task = Process::create_kernel_task(init_task_entry);
+    init_task->switch_to();
+}
+
+void init_task_entry()
+{
+    check_stack();
 #if USES_ACPICA
     auto status = acpi_init();
     if (ACPI_FAILURE(status))
@@ -303,6 +344,8 @@ void init(uint32_t magic, const multiboot_info_t* mbd_info)
         log(Notice, "Fallback to IDE PIO mode\n");
         ide::pio::init();
     }
+
+    global_init();
 }
 }
 }

@@ -179,7 +179,8 @@ kpp::expected<kpp::dummy_t, DiskError> Disk::enable_caching(bool val)
     if (!val && m_caching)
     {
         auto result = flush_cache();
-        if (!result) return result;
+        warn("Error flushing cache on disk '%s' : %s\n", drive_name().c_str(), result.error().to_string());
+        return {};
     }
 
     // TODO : investigate why enabling caching destroys performance !

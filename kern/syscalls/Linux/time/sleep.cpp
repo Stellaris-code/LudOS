@@ -40,7 +40,9 @@ int sys_nanosleep(user_ptr<const struct timespec> req, user_ptr<struct timespec>
         return -EINVAL;
     }
 
+    Process::current().status = Process::Sleeping;
     tasking::sleep_queue.insert(Process::current().pid, req.get()->tv_nsec/1000 + req.get()->tv_sec*1'000'000);
+
     tasking::schedule();
 
     return EOK;

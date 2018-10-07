@@ -113,7 +113,5 @@ int main(int argc, char* argv[])
         update_key_state();
     }
 
-    while (true) {}
-
     return 0;
 }

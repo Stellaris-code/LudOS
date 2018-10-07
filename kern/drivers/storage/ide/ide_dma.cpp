@@ -116,25 +116,32 @@ void Controller::init()
         ide::dma::Disk::create_disk(*this, (BusPort)pair.first, (DriveType)pair.second);
         log(Debug, "Created ATA DMA disk on 0x%x 0x%x\n", io_base((BusPort)pair.first), pair.second);
     }
+
+    memset((void*)raised_ints, 0, sizeof(raised_ints));
 }
 
 bool Controller::common_handler(const ata_device& dev)
 {
     auto status = status_byte(dev.port);
 
-    //log(Debug, "Received PCI ATA IRQ on port 0x%x, status 0x%x\n", dev.port, status);
+    if (status & (1<<0))
+    {
+        log_serial("Received PCI ATA IRQ on port 0x%x, status 0x%x\n", dev.port, status);
+    }
 
     if (status & (1<<2))
     {
         bool slave = drive_register(dev) & (1<<4);
 
-        if ((status & (1<<0)) == 0) // last PRDT used up
+        if ((status & (1<<0)) == 0 || true) // TODO : investigate why sometimes it hangs when there are PRD pending
         {
             auto* process = waiting_processes[dev.port==BusPort::Primary][slave];
-            //            assert(process);
-            //            assert(process->is_blocked());
             raised_ints[dev.port==BusPort::Primary][slave] = true;
-            if (process) process->unblock();
+
+            if (process)
+            {
+                process->status = Process::Active;
+            }
 
             send_command_byte(dev.port, 0); // clear start/stop bit
 
@@ -148,8 +155,8 @@ bool Controller::common_handler(const ata_device& dev)
             {
                 drive_status[dev.port==BusPort::Primary][slave] = status_ok;
             }
-        }
 
+        }
         bit_clear(status, 0); bit_clear(status, 1); // clear error and interrupt bits
         send_status_byte(dev.port, status);
     }
@@ -323,19 +330,21 @@ kpp::expected<kpp::dummy_t, DiskError> Disk::do_read_write(size_t sector, gsl::s
 
     (void)ide::status_register(m_dev); // read status port to reset drive
 
+    Process::current().status = Process::IOWait;
     m_cont.send_command(m_dev, ata_read_dma_ex, action == RWAction::Read,
                         sector, count, data);
 
-//    if (!int_status)
-//    {
-//        Process::current().block();
-//        tasking::kernel_yield();
-//    }
-
-            if (!Timer::sleep_until([&int_status]{return int_status;}))
-            {
-                return kpp::make_unexpected(DiskError{DiskError::TimeOut});
-            }
+#if 1
+    if (!int_status)
+    {
+        tasking::kernel_yield();
+    }
+#else
+    if (!Timer::sleep_until([&int_status]{return int_status;}, 1000))
+    {
+        return kpp::make_unexpected(DiskError{DiskError::TimeOut});
+    }
+#endif
 
     int_status = false;
 

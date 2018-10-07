@@ -90,7 +90,7 @@ public:
         children.emplace_back(std::make_shared<string_node>("cmdline", kernel_cmdline));
         children.emplace_back(std::make_shared<string_node>("uptime",  []{ return kpp::to_string(Time::uptime()); }));
         children.emplace_back(std::make_shared<string_node>("version", get_version_str()));
-        if (Process::enabled()) children.emplace_back(std::make_shared<vfs::symlink>(kpp::to_string(Process::current().pid), "self"));
+        children.emplace_back(std::make_shared<vfs::symlink>(kpp::to_string(Process::current().pid), "self"));
 
         children.emplace_back(std::make_shared<interface_test>("interface_test"));
 

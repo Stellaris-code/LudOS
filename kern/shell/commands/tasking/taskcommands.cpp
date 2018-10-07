@@ -73,7 +73,7 @@ void install_task_commands(Shell &sh)
 
          kprintf("File type : %s\n", loader->file_type().c_str());
 
-         std::vector<kpp::string> program_args(args.size()+1);
+         std::vector<kpp::string> program_args(args.size());
          program_args[0] = sh.get_path(path);
          for (size_t i { 1 }; i < args.size(); ++i)
          {
@@ -96,6 +96,12 @@ void install_task_commands(Shell &sh)
          int status = 0xdeadbeef;
          Process::current().wait_for(process->pid, &status);
          tasking::kernel_yield();
+
+         if (WIFSIGNALED(status))
+         {
+             sh.error("Exited with signal %d\n", WTERMSIG(status));
+             return WTERMSIG(status);
+         }
 
          return WEXITSTATUS(status);
      }});

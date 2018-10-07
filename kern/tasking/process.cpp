@@ -31,6 +31,7 @@ SOFTWARE.
 #include "fs/fsutils.hpp"
 
 #include "syscalls/syscalls.hpp"
+#include "tasking/scheduler.hpp"
 
 #include "mem/memmap.hpp"
 #include "mem/meminfo.hpp"
@@ -140,16 +141,12 @@ void Process::close_fd(size_t fd)
     (*data->fd_table)[fd].node = nullptr;
 }
 
-bool Process::is_waiting() const
-{
-    return blocked || data->waiting_pid.has_value();
-}
-
 void Process::wait_for(pid_t pid, int *wstatus)
 {
     data->waiting_pid = pid;
     data->wstatus = wstatus;
     data->waitstatus_phys = Memory::physical_address(wstatus);
+    status = ChildWait;
     assert(data->wstatus);
 }
 
@@ -180,23 +177,6 @@ bool Process::check_perms(uint16_t perms, uint16_t tgt_uid, uint16_t tgt_gid, ui
     return false;
 }
 
-bool Process::enabled()
-{
-    return m_current_process != nullptr;
-}
-
-Process &Process::current()
-{
-    assert(enabled());
-
-    return *m_current_process;
-}
-
-size_t Process::count()
-{
-    return m_process_count;
-}
-
 void Process::raise(pid_t target_pid, int signal, const siginfo_t &siginfo)
 {
     auto proc = Process::by_pid(target_pid);
@@ -212,7 +192,7 @@ void Process::raise(pid_t target_pid, int signal, const siginfo_t &siginfo)
             return;
         case SIG_ACTION_CORE:
         case SIG_ACTION_TERM:
-            Process::kill(target_pid, __W_STOPCODE(signal));
+            Process::kill(target_pid, __W_EXITCODE(255, signal));
             return;
         case SIG_ACTION_STOP:
             // TODO
@@ -235,6 +215,41 @@ void Process::kill(pid_t pid, int err_code)
     }
 
     assert(by_pid(pid));
+
+    siginfo_t info;
+    info.si_signo = SIGCHLD;
+    info.si_code = (WIFEXITED(err_code) ? CLD_EXITED : CLD_KILLED);
+    info.si_pid = pid;
+    info.si_uid = m_processes[pid]->data->uid;
+
+    info.si_status = err_code;
+
+    m_processes[pid]->status = Zombie;
+
+    kmsgbus.send(ProcessDestroyedEvent{pid, err_code});
+
+    assert(by_pid(by_pid(pid)->parent));
+    auto& parent = *by_pid(by_pid(pid)->parent);
+
+    if (parent.status == ChildWait && (parent.data->waiting_pid.value() == -1 || parent.data->waiting_pid.value() == pid))
+    {
+        log_serial("Waking up PID %d with PID %d\n", parent.pid, pid);
+        parent.wake_up(pid, err_code);
+    }
+
+    parent.raise(parent.pid, SIGCHLD, info);
+
+    if (pid == m_current_process->pid) // if we killed the current process, do a context switch
+    {
+        tasking::schedule();
+    }
+}
+
+void Process::release_zombie(pid_t pid)
+{
+    assert(m_current_process->pid != pid);
+    assert(by_pid(pid)->status == Zombie);
+
     assert(by_pid(by_pid(pid)->parent));
     auto& parent = *by_pid(by_pid(pid)->parent);
 
@@ -242,31 +257,9 @@ void Process::kill(pid_t pid, int err_code)
     assert(find(parent.data->children, pid));
     erase(parent.data->children, pid);
 
-    if (parent.is_waiting() && (parent.data->waiting_pid.value() == -1 || parent.data->waiting_pid.value() == pid))
-    {
-        log_serial("Waking up PID %d with PID %d\n", parent.pid, pid);
-        parent.wake_up(pid, err_code);
-    }
-
-    if (Process::current().pid == pid)
-    {
-        Process::current().unswitch();
-        m_current_process = nullptr;
-    }
-
-    siginfo_t info;
-    info.si_signo = SIGCHLD;
-    info.si_code = (WIFEXITED(err_code) ? CLD_EXITED : CLD_KILLED);
-    info.si_pid = pid;
-    info.si_uid = m_processes[pid]->data->uid;
-    info.si_status = err_code;
     m_processes[pid].reset();
-    --m_process_count;
-    assert(!by_pid(pid));
 
-    kmsgbus.send(ProcessDestroyedEvent{pid, err_code});
-
-    parent.raise(parent.pid, SIGCHLD, info);
+    m_process_count--;
 }
 
 Process *Process::by_pid(pid_t pid)
@@ -578,7 +571,6 @@ Process::~Process()
             close_fd(fd);
         }
     }
-
     //unswitch();
     cleanup();
 }

@@ -79,6 +79,8 @@ void Process::wake_up(pid_t child, int err_code)
 
     data->waiting_pid.reset();
 
+    status = Active;
+
     arch_context->regs.eax = child; // set waitpid return value
 }
 
@@ -113,8 +115,7 @@ void Process::execute_sighandler(int signal, pid_t returning_pid, const siginfo_
     push_onto_stack(info);
 
     set_instruction_pointer(signal_trampoline_page);
-    if (m_current_process)
-        Process::current().unswitch();
+    Process::current().unswitch();
     switch_to();
 }
 
@@ -236,13 +237,12 @@ void Process::set_instruction_pointer(unsigned int value)
 void Process::switch_to()
 {
     {
+        //assert(status == Active); TODO : check if in sighandler too
         if (m_current_process &&
                 (m_current_process->arch_context->regs.cs & 0x3) == 0) // if previous task was in ring 0
         {
             m_current_process->data->kernel_stack_ptr = m_current_process->arch_context->regs.esp;
         }
-
-        assert(!is_waiting());
 
         map_address_space();
         map_shm();
@@ -309,7 +309,7 @@ Process *Process::clone(Process &proc, uint32_t flags)
 
 void Process::unmap_address_space()
 {
-#if 1
+#if 0
     Paging::unmap_user_space(); // reloading all the page tables is really costly, not the right solution
 #else
     for (const auto& pair : data->mappings)

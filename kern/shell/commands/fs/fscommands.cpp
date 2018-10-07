@@ -183,8 +183,8 @@ void install_fs_commands(Shell &sh)
      {
          for (Disk& disk : Disk::disks())
          {
-             kprintf("%s : %s (%s)\n", disk.drive_name().c_str(), human_readable_size(disk.disk_size()).c_str(),
-             disk.read_only() ? "ro" : "rw");
+             kprintf("%s : %s (%s) (%s)\n", disk.drive_name().c_str(), human_readable_size(disk.disk_size()).c_str(),
+             disk.read_only() ? "ro" : "rw", disk.caching_enabled() ? "cached" : "uncached");
          }
          return 0;
      }});

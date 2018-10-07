@@ -80,37 +80,36 @@ public:
     static constexpr kpp::array<uintptr_t, 64> default_sighandler_actions
     {{
             SIG_ACTION_TERM, // 0
-            SIG_ACTION_TERM, // SIGHUP
-            SIG_ACTION_TERM, // SIGINT
-            SIG_ACTION_CORE, // SIGQUIT
-            SIG_ACTION_CORE, // SIGILL
-            SIG_ACTION_CORE, // SIGABRT
-            SIG_ACTION_CORE, // SIGFPE
-            SIG_ACTION_TERM, // SIGKILL
-            SIG_ACTION_CORE, // SIGSEGV
-            SIG_ACTION_TERM, // SIGPIPE
-            SIG_ACTION_TERM, // SIGALRM
-            SIG_ACTION_TERM, // SIGTERM
-            SIG_ACTION_TERM, // SIGUSR1
-            SIG_ACTION_TERM, // SIGUSR2
-            SIG_ACTION_IGN , // SIGCHLD
-            SIG_ACTION_CONT, // SIGCONT
-            SIG_ACTION_STOP, // SIGSTOP
-            SIG_ACTION_STOP, // SIGTSTP
-            SIG_ACTION_STOP, // SIGTTIN
-            SIG_ACTION_STOP  // SIGTTOU
-            // The rest is filled with zeroes which are equal to SIG_ACTION_TERM
+                    SIG_ACTION_TERM, // SIGHUP
+                    SIG_ACTION_TERM, // SIGINT
+                    SIG_ACTION_CORE, // SIGQUIT
+                    SIG_ACTION_CORE, // SIGILL
+                    SIG_ACTION_CORE, // SIGABRT
+                    SIG_ACTION_CORE, // SIGFPE
+                    SIG_ACTION_TERM, // SIGKILL
+                    SIG_ACTION_CORE, // SIGSEGV
+                    SIG_ACTION_TERM, // SIGPIPE
+                    SIG_ACTION_TERM, // SIGALRM
+                    SIG_ACTION_TERM, // SIGTERM
+                    SIG_ACTION_TERM, // SIGUSR1
+                    SIG_ACTION_TERM, // SIGUSR2
+                    SIG_ACTION_IGN , // SIGCHLD
+                    SIG_ACTION_CONT, // SIGCONT
+                    SIG_ACTION_STOP, // SIGSTOP
+                    SIG_ACTION_STOP, // SIGTSTP
+                    SIG_ACTION_STOP, // SIGTTIN
+                    SIG_ACTION_STOP  // SIGTTOU
+                    // The rest is filled with zeroes which are equal to SIG_ACTION_TERM
         }};
 
 public:
-    static bool enabled();
-
     static Process* create(const std::vector<kpp::string> &args);
     static Process* create_kernel_task(void(*procedure)());
     static Process* clone(Process& proc, uint32_t flags = 0);
-    static Process& current();
-    static size_t   count();
+    static Process& current() { return *m_current_process; }
+    static size_t   count()   { return  m_process_count  ; }
     static void     kill(pid_t pid, int err_code);
+    static void     release_zombie(pid_t pid);
     static Process* by_pid(pid_t pid);
     static std::vector<pid_t> process_list();
 
@@ -132,12 +131,7 @@ public:
     tasking::FDInfo *get_fd(size_t fd);
     void close_fd(size_t fd);
 
-    bool is_waiting() const;
     void wait_for(pid_t pid, int* wstatus);
-
-    void block() { blocked = true; }
-    void unblock() { blocked = false; }
-    bool is_blocked() const { return blocked; }
 
     void switch_to();
     void unswitch();
@@ -166,9 +160,17 @@ public:
     pid_t pid { 0 };
     pid_t tgid { 0 };
     pid_t parent { 0 };
-    bool blocked { false };
     std::unique_ptr<ProcessData> data;
     ProcessArchContext* arch_context { nullptr };
+    enum
+    {
+        Active,
+        Paused,
+        ChildWait,
+        IOWait,
+        Sleeping,
+        Zombie
+    } status = Active;
 
 private:
     static pid_t find_free_pid();

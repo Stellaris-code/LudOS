@@ -106,6 +106,8 @@ SOFTWARE.
 // : faire une boucle de traitement de callbacks d'interruption
 // : implémenter /dev/input
 // : implémenter expanding stack
+// : fix caching
+// : PRIORITAIRE : pour les read disk, ne pas retourner une structure allouée mais prendre un ptr en argument
 
 /**********************************/
 // BUGS
@@ -126,34 +128,8 @@ SOFTWARE.
 // * don't forget about fpu state
 /**********************************/
 
-void test1()
-{
-    int esp;
-    uint8_t val = 0;
-    while (true)
-    {
-        asm volatile ("movl %%esp, %0":"=m"(esp):);
-        kprintf("Hi ! %d (esp : 0x%x)\n", val, esp);
-        ++val;
-        tasking::kernel_yield();
-    }
-}
-void test2()
-{
-    int esp;
-    uint8_t val = 0;
-    while (true)
-    {
-        asm volatile ("movl %%esp, %0":"=m"(esp):);
-        kprintf("Hello 2! %d (esp : 0x%x)\n", val, esp);
-        ++val;
-        tasking::kernel_yield();
-    }
-}
-
 void global_init()
 {
-
     beep(200);
 
     power::init_power_management();
@@ -252,10 +228,6 @@ void global_init()
     MemBuffer buf(512*16);
     MemoryDisk::create_disk(buf.data(), buf.size(), "scratch");
 
-    //    auto task1 = Process::create_kernel_task(test1);
-    //    auto task2 = Process::create_kernel_task(test2);
-    //    task1->switch_to();
-
     Shell sh;
     sh.params.prompt = ESC_BG(13,132,203) "  LudOS " ESC_POP_COLOR ESC_BG(78,154,6) ESC_FG(13,132,203) "▶" ESC_POP_COLOR " :{path}> " ESC_POP_COLOR
             ESC_FG(78,154,6) "▶" ESC_POP_COLOR " ";
@@ -265,9 +237,6 @@ void global_init()
     install_gfx_commands(sh);
     install_net_commands(sh);
     install_task_commands(sh);
-
-    sh.command("run /initrd/init.sh");
-    sh.run();
 
 #if 0
     Timer::register_callback(100, []
@@ -286,4 +255,7 @@ void global_init()
         }
     }, false);
 #endif
+
+    sh.command("run /initrd/init.sh");
+    sh.run();
 }

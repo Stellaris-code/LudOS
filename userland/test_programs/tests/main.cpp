@@ -203,6 +203,10 @@ int main(int argc, char* argv[])
     {
         ensure(execute_program("/initrd/test_programs/ShmTest") == 0);
     }
+    for (size_t i { 0 }; i < 5; ++i)
+    {
+        ensure(execute_program("/initrd/test_programs/SignalsTest") == 0);
+    }
 
     printf("Mean ticks : %zd\n", total_test_ticks / 100);
 

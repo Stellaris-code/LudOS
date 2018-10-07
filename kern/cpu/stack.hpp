@@ -1,7 +1,7 @@
 /*
-main.cpp
+stack.hpp
 
-Copyright (c) 28 Yann BOUCHER (yann)
+Copyright (c) 06 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,37 +22,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
+#ifndef STACK_HPP
+#define STACK_HPP
 
-#include <syscalls/syscall_list.hpp>
+// returns previous stack pointer value
+extern "C" void* switch_stacks(void* new_stack);
 
-void test()
-{
-    int ret = fork();
-    if (ret < 0)
-    {
-        return;
-    }
-    else if (ret == 0)
-    {
-        exit(1);
-
-        return;
-    }
-    else
-    {
-        int status;
-        waitpid(ret, &status, 0);
-    }
-}
-
-int main()
-{
-    syscall_nop();
-
-    for (size_t i { 0 }; i < 1000; ++i)
-    {
-        test();
-    }
-
-    syscall_nop();
-}
+#endif // STACK_HPP

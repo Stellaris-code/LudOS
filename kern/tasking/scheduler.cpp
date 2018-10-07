@@ -32,7 +32,16 @@ SOFTWARE.
 
 namespace tasking
 {
-DeltaQueue<pid_t> sleep_queue;
+DeltaQueue<pid_t> sleep_queue
+{
+    [](pid_t pid)
+    {
+        auto proc = Process::by_pid(pid);
+        assert(proc); assert(proc->status == Process::Sleeping);
+
+        proc->status = Process::Active;
+    }
+};
 
 time_t elapsed_ticks { 0 };
 
@@ -42,21 +51,25 @@ void scheduler_init()
 
 void update_sleep_queue()
 {
+    asm volatile ("cli\n"); // TODO : have a lock() function
+
     time_t current_ticks = Time::total_ticks();
     time_t microsec_duration = (current_ticks - elapsed_ticks) / (Time::clock_speed());
     elapsed_ticks = current_ticks;
 
     sleep_queue.decrease(microsec_duration);
+
+    asm volatile ("sti\n");
 }
 
 bool process_ready(pid_t pid)
 {
-    return !sleep_queue.find(pid) && !Process::by_pid(pid)->is_waiting();
+    return Process::by_pid(pid)->status == Process::Active;
 }
 
 pid_t find_next_pid()
 {
-    pid_t next_pid = Process::enabled() ? Process::current().pid : 0;
+    pid_t next_pid = Process::current().pid;
     // while next_pid is a waiting pid, set next_pid to the next process in the process list
     do
     {
@@ -66,10 +79,21 @@ pid_t find_next_pid()
     return next_pid;
 }
 
+void delete_zombie_processes()
+{
+    for (pid_t pid { 0 }; pid < (pid_t)Process::count(); ++pid)
+    {
+        if (auto proc = Process::by_pid(pid); proc && proc->status == Process::Zombie && proc->pid != Process::current().pid)
+        {
+            Process::release_zombie(pid);
+        }
+    }
+}
+
 void schedule()
 {
-    // FIXME : not proper wording ("active"?)
-    if (Process::enabled()) Process::current().unswitch();
+    Process::current().unswitch();
+    delete_zombie_processes();
 
     update_sleep_queue();
 

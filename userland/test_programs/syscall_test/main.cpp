@@ -65,9 +65,10 @@ int main(int argc, char* argv[])
 
     print_debug("Am here\n");
 
+    printf("arg count : %d\n", argc);
     for (size_t i { 0 }; i < argc; ++i)
     {
-        printf("%s", argv[i]);
+        printf("'%s'", argv[i]);
         printf("%s", "\n");
     }
 
@@ -110,5 +111,6 @@ int main(int argc, char* argv[])
     printf("Process name : %s\n", name_buf);
 
     free(allocated_str);
+
     return 0;
 }

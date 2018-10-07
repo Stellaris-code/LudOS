@@ -34,8 +34,8 @@ int main(int argc, char* argv[])
 {
     if (argc < 2)
     {
-//        fprintf(stdout, "cat needs one argument\n");
-//        return 1;
+        fprintf(stdout, "cat needs one argument\n");
+        return 1;
     }
 
     const char* path = argv[1];
@@ -44,17 +44,17 @@ int main(int argc, char* argv[])
     if (fd < 0)
     {
         perror("open");
-        while (true){}
+        return 0;
     }
 
     char buf[0x1000];
     if (read(fd, buf, sizeof(buf)) < 0)
     {
         perror("read");
-        while (true){}
+        return 0;
     }
 
     printf("%s\n", buf);
-    while (true){}
+
     return 0;
 }

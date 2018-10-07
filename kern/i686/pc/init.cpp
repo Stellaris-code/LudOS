@@ -309,8 +309,8 @@ void init(uint32_t magic, const multiboot_info_t* mbd_info)
     {
         while (true)
         {
-            wait_for_interrupts();
             tasking::schedule();
+            wait_for_interrupts();
         }
     });
     (void)idle_task;

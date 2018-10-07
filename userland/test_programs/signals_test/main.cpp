@@ -122,6 +122,5 @@ int main(int argc, char* argv[])
 
     ensure(segfault_check == true);
 
-    while (true){}
     return 0;
 }

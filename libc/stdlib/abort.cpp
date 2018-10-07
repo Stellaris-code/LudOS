@@ -29,6 +29,9 @@ SOFTWARE.
 
 #if defined(__is_libk)
 #include "panic.hpp"
+#else
+#include <signal.h>
+#include "syscalls/syscall_list.hpp"
 #endif
 
 #include "utils/builtins.hpp"
@@ -43,6 +46,7 @@ void abort_impl(const char* file, size_t line, const char* fun)
 #else
     // TODO: Abnormally terminate the process as if by SIGABRT.
     printf("abort()\n");
+    kill(getpid(), SIGABRT);
 #endif
     while (true) { }
     unreachable();
@@ -59,6 +63,7 @@ void abort(void)
 #else
     // TODO: Abnormally terminate the process as if by SIGABRT.
     printf("abort()\n");
+    kill(getpid(), SIGABRT);
 #endif
     while (true) { }
     unreachable();
@@ -73,6 +78,7 @@ void _abort(void)
 #else
     // TODO: Abnormally terminate the process as if by SIGABRT.
     printf("abort()\n");
+    kill(getpid(), SIGABRT);
 #endif
     while (true) { }
     unreachable();

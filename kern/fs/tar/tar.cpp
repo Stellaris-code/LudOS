@@ -268,17 +268,18 @@ void TarFS::attach_parents(std::vector<std::shared_ptr<tar_node>> nodes)
     }
 }
 
-[[nodiscard]] kpp::expected<MemBuffer, vfs::FSError> tar_node::read_impl(size_t offset, size_t size) const
+[[nodiscard]] kpp::expected<size_t, vfs::FSError> tar_node::read_impl(size_t offset, gsl::span<uint8_t> data) const
 {
     if (!m_link_target.empty())
     {
         auto result = vfs::find(m_parent->path() + m_link_target);
         if (!result) return kpp::make_unexpected(vfs::FSError{vfs::FSError::InvalidLink});
-        return result.value()->read(offset, size);
+        return result.value()->read(offset, data);
     }
 
-    size_t amnt = std::min(size, this->size());
-    return MemBuffer(m_data_addr + offset, m_data_addr + offset + amnt);
+    size_t amnt = std::min<long>(data.size(), this->size());
+    std::copy(m_data_addr + offset, m_data_addr + offset + amnt, data.begin());
+    return amnt;
 }
 
 std::vector<std::shared_ptr<vfs::node> > tar_node::readdir_impl()

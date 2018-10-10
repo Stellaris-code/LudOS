@@ -47,9 +47,9 @@ public:
 
 public:
     [[nodiscard]]
-    kpp::expected<kpp::dummy_t, DiskError> write_sector(size_t sec, gsl::span<const uint8_t> data);
+    kpp::expected<kpp::dummy_t, DiskError> write_sectors(size_t sec, gsl::span<const uint8_t> data);
     [[nodiscard]]
-    kpp::expected<MemBuffer, DiskError> read_sector(size_t sec, size_t count);
+    kpp::expected<kpp::dummy_t, DiskError> read_sectors(size_t sec, gsl::span<uint8_t> data);
     [[nodiscard]]
     kpp::expected<kpp::dummy_t, DiskError> flush();
 

@@ -77,7 +77,7 @@ int main(int argc, char* argv[])
     print_debug(allocated_str);
     print_debug(std_str.c_str());
 
-    print_serial(local_str);
+//    /print_serial(local_str);
 
     std::string process_info;
     char buf[512];

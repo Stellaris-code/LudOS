@@ -34,10 +34,6 @@ SOFTWARE.
 
 #include "power/powermanagement.hpp"
 #include "time/timer.hpp"
-#include "tasking/spinlock.hpp"
-
-DECLARE_LOCK(read_lock);
-DECLARE_LOCK(write_lock);
 
 void Disk::system_init()
 {
@@ -77,37 +73,55 @@ void Disk::set_read_only(bool val)
 
 kpp::expected<MemBuffer, DiskError> Disk::read(size_t offset, size_t size) const
 {
-    //LOCK(read_lock);
+    MemBuffer buf;
+    buf.resize(size);
 
+    auto result = read(offset, buf);
+    if (!result) return kpp::make_unexpected(result.error());
+
+    return std::move(buf);
+}
+
+kpp::expected<kpp::dummy_t, DiskError> Disk::read(size_t offset, gsl::span<uint8_t> data) const
+{
     const size_t sect_size = sector_size();
 
-    const size_t sector = offset / sect_size;
-    const size_t count = ((offset+size)/sect_size + ((offset+size)%sect_size?1:0))
-            - (offset/sect_size + (offset%sect_size?1:0))
-            + ((offset+size)%sect_size?1:0);
+    const size_t first_stride_size = offset%sect_size;
+    const size_t second_stride_size = (offset+data.size()) % sect_size;
+    const size_t mid_stride_size = data.size() - ((sect_size - first_stride_size)%sect_size) - second_stride_size;
 
-    if (count > disk_size()/sector_size() + (disk_size()%sector_size()?1:0))
+    if (first_stride_size != 0) // offset isn't aligned, manually fetch the first sector
     {
-        panic("Count : %d/%d; off/size: %d/%d\n", count, disk_size()/sector_size() + (disk_size()%sector_size()?1:0),
-              offset, size);
+        MemBuffer buf(sect_size);
+        auto result = read_cache_sectors(offset/sect_size, buf);
+        if (!result) return kpp::make_unexpected(result.error());
+        std::copy(buf.begin() + first_stride_size, buf.begin() + sect_size, data.begin());
+    }
+    if (second_stride_size != 0) // size isn't aligned, manually fetch the last sector
+    {
+        MemBuffer buf(sect_size);
+        auto result = read_cache_sectors((offset+data.size())/sect_size, buf);
+        if (!result) return kpp::make_unexpected(result.error());
+        std::copy(buf.begin(), buf.begin() + second_stride_size, data.begin() + (data.size()-second_stride_size));
     }
 
-    assert(count <= disk_size()/sector_size() + (disk_size()%sector_size()?1:0));
+    if (mid_stride_size != 0)
+    {
+        gsl::span<uint8_t> aligned_span = {data.data() + (sect_size - first_stride_size)%sect_size,
+                                           (long)mid_stride_size};
 
-    auto result = read_cache_sector(sector, count);
-    if (!result) return result;
+        assert(aligned_span.size() % sect_size == 0);
 
-    auto data = std::move(result.value());
+        auto result = read_cache_sectors(offset/sect_size, aligned_span);
+        if (!result) return kpp::make_unexpected(result.error());
+    }
 
-    assert(data.size() >= size);
+    if (first_stride_size || second_stride_size)
+    {
+        log_serial("Unaligned disk read\n");
+    }
 
-    offset %= sect_size;
-
-    assert(data.size() >= offset + size);
-
-    //UNLOCK(read_lock);
-
-    return MemBuffer{data.begin() + offset, data.begin() + offset + size};
+    return {};
 }
 
 kpp::expected<MemBuffer, DiskError> Disk::read() const
@@ -118,36 +132,34 @@ kpp::expected<MemBuffer, DiskError> Disk::read() const
 [[nodiscard]]
 kpp::expected<kpp::dummy_t, DiskError> Disk::write_offseted_sector(size_t base, size_t byte_off, gsl::span<const uint8_t> data)
 {
-    //LOCK(write_lock);
+    const size_t sector_size = this->sector_size();
 
-    assert((size_t)data.size() <= sector_size());
+    assert((size_t)data.size() <= sector_size);
     assert(data.size() + byte_off <= disk_size());
 
     gsl::span<const uint8_t> spans[2];
-    spans[0] = data.subspan(0, std::min<size_t>(sector_size() - byte_off, data.size()));
+    spans[0] = data.subspan(0, std::min<size_t>(sector_size - byte_off, data.size()));
 
-    if (sector_size() - byte_off < (size_t)data.size())
+    if (sector_size - byte_off < (size_t)data.size())
     {
-        spans[1] = data.subspan(sector_size() - byte_off);
+        spans[1] = data.subspan(sector_size - byte_off);
     }
 
+    uint8_t sect_data[sector_size];
+    gsl::span sect_span = {sect_data, (long)sector_size};
     for (size_t i { 0 }; i < 2; ++i)
     {
-        auto result = read_cache_sector(base+i, 1);
-        assert(result); // TODO
+        auto result = read_cache_sectors(base+i, sect_span);
+        assert(result);
 
-        auto sect_data = std::move(result.value());
+        assert((size_t)spans[i].size() <= sect_span.size() - byte_off);
 
-        assert((size_t)spans[i].size() <= sect_data.size() - byte_off);
-
-        std::copy(spans[i].begin(), spans[i].end(), sect_data.begin() + byte_off);
-        auto write_result = write_cache_sector(base+i, sect_data);
+        std::copy(spans[i].begin(), spans[i].end(), sect_data + byte_off);
+        auto write_result = write_cache_sectors(base+i, sect_span);
         if (!write_result) return write_result;
 
         byte_off = 0;
     }
-
-    //UNLOCK(write_lock);
 
     return {};
 }
@@ -199,19 +211,19 @@ kpp::expected<kpp::dummy_t, DiskError> Disk::flush_cache()
     return {};
 }
 
-kpp::expected<MemBuffer, DiskError> Disk::read_cache_sector(size_t sector, size_t count) const
+kpp::expected<kpp::dummy_t, DiskError> Disk::read_cache_sectors(size_t sector, gsl::span<uint8_t> data) const
 {
-    if (m_caching) return m_cache.read_sector(sector, count);
-    else return read_sector(sector, count);
+    if (m_caching) return m_cache.read_sectors(sector, data);
+    else return read_sectors(sector, data);
 }
 
 [[nodiscard]]
-kpp::expected<kpp::dummy_t, DiskError> Disk::write_cache_sector(size_t sector, gsl::span<const uint8_t> data)
+kpp::expected<kpp::dummy_t, DiskError> Disk::write_cache_sectors(size_t sector, gsl::span<const uint8_t> data)
 {
     if (read_only()) return kpp::make_unexpected(DiskError{DiskError::ReadOnly});
 
-    if (m_caching) return m_cache.write_sector(sector, data);
-    else return write_sector(sector, data);
+    if (m_caching) return m_cache.write_sectors(sector, data);
+    else return write_sectors(sector, data);
 }
 
 ref_vector<Disk> Disk::disks()
@@ -237,19 +249,18 @@ MemoryDisk::MemoryDisk(const uint8_t *data, size_t size, const kpp::string& name
     m_const = true;
 }
 
-kpp::expected<MemBuffer, DiskError> MemoryDisk::read_sector(size_t sector, size_t count) const
+kpp::expected<kpp::dummy_t, DiskError> MemoryDisk::read_sectors(size_t sector, gsl::span<uint8_t> data) const
 {
-    MemBuffer data(count * sector_size());
-
     const size_t offset = sector * sector_size();
+    const size_t count  = data.size() / sector_size();
 
     std::copy(m_data + offset, m_data + offset + count * sector_size(), data.begin());
 
-    return std::move(data);
+    return {};
 }
 
 [[nodiscard]]
-kpp::expected<kpp::dummy_t, DiskError> MemoryDisk::write_sector(size_t sector, gsl::span<const uint8_t> data)
+kpp::expected<kpp::dummy_t, DiskError> MemoryDisk::write_sectors(size_t sector, gsl::span<const uint8_t> data)
 {
     if (m_const)
     {
@@ -269,25 +280,26 @@ DiskSlice::DiskSlice(Disk &disk, size_t offset, size_t size)
     set_read_only(disk.read_only());
 }
 
-kpp::expected<MemBuffer, DiskError> DiskSlice::read_sector(size_t sector, size_t count) const
+kpp::expected<kpp::dummy_t, DiskError> DiskSlice::read_sectors(size_t sector, gsl::span<uint8_t> data) const
 {
+    const size_t count = data.size()/sector_size();
     if (sector + count > m_size)
     {
         return kpp::make_unexpected(DiskError{DiskError::OutOfBounds});
     }
 
-    return m_base_disk.read_sector(sector + m_offset, count);
+    return m_base_disk.read_sectors(sector + m_offset, data);
 }
 
 [[nodiscard]]
-kpp::expected<kpp::dummy_t, DiskError> DiskSlice::write_sector(size_t sector, gsl::span<const uint8_t> data)
+kpp::expected<kpp::dummy_t, DiskError> DiskSlice::write_sectors(size_t sector, gsl::span<const uint8_t> data)
 {
     if (sector + data.size()/sector_size() > m_size)
     {
         return kpp::make_unexpected(DiskError{DiskError::OutOfBounds});
     }
 
-    return m_base_disk.write_sector(sector + m_offset, data);
+    return m_base_disk.write_sectors(sector + m_offset, data);
 }
 
 void test_writes(Disk &disk)

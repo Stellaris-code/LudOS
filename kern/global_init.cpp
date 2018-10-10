@@ -96,6 +96,7 @@ SOFTWARE.
 // TODO : restore ucontext_t* modified by signal handlers
 // TODO : optimized page copy function
 // TODO : mettre une page sentinelle après chaque stack de chaque processus
+// TODO : put a lock on the ext2fs for earch access
 
 // ROADMAP
 // : supprimer la libc++ & libcxxabi
@@ -107,7 +108,7 @@ SOFTWARE.
 // : implémenter /dev/input
 // : implémenter expanding stack
 // : fix caching
-// : PRIORITAIRE : pour les read disk, ne pas retourner une structure allouée mais prendre un ptr en argument
+// : Pour ext2fs : prendre un span en argument au lieu de retourner un MemBuffer
 
 /**********************************/
 // BUGS
@@ -125,6 +126,7 @@ SOFTWARE.
 // --> SSE and FPU state between interrupts !!
 // --> ctors ?
 // --> any impl in MessageBus
+// --> m_current_block in ext2fs
 // * don't forget about fpu state
 /**********************************/
 

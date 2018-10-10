@@ -50,7 +50,7 @@ struct disk_file : public vfs::node
     Disk& disk() { return m_disk; }
 
 protected:
-    [[nodiscard]] virtual kpp::expected<MemBuffer, vfs::FSError> read_impl(size_t offset, size_t size) const override;
+    [[nodiscard]] virtual kpp::expected<size_t, vfs::FSError> read_impl(size_t offset, gsl::span<uint8_t> data) const override;
     [[nodiscard]] virtual kpp::expected<kpp::dummy_t, vfs::FSError> write_impl(size_t offset, gsl::span<const uint8_t> data) override;
 
 public:

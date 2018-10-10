@@ -88,21 +88,22 @@ public:
     }
 
 protected:
-    [[nodiscard]] virtual kpp::expected<MemBuffer, vfs::FSError> read_impl(size_t offset, size_t size) const override
+    [[nodiscard]] virtual kpp::expected<size_t, vfs::FSError> read_impl(size_t offset, gsl::span<uint8_t> data) const override
     {
         MemBuffer buf;
 
-        while (m_input_buffer.size() < size) { wait_for_interrupts(); };
+        while (m_input_buffer.size() < data.size()) { wait_for_interrupts(); };
 
-        for (size_t i { 0 }; i < size; ++i)
+        for (size_t i { 0 }; i < data.size(); ++i)
         {
             buf.emplace_back(m_input_buffer.front());
             m_input_buffer.pop_front();
         }
 
-        assert(buf.size() == size);
+        assert(buf.size() == data.size());
 
-        return std::move(buf);
+        std::copy(buf.begin(), buf.end(), data.begin());
+        return data.size();
     }
 
 private:
@@ -178,14 +179,14 @@ void init()
 
 size_t disk_file::size() const { return m_disk.disk_size(); }
 
-kpp::expected<MemBuffer, vfs::FSError> disk_file::read_impl(size_t offset, size_t size) const
+[[nodiscard]] kpp::expected<size_t, vfs::FSError> disk_file::read_impl(size_t offset, gsl::span<uint8_t> data) const
 {
-    auto result = m_disk.read(offset, size);
+    auto result = m_disk.read(offset, data);
     if (!result)
     {
         return kpp::make_unexpected(vfs::FSError{vfs::FSError::ReadError, {result.error().type}});
     }
-    return std::move(result.value());
+    return data.size();
 }
 
 kpp::expected<kpp::dummy_t, vfs::FSError> disk_file::write_impl(size_t offset, gsl::span<const uint8_t> data)

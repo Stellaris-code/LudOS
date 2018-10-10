@@ -50,7 +50,7 @@ struct tar_node : public vfs::node
         : vfs::node(parent), m_fs(fs)
     {}
 
-    [[nodiscard]] virtual kpp::expected<MemBuffer, vfs::FSError> read_impl(size_t offset, size_t size) const override;
+    [[nodiscard]] virtual result<size_t> read_impl(size_t offset, gsl::span<uint8_t> data) const override;
 
     virtual std::vector<std::shared_ptr<vfs::node>> readdir_impl() override;
 

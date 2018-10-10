@@ -171,9 +171,9 @@ public:
 
 protected:
     [[nodiscard]]
-    virtual kpp::expected<MemBuffer, DiskError> read_sector(size_t sector, size_t count) const override = 0;
+    virtual kpp::expected<kpp::dummy_t, DiskError> read_sectors(size_t sector, gsl::span<uint8_t> data) const override = 0;
     [[nodiscard]]
-    virtual kpp::expected<kpp::dummy_t, DiskError> write_sector(size_t sector, gsl::span<const uint8_t> data) override = 0;
+    virtual kpp::expected<kpp::dummy_t, DiskError> write_sectors(size_t sector, gsl::span<const uint8_t> data) override = 0;
 
 protected:
     void update_id_data() const;

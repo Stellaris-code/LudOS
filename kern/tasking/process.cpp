@@ -183,7 +183,7 @@ void Process::raise(pid_t target_pid, int signal, const siginfo_t &siginfo)
     assert(proc);
     assert(signal < proc->data->sig_handlers->size());
 
-    log_serial("Sent signal %d to pid %d\n", signal, target_pid);
+    //log_serial("Sent signal %d to pid %d\n", signal, target_pid);
 
     auto sig = proc->data->sig_handlers->at(signal);
     switch ((intptr_t)sig.sa_handler)
@@ -233,7 +233,7 @@ void Process::kill(pid_t pid, int err_code)
 
     if (parent.status == ChildWait && (parent.data->waiting_pid.value() == -1 || parent.data->waiting_pid.value() == pid))
     {
-        log_serial("Waking up PID %d with PID %d\n", parent.pid, pid);
+        //log_serial("Waking up PID %d with PID %d\n", parent.pid, pid);
         parent.wake_up(pid, err_code);
     }
 

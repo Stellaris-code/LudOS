@@ -95,18 +95,31 @@ node::result<kpp::dummy_t> node::rename(const kpp::string &name)
     return result;
 }
 
-node::result<MemBuffer> node::read(size_t offset, size_t size) const
+node::result<size_t> node::read(size_t offset, gsl::span<uint8_t> data) const
 {
     assert(type() != Directory);
-    if (this->size()) assert(offset + size <= this->size());
+    if (this->size()) assert(offset + data.size() <= this->size());
 
-    auto result = read_impl(offset, size);
-
-    //assert(data.size() == size);
+    auto result = read_impl(offset, data);
 
     update_access_time();
 
     return result;
+}
+
+node::result<MemBuffer> node::read(size_t offset, size_t size) const
+{
+    MemBuffer buf;
+    buf.resize(size);
+    auto result = read(offset, buf);
+    if (!result) return kpp::make_unexpected(result.error());
+    else
+        return std::move(buf);
+}
+
+node::result<MemBuffer> node::read() const
+{
+    return read(0, size());
 }
 
 node::result<kpp::dummy_t> node::write(size_t offset, gsl::span<const uint8_t> data)
@@ -275,7 +288,7 @@ const char *FSError::to_string()
     {
         case ReadError:
         case WriteError:
-            return DiskError{(DiskError::Type)details.read_error_type}.to_string();
+            return DiskError{(DiskError::Type)details.rw_error_type}.to_string();
         case InvalidLink:
             return "Invalid link";
         case AlreadyExists:

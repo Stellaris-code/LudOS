@@ -173,21 +173,18 @@ bool ide::pio::write(const ata_device& dev, uint64_t block, size_t count, const 
 }
 
 [[nodiscard]]
-kpp::expected<MemBuffer, DiskError> ide::pio::Disk::read_sector(size_t sector, size_t count) const
+kpp::expected<kpp::dummy_t, DiskError> ide::pio::Disk::read_sectors(size_t sector, gsl::span<uint8_t> data) const
 {
-    MemBuffer data(count * sector_size());
-    if (ide::pio::read(m_dev, sector, count, (uint16_t*)data.data()))
-    {
-        return std::move(data);
-    }
-    else
-    {
+    const size_t count = sector_size();
+
+    if (!ide::pio::read(m_dev, sector, count, (uint16_t*)data.data()))
         return kpp::make_unexpected(DiskError{get_error(m_dev)});
-    }
+
+    return {};
 }
 
 [[nodiscard]]
-kpp::expected<kpp::dummy_t, DiskError> ide::pio::Disk::write_sector(size_t sector, gsl::span<const uint8_t> data)
+kpp::expected<kpp::dummy_t, DiskError> ide::pio::Disk::write_sectors(size_t sector, gsl::span<const uint8_t> data)
 {
     const size_t count = data.size() / sector_size() + (data.size()%sector_size()?1:0);
 

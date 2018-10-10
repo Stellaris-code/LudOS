@@ -68,10 +68,12 @@ public:
     virtual size_t size() const override { return 0; }
 
 protected:
-    [[nodiscard]] virtual kpp::expected<MemBuffer, vfs::FSError> read_impl(size_t offset, size_t size) const override
+    [[nodiscard]] virtual result<size_t> read_impl(size_t offset, gsl::span<uint8_t> data) const override
     {
-        auto substr = m_callback(offset, size) + '\0';
-        return MemBuffer{substr.begin(), substr.end()};
+        auto substr = m_callback(offset, data.size()) + '\0';
+        std::copy(substr.begin(), substr.end(), data.begin());
+
+        return substr.size();
     }
 
 private:

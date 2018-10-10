@@ -359,18 +359,16 @@ kpp::expected<kpp::dummy_t, DiskError> Disk::do_read_write(size_t sector, gsl::s
 }
 
 [[nodiscard]]
-kpp::expected<MemBuffer, DiskError> Disk::read_sector(size_t sector, size_t count) const
+kpp::expected<kpp::dummy_t, DiskError> Disk::read_sectors(size_t sector, gsl::span<uint8_t> data) const
 {
-    MemBuffer data(sector_size()*count);
-
     if (auto result = do_read_write(sector, data, RWAction::Read); !result)
         return kpp::make_unexpected(result.error());
 
-    return std::move(data);
+    return {};
 }
 
 [[nodiscard]]
-kpp::expected<kpp::dummy_t, DiskError> Disk::write_sector(size_t sector, gsl::span<const uint8_t> data)
+kpp::expected<kpp::dummy_t, DiskError> Disk::write_sectors(size_t sector, gsl::span<const uint8_t> data)
 {
     assert(data.size() % sector_size() == 0);
     assert(sector <= m_id_data->sectors_48);

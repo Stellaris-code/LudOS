@@ -58,7 +58,7 @@ public:
     size_t block_group_table_block() const;
     const ext2::BlockGroupDescriptor get_block_group(size_t idx) const;
     void write_block_group(size_t idx, const ext2::BlockGroupDescriptor& desc);
-    MemBuffer read_block(size_t number) const;
+    kpp::error<vfs::FSError> read_block(size_t number, gsl::span<uint8_t> data) const;
     void write_block(size_t number, gsl::span<const uint8_t> data);
     const ext2::Inode read_inode(size_t inode) const;
     void write_inode(size_t inode, const ext2::Inode& structure);
@@ -69,9 +69,9 @@ public:
     size_t get_data_block_indirected(size_t indirected_block, size_t blk_id, size_t depth) const;
     size_t count_used_blocks(const ext2::Inode& inode) const;
 
-    MemBuffer read_data(const ext2::Inode& inode, size_t offset, size_t size) const;
-    MemBuffer read_data_block(const ext2::Inode& inode, size_t blk_id) const;
-    MemBuffer read_indirected(size_t indirected_block, size_t blk_id, size_t depth) const;
+    kpp::error<vfs::FSError> read_data(const ext2::Inode& inode, size_t offset, gsl::span<uint8_t> data) const;
+    kpp::error<vfs::FSError> read_data_block(const ext2::Inode& inode, size_t blk_id, gsl::span<uint8_t> data) const;
+    kpp::error<vfs::FSError> read_indirected(size_t indirected_block, size_t blk_id, size_t depth, gsl::span<uint8_t> data) const;
 
     void alloc_data_block(size_t inode, size_t blk_id);
     void alloc_indirected(size_t indirected_block, size_t blk_id, size_t block_group, size_t depth);
@@ -112,6 +112,7 @@ public:
 
 private:
     ext2::Superblock m_superblock;
+    mutable MemBuffer m_current_block; // used when we want to read only a block
     mutable uint16_t m_has_error { true };
 };
 
@@ -134,7 +135,7 @@ public:
     virtual Stat stat() const override;
     virtual void set_stat(const Stat& stat) override;
 
-    [[nodiscard]] virtual kpp::expected<MemBuffer, vfs::FSError> read_impl(size_t offset, size_t size) const override;
+    [[nodiscard]] virtual kpp::expected<size_t, vfs::FSError> read_impl(size_t offset, gsl::span<uint8_t> data) const override;
     [[nodiscard]] virtual kpp::expected<kpp::dummy_t, vfs::FSError> write_impl(size_t offset, gsl::span<const uint8_t> data) override;
     virtual std::vector<std::shared_ptr<node>> readdir_impl() override;
     [[nodiscard]] virtual node::result<std::shared_ptr<node>> create_impl(const kpp::string&, Type type) override;

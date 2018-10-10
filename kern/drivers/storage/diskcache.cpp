@@ -41,7 +41,7 @@ DiskCache::DiskCache(Disk &disk)
 }
 
 [[nodiscard]]
-kpp::expected<kpp::dummy_t, DiskError> DiskCache::write_sector(size_t sec, gsl::span<const uint8_t> data)
+kpp::expected<kpp::dummy_t, DiskError> DiskCache::write_sectors(size_t sec, gsl::span<const uint8_t> data)
 {
     auto chunks = split(data, m_disk.sector_size());
     for (size_t i { 0 }; i < chunks.size(); ++i)
@@ -53,17 +53,18 @@ kpp::expected<kpp::dummy_t, DiskError> DiskCache::write_sector(size_t sec, gsl::
 }
 
 [[nodiscard]]
-kpp::expected<MemBuffer, DiskError> DiskCache::read_sector(size_t sec, size_t count)
+kpp::expected<kpp::dummy_t, DiskError> DiskCache::read_sectors(size_t sec, gsl::span<uint8_t> data)
 {
-    MemBuffer data;
-    data.reserve(count*m_disk.sector_size());
+    const size_t sect_size = m_disk.sector_size();
+    size_t count = data.size()/sect_size;
 
     auto result = add_span(sec, count);
     if (!result) return kpp::make_unexpected(result.error());
 
     for (size_t i { sec }; i < sec + count; ++i)
     {
-        merge(data, m_cache.at(i).data);
+        const auto& cache_data = m_cache.at(i).data;
+        std::copy(cache_data.begin(), cache_data.end(), data.begin() + i*sect_size);
 
         const uint64_t ticks = Time::total_ticks();
 
@@ -76,7 +77,7 @@ kpp::expected<MemBuffer, DiskError> DiskCache::read_sector(size_t sec, size_t co
     if (!prune_result)
         return kpp::make_unexpected(prune_result.error());
 
-    return std::move(data);
+    return {};
 }
 
 [[nodiscard]]
@@ -110,17 +111,19 @@ kpp::expected<kpp::dummy_t, DiskError> DiskCache::add_span(size_t sec, size_t co
             size_t len { 1 };
             while (m_cache.count(i + len) == 0 && len < count) { ++len; };
 
+            MemBuffer buffer;
+            buffer.resize(m_disk.sector_size()*len);
 #if 1
-            auto result = m_disk.read_sector(i, len);
+            auto result = m_disk.read_sectors(i, buffer);
             if (!result) return kpp::make_unexpected(result.error());
-            auto data = split(result.value(), m_disk.sector_size());
+            auto data = split(buffer, m_disk.sector_size());
 
             for (size_t j { 0 }; j < len; ++j)
             {
                 add_to_cache(i+j, data[j]);
             }
 #else
-            auto data = m_disk.read_sector(i, len);
+            auto data = m_disk.read_sectors(i, len);
 
             for (size_t j { 0 }; j < len; ++j)
             {
@@ -139,7 +142,7 @@ kpp::expected<kpp::dummy_t, DiskError> DiskCache::add_span(size_t sec, size_t co
 #else
     for (size_t i { sec }; i < sec + count; ++i)
     {
-        add_to_cache(i, m_disk.read_sector(i, 1));
+        add_to_cache(i, m_disk.read_sectors(i, 1));
     }
 #endif
 
@@ -189,7 +192,7 @@ kpp::expected<kpp::dummy_t, DiskError> DiskCache::remove_entry(size_t id)
 {
     if (m_cache.at(id).dirty)
     {
-       auto result = m_disk.write_sector(id, m_cache.at(id).data);
+       auto result = m_disk.write_sectors(id, m_cache.at(id).data);
        if (!result) return kpp::make_unexpected(result.error());
     }
 

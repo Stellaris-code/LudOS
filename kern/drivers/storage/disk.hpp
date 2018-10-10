@@ -119,6 +119,7 @@ public:
     void set_read_only(bool val);
 
     kpp::expected<MemBuffer, DiskError> read(size_t offset, size_t size) const;
+    kpp::expected<kpp::dummy_t, DiskError> read(size_t offset, gsl::span<uint8_t> data) const;
     kpp::expected<MemBuffer, DiskError> read() const;
 
     [[nodiscard]]
@@ -134,15 +135,15 @@ private:
     [[nodiscard]]
     kpp::expected<kpp::dummy_t, DiskError> write_offseted_sector(size_t base, size_t byte_off, gsl::span<const uint8_t> data);
 
-    kpp::expected<MemBuffer, DiskError> read_cache_sector(size_t sector, size_t count) const;
+    kpp::expected<kpp::dummy_t, DiskError> read_cache_sectors(size_t sector, gsl::span<uint8_t> data) const;
     [[nodiscard]]
-    kpp::expected<kpp::dummy_t, DiskError> write_cache_sector(size_t sector, gsl::span<const uint8_t> data);
+    kpp::expected<kpp::dummy_t, DiskError> write_cache_sectors(size_t sector, gsl::span<const uint8_t> data);
 
 public:
     [[nodiscard]]
-    virtual kpp::expected<MemBuffer, DiskError> read_sector(size_t sector, size_t count) const = 0;
+    virtual kpp::expected<kpp::dummy_t, DiskError> read_sectors(size_t sector, gsl::span<uint8_t> data) const = 0;
     [[nodiscard]]
-    virtual kpp::expected<kpp::dummy_t, DiskError> write_sector(size_t sector, gsl::span<const uint8_t> data) = 0;
+    virtual kpp::expected<kpp::dummy_t, DiskError> write_sectors(size_t sector, gsl::span<const uint8_t> data) = 0;
 
 public:
     static ref_vector<Disk> disks();
@@ -188,9 +189,9 @@ public:
     virtual Type media_type() const override { return Disk::RamDrive; }
 
 protected:
-    virtual kpp::expected<MemBuffer, DiskError> read_sector(size_t sector, size_t count) const override;
+    virtual kpp::expected<kpp::dummy_t, DiskError> read_sectors(size_t sector, gsl::span<uint8_t> data) const override;
     [[nodiscard]]
-    virtual kpp::expected<kpp::dummy_t, DiskError> write_sector(size_t sector, gsl::span<const uint8_t> data) override;
+    virtual kpp::expected<kpp::dummy_t, DiskError> write_sectors(size_t sector, gsl::span<const uint8_t> data) override;
 
 public:
     MemoryDisk(uint8_t* data, size_t size, kpp::string name);
@@ -219,9 +220,10 @@ public:
     const Disk& parent() const { return m_base_disk; }
 
 protected:
-    virtual kpp::expected<MemBuffer, DiskError> read_sector(size_t sector, size_t count) const override;
     [[nodiscard]]
-    virtual kpp::expected<kpp::dummy_t, DiskError> write_sector(size_t sector, gsl::span<const uint8_t> data) override;
+    virtual kpp::expected<kpp::dummy_t, DiskError> read_sectors(size_t sector, gsl::span<uint8_t> data) const override;
+    [[nodiscard]]
+    virtual kpp::expected<kpp::dummy_t, DiskError> write_sectors(size_t sector, gsl::span<const uint8_t> data) override;
 
 private:
     Disk& m_base_disk;

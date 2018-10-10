@@ -154,23 +154,20 @@ void ahci::Disk::update_id_data() const
 }
 
 [[nodiscard]]
-kpp::expected<MemBuffer, DiskError> ahci::Disk::read_sector(size_t sector, size_t count) const
+kpp::expected<kpp::dummy_t, DiskError> ahci::Disk::read_sectors(size_t sector, gsl::span<uint8_t> data) const
 {
-    MemBuffer data(count * sector_size());
-    if (detail::do_read(m_port, sector, count, (uint16_t*)data.data()))
-    {
-        return std::move(data);
-    }
-    else
-    {
+    const size_t count = data.size() / sector_size();
+
+    if (!detail::do_read(m_port, sector, count, (uint16_t*)data.data()))
         return kpp::make_unexpected(DiskError{DiskError::Unknown});
-    }
+
+    return {};
 }
 
 [[nodiscard]]
-kpp::expected<kpp::dummy_t, DiskError> ahci::Disk::write_sector(size_t sector, gsl::span<const uint8_t> data)
+kpp::expected<kpp::dummy_t, DiskError> ahci::Disk::write_sectors(size_t sector, gsl::span<const uint8_t> data)
 {
-    const size_t count = data.size() / sector_size() + (data.size()%sector_size()?1:0);
+    const size_t count = data.size() / sector_size();
 
     if (!detail::issue_write_command(m_port, sector, count, (const uint16_t*)data.data()))
     {

@@ -69,7 +69,7 @@ struct FSError
 
     union Details
     {
-        int read_error_type;
+        int rw_error_type;
     } details { 0 };
 
     int to_errno() const
@@ -140,8 +140,9 @@ struct node
     virtual Type type() const { return m_type; }
     virtual bool is_link() const { return false; }
 
+    [[nodiscard]] result<size_t> read(size_t offset, gsl::span<uint8_t> data) const;
     [[nodiscard]] result<MemBuffer> read(size_t offset, size_t size) const;
-    [[nodiscard]] result<MemBuffer> read() const { return read(0, size()); }
+    [[nodiscard]] result<MemBuffer> read() const;
     [[nodiscard]] result<kpp::dummy_t> write(size_t offset, gsl::span<const uint8_t> data);
     [[nodiscard]] result<std::shared_ptr<node>> create(const kpp::string&, Type);
     result<kpp::dummy_t> resize(size_t);
@@ -162,7 +163,7 @@ struct node
     kpp::string path() const;
 
 protected:
-    [[nodiscard]] virtual result<MemBuffer> read_impl(size_t, size_t) const { return {}; }
+    [[nodiscard]] virtual result<size_t> read_impl(size_t, gsl::span<uint8_t>) const { return {}; }
     [[nodiscard]] virtual result<kpp::dummy_t> write_impl(size_t, gsl::span<const uint8_t>)
     { return kpp::make_unexpected(FSError{FSError::Unknown}); }
     [[nodiscard]] virtual result<kpp::dummy_t>  resize_impl(size_t)
@@ -232,8 +233,8 @@ private:
     std::shared_ptr<const node> actual_target() const;
 
 protected:
-    [[nodiscard]] virtual kpp::expected<MemBuffer, FSError> read_impl(size_t offset, size_t size) const override
-    { return actual_target()->read(offset, size); }
+    [[nodiscard]] virtual result<size_t> read_impl(size_t offset, gsl::span<uint8_t> data) const override
+    { return actual_target()->read(offset, data); }
     [[nodiscard]] virtual kpp::expected<kpp::dummy_t, FSError> write_impl(size_t offset, gsl::span<const uint8_t> data) override
     { return actual_target()->write(offset, data); }
     virtual std::vector<std::shared_ptr<node>> readdir_impl() override { return actual_target()->readdir_impl(); }

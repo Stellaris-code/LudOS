@@ -89,9 +89,9 @@ public:
 
 protected:
     [[nodiscard]]
-    virtual kpp::expected<MemBuffer, DiskError> read_sector(size_t sector, size_t count) const override;
+    virtual kpp::expected<kpp::dummy_t, DiskError> read_sectors(size_t sector, gsl::span<uint8_t> data) const override;
     [[nodiscard]]
-    virtual kpp::expected<kpp::dummy_t, DiskError> write_sector(size_t sector, gsl::span<const uint8_t> data) override;
+    virtual kpp::expected<kpp::dummy_t, DiskError> write_sectors(size_t sector, gsl::span<const uint8_t> data) override;
 
 private:
     enum class RWAction

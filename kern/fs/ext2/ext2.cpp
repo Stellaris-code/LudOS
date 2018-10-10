@@ -42,6 +42,8 @@ Ext2FS::Ext2FS(Disk &disk) : FSImpl<Ext2FS>(disk)
     // these are the only supported features
     m_superblock.optional_features = (int)ext2::OptFeatureFlags::InodeExtendedAttributes | (int)ext2::OptFeatureFlags::InodeResize;
 
+    m_current_block.resize(block_size());
+
     check_superblock_backups();
 
     m_superblock.last_mount_time = Time::epoch();
@@ -143,13 +145,13 @@ bool Ext2FS::check_superblock_backups() const
 
         if (check)
         {
-            auto data = read_block(i * m_superblock.blocks_in_block_group + 1);
+            read_block(i * m_superblock.blocks_in_block_group + 1, m_current_block);
 
             log(Debug, "block : %d, offset 0x%x (%d)\n", i * m_superblock.blocks_in_block_group + 1,
                 (i * m_superblock.blocks_in_block_group + 1) * block_size(),
                 (i * m_superblock.blocks_in_block_group + 1) * block_size());
 
-            if (((ext2::Superblock*)data.data())->ext2_signature != ext2::signature)
+            if (((ext2::Superblock*)m_current_block.data())->ext2_signature != ext2::signature)
             {
                 warn("Superblock backup at group %d has an invalid signature\n", i);
                 okay = false;
@@ -171,22 +173,23 @@ const ext2::BlockGroupDescriptor Ext2FS::get_block_group(size_t idx) const
 
     const size_t block_to_read = block_group_table_block() + (idx / group_desc_per_block);
 
-    auto data = read_block(block_to_read);
+    read_block(block_to_read, m_current_block);
 
-    return ((ext2::BlockGroupDescriptor*)data.data())[idx % group_desc_per_block];
+    return ((ext2::BlockGroupDescriptor*)m_current_block.data())[idx % group_desc_per_block];
 }
 
-MemBuffer Ext2FS::read_block(size_t number) const
+kpp::expected<kpp::dummy_t, vfs::FSError> Ext2FS::read_block(size_t number, gsl::span<uint8_t> data) const
 {
     assert(number < m_superblock.block_count);
-    auto vec = m_disk.read(number * block_size(), block_size());
-    if (!vec)
+    assert(data.size() == block_size());
+
+    auto result = m_disk.read(number * block_size(), data);
+    if (!result)
     {
-        panic("ext2fs read err : %s\n", vec.error().to_string());
+        return kpp::make_unexpected(vfs::FSError{vfs::FSError::ReadError, {result.error().type}});
     }
 
-    // TODO
-    return std::move(vec.value());
+    return {};
 }
 
 const ext2::Inode Ext2FS::read_inode(size_t inode) const
@@ -202,9 +205,9 @@ const ext2::Inode Ext2FS::read_inode(size_t inode) const
     size_t block_idx = (index * inode_size()) / block_size();
     size_t offset = index % (block_size() / inode_size());
 
-    auto block = read_block(block_group.inode_table + block_idx);
+    read_block(block_group.inode_table + block_idx, m_current_block);
 
-    return ((ext2::Inode*)block.data())[offset];
+    return ((ext2::Inode*)m_current_block.data())[offset];
 }
 
 std::vector<ext2::DirectoryEntry> Ext2FS::read_directory_entries(size_t inode) const
@@ -215,11 +218,10 @@ std::vector<ext2::DirectoryEntry> Ext2FS::read_directory_entries(size_t inode) c
 
     size_t blocks = data_blocks(inode_struct);
 
-#if 0
-    auto entries = read_directory(read_data(inode_struct, 0, blocks));
-    ((Ext2FS*)this)->write_directory_entries(inode, entries);
-#endif
-    return read_directory(read_data(inode_struct, 0, blocks));
+    MemBuffer buf(blocks*block_size());
+    auto result = read_data(inode_struct, 0, buf);
+    assert(result); // TODO
+    return read_directory(buf);
 }
 
 bool Ext2FS::check_inode_presence(size_t inode) const
@@ -228,9 +230,9 @@ bool Ext2FS::check_inode_presence(size_t inode) const
 
     size_t index = (inode - 1) % m_superblock.inodes_in_block_group;
 
-    auto block = read_block(block_group.inode_bitmap);
+    read_block(block_group.inode_bitmap, m_current_block);
 
-    return bit_check(block[index / 8], index % 8);
+    return bit_check(m_current_block[index / 8], index % 8);
 }
 
 size_t Ext2FS::data_blocks(const ext2::Inode &inode) const
@@ -288,8 +290,8 @@ size_t Ext2FS::get_data_block_indirected(size_t indirected_block, size_t blk_id,
 {
     MemBuffer data;
     size_t entries = ipow<size_t>(block_size()/sizeof(uint32_t), depth-1);
-    auto vec = read_block(indirected_block);
-    uint32_t* block = (uint32_t*)vec.data();
+    read_block(indirected_block, m_current_block);
+    uint32_t* block = (uint32_t*)m_current_block.data();
 
     if (depth <= 1) return block[blk_id];
     else
@@ -301,63 +303,64 @@ size_t Ext2FS::get_data_block_indirected(size_t indirected_block, size_t blk_id,
     }
 }
 
-MemBuffer Ext2FS::read_data_block(const ext2::Inode &inode, size_t blk_id) const
+kpp::error<vfs::FSError> Ext2FS::read_data_block(const ext2::Inode& inode, size_t blk_id, gsl::span<uint8_t> data) const
 {
     const size_t entries_per_block = block_size()/sizeof(uint32_t);
 
     if (blk_id < 12)
     {
-        return read_block(inode.block_ptr[blk_id]);
+        return read_block(inode.block_ptr[blk_id], data);
     }
     blk_id -= 12;
 
     if (blk_id < entries_per_block)
     {
-        return read_indirected(inode.block_ptr[12], blk_id, 1);
+        return read_indirected(inode.block_ptr[12], blk_id, 1, data);
     }
     blk_id -= entries_per_block;
 
     if (blk_id < entries_per_block*entries_per_block)
     {
-        return read_indirected(inode.block_ptr[13], blk_id, 2);
+        return read_indirected(inode.block_ptr[13], blk_id, 2, data);
     }
     blk_id -= entries_per_block*entries_per_block;
 
-    return read_indirected(inode.block_ptr[14], blk_id, 3);
+    return read_indirected(inode.block_ptr[14], blk_id, 3, data);
 }
 
-MemBuffer Ext2FS::read_indirected(size_t indirected_block, size_t blk_id, size_t depth) const
+kpp::error<vfs::FSError> Ext2FS::read_indirected(size_t indirected_block, size_t blk_id, size_t depth, gsl::span<uint8_t> data) const
 {
-    MemBuffer data;
     size_t entries = ipow<size_t>(block_size()/sizeof(uint32_t), depth-1);
-    auto vec = read_block(indirected_block);
-    uint32_t* block = (uint32_t*)vec.data();
+    read_block(indirected_block, m_current_block);
+    uint32_t* block = (uint32_t*)m_current_block.data();
 
-    if (depth <= 1) return read_block(block[blk_id]);
+    if (depth <= 1)
+    {
+        return read_block(block[blk_id], data);
+    }
     else
     {
         size_t tgt_block_idx = blk_id / entries;
         size_t offset = blk_id % entries;
 
-        return read_indirected(block[tgt_block_idx], offset, depth - 1);
+        return read_indirected(block[tgt_block_idx], offset, depth - 1, data);
     }
 }
 
-MemBuffer Ext2FS::read_data(const ext2::Inode &inode, size_t offset, size_t size) const
+kpp::error<vfs::FSError> Ext2FS::read_data(const ext2::Inode &inode, size_t offset, gsl::span<uint8_t> data) const
 {
     size_t blocks = data_blocks(inode);
 
-    assert(offset + size <= blocks);
+    assert(data.size() % block_size() == 0);
+    assert(offset + data.size()/block_size() <= blocks);
 
-    MemBuffer data;
-    data.reserve(blocks);
-
-    for (size_t i { offset }; i < offset + size; ++i)
+    for (size_t i { offset }; i < offset + data.size()/block_size(); ++i)
     {
-        merge(data, read_data_block(inode, i));
+        auto result = read_data_block(inode, i, {data.data() + i*block_size(), data.size()});
+        if (!result) return result;
     }
 
-    return data;
+    return {};
 }
 
 std::vector<ext2::DirectoryEntry> Ext2FS::read_directory(gsl::span<const uint8_t> data) const
@@ -415,15 +418,17 @@ kpp::string Ext2FS::link_name(const ext2::Inode &inode_struct)
     }
     else
     {
-        auto data = read_data(inode_struct, 0, inode_struct.size_lower);
-        str = kpp::string((const char*)data.data(), inode_struct.size_lower);
+        if (!read_data(inode_struct, 0, {m_current_block.data(), (long)inode_struct.size_lower}))
+            return "<invalid>";
+
+        str = kpp::string((const char*)m_current_block.data(), inode_struct.size_lower);
     }
     str += '\0'; // just to be safe
 
     return trim_zstr(str);
 }
 
-kpp::expected<MemBuffer, vfs::FSError> ext2_node::read_impl(size_t offset, size_t size) const
+kpp::expected<size_t, vfs::FSError> ext2_node::read_impl(size_t offset, gsl::span<uint8_t> data) const
 {
     if (this->size() >= 65536)
     {
@@ -433,19 +438,57 @@ kpp::expected<MemBuffer, vfs::FSError> ext2_node::read_impl(size_t offset, size_
     if (is_link())
     {
         auto ptr = link_target();
-        if (ptr) return ptr->read(offset, size);
+        if (ptr) return ptr->read(offset, data);
         else return kpp::make_unexpected(vfs::FSError{vfs::FSError::InvalidLink});
     }
 
+    const auto& inode_struct = fs.read_inode(inode);
+
+#if 0
     size_t block_off = offset/fs.block_size();
-    size_t block_size = size/fs.block_size() + (size%fs.block_size()?1:0);
+    size_t block_size = data.size()/fs.block_size() + (data.size()%fs.block_size()?1:0);
 
     size_t byte_off = offset % fs.block_size();
 
-    auto data = fs.read_data(fs.read_inode(inode), block_off, block_size);
+    MemBuffer buffer(block_size*fs.block_size());
+    auto result = fs.read_data(inode_struct, block_off, buffer);
+    if (!result) return kpp::make_unexpected(result.error());
 
-    if (byte_off == 0) { data.resize(size); return std::move(data); }
-    else { return MemBuffer(data.begin() + byte_off, data.begin() + offset + size); }
+    std::copy(buffer.begin() + byte_off, buffer.begin() + offset + data.size(), data.begin());
+
+    return (offset + data.size()) - byte_off;
+#else
+    const size_t blk_size = fs.block_size();
+
+    const size_t first_stride_size = offset%blk_size;
+    const size_t second_stride_size = (offset+data.size()) % blk_size;
+    const size_t mid_stride_size = data.size() - ((blk_size - first_stride_size)%blk_size) - second_stride_size;
+    if (first_stride_size != 0) // offset isn't aligned, manually fetch the first sector
+    {
+        MemBuffer buf(blk_size);
+        auto result = fs.read_data_block(inode_struct, offset/blk_size, buf);
+        if (!result) return kpp::make_unexpected(result.error());
+        std::copy(buf.begin() + first_stride_size, buf.begin() + blk_size, data.begin());
+    }
+    if (second_stride_size != 0) // size isn't aligned, manually fetch the last sector
+    {
+        MemBuffer buf(blk_size);
+        auto result = fs.read_data_block(inode_struct, (offset+data.size())/blk_size, buf);
+        if (!result) return kpp::make_unexpected(result.error());
+        std::copy(buf.begin(), buf.begin() + second_stride_size, data.begin() + (data.size()-second_stride_size));
+    }
+
+    if (mid_stride_size != 0)
+    {
+        gsl::span<uint8_t> aligned_span = {data.data() + (blk_size - first_stride_size)%blk_size,
+                                           (long)mid_stride_size};
+
+        assert(aligned_span.size() % blk_size == 0);
+
+        auto result = fs.read_data(inode_struct, offset/blk_size, aligned_span);
+        if (!result) return kpp::make_unexpected(result.error());
+    }
+#endif
 }
 
 std::vector<std::shared_ptr<vfs::node>> ext2_node::readdir_impl()
@@ -570,20 +613,7 @@ kpp::string ext2_node::link_name() const
 {
     ext2::Inode inode_struct = fs.read_inode(inode);
 
-    kpp::string str;
-
-    if (inode_struct.size_lower <= 60)
-    {
-        str = kpp::string((const char*)inode_struct.block_ptr, 60);
-    }
-    else
-    {
-        auto data = fs.read_data(inode_struct, 0, inode_struct.size_lower);
-        str = kpp::string((const char*)data.data(), inode_struct.size_lower);
-    }
-    str += '\0'; // just to be safe
-
-    return trim_zstr(str);
+    return fs.link_name(inode_struct);
 }
 
 std::shared_ptr<vfs::node> ext2_node::link_target() const

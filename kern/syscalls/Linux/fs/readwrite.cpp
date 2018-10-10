@@ -57,24 +57,13 @@ size_t sys_read(unsigned int fd, user_ptr<void> buf, size_t count)
         return -EIO;
     }
 
-    MemBuffer data;
-
-    auto result = node->read(fd_entry->cursor, count);
+    auto result = node->read(fd_entry->cursor, {(uint8_t*)buf.get(), (long)count});
     if (!result)
     {
         return -result.error().to_errno();
     }
 
-    data = std::move(result.value());
-
-    if (data.empty() && count != 0)
-    {
-        return -EIO;
-    }
-
-    std::copy(data.begin(), data.end(), (uint8_t*)buf.get());
-
-    return data.size(); // again, to allow errno numbers
+    return *result; // again, to allow errno numbers
 }
 
 size_t sys_write(unsigned int fd, user_ptr<const void> buf, size_t count)

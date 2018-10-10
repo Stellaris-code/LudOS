@@ -423,6 +423,9 @@ template <class T, class E> constexpr bool operator!=(const T& v, const expected
 namespace kpp
 {
 using namespace tl;
+
+template <typename T>
+using error = expected<dummy_t, T>;
 }
 
 #endif

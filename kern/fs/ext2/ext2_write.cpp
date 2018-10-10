@@ -72,7 +72,7 @@ void Ext2FS::write_block(size_t number, gsl::span<const uint8_t> data)
 {
     assert(number < m_superblock.block_count);
 
-    m_disk.write(number * block_size(), data);
+    m_disk.write(number * block_size(), data); // TODO
 }
 
 void Ext2FS::write_offsetted_data(gsl::span<const uint8_t> data, size_t block, size_t byte_off, const ext2::Inode &inode)
@@ -89,7 +89,8 @@ void Ext2FS::write_offsetted_data(gsl::span<const uint8_t> data, size_t block, s
 
     for (size_t i { 0 }; i < 2; ++i)
     {
-        auto sect_data = read_data_block(inode, block+i);
+        read_data_block(inode, block+i, m_current_block);
+        auto& sect_data = m_current_block;
 
         assert((size_t)spans[i].size() <= sect_data.size() - byte_off);
 
@@ -153,8 +154,8 @@ void Ext2FS::write_indirected(gsl::span<const uint8_t> data, size_t indirected_b
     assert(data.size() <= (int)block_size());
 
     size_t entries = ipow<size_t>(block_size()/sizeof(uint32_t), depth-1);
-    auto vec = read_block(indirected_block);
-    uint32_t* block = (uint32_t*)vec.data();
+    read_block(indirected_block, m_current_block);
+    uint32_t* block = (uint32_t*)m_current_block.data();
 
     if (depth <= 1) write_block(block[blk_id], data);
     else
@@ -208,7 +209,8 @@ void Ext2FS::remove_inode(size_t inode, bool dir)
     ++bgd.free_inodes_count;
     if (dir) --bgd.used_dirs_count;
 
-    auto bitmap = read_block(bgd.inode_bitmap);
+    read_block(bgd.inode_bitmap, m_current_block);
+    auto& bitmap = m_current_block;
     size_t index = (inode - 1) % m_superblock.inodes_in_block_group;
 
     bit_clear(bitmap[index / 8], index % 8);
@@ -316,13 +318,13 @@ void Ext2FS::write_inode(size_t inode, const ext2::Inode& structure)
     size_t block_idx = (index * inode_size()) / block_size();
     size_t offset = index % (block_size() / inode_size());
 
-    auto block = read_block(block_group.inode_table + block_idx);
+    read_block(block_group.inode_table + block_idx, m_current_block);
 
     std::copy((const uint8_t*)&structure,
               (const uint8_t*)&structure + inode_size(),
-              block.data() + offset*inode_size());
+              m_current_block.data() + offset*inode_size());
 
-    write_block(block_group.inode_table + block_idx, block);
+    write_block(block_group.inode_table + block_idx, m_current_block);
 }
 
 void Ext2FS::write_block_group(size_t idx, const ext2::BlockGroupDescriptor &desc)
@@ -331,12 +333,12 @@ void Ext2FS::write_block_group(size_t idx, const ext2::BlockGroupDescriptor &des
 
     const size_t block_to_write = block_group_table_block() + (idx / group_desc_per_block);
 
-    auto data = read_block(block_to_write);
+    read_block(block_to_write, m_current_block);
 
     std::copy((const uint8_t*)&desc, (const uint8_t*)&desc + sizeof(desc),
-              data.data() + (idx % group_desc_per_block) * sizeof(desc));
+              m_current_block.data() + (idx % group_desc_per_block) * sizeof(desc));
 
-    write_block(block_to_write, data);
+    write_block(block_to_write, m_current_block);
 }
 
 size_t Ext2FS::alloc_block(size_t preferred_group)
@@ -373,7 +375,8 @@ size_t Ext2FS::alloc_block_in_block_group(size_t group)
     auto bgd = get_block_group(group);
     if (bgd.free_blocks_count == 0) return 0;
 
-    auto bitmap = read_block(bgd.block_bitmap);
+    read_block(bgd.block_bitmap, m_current_block);
+    auto& bitmap = m_current_block;
     for (size_t j { 0 }; j < block_size()*8; ++j)
     {
         if (!bit_check(bitmap[j / 8], j % 8))
@@ -444,13 +447,13 @@ void Ext2FS::alloc_indirected(size_t indirected_block, size_t blk_id, size_t blo
 {
     MemBuffer data;
     size_t entries = ipow<size_t>(block_size()/sizeof(uint32_t), depth-1);
-    auto vec = read_block(indirected_block);
-    uint32_t* block = (uint32_t*)vec.data();
+    read_block(indirected_block, m_current_block);
+    uint32_t* block = (uint32_t*)m_current_block.data();
 
     if (depth <= 1)
     {
         block[blk_id] = alloc_block(block_group);
-        write_block(indirected_block, vec);
+        write_block(indirected_block, m_current_block);
     }
     else
     {
@@ -460,7 +463,7 @@ void Ext2FS::alloc_indirected(size_t indirected_block, size_t blk_id, size_t blo
         if (!block[tgt_block_idx])
         {
             block[tgt_block_idx] = alloc_block(block_group);
-            write_block(indirected_block, vec);
+            write_block(indirected_block, m_current_block);
         }
         alloc_indirected(block[tgt_block_idx], offset, block_group, depth - 1);
     }
@@ -472,7 +475,8 @@ void Ext2FS::free_block(size_t block)
 
     ++bgd.free_blocks_count;
 
-    auto bitmap = read_block(bgd.block_bitmap);
+    read_block(bgd.block_bitmap, m_current_block);
+    auto& bitmap = m_current_block;
     size_t index = (block - 1) % m_superblock.blocks_in_block_group;
 
     assert(index / 8 < bitmap.size());
@@ -546,14 +550,14 @@ void Ext2FS::free_indirected(size_t indirected_block, size_t blk_id, size_t dept
     assert(indirected_block);
 
     size_t entries = ipow<size_t>(block_size()/sizeof(uint32_t), depth-1);
-    auto vec = read_block(indirected_block);
-    uint32_t* block = (uint32_t*)vec.data();
+    read_block(indirected_block, m_current_block);
+    uint32_t* block = (uint32_t*)m_current_block.data();
 
     if (depth <= 1)
     {
         free_block(block[blk_id]);
         block[blk_id] = 0;
-        write_block(indirected_block, vec);
+        write_block(indirected_block, m_current_block);
     }
     else
     {
@@ -596,7 +600,8 @@ size_t Ext2FS::alloc_inode_in_block_group(size_t group, bool directory)
     auto bgd = get_block_group(group);
     if (bgd.free_inodes_count == 0) return 0;
 
-    auto bitmap = read_block(bgd.inode_bitmap);
+    read_block(bgd.inode_bitmap, m_current_block);
+    auto& bitmap = m_current_block;
     for (size_t j { 0 }; j < block_size()*8; ++j)
     {
         if (!bit_check(bitmap[j / 8], j % 8))
@@ -724,7 +729,10 @@ void ext2_node::update_dir_entry(size_t inode, const kpp::string &name)
 
     const size_t blocks = fs.data_blocks(inode_struct);
 
-    auto entries = fs.read_directory(fs.read_data(inode_struct, 0, blocks));
+    MemBuffer buf(blocks*fs.block_size());
+    auto result = fs.read_data(inode_struct, 0, buf);
+    assert(result); // TODO
+    auto entries = fs.read_directory(buf);
 
     auto entry = std::find_if(entries.begin(), entries.end(), [inode](const ext2::DirectoryEntry& e)
     {
@@ -755,7 +763,10 @@ std::shared_ptr<ext2_node> ext2_node::create_child(const kpp::string &name, Type
 
     const size_t blocks = fs.data_blocks(inode_struct);
 
-    auto dir_entries = fs.read_directory(fs.read_data(inode_struct, 0, blocks));
+    MemBuffer buf(blocks*fs.block_size());
+    auto result = fs.read_data(inode_struct, 0, buf);
+    assert(result); // TODO
+    auto dir_entries = fs.read_directory(buf);
 
     const size_t block_group = inode / fs.m_superblock.inodes_in_block_group;
     const size_t free_inode = fs.alloc_inode(block_group, type == Directory);
@@ -786,7 +797,11 @@ void ext2_node::remove_child(const kpp::string& name)
 
     const size_t blocks = fs.data_blocks(inode_struct);
 
-    auto dir_entries = fs.read_directory(fs.read_data(inode_struct, 0, blocks));
+
+    MemBuffer buf(blocks*fs.block_size());
+    auto result = fs.read_data(inode_struct, 0, buf);
+    assert(result); // TODO
+    auto dir_entries = fs.read_directory(buf);
 
     for (const auto& entry : dir_entries)
     {

@@ -35,29 +35,30 @@ SOFTWARE.
 typedef struct __attribute__((packed))
 {
     // Pushed by the interrupt request/routine handler
-    uint32_t gs;
-    uint32_t fs;
-    uint32_t es;
-    uint32_t ds;
+    uint32_t gs; // 0x00
+    uint32_t fs; // 0x04
+    uint32_t es; // 0x08
+    uint32_t ds; // 0x0c
 
-    uint32_t eax;
-    uint32_t ecx;
-    uint32_t edx;
-    uint32_t ebx;
-    uint32_t ebp;
-    uint32_t esi;
-    uint32_t edi;
+    uint32_t edi; // 0x10
+    uint32_t esi; // 0x14
+    uint32_t ebp; // 0x18
+    uint32_t dummy_esp; // 0x1c
+    uint32_t ebx; // 0x20
+    uint32_t edx; // 0x24
+    uint32_t ecx; // 0x28
+    uint32_t eax; // 0x2c
 
     // Pushed by ISR handler if available
-    uint32_t int_no;
-    uint32_t err_code;
+    uint32_t int_no; // 0x30
+    uint32_t err_code; // 0x34
 
     // Pushed by the processor
-    uint32_t eip;
-    uint32_t cs;
-    uint32_t eflags;
-    uint32_t esp;
-    uint32_t ss;
+    uint32_t eip; // 0x38
+    uint32_t cs; // 0x3c
+    uint32_t eflags; // 0x40
+    uint32_t esp; // 0x44
+    uint32_t ss; // 0x48
 } registers;
 
 inline uint32_t cr0()

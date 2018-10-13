@@ -108,7 +108,6 @@ SOFTWARE.
 // : implémenter /dev/input
 // : implémenter expanding stack
 // : fix caching
-// : Pour ext2fs : prendre un span en argument au lieu de retourner un MemBuffer
 
 /**********************************/
 // BUGS

@@ -158,22 +158,38 @@ extern "C" void call_panic()
 }
 
 extern "C" void check_stack();
-
 asm ("check_stack:"
-            "pushl %ebp\n"
-            "movl %esp, %ebp\n"
-            "subl $8, %esp\n"
-            "testl $0xF, %esp\n"
-            "je chk_exit\n"
-            "call call_panic\n"
-            "chk_exit: leave\n"
-            "ret\n");
+"pushl %ebp\n"
+"movl %esp, %ebp\n"
+"subl $8, %esp\n"
+"testl $0xF, %esp\n"
+"je chk_exit\n"
+"call call_panic\n"
+"chk_exit: leave\n"
+"ret\n");
 
 namespace i686
 {
 namespace pc
 {
 void init_task_entry();
+
+void test1()
+{
+    while (true)
+    {
+        kprintf("bouh1\n");
+        Process::task_switch(0);
+    }
+}
+void test2()
+{
+    while (true)
+    {
+        kprintf("bouh2\n");
+        Process::task_switch(1);
+    }
+}
 
 void init(uint32_t magic, const multiboot_info_t* mbd_info)
 {
@@ -304,6 +320,11 @@ void init(uint32_t magic, const multiboot_info_t* mbd_info)
     init_syscalls();
 
     tasking::scheduler_init();
+
+//    auto test1_task = Process::create_kernel_task(test1);
+//    auto test2_task = Process::create_kernel_task(test2);
+
+//    while (true);
 
     auto idle_task = Process::create_kernel_task([]()
     {

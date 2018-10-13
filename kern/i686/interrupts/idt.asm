@@ -107,13 +107,7 @@ extern syscall_handler
 ; and finally restores the stack frame.
 syscall_common_stub:
     ; Store general purpose
-    push edi
-    push esi
-    push ebp
-    push ebx
-    push edx
-    push ecx
-    push eax
+    pushad
 
     ; Store segments
     push ds
@@ -148,13 +142,7 @@ syscall_common_stub:
 
     ; Restore general purpose
     ;add esp, 4 ; skip stack's eax in order to keep the syscall return value
-    pop eax
-    pop ecx
-    pop edx
-    pop ebx
-    pop ebp
-    pop esi
-    pop edi
+    popad
 
     ; Skip intr and error in Registers struct
     add esp, 8
@@ -170,13 +158,7 @@ extern isr_handler
 ; and finally restores the stack frame.
 isr_common_stub:
     ; Store general purpose
-    push edi
-    push esi
-    push ebp
-    push ebx
-    push edx
-    push ecx
-    push eax
+    pushad
 
     ; Store segments
     push ds
@@ -206,13 +188,7 @@ isr_common_stub:
     pop ds
 
     ; Restore general purpose
-    pop eax
-    pop ecx
-    pop edx
-    pop ebx
-    pop ebp
-    pop esi
-    pop edi
+    popad
 
     ; Skip intr and error in Registers struct
     add esp, 8
@@ -227,13 +203,7 @@ extern irq_handler
 ; and finally restores the stack frame.
 irq_common_stub:
     ; Store general purpose
-    push edi
-    push esi
-    push ebp
-    push ebx
-    push edx
-    push ecx
-    push eax
+    pushad
 
     ; Store segments
     push ds
@@ -263,13 +233,7 @@ irq_common_stub:
     pop ds
 
     ; Restore general purpose
-    pop eax
-    pop ecx
-    pop edx
-    pop ebx
-    pop ebp
-    pop esi
-    pop edi
+    popad
 
     ; Skip intr and error in Registers struct
     add esp, 8

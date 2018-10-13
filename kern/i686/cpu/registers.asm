@@ -13,13 +13,7 @@ update_registers:
     push dword 0
 
     ; Store general purpose
-    push edi
-    push esi
-    push ebp
-    push ebx
-    push edx
-    push ecx
-    push eax
+    pushad
 
     ; Store segments
     push ds
@@ -34,6 +28,6 @@ update_registers:
     ; Set stack pointer to returned value
     mov esp, eax
     ; Restore esp
-    add esp, 72
+    add esp, 76
 
     ret

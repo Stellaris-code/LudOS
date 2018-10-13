@@ -227,11 +227,38 @@ void Process::arch_init(gsl::span<const uint8_t> code_to_copy, size_t allocated_
     create_mappings();
 
     set_args(data->args);
+
+    push_onto_stack(regs.eip);
+    push_onto_stack(regs.eflags);
+    push_onto_stack(regs.eax);
+    push_onto_stack(regs.ecx);
+    push_onto_stack(regs.edx);
+    push_onto_stack(regs.ebx);
+    push_onto_stack((uintptr_t)0); // esp
+    push_onto_stack(regs.ebp);
+    push_onto_stack(regs.esi);
+    push_onto_stack(regs.edi);
 }
 
 void Process::set_instruction_pointer(unsigned int value)
 {
     arch_context->regs.eip = value;
+}
+
+uintptr_t Process::kernel_stack_pointer() const
+{
+    return arch_context->regs.esp;
+}
+
+void Process::jump_to_user_space(uintptr_t ip)
+{
+    tss.esp0 = data->kernel_stack_ptr;
+    arch_context->regs.eip = ip;
+    arch_context->regs.eflags |= 0b1000000000; // enable IF
+
+    do_switch_inter(&arch_context->regs);
+
+    __builtin_unreachable();
 }
 
 void Process::switch_to()

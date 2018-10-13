@@ -108,6 +108,7 @@ public:
     static Process* clone(Process& proc, uint32_t flags = 0);
     static Process& current() { return *m_current_process; }
     static size_t   count()   { return  m_process_count  ; }
+    static void     task_switch(pid_t pid);
     static void     kill(pid_t pid, int err_code);
     static void     release_zombie(pid_t pid);
     static Process* by_pid(pid_t pid);
@@ -125,6 +126,8 @@ public:
     void set_exec_level(ExecLevel lvl);
     void set_instruction_pointer(unsigned int value);
 
+    uintptr_t kernel_stack_pointer() const;
+
     void set_args(const std::vector<kpp::string> &args);
 
     size_t add_fd(const tasking::FDInfo& info);
@@ -132,6 +135,8 @@ public:
     void close_fd(size_t fd);
 
     void wait_for(pid_t pid, int* wstatus);
+
+    void jump_to_user_space(uintptr_t ip);
 
     void switch_to();
     void unswitch();

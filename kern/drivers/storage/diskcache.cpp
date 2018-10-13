@@ -64,7 +64,7 @@ kpp::expected<kpp::dummy_t, DiskError> DiskCache::read_sectors(size_t sec, gsl::
     for (size_t i { sec }; i < sec + count; ++i)
     {
         const auto& cache_data = m_cache.at(i).data;
-        std::copy(cache_data.begin(), cache_data.end(), data.begin() + i*sect_size);
+        std::copy(cache_data.begin(), cache_data.end(), data.begin() + (i-sec)*sect_size);
 
         const uint64_t ticks = Time::total_ticks();
 

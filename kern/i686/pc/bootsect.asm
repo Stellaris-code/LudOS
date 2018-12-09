@@ -14,7 +14,7 @@ extern _bss_end
 
 extern __cxa_finalize
 
-%include "../kern/i686/defs.asm"
+%include "defs.asm"
 
 KERNEL_PAGE_NUMBER equ (KERNEL_VIRTUAL_BASE >> 22)
 

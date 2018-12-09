@@ -1,4 +1,5 @@
 set -e
+cd "${BASH_SOURCE%/*}/" 
 ./mkinitrd.sh
 ./strip-bin.sh
 cd ..

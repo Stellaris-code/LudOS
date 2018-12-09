@@ -18,8 +18,6 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 include(profile_detection)
 
-LOAD_PROFILE("${ARCH}" "${PLATFORM}")
-
 add_definitions("-DARCH_${ARCH} -DLUDOS_ARCH=\"${ARCH}\"")
 
 set(CMAKE_ASM_NASM_OBJECT_FORMAT elf32)
@@ -109,6 +107,9 @@ if (NOT WITH_ACPICA)
 endif()
 
 add_executable(${PROJECT_NAME} ${PLATFORM_SRCS} ${ISA_SRCS} ${GENERIC_SRCS} ${HEADERS} ${STB_HEADERS} ${LD_SCRIPTS})
+
+LOAD_PROFILE("${ARCH}" "${PLATFORM}")
+target_sources(${PROJECT_NAME} PUBLIC ${PLATFORM_SRCS} ${ISA_SRCS})
 
 target_compile_definitions(${PROJECT_NAME} PUBLIC "-D__LUDOS__")
 

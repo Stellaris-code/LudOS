@@ -4,4 +4,6 @@ SET(ISA_LINKER_FLAGS "${ISA_LINKER_FLAGS}")
 
 SET(ISA_LINKER_FLAGS "${ISA_LINKER_FLAGS} CMakeFiles/LudOS.dir/kern/i686/pc/multiboot.asm.obj")
 
+target_compile_options(${PROJECT_NAME} PUBLIC $<$<BOOL:$<COMPILE_LANGUAGE:ASM_NASM>>:-I${CMAKE_CURRENT_SOURCE_DIR}/kern/i686/>) #necessary for nasm
+
 configure_file("${PROJECT_SOURCE_DIR}/kern/i686/pc/layout.ld.in" "${PROJECT_SOURCE_DIR}/kern/i686/pc/layout.ld")

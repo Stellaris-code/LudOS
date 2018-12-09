@@ -31,23 +31,20 @@ SOFTWARE.
 
 int main(int argc, char* argv[])
 {
-    char file[] = "/initrd/test_programs/ExecTest";
-    printf("Going to execute file '%s'\n", file);
 
-    void* waste = malloc(8000000);
+    char file[] = "/initrd/test_programs/ExecTest";
+
+    print_serial("before call :\n");
+    for (size_t i { 0 }; i < 1; ++i)
+    {
+        printf("test\n");
+    }
+    print_serial("after call : \n");
+
+    printf("argc : 0x%x\n", argc);
 
     const char* empty_arr[] = {nullptr};
-    char* arg_arr[argc+1];
-    for (int i { 0 }; i < argc; ++i)
-    {
-        arg_arr[i] = (char*)malloc(strlen(argv[i]));
-        strcpy(arg_arr[i], argv[i]);
-        printf("Arg %d : %s\n", i, arg_arr[i]);
-    }
 
-    arg_arr[argc] = nullptr;
-
-    execve(file, (const char**)arg_arr, empty_arr);
-
+    execve(file, (const char**)empty_arr, empty_arr);
     return 0;
 }

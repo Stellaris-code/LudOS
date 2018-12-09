@@ -56,7 +56,7 @@ private:
     static void clear_page(uintptr_t p_addr);
 
 private:
-    static inline bitarray<1024*1024, uint32_t> mem_bitmap; // 0 = free / 1 = used
+    static bitarray<1024*1024, uint32_t> mem_bitmap; // 0 = free / 1 = used
     static inline size_t last_pos { 0 };
 };
 

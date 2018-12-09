@@ -103,6 +103,7 @@ void add_syscall(ReturnType(*target)(Args...))
     };
 
     table[Number].arg_cnt = sizeof...(Args);
+    table[Number].returns = !std::is_same_v<ReturnType, void>;
 
     size_t i { 0 };
     ((table[Number].arg_sizes[i++] = sizeof(Args)), ...);

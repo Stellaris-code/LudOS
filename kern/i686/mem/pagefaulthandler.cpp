@@ -1,4 +1,4 @@
-/*
+﻿/*
 pagefaulthandler.cpp
 
 Copyright (c) 17 Yann BOUCHER (yann)
@@ -33,7 +33,7 @@ SOFTWARE.
 
 bool Paging::page_fault_handler(registers *regs)
 {
-    panic_regs = regs;
+    panic_regs = *regs;
 
     PageFault fault;
     fault.mcontext = regs;
@@ -49,7 +49,7 @@ bool Paging::page_fault_handler(registers *regs)
         panic("Reserved paging structure bit write !\n");
     }
 
-    page_fault_entry(fault);
+    log_serial("returning to 0x%x\n", regs->eip);
 
     // if eip seems invalid, try to manually pop the stack and return
     if (!Memory::is_mapped((unsigned char*)regs->eip))
@@ -62,11 +62,16 @@ bool Paging::page_fault_handler(registers *regs)
     else
     {
         // if we actually return, move eip to the next instruction
+        uint8_t buf[x86_max_insn_size()];
+        memcpy(buf, (uint8_t*)regs->eip, sizeof(buf));
+
         x86_invariant_t ins;
-        x86_invariant_disasm((unsigned char*)regs->eip, x86_max_insn_size(), &ins);
+        x86_invariant_disasm(buf, x86_max_insn_size(), &ins);
 
         regs->eip += ins.size;
     }
+
+    page_fault_entry(fault);
 
     return true;
 }

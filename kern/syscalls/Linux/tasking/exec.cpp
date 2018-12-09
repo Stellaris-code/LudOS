@@ -41,8 +41,6 @@ SOFTWARE.
 
 extern "C" void enter_ring3(uint32_t esp, uint32_t eip, uint32_t argc, uint32_t argv);
 
-std::vector<kpp::string> args;
-Process* process { nullptr };
 
 // TODO : ETXTBSY
 // TODO : envp
@@ -53,25 +51,27 @@ int sys_execve(user_ptr<const char> path, user_ptr<user_ptr<const char>> argv, u
         return -EFAULT;
     }
 
+    auto res = vfs::user_find(path.get());
+    if (res.target_node == nullptr)
     {
-        auto res = vfs::user_find(path.get());
-        if (res.target_node == nullptr)
-        {
-            return -ENOENT;
-        }
-        if (res.target_node->type() != vfs::node::File)
-        {
-            return -ENOENT;
-        }
+        return -ENOENT;
+    }
+    if (res.target_node->type() != vfs::node::File)
+    {
+        return -ENOENT;
+    }
 
-        if (!Process::current().check_perms(res.target_node->stat().perms, res.target_node->stat().uid,
-                                            res.target_node->stat().gid, Process::AccessRequestPerm::ExecRequest))
-        {
-            return -EACCES;
-        }
+    if (!Process::current().check_perms(res.target_node->stat().perms, res.target_node->stat().uid,
+                                        res.target_node->stat().gid, Process::AccessRequestPerm::ExecRequest))
+    {
+        return -EACCES;
+    }
 
-        args.clear();
-        user_ptr<const char>* str = argv.get();
+    std::vector<kpp::string> args;
+
+    user_ptr<const char>* str = argv.get();
+    if (str->as_raw() != 0)
+    {
         if (!str->check()) return -EFAULT;
         while (str->get())
         {
@@ -79,44 +79,41 @@ int sys_execve(user_ptr<const char> path, user_ptr<user_ptr<const char>> argv, u
             str++;
             if (!str->check()) return -EFAULT;
         }
-
-        if (!Process::check_args_size(args))
-        {
-            return -E2BIG;
-        }
-
-        auto result = res.target_node->read();
-        if (!result)
-        {
-            return -result.error().to_errno();
-        }
-
-        MemBuffer data = std::move(result.value());
-
-        if (data.empty())
-        {
-            return -EIO;
-        }
-
-        auto loader = ProcessLoader::get(data);
-        if (!loader)
-        {
-            return -ENOEXEC;
-        }
-
-        kpp::string proc_name = path.get();
-
-        process = &Process::current();
-
-        process->unswitch();
-        loader->load(*process);
-
-        process->set_args(args);
-        process->data->name = filename(proc_name).to_string();
     }
 
-    // Force scope deletion, otherwise it will never be called
-    process->switch_to();
+    if (!Process::check_args_size(args))
+    {
+        return -E2BIG;
+    }
 
-    __builtin_unreachable();
+    auto result = res.target_node->read();
+    if (!result)
+    {
+        return -result.error().to_errno();
+    }
+
+    MemBuffer data = std::move(result.value());
+
+    if (data.empty())
+    {
+        return -EIO;
+    }
+
+    auto loader = ProcessLoader::get(data);
+    if (!loader)
+    {
+        return -ENOEXEC;
+    }
+
+    kpp::string proc_name = path.get();
+
+    auto& process = Process::current();
+
+    process.data->name = filename(proc_name).to_string();
+
+    loader->load(process);
+
+    process.push_args(args);
+
+    return -EOK;
 }

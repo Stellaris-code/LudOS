@@ -40,6 +40,8 @@ SOFTWARE.
 #include "utils/stlutils.hpp"
 #include "utils/memutils.hpp"
 
+#include "cpu/stack.hpp"
+
 #include "shared_memory.hpp"
 
 #include "fs/vfs.hpp"
@@ -59,16 +61,8 @@ Process::Process()
     init_sig_handlers();
 
     data->user_callbacks = std::make_shared<tasking::UserCallbacks>();
-}
 
-void Process::load_user_code(gsl::span<const uint8_t> code_to_copy, size_t allocated_size)
-{
-    if (arch_context)
-    {
-        cleanup(); // if arch_data == nullptr then the process isn't in a ready state yet, so don't clean it up
-        assert(arch_context == nullptr);
-    }
-    arch_init(code_to_copy, allocated_size);
+    arch_init();
 }
 
 void Process::init_default_fds()
@@ -258,16 +252,8 @@ void Process::release_zombie(pid_t pid)
     m_processes[pid].reset();
 
     m_process_count--;
-}
 
-extern "C" void task_switch(uintptr_t other_sp);
-
-void Process::task_switch(pid_t pid)
-{
-    auto proc = by_pid(pid);
-    assert(proc);
-
-    ::task_switch(proc->kernel_stack_pointer());
+    assert(by_pid(pid) == nullptr);
 }
 
 Process *Process::by_pid(pid_t pid)
@@ -295,7 +281,7 @@ std::vector<pid_t> Process::process_list()
     return vec;
 }
 
-Process *Process::create(const std::vector<kpp::string>& args)
+Process *Process::create()
 {
     pid_t free_idx = find_free_pid();
     if (free_idx == (int)m_processes.size())
@@ -311,7 +297,6 @@ Process *Process::create(const std::vector<kpp::string>& args)
 
     m_processes[free_idx]->tgid = free_idx;
     m_processes[free_idx]->pid  = free_idx;
-    m_processes[free_idx]->data->args = args;
 
     ++m_process_count;
 
@@ -320,38 +305,25 @@ Process *Process::create(const std::vector<kpp::string>& args)
     return m_processes[free_idx].get();
 }
 
-Process *Process::create_kernel_task(void (*procedure)())
+Process *Process::create_init_task(void (*procedure)())
 {
-    auto proc = Process::create({});
-    proc->arch_init({}, 0);
-    proc->set_exec_level(Process::Kernel);
-    proc->set_instruction_pointer((uintptr_t)procedure);
+    assert(m_current_process == nullptr);
+    m_current_process = create_kernel_task(procedure);
 
-    return proc;
+    m_current_process->switch_to();
+
+    return m_current_process;
 }
 
-void populate_argv(uintptr_t addr, gsl::span<const kpp::string> args)
+void Process::switch_to()
 {
-    // Structure:
-    // 0..n*4 : ptr array
-    // n*4..end : actual strings
+    map_address_space();
+    map_shm();
+}
 
-    gsl::span<uint8_t> data {(uint8_t*)addr, Memory::page_size()};
-
-    size_t cursor = args.size() * sizeof(uintptr_t); // start after arg array;
-
-    for (size_t i { 0 }; i < args.size(); ++i)
-    {
-        assert(cursor + args[i].size() < Memory::page_size());
-
-        std::copy(args[i].c_str(), args[i].c_str() + args[i].size() + 1, data.data() + cursor); // include null terminator
-
-        ((uint32_t*)data.data())[i] = Process::argv_virt_page + cursor;
-
-        cursor += args[i].size() + 1; // again, null terminator
-    }
-
-    assert(cursor < Memory::page_size());
+void Process::unswitch()
+{
+    unmap_address_space();
 }
 
 bool Process::check_args_size(const std::vector<kpp::string> &args)
@@ -366,13 +338,43 @@ bool Process::check_args_size(const std::vector<kpp::string> &args)
     return tb_size < Memory::page_size();
 }
 
-void Process::set_args(const std::vector<kpp::string>& args)
+void Process::push_args(const std::vector<kpp::string>& args)
 {
     data->args = args;
 
-    auto ptr = Memory::mmap(data->mappings.at(argv_virt_page).paddr, Memory::page_size());
-    populate_argv((uintptr_t)ptr, args);
-    Memory::unmap(ptr, Memory::page_size());
+    // Structure:
+    // 0..n*4 : ptr array
+    // n*4..end : actual strings
+
+    size_t table_size { args.size()*sizeof(uintptr_t) };
+
+    for (const auto& str : args)
+    {
+        table_size += str.size()+1; // null terminator
+    }
+
+    expand_stack(table_size);
+
+    const uintptr_t argv_base = stack_pointer();
+    const uintptr_t stack_base = (uintptr_t)data->stack.data() + data->stack.size() - (user_stack_top - argv_base);
+
+    size_t cursor = args.size() * sizeof(uintptr_t); // start after arg array;
+
+    for (size_t i { 0 }; i < args.size(); ++i)
+    {
+        assert(cursor + args[i].size() < Memory::page_size());
+
+        std::copy(args[i].c_str(), args[i].c_str() + args[i].size() + 1, (uint8_t*)stack_base + cursor); // include null terminator
+
+        ((uint32_t*)stack_base)[i] = argv_base + cursor;
+
+        cursor += args[i].size() + 1; // again, null terminator
+    }
+
+    assert(cursor < Memory::page_size());
+
+    push_onto_stack(argv_base); // argv
+    push_onto_stack(args.size()); // argc
 }
 
 Process::~Process()

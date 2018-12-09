@@ -80,12 +80,14 @@ void install_task_commands(Shell &sh)
              program_args[i] = args[i];
          }
 
-         auto process = Process::create(program_args);
+         auto process = Process::create_user_task();
          if (!process || !loader->load(*process))
          {
              sh.error("Can't load '%s'\n", args[0].c_str());
              return -4;
          }
+
+         process->push_args(program_args);
 
          process->data->pwd = sh.pwd;
          process->data->name = filename(program_args[0]).to_string();
@@ -95,7 +97,7 @@ void install_task_commands(Shell &sh)
 
          int status = 0xdeadbeef;
          Process::current().wait_for(process->pid, &status);
-         tasking::kernel_yield();
+         tasking::schedule();
 
          if (WIFSIGNALED(status))
          {

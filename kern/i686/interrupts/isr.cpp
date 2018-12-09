@@ -33,7 +33,10 @@ SOFTWARE.
 #include "io.hpp"
 #include "terminal/terminal.hpp"
 #include "utils/logging.hpp"
+
 #include "tasking/process.hpp"
+#include "tasking/process_data.hpp"
+#include "i686/tasking/tss.hpp"
 
 #include <stdio.h>
 
@@ -80,11 +83,21 @@ constexpr const char *exception_messages[] = {
 extern "C"
 const registers* isr_handler(registers* const regs)
 {
-    Process::current().arch_context->regs = *regs;
+    if (regs->cs & 0x3) // in user mode
+    {
+        Process::current().arch_context->user_regs = regs;
+    }
 
     if (auto handl = handlers[regs->int_no])
     {
-        if (handl(regs)) return regs;
+        if (handl(regs))
+        {
+            if (regs->cs & 0x3) // in user mode
+            {
+                tss.esp0 = (uintptr_t)(Process::current().data->kernel_stack + ProcessData::kernel_stack_size);
+            }
+            return regs;
+        }
     }
 
     if (regs->int_no < std::extent_v<decltype(exception_messages)>)
@@ -104,7 +117,7 @@ const registers* isr_handler(registers* const regs)
 
         log_serial("Unhandeld interrupt 0x%x (type : '%s') with error code 0x%lx at 0x%lx\n", regs->int_no, exception_messages[regs->int_no], regs->err_code, regs->eip);
 
-        panic_regs = regs;
+        panic_regs = *regs;
         panic("Unhandeld interrupt 0x%x (type : '%s')\n", regs->int_no, exception_messages[regs->int_no]);
     }
 
@@ -114,9 +127,6 @@ const registers* isr_handler(registers* const regs)
 extern "C"
 const registers* irq_handler(registers* const regs)
 {
-    // If in user mode
-    if (regs->cs & 0x3) Process::current().arch_context->regs = *regs;
-
     pic::send_eoi(regs->int_no-31);
     if (auto handl = handlers[regs->int_no])
     {

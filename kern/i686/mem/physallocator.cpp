@@ -32,10 +32,8 @@ SOFTWARE.
 
 static constexpr uint32_t fill_pattern = 0xDEADBEEF;
 
-uintptr_t PhysPageAllocator::allocated_list[50000];
-bool recording { false };
-
 int PhysPageAllocator::allocated_pages = 0;
+bitarray<1024*1024, uint32_t> PhysPageAllocator::mem_bitmap;
 
 void PhysPageAllocator::init()
 {
@@ -64,6 +62,7 @@ bool PhysPageAllocator::release_physical_page(uintptr_t p_addr)
 
     assert(released);
 
+    last_pos = base_page;
     --allocated_pages;
 
     return released;
@@ -95,13 +94,10 @@ void PhysPageAllocator::mark_as_free(uintptr_t addr, size_t size)
 
 void PhysPageAllocator::start_recording_allocs()
 {
-    for (auto& i : allocated_list) i = 0;
-    recording = true;
 }
 
 void PhysPageAllocator::stop_recording_allocs()
 {
-    recording = false;
 }
 
 uintptr_t PhysPageAllocator::find_free_page()

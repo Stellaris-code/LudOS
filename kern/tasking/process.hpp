@@ -57,6 +57,8 @@ class SharedMemorySegment;
 struct ProcessArchContext;
 struct ProcessData;
 
+struct PageFault;
+
 class Process : NonCopyable
 {
 public:
@@ -73,10 +75,8 @@ public:
     };
 
     static constexpr size_t root_uid = 0;
-    // Let the upper page free for argv/argc
-    static constexpr uintptr_t argv_virt_page         = KERNEL_VIRTUAL_BASE - (1*Memory::page_size());
-    static constexpr uintptr_t signal_trampoline_page = KERNEL_VIRTUAL_BASE - (2*Memory::page_size());
-    static constexpr size_t    user_stack_top         = KERNEL_VIRTUAL_BASE - (2*Memory::page_size());
+    static constexpr uintptr_t signal_trampoline_page = KERNEL_VIRTUAL_BASE - (1*Memory::page_size());
+    static constexpr size_t    user_stack_top         = KERNEL_VIRTUAL_BASE - (1*Memory::page_size());
     static constexpr kpp::array<uintptr_t, 64> default_sighandler_actions
     {{
             SIG_ACTION_TERM, // 0
@@ -84,30 +84,45 @@ public:
                     SIG_ACTION_TERM, // SIGINT
                     SIG_ACTION_CORE, // SIGQUIT
                     SIG_ACTION_CORE, // SIGILL
+                    SIG_ACTION_CORE, // SIGTRAP
                     SIG_ACTION_CORE, // SIGABRT
+                    SIG_ACTION_CORE, // SIGBUS
                     SIG_ACTION_CORE, // SIGFPE
                     SIG_ACTION_TERM, // SIGKILL
+                    SIG_ACTION_TERM, // SIGUSR1
                     SIG_ACTION_CORE, // SIGSEGV
+                    SIG_ACTION_TERM, // SIGUSR2
                     SIG_ACTION_TERM, // SIGPIPE
                     SIG_ACTION_TERM, // SIGALRM
                     SIG_ACTION_TERM, // SIGTERM
-                    SIG_ACTION_TERM, // SIGUSR1
-                    SIG_ACTION_TERM, // SIGUSR2
+                    SIG_ACTION_TERM, // SIGSTKFLT
                     SIG_ACTION_IGN , // SIGCHLD
                     SIG_ACTION_CONT, // SIGCONT
                     SIG_ACTION_STOP, // SIGSTOP
                     SIG_ACTION_STOP, // SIGTSTP
                     SIG_ACTION_STOP, // SIGTTIN
-                    SIG_ACTION_STOP  // SIGTTOU
+                    SIG_ACTION_STOP, // SIGTTOU
+                    SIG_ACTION_IGN , // SIGURG
+                    SIG_ACTION_CORE, // SIGXCPU
+                    SIG_ACTION_CORE, // SIGXFSZ
+                    SIG_ACTION_TERM, // SIGVTALRM
+                    SIG_ACTION_TERM, // SIGPROF
+                    SIG_ACTION_IGN , // SIGWINCH
+                    SIG_ACTION_IGN , // SIGIO
+                    SIG_ACTION_IGN , // SIGPWR
+                    SIG_ACTION_CORE, // SIGSYS
                     // The rest is filled with zeroes which are equal to SIG_ACTION_TERM
         }};
 
 public:
-    static Process* create(const std::vector<kpp::string> &args);
+    static Process* create();
+    static Process* create_init_task(void(*procedure)());
     static Process* create_kernel_task(void(*procedure)());
+    static Process* create_user_task();
     static Process* clone(Process& proc, uint32_t flags = 0);
-    static Process& current() { return *m_current_process; }
-    static size_t   count()   { return  m_process_count  ; }
+    static Process& current()    { return *m_current_process ; }
+    static size_t   count()      { return  m_process_count   ; }
+    static size_t   highest_pid(){ return  m_processes.size(); }
     static void     task_switch(pid_t pid);
     static void     kill(pid_t pid, int err_code);
     static void     release_zombie(pid_t pid);
@@ -123,12 +138,9 @@ public:
     ~Process();
 
     void load_user_code(gsl::span<const uint8_t> code_to_copy, size_t allocated_size = 0);
-    void set_exec_level(ExecLevel lvl);
     void set_instruction_pointer(unsigned int value);
 
-    uintptr_t kernel_stack_pointer() const;
-
-    void set_args(const std::vector<kpp::string> &args);
+    void push_args(const std::vector<kpp::string> &args);
 
     size_t add_fd(const tasking::FDInfo& info);
     tasking::FDInfo *get_fd(size_t fd);
@@ -136,10 +148,10 @@ public:
 
     void wait_for(pid_t pid, int* wstatus);
 
+    // expects that user_regs is a owned pointer !
+    // will delete user_regs on call
+    void jump_to_user_space();
     void jump_to_user_space(uintptr_t ip);
-
-    void switch_to();
-    void unswitch();
 
     void* map_range(uintptr_t phys, size_t len);
 
@@ -181,10 +193,12 @@ private:
     static pid_t find_free_pid();
 
 private:
-    void arch_init(gsl::span<const uint8_t> code_to_copy, size_t allocated_size);
+    void arch_init();
     void init_default_fds();
     void init_sig_handlers();
 
+    uintptr_t stack_pointer() const;
+    void expand_stack(size_t size);
     void push_onto_stack(gsl::span<const uint8_t> data);
     void pop_stack(size_t size);
 
@@ -201,7 +215,11 @@ private:
 
     void execute_sighandler(int signal, pid_t returning_pid, const siginfo_t& siginfo);
 
+    bool user_callback_fault_handler(const PageFault& fault);
     void do_user_callback(const std::function<int(const std::vector<uintptr_t>&)>& callback, const std::vector<size_t> &arg_sizes);
+
+    void switch_to();
+    void unswitch();
 
     void map_code();
     void map_stack();

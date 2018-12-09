@@ -34,9 +34,8 @@ namespace tasking
 void scheduler_init();
 
 void schedule();
-void kernel_yield();
 
-extern DeltaQueue<pid_t> sleep_queue;
+extern DeltaQueue<pid_t, time_t> sleep_queue;
 
 }
 

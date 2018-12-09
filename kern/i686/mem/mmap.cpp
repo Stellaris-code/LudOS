@@ -71,6 +71,11 @@ void Memory::unmap_page(void *v_addr)
     Paging::unmap_page(v_addr);
 }
 
+void Memory::unmap_user_space()
+{
+    Paging::unmap_user_space();
+}
+
 void Memory::remap_page(uintptr_t p_addr, void *v_addr, uint32_t flags)
 {
     Paging::unmap_page(v_addr);

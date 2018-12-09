@@ -30,9 +30,9 @@ SOFTWARE.
 extern "C" bool check_fpu_presence();
 extern "C" void setup_fpu();
 
-struct FPUState
+struct alignas(16) FPUState
 {
-    uint8_t data[512];
+    alignas(16) uint8_t data[512];
 };
 
 class FPU
@@ -40,6 +40,7 @@ class FPU
 public:
     static void init();
 
+    static FPUState make();
     static FPUState save();
     static void load(const FPUState& state);
 

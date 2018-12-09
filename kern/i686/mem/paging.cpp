@@ -55,8 +55,6 @@ void Paging::init()
     write_cr3(pd_addr);
     write_cr4(cr4_var);
 
-    m_initialized = true;
-
     sti();
 }
 
@@ -136,14 +134,7 @@ void Paging::create_paging_info(PagingInformation &info)
 {
     auto get_addr = [](auto addr)->void*
     {
-        if (!m_initialized)
-        {
-            return (void*)addr;
-        }
-        else
-        {
-            return (void*)Memory::physical_address((void*)addr);
-        }
+        return (void*)Memory::physical_address((void*)addr);
     };
 
     memset(info.page_directory.data(), 0, info.page_directory.size()*sizeof(PDEntry));
@@ -173,10 +164,10 @@ uintptr_t Paging::alloc_virtual_page(size_t number, bool user)
 
     constexpr size_t margin = 0;
 
-    static size_t user_last_pos = 0x0;
+    static size_t user_last_pos = USER_VIRTUAL_BASE >> 12;
     static size_t kernel_last_pos = KERNEL_VIRTUAL_BASE >> 12;
 
-    const size_t base = user ? 0x0 : (KERNEL_VIRTUAL_BASE >> 12);
+    const size_t base = (user ? USER_VIRTUAL_BASE : KERNEL_VIRTUAL_BASE) >> 12;
 
     size_t& last_pos = user ? user_last_pos : kernel_last_pos;
 
@@ -202,9 +193,6 @@ loop:
         if (counter == number)
         {
             last_pos = i;
-
-            // ensure it stays in kernel space
-            if (!user) assert(addr * page_size + (margin/2*page_size) >= KERNEL_VIRTUAL_BASE);
 
             for (size_t j { addr }; j < addr + number + margin; ++j)
             {
@@ -233,7 +221,7 @@ bool Paging::release_virtual_page(uintptr_t v_addr, size_t number, ReleaseFlags 
     auto entry = page_entry(v_addr);
     for (size_t i { 0 }; i < number; ++i)
     {
-        assert(entry[i].present);
+        //assert(entry[i].present);
         assert(entry[i].os_claimed);
         assert(flags == FreePage);
         entry[i].present = false;
@@ -241,7 +229,7 @@ bool Paging::release_virtual_page(uintptr_t v_addr, size_t number, ReleaseFlags 
 
         invlpg(v_addr + i*page_size);
     }
-#else
+#else // FIXME
     auto base = page_entry(v_addr);
     memset(base, 0, number*sizeof(PTEntry));
     for (size_t i { 0 }; i < number; ++i)
@@ -251,18 +239,6 @@ bool Paging::release_virtual_page(uintptr_t v_addr, size_t number, ReleaseFlags 
 #endif
 
     return true;
-}
-
-PageDirectory *Paging::get_page_directory()
-{
-    if (!m_initialized)
-    {
-        return &kernel_info.page_directory;
-    }
-    else
-    {
-        return reinterpret_cast<PageDirectory*>(0xFFFFF000);
-    }
 }
 
 void Paging::map_kernel(PagingInformation& info)
@@ -281,4 +257,13 @@ void Paging::map_kernel(PagingInformation& info)
         entry->write = true;
         entry->user = true;
     }
+}
+
+PTEntry *Paging::page_entry(uintptr_t addr)
+{
+    uint32_t pdindex = addr >> 22;
+    uint32_t ptindex = addr >> 12 & 0x03FF;
+
+    PageTable * pt = reinterpret_cast<PageTable*>(((kernel_info.page_directory)[pdindex].pt_addr << 12) + KERNEL_VIRTUAL_BASE);
+    return &(*pt)[ptindex];
 }

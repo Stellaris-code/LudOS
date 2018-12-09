@@ -42,7 +42,8 @@ constexpr uint8_t invalid_syscall_magic { 0xFF };
 struct SyscallInfo
 {
     syscall_ptr ptr;
-    uint8_t arg_cnt;
+    uint8_t returns : 1;
+    uint8_t arg_cnt : 7;
     uint8_t arg_sizes[6];
 }; // 32 bytes
 

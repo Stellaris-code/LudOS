@@ -22,3 +22,35 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
+
+#include "memmap.hpp"
+
+#include <assert.h>
+
+void *Memory::vmalloc(size_t pages, uint32_t flags)
+{
+    uint8_t* addr = reinterpret_cast<uint8_t*>(Memory::allocate_virtual_page(pages, false));
+    for (size_t i { 0 }; i < pages; ++i)
+    {
+        void* virtual_page  = (uint8_t*)addr + i*Memory::page_size();
+        uintptr_t physical_page = Memory::allocate_physical_page();
+        Memory::map_page(physical_page, virtual_page, flags);
+    }
+
+    return addr;
+}
+
+void Memory::vfree(void *base, size_t pages)
+{
+    assert((uintptr_t)base % Memory::page_size() == 0);
+
+    for (size_t i { 0 }; i < pages; ++i)
+    {
+        void* virtual_page = (uint8_t*)base + i*Memory::page_size();
+
+        uintptr_t physical_page = Memory::physical_address(virtual_page);
+
+        Memory::release_physical_page(physical_page);
+        Memory::unmap_page(virtual_page);
+    }
+}

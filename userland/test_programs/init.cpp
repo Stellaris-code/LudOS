@@ -27,9 +27,20 @@ SOFTWARE.
 
 #include <syscalls/syscall_list.hpp>
 
+char print_buffer[1024];
+size_t buf_counter;
+
+void flush_buffer()
+{
+    write(1, print_buffer, buf_counter);
+    buf_counter = 0;
+}
+
 void write_callback(void*, char c)
 {
-    write(1, &c, 1);
+    print_buffer[buf_counter++] = c;
+    if (c == '\n' || buf_counter == sizeof(print_buffer))
+        flush_buffer();
 }
 
 void __attribute__((constructor)) libc_init()

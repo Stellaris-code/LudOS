@@ -53,6 +53,7 @@ public:
 
     static void map_page(uintptr_t p_addr, void* v_addr, uint32_t flags = Memory::Read|Memory::Write);
     static void unmap_page(void* v_addr);
+    static void unmap_user_space();
     static void remap_page(uintptr_t p_addr, void* v_addr, uint32_t flags);
 
     // TODO : add size field
@@ -68,6 +69,9 @@ public:
 
     static uintptr_t allocate_virtual_page(size_t number, bool user);
     static void release_virtual_page(uintptr_t page);
+
+    static void* vmalloc(size_t pages, uint32_t flags);
+    static void  vfree(void* base, size_t pages);
 
     static constexpr size_t page_size()
     {

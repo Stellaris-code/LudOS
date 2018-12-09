@@ -1,4 +1,4 @@
-﻿/*
+/*
 scheduler.cpp
 
 Copyright (c) 29 Yann BOUCHER (yann)
@@ -30,9 +30,12 @@ SOFTWARE.
 #include "time/time.hpp"
 #include "tasking/process.hpp"
 
+#include "i686/tasking/process.hpp"
+#include "tasking/process_data.hpp"
+
 namespace tasking
 {
-DeltaQueue<pid_t> sleep_queue
+DeltaQueue<pid_t, time_t> sleep_queue
 {
     [](pid_t pid)
     {
@@ -54,10 +57,12 @@ void update_sleep_queue()
     asm volatile ("cli\n"); // TODO : have a lock() function
 
     time_t current_ticks = Time::total_ticks();
-    time_t microsec_duration = (current_ticks - elapsed_ticks) / (Time::clock_speed());
+    time_t tick_duration = current_ticks - elapsed_ticks;
     elapsed_ticks = current_ticks;
 
-    sleep_queue.decrease(microsec_duration);
+    //log_serial("tick duration : %lld\n", tick_duration);
+
+    sleep_queue.decrease(tick_duration);
 
     asm volatile ("sti\n");
 }
@@ -73,15 +78,25 @@ pid_t find_next_pid()
     // while next_pid is a waiting pid, set next_pid to the next process in the process list
     do
     {
-        next_pid = (next_pid + 1) % Process::count();
+        next_pid = (next_pid + 1) % Process::highest_pid();
     } while (!Process::by_pid(next_pid) || !process_ready(next_pid));
+
+    if (next_pid == 0)
+    {
+        // FIXME : ugly
+        //if next pid is idle task, search again to make sure we actually only have the idle task remaining
+        do
+        {
+            next_pid = (next_pid + 1) % Process::highest_pid();
+        } while (!Process::by_pid(next_pid) || !process_ready(next_pid));
+    }
 
     return next_pid;
 }
 
 void delete_zombie_processes()
 {
-    for (pid_t pid { 0 }; pid < (pid_t)Process::count(); ++pid)
+    for (pid_t pid { 0 }; pid < (pid_t)Process::highest_pid(); ++pid)
     {
         if (auto proc = Process::by_pid(pid); proc && proc->status == Process::Zombie && proc->pid != Process::current().pid)
         {
@@ -92,7 +107,6 @@ void delete_zombie_processes()
 
 void schedule()
 {
-    Process::current().unswitch();
     delete_zombie_processes();
 
     update_sleep_queue();
@@ -101,7 +115,10 @@ void schedule()
 
     //log_serial("Switching from PID %d to PID %d (Process count : %d)\n", Process::current().pid, next_pid, Process::count());
 
-    Process::by_pid(next_pid)->switch_to();
+    if (Process::current().pid != next_pid)
+    {
+        Process::task_switch(next_pid);
+    }
 }
 
 }

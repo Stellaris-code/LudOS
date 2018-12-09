@@ -32,6 +32,7 @@ SOFTWARE.
 # define PRINTF_FMT(fmt_idx,arg1_idx)
 #endif
 
+#define USER_VIRTUAL_BASE   0x08000000
 #define KERNEL_VIRTUAL_BASE @KERNEL_VIRTUAL_BASE@
 #define CURRENT_YEAR @CURRENT_YEAR@
     

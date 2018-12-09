@@ -25,42 +25,47 @@ SOFTWARE.
 
 #include "i686/syscalls/syscall.hpp"
 
-#include "panic.hpp"
 #include "errno.h"
 
 #include "i686/tasking/process.hpp"
-#include "i686/tasking/tss.hpp"
-#include "tasking/process_data.hpp"
-#include "tasking/scheduler.hpp"
-#include "utils/align.hpp"
 
-extern "C" const registers* __attribute__((force_align_arg_pointer)) syscall_handler(registers* const regs)
+#include "i686/tasking/tss.hpp"
+
+#include "tasking/process_data.hpp"
+
+
+extern "C" const registers* syscall_handler(registers* const regs)
 {
     assert(regs->cs & 0x3); // ensure it was called from user mode
 
     auto& process = Process::current();
 
-    process.arch_context->regs = *regs;
     process.arch_context->fpu_state = FPU::save();
+    process.arch_context->user_regs = regs;
+
     uint32_t ret = ENOSYS;
 
     auto& table = (regs->int_no == ludos_syscall_int ? ludos_syscall_table :
                                                        linux_syscall_table);
-    if (regs->eax >= max_syscalls)
+    const uint32_t sys_num = regs->eax;
+
+    if (sys_num >= max_syscalls)
     {
         ret = ENOSYS;
         goto exit;
     }
 
-    ret = table[regs->eax].ptr(regs);
-
+    ret = table[sys_num].ptr(regs);
 exit:
-    FPU::load(process.arch_context->fpu_state);
-    regs->eax = ret;
 
-    // FIXME : ugly af
-    process.data->kernel_stack_ptr = (uintptr_t)(process.data->kernel_stack.data() + process.data->kernel_stack.size());
-    tss.esp0 = process.data->kernel_stack_ptr;
+    if (table[sys_num].returns) // eax holds return value
+    {
+        regs->eax = ret;
+    }
+
+    FPU::load(process.arch_context->fpu_state); // FIXME
+
+    tss.esp0 = (uintptr_t)(process.data->kernel_stack + ProcessData::kernel_stack_size);
 
     return regs;
 }

@@ -90,8 +90,8 @@ int main(int argc, char* argv[])
     int fbret = get_interface(fbdev_fd, IFBDEV_ID, &fbdev);
     assert(fbret != -1);
 
-    //    FBDevMode modes[64];
-    //    int count = fbdev.get_video_modes(modes, 64);
+//        FBDevMode modes[64];
+//        int count = fbdev.get_video_modes(modes, 64);
 
 
     printf("Switching to 640x480x32\n");

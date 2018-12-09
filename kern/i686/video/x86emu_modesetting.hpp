@@ -53,7 +53,6 @@ struct RealModeState
 };
 
 extern uint8_t* emu_mem;
-extern bool x86_flag;
 
 void init_emu_mem();
 

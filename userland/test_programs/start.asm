@@ -11,11 +11,6 @@ extern start_dtors
 extern end_dtors
 
 _start:
-    ; push argc
-    ; push argv
-    push ecx
-    push eax
-
     ; Call ctors
     mov ebx, start_ctors
 
@@ -30,7 +25,7 @@ _start:
 
     call main
     ; main has returned, eax is return value
-    mov [main_return_value], eax
+    push eax
 
     ; Call dtors
     mov ebx, start_dtors
@@ -46,19 +41,11 @@ _start:
 
     ; call exit syscall
     mov eax, 1
-    mov ebx, [main_return_value]
+    pop ebx ; pop back main return value
     int 0x80
 
 _wait:
     jmp  _wait    ; loop forever
-
-;section .data
-;global _GLOBAL_OFFSET_TABLE_
-;_GLOBAL_OFFSET_TABLE_: dd 0
-
-section .bss
-align 4
-main_return_value: resd 1
 
 section .header
 extern last_allocated_page_sym

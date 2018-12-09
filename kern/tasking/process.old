@@ -1,0 +1,41 @@
+void unmap_allocated_pages(Process& p)
+{
+    for (const auto& pair : p.allocated_pages)
+    {
+        Paging::unmap_page((void*)pair.first);
+    }
+}
+
+void unmap_code(const Process::ArchSpecificData& data)
+{
+    size_t code_page_amnt = data.code.size() / Paging::page_size +
+            (data.code.size()%Paging::page_size?1:0);
+
+    for (size_t i { 0 }; i < code_page_amnt; ++i)
+    {
+        uint8_t* virt_addr = (uint8_t*)(i * Paging::page_size);
+
+        Paging::unmap_page(virt_addr);
+    }
+}
+
+void unmap_stack(const Process::ArchSpecificData& data)
+{
+    size_t code_page_amnt = data.stack.size() / Paging::page_size +
+            (data.stack.size()%Paging::page_size?1:0);
+
+    for (size_t i { 0 }; i < code_page_amnt; ++i)
+    {
+        uint8_t* virt_addr = (uint8_t*)(user_stack_top - (i * Paging::page_size));
+
+        Paging::unmap_page(virt_addr);
+    }
+}
+
+void Process::unmap_shm()
+{
+    for (auto pair : m_shm_list)
+    {
+        pair.second.shm->unmap(pair.second.v_addr);
+    }
+}

@@ -22,7 +22,6 @@ cat > isodir/boot/grub/grub.cfg << EOF
 menuentry "LudOS" {
 	multiboot /boot/LudOS.bin loglevel=debug
 	module    /boot/initrd.tar initrd
-	module    /boot/stripped.bin kernel_binary
 } 
 EOF
 grub-mkrescue -o build/iso/LudOS.iso isodir

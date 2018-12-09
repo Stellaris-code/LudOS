@@ -45,12 +45,12 @@ BootPageDirectory:
     dd 0x02c00083
     times (1024 - KERNEL_PAGE_NUMBER - 12) dd 0  ; Pages after the kernel image.
 
-kernel_stack_top: dd kernel_stack_bottom + STACKSIZE
+kernel_stack_top equ kernel_stack_bottom + STACKSIZE
 
 section .text
 
 ; reserve initial kernel stack space
-STACKSIZE equ 0x10000                    ; that's 64k.
+STACKSIZE equ 0x4000                   ; that's 16k.
 
 _start:
     ; clear bss section
@@ -92,30 +92,13 @@ higher_half_start:
     add ebx, KERNEL_VIRTUAL_BASE
     mov [mbd_info], ebx
 
-    add esp, 8 ; align stack to 16-byte boundary
+    sub esp, 8 ; align stack to 16-byte boundary
 
     push dword [mbd_info]
     push dword [magic]
 
 .kmain_call:
     call kmain                          ; call kernel proper
-
-    mov  ebx, end_dtors                 ; call the destructors
-    jmp  .dtors_until_end
-.call_destructor:
-    sub  ebx, 4
-    call [ebx]
-.dtors_until_end:
-    cmp  ebx, start_dtors
-    ja   .call_destructor
-
-    sub esp, 4
-    mov [esp], dword 0x0
-    sub esp, 8
-
-    call __cxa_finalize
-
-    add esp, 4
 
     cli
 hang:
@@ -124,8 +107,7 @@ hang:
 
 section .bss
 
-align 16
+align 0x1000
+kernel_stack_bottom:      resb STACKSIZE                   ; reserve 16k stack on a doubleword boundary
 magic:      resd 1
 mbd_info:   resd 1
-            resd 6 ; padding in order to align to 16 byte boundary
-kernel_stack_bottom:      resb STACKSIZE                   ; reserve 16k stack on a doubleword boundary

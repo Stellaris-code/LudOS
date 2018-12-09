@@ -3,14 +3,14 @@ ENTRY(_start)
 
 SECTIONS
 {
-    . = 0;
+    . = 0x08000000;
 
     .header ALIGN(4):
     {
         *(.header)
     }
 
-    .text ALIGN(4):
+    .text ALIGN(4) :
     {
         *(.text)           /* include all other .text sections */
     }

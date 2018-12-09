@@ -31,11 +31,9 @@ SOFTWARE.
 #include <stdio.h>
 #include <string.h>
 
-#include <string.hpp>
-
 #include <sys/wait.h>
 
-int exec_cmd(const std::string& cmd)
+int exec_cmd(const char* cmd)
 {
     int cmd_ret;
 
@@ -49,7 +47,7 @@ int exec_cmd(const std::string& cmd)
     {
         const char* argv[] = {0};
         const char* envp[] = {0};
-        if (execve(cmd.c_str(), argv, envp) == -1)
+        if (execve(cmd, argv, envp) == -1)
         {
             perror("execve");
             exit(22);
@@ -66,16 +64,14 @@ int exec_cmd(const std::string& cmd)
     }
 }
 
-std::string read_str()
+void read_str(char* buf, size_t len)
 {
-    std::string str;
     char c;
-    while ((c = getchar()) != '\n')
+    while ((c = getchar()) != '\n' && --len != 0)
     {
-        str += c;
+        *buf++ = c;
     }
-
-    return str;
+    *buf = '\0';
 }
 
 int main()
@@ -85,9 +81,14 @@ int main()
     while (true)
     {
         printf("%s", prompt);
-        auto cmd = read_str();
-        if (cmd == "exit") exit(0);
-        auto ret = exec_cmd("/initrd/test_programs/" + cmd);
-        printf("Command '%s' returned code %d (0x%x)\n", cmd.c_str(), ret, ret);
+        char cmd[64];
+        read_str(cmd, 64);
+        if (strcmp(cmd, "exit") == 0) exit(0);
+
+        char prgm_path[128];
+        strncpy(prgm_path, "/initrd/test_programs/", 23);
+        strncat(prgm_path, cmd, 64);
+        auto ret = exec_cmd(prgm_path);
+        printf("Command '%s' returned code %d (0x%x)\n", cmd, ret, ret);
     }
 }

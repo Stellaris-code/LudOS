@@ -29,7 +29,7 @@ SOFTWARE.
 
 #include "i686/cpu/registers.hpp"
 
-extern const registers* panic_regs;
+extern registers panic_regs;
 extern bool panic_use_exception_frame;
 
 #ifdef __cplusplus

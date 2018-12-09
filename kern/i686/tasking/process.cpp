@@ -52,12 +52,45 @@ struct SignalTrampolineInfo
 };
 static_assert(sizeof(SignalTrampolineInfo) == 16);
 
-extern "C" [[noreturn]] void do_switch_inter(const registers* regs);
-extern "C" [[noreturn]] void do_switch_same(const registers* regs);
+extern "C" [[noreturn]] void userspace_jump(const registers* regs);
+
+void Process::load_user_code(gsl::span<const uint8_t> code_to_copy, size_t allocated_size)
+{
+    data->code = std::make_shared<aligned_vector<uint8_t, Memory::page_size()>>();
+    data->code->resize(std::max<int>(code_to_copy.size(), allocated_size), 0);
+    std::copy(code_to_copy.begin(), code_to_copy.end(), data->code->begin());
+    std::fill(data->code->data() + code_to_copy.size(), data->code->data() + data->code->size(), 0); // fill bss section
+
+    data->stack.clear();
+    data->stack.resize(2*Paging::page_size);
+    auto* regs = arch_context->user_regs;
+
+    memset(regs, 0, sizeof(registers));
+
+    regs->esp = user_stack_top;
+    regs->eflags |= 0b11001000000000; // enable IF and IOPL=3
+    regs->eip = 0xdeadbeef;
+    regs->cs = gdt::user_code_selector*0x8 | 0x3;
+    regs->ds = regs->es = regs->fs = regs->gs = regs->ss = gdt::user_data_selector*0x8 | 0x3;
+
+    if (m_current_process == this)
+        unmap_address_space();
+
+    release_mappings();
+    create_mappings();
+
+    if (m_current_process == this)
+        map_address_space();
+}
+
+void Process::expand_stack(size_t size)
+{
+    arch_context->user_regs->esp -= size;
+}
 
 void Process::push_onto_stack(gsl::span<const uint8_t> data)
 {
-    auto current_sp = this->data->stack.size() - (user_stack_top - arch_context->regs.esp);
+    auto current_sp = this->data->stack.size() - (user_stack_top - arch_context->user_regs->esp);
     assert(current_sp - data.size() >= 0);
 
     for (int i { 0 }; i < data.size(); ++i)
@@ -65,12 +98,12 @@ void Process::push_onto_stack(gsl::span<const uint8_t> data)
         this->data->stack[current_sp - i - 1] = data[data.size() - i - 1];
     }
 
-    arch_context->regs.esp -= data.size();
+    expand_stack(data.size());
 }
 
 void Process::pop_stack(size_t size)
 {
-    arch_context->regs.esp += size;
+    arch_context->user_regs->esp += size;
 }
 
 void Process::wake_up(pid_t child, int err_code)
@@ -81,15 +114,21 @@ void Process::wake_up(pid_t child, int err_code)
 
     status = Active;
 
-    arch_context->regs.eax = child; // set waitpid return value
+    if (arch_context->user_regs)
+        arch_context->user_regs->eax = child; // set waitpid return value
 }
 
 void Process::execute_sighandler(int signal, pid_t returning_pid, const siginfo_t &siginfo)
 {
     assert(arch_context);
+
     data->sig_context.push(ProcessData::SigContext{arch_context, returning_pid});
     arch_context = new ProcessArchContext(*arch_context);
     // keep the same stack for signal handling
+
+    registers* reg_copy = new registers{*data->sig_context.top().cpu_context->user_regs};
+    arch_context->user_regs = data->sig_context.top().cpu_context->user_regs;
+    data->sig_context.top().cpu_context->user_regs = reg_copy;
 
     auto sig = data->sig_handlers->at(signal);
 
@@ -105,28 +144,63 @@ void Process::execute_sighandler(int signal, pid_t returning_pid, const siginfo_
     info.handler = (uintptr_t)sig.sa_handler;
 
     push_onto_stack(siginfo); // siginfo_t
-    uintptr_t siginfo_addr = arch_context->regs.esp;
+    uintptr_t siginfo_addr = arch_context->user_regs->esp;
 
     push_onto_stack(*data->sig_context.top().cpu_context); // ucontext_t
-    uintptr_t ucontext_addr = arch_context->regs.esp;
+    uintptr_t ucontext_addr = arch_context->user_regs->esp;
 
     push_onto_stack(ucontext_addr);
     push_onto_stack(siginfo_addr);
     push_onto_stack(info);
 
     set_instruction_pointer(signal_trampoline_page);
-    Process::current().unswitch();
-    switch_to();
+}
+
+void Process::exit_signal()
+{
+    assert(!data->sig_context.empty());
+
+    // restore the saved copy
+    registers reg_copy = *data->sig_context.top().cpu_context->user_regs;
+    registers* reg_ptr = arch_context->user_regs;
+
+    free_arch_context();
+    arch_context = data->sig_context.top().cpu_context;
+    pid_t returning_pid = data->sig_context.top().returning_process;
+
+    delete arch_context->user_regs;
+    arch_context->user_regs = reg_ptr;
+    *arch_context->user_regs = reg_copy; // copy the saved register frame
+
+    arch_context->user_regs->eax = 0; // Set the return value of kill() to 0, as success
+
+    data->sig_context.pop();
+
+    if (pid != returning_pid) task_switch(returning_pid);
+}
+
+bool Process::user_callback_fault_handler(const PageFault &fault)
+{
+    if (fault.level != PageFault::User) return false;
+    if (fault.type != PageFault::Read && fault.type != PageFault::Execute) return false;
+    if (!data->user_callbacks->list.count(fault.address)) return false;
+
+    auto entry = data->user_callbacks->list.at(fault.address);
+    do_user_callback(entry.callback, entry.arg_sizes);
+
+    return true;
 }
 
 void Process::do_user_callback(const std::function<int (const std::vector<uintptr_t> &)> &callback, const std::vector<size_t>& arg_sizes)
 {
     // TODO : copy_from_user
-    auto& regs = arch_context->regs;
-    uintptr_t return_address = *(uintptr_t*)(regs.esp);
-    regs.esp += sizeof(uintptr_t);
 
-    uintptr_t esp_copy = regs.esp;
+    // will be released by the jump_to_userspace call
+    auto* regs = new registers{*arch_context->user_regs};
+    uintptr_t return_address = *(uintptr_t*)(regs->esp);
+    regs->esp += sizeof(uintptr_t);
+
+    uintptr_t esp_copy = regs->esp;
 
     std::vector<uintptr_t> arguments;
     for (auto len : arg_sizes)
@@ -153,159 +227,119 @@ void Process::do_user_callback(const std::function<int (const std::vector<uintpt
     }
 
     int ret = callback(arguments);
-    regs.eax = ret;
+    regs->eax = ret;
 
-    set_instruction_pointer(return_address);
-    unswitch(); // TODO : optimizable
-    switch_to();
+    jump_to_user_space(return_address);
 }
 
-void Process::exit_signal()
+Process *Process::create_kernel_task(void (*procedure)())
 {
-    assert(!data->sig_context.empty());
+    auto proc = Process::create();
+    proc->arch_context->init_regs->eip = (uintptr_t)procedure; // set eip to the procedure's entry point
 
-    free_arch_context();
-    arch_context = data->sig_context.top().cpu_context;
-    pid_t returning_pid = data->sig_context.top().returning_process;
-
-    arch_context->regs.eax = 0; // Set the return value of kill() to 0, as success
-    arch_context->regs.esp = data->sig_context.top().cpu_context->regs.esp; // restore the process' %esp register
-
-    data->sig_context.pop();
-
-    unswitch();
-    Process::by_pid(returning_pid)->switch_to();
+    return proc;
 }
 
-void Process::set_exec_level(Process::ExecLevel lvl)
+Process *Process::create_user_task()
 {
-    auto& regs = arch_context->regs;
+    auto proc = create_kernel_task([]
+    {
+        Process::current().jump_to_user_space();
+    });
 
-    auto code_selector = (lvl == Process::User ? gdt::user_code_selector : gdt::kernel_code_selector);
-    auto data_selector = (lvl == Process::User ? gdt::user_data_selector : gdt::kernel_data_selector);
-    regs.cs = code_selector*0x8 | (lvl == Process::User ? 0x3 : 0x0);
-    regs.ds = regs.es = regs.fs = regs.gs = regs.ss =
-            data_selector*0x8 | (lvl == Process::User ? 0x3 : 0x0);
-    if (lvl == Process::User)
-    {
-        regs.eflags |= 0b11000000000000; // IOPL = 3
-    }
-    else
-    {
-        regs.eflags &= ~0b11000000000000; // IOPL = 0;
-        regs.esp = data->kernel_stack_ptr;
-    }
+    proc->arch_context->user_regs = new registers;
+
+    return proc;
 }
 
-void Process::arch_init(gsl::span<const uint8_t> code_to_copy, size_t allocated_size)
+extern "C" int kernel_stack_bottom;
+void Process::arch_init()
 {
     assert(!arch_context);
     arch_context = new ProcessArchContext;
+    arch_context->user_regs = nullptr;
+    arch_context->fpu_state = FPU::make();
 
-    data->stack.resize(2*Paging::page_size);
-    data->kernel_stack.resize(16*Paging::page_size);
+    data->kernel_stack = (uint8_t*)Memory::vmalloc(ProcessData::kernel_stack_size/Memory::page_size(), Memory::Write|Memory::Read);
+
     // kernel esp+4 must be 16-bit aligned on function entry
-    data->kernel_stack_ptr = (uintptr_t)(data->kernel_stack.data() + data->kernel_stack.size()) - sizeof(uintptr_t);
+    arch_context->esp = (uintptr_t)(data->kernel_stack + ProcessData::kernel_stack_size) - sizeof(uintptr_t);
 
-    data->code = std::make_shared<aligned_vector<uint8_t, Memory::page_size()>>();
-    data->code->resize(std::max<int>(code_to_copy.size(), allocated_size));
-    std::copy(code_to_copy.begin(), code_to_copy.end(), data->code->begin());
-    std::fill(data->code->begin() + code_to_copy.size(), data->code->end(), 0); // clear the allocated part
+    *(uintptr_t*)(arch_context->esp-=4) = 0xdeadbeef; // eip
+    *(uintptr_t*)(arch_context->esp-=4) = 0b1000000000; // eflags with IF
+    *(uintptr_t*)(arch_context->esp-=4) = 0xdeadbeef; // eax
+    *(uintptr_t*)(arch_context->esp-=4) = 0xdeadbeef; // ecx
+    *(uintptr_t*)(arch_context->esp-=4) = 0xdeadbeef; // edx
+    *(uintptr_t*)(arch_context->esp-=4) = 0xdeadbeef; // ebx
+    *(uintptr_t*)(arch_context->esp-=4) = 0xcafebabe; // dummy_esp
+    *(uintptr_t*)(arch_context->esp-=4) = 0xdeadbeef; // ebp
+    *(uintptr_t*)(arch_context->esp-=4) = 0xdeadbeef; // esi
+    *(uintptr_t*)(arch_context->esp-=4) = 0xdeadbeef; // edi
+}
 
-    registers regs;
-    memset(&regs, 0, sizeof(registers));
+extern "C" void task_switch(uintptr_t* esp_from, uintptr_t* esp_to);
 
-    regs.eax = data->args.size();
-    regs.ecx = argv_virt_page;
-    regs.esp = user_stack_top;
-    regs.eflags |= 0b1000000000; // enable IF
+void Process::task_switch(pid_t pid)
+{
+    assert(pid != m_current_process->pid);
+    auto next = by_pid(pid);
+    assert(next);
+    auto prev = m_current_process;
 
-    arch_context->regs = regs;
+    prev->arch_context->fpu_state = FPU::save();
 
-    set_exec_level(Process::User);
+    prev->unswitch();
+    next->switch_to();
 
-    create_mappings();
+    FPU::load(next->arch_context->fpu_state);
 
-    set_args(data->args);
+    m_current_process = next;
 
-    push_onto_stack(regs.eip);
-    push_onto_stack(regs.eflags);
-    push_onto_stack(regs.eax);
-    push_onto_stack(regs.ecx);
-    push_onto_stack(regs.edx);
-    push_onto_stack(regs.ebx);
-    push_onto_stack((uintptr_t)0); // esp
-    push_onto_stack(regs.ebp);
-    push_onto_stack(regs.esi);
-    push_onto_stack(regs.edi);
+    assert(next->arch_context->init_regs->dummy_esp == 0xcafebabe); // check stack integrity
+    ::task_switch(&prev->arch_context->esp, &next->arch_context->esp);
 }
 
 void Process::set_instruction_pointer(unsigned int value)
 {
-    arch_context->regs.eip = value;
+    arch_context->user_regs->eip = value;
 }
-
-uintptr_t Process::kernel_stack_pointer() const
+uintptr_t Process::stack_pointer() const
 {
-    return arch_context->regs.esp;
+    return arch_context->user_regs->esp;
 }
 
 void Process::jump_to_user_space(uintptr_t ip)
 {
-    tss.esp0 = data->kernel_stack_ptr;
-    arch_context->regs.eip = ip;
-    arch_context->regs.eflags |= 0b1000000000; // enable IF
+    assert(this == m_current_process);
 
-    do_switch_inter(&arch_context->regs);
+    registers regs_copy = *arch_context->user_regs;
 
-    __builtin_unreachable();
-}
+    delete arch_context->user_regs;
 
-void Process::switch_to()
-{
-    {
-        //assert(status == Active); TODO : check if in sighandler too
-        if (m_current_process &&
-                (m_current_process->arch_context->regs.cs & 0x3) == 0) // if previous task was in ring 0
-        {
-            m_current_process->data->kernel_stack_ptr = m_current_process->arch_context->regs.esp;
-        }
+    regs_copy.eip = ip;
+    regs_copy.eflags |= 0b1000000000; // enable IF
 
-        map_address_space();
-        map_shm();
-
-        m_current_process = this;
-
-        tss.esp0 = data->kernel_stack_ptr;
-        arch_context->regs.eflags |= 0b1000000000; // enable IF
-    }
-
-    if ((m_current_process->arch_context->regs.cs & 0x3) == 0)
-    {
-        do_switch_same(&arch_context->regs);
-    }
-    else
-    {
-        do_switch_inter(&arch_context->regs);
-    }
+    asm volatile ("pushl %0\n"
+                  "jmp userspace_jump\n"
+                  ::"r"(&regs_copy));
 
     __builtin_unreachable();
 }
 
-void Process::unswitch()
+void Process::jump_to_user_space()
 {
-    unmap_address_space();
+    jump_to_user_space(arch_context->user_regs->eip);
 }
 
 Process *Process::clone(Process &proc, uint32_t flags)
 {
-    auto new_proc = Process::create(proc.data->args);
+    auto new_proc = Process::create();
     if (!new_proc) return nullptr;
 
     new_proc->data->code = std::make_shared<aligned_vector<uint8_t, Memory::page_size()>>(*proc.data->code); // noleak ? :(
     new_proc->data->stack = proc.data->stack; // noleak
-    new_proc->data->kernel_stack = proc.data->kernel_stack;
-    new_proc->data->kernel_stack_ptr = proc.data->kernel_stack_ptr;
+    assert(new_proc->data->stack.data() != proc.data->stack.data()); // check separate
+
     new_proc->data->name = proc.data->name + "_child"; // noleak
     new_proc->data->uid = proc.data->uid;
     new_proc->data->gid = proc.data->gid;
@@ -323,33 +357,16 @@ Process *Process::clone(Process &proc, uint32_t flags)
     new_proc->data->args = proc.data->args; // noleak
     new_proc->data->shm_list = proc.data->shm_list;
     new_proc->data->sig_handlers = std::make_shared<kpp::array<struct sigaction, SIGRTMAX>>(*proc.data->sig_handlers);
-    new_proc->arch_context = new ProcessArchContext;
-    *new_proc->arch_context = *proc.arch_context;
+
+    if (proc.arch_context->user_regs != nullptr)
+        new_proc->arch_context->user_regs = new registers{*proc.arch_context->user_regs};
 
     proc.data->children.emplace_back(new_proc->pid);
 
     new_proc->create_mappings();
 
-    assert(new_proc);
     return new_proc;
 }
-
-void Process::unmap_address_space()
-{
-#if 0
-    Paging::unmap_user_space(); // reloading all the page tables is really costly, not the right solution
-#else
-    for (const auto& pair : data->mappings)
-    {
-        Memory::unmap_page((void*)pair.first);
-    }
-    for (const auto& shm : data->shm_list)
-    {
-        Memory::unmap(shm.second.v_addr, shm.second.shm->size());
-    }
-#endif
-}
-
 // TODO : remove when using std::unique_ptr
 void Process::free_arch_context()
 {

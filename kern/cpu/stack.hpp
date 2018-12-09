@@ -26,6 +26,9 @@ SOFTWARE.
 #define STACK_HPP
 
 // returns previous stack pointer value
-extern "C" void* switch_stacks(void* new_stack);
+extern "C" void* switch_stacks(void* former_stack_top, void* next_stack_top);
+
+extern "C" int kernel_stack_bottom;
+extern "C" int kernel_stack_top;
 
 #endif // STACK_HPP

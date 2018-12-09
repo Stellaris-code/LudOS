@@ -25,6 +25,8 @@ SOFTWARE.
 
 #include <syscalls/syscall_list.hpp>
 
+#include "stdio.h"
+
 void test()
 {
     int ret = fork();
@@ -45,13 +47,39 @@ void test()
     }
 }
 
+uint64_t total_ticks()
+{
+    uint64_t ret;
+    asm volatile ( "rdtsc" : "=A"(ret) );
+    return ret;
+}
+
 int main()
 {
     syscall_nop();
 
-    for (size_t i { 0 }; i < 1000; ++i)
+    int pid = fork();
+    if (pid == 0)
     {
-        test();
+        while (true)
+        {
+            sched_yield();
+        }
+    }
+    else
+    {
+        uint64_t total_test_ticks = 0;
+
+        for (size_t i { 0 }; i < 1000; ++i)
+        {
+            uint64_t begin = total_ticks();
+            sched_yield();
+            total_test_ticks += (total_ticks() - begin);
+        }
+
+        printf("total ticks : %lld\n", total_test_ticks/1000 / 2400 / 2);
+
+        kill(pid, SIGKILL);
     }
 
     syscall_nop();

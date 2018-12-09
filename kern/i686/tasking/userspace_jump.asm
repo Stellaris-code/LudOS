@@ -1,9 +1,8 @@
-global do_switch_inter
-
-do_switch_inter:
+global userspace_jump
+userspace_jump:
     cli ; disable instructions
 
-    mov esp, [esp+0x4] ; reg_frame
+    pop esp ; reg_frame (= mov esp, [esp+0x0])
 
     ;;;;;;;;;;;;
     pop gs ; segment registers

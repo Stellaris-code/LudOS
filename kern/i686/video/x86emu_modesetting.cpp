@@ -35,7 +35,6 @@ SOFTWARE.
 #include <array.hpp>
 
 uint8_t* emu_mem;
-bool x86_flag = false;
 
 void init_emu_mem()
 {

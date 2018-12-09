@@ -97,8 +97,11 @@ SOFTWARE.
 // TODO : optimized page copy function
 // TODO : mettre une page sentinelle après chaque stack de chaque processus
 // TODO : put a lock on the ext2fs for earch access
+// TODO : only switch to the idle task if nothing is left to do
+// TODO : nanosleep must let signals pass through
 
 // ROADMAP
+// : supprimer les floats dans le kernel et fixer le syscall handler pour envler les fpu save
 // : supprimer la libc++ & libcxxabi
 // : supprimer les includes inutiles
 // : passer le shell et un max de trucs en userspace
@@ -111,6 +114,7 @@ SOFTWARE.
 
 /**********************************/
 // BUGS
+// BUG : there is a leak in process management (ShmTest seems to leak heavily, LeakTest too...)
 /**********************************/
 
 /**********************************/

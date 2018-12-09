@@ -64,7 +64,6 @@ struct MonitorInfo
     size_t phys_height;
 };
 
-constexpr size_t max_res_pixels { 1920 * 1080 * 4 };
 class Screen;
 
 std::vector<VideoMode> list_video_modes();

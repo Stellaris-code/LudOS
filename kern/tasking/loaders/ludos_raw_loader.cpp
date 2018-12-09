@@ -42,8 +42,8 @@ bool LudosRawLoader::load(Process &p)
 {
     uint32_t allocated_size = *(uint32_t*)(m_file.data() + 8);
 
-    p.load_user_code(m_file, allocated_size); // TODO : name
-    p.set_instruction_pointer(ludos_raw_len); // skip the magic header
+    p.load_user_code(m_file, allocated_size - 0x8000000); // TODO : name
+    p.set_instruction_pointer(ludos_raw_len + 0x8000000); // skip the magic header
 
     return true;
 }

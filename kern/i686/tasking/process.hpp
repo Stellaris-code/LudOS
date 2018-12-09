@@ -30,10 +30,31 @@ SOFTWARE.
 #include "i686/fpu/fpu.hpp"
 #include "i686/cpu/registers.hpp"
 
+struct ProcessInitRegs
+{
+    uint32_t edi; // 0x00
+    uint32_t esi; // 0x04
+    uint32_t ebp; // 0x08
+    uint32_t dummy_esp; // 0x0c
+    uint32_t ebx; // 0x10
+    uint32_t edx; // 0x14
+    uint32_t ecx; // 0x18
+    uint32_t eax; // 0x1c
+
+    uint32_t eflags; // 0x20
+
+    uint32_t eip; // 0x24
+};
+
 struct ProcessArchContext
 {
-    registers regs;
-    FPUState fpu_state;
+    union
+    {
+        uintptr_t        esp;
+        ProcessInitRegs* init_regs;
+    };
+    registers*        user_regs;
+    FPUState          fpu_state;
 };
 
 #endif // i686_PROCESS_HPP

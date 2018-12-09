@@ -1,7 +1,7 @@
 /*
 main.cpp
 
-Copyright (c) 07 Yann BOUCHER (yann)
+Copyright (c) 28 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -23,19 +23,40 @@ SOFTWARE.
 
 */
 
-#include <stdint.h>
 #include <stdio.h>
+
 #include <syscalls/syscall_list.hpp>
+
+#include <errno.h>
+#include <stdio.h>
+#include <string.h>
+#include <signal.h>
+#include <siginfo.h>
 
 int main()
 {
-    while (true)
-    {
-        asm volatile ("\n"
-                      "mov $0x6, %eax\n"
-                      "int $0x70\n"
-                      ""); // syscall_nop
-    }
 
-    return -25;
+    int ret = fork();
+    if (ret < 0)
+    {
+        perror("fork");
+        return 0;
+    }
+    else if (ret == 0)
+    {
+        while (true)
+        {
+            //sched_yield();
+            exit(0xef);
+        }
+        return 1;
+    }
+    else
+    {
+        while (true)
+        {
+            sched_yield();
+        }
+        return 2;
+    }
 }

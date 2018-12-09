@@ -1,12 +1,5 @@
 ENTRY(_start)
 
-PHDRS
-{
-  mb_hdr PT_LOAD;
-  text PT_LOAD;
-  eh_frame_phdr 0x6474e550;
-}
-
 SECTIONS
 {
     . = @KERNEL_VIRTUAL_BASE@ + 1M;
@@ -17,13 +10,13 @@ SECTIONS
     {
         mbd = .;
         *(.multiboot_header)
-    } :mb_hdr
+    }
     
     .text ALIGN(0x1000) : AT(ADDR(.text) - @KERNEL_VIRTUAL_BASE@)
     {
         *(.text)
         *(.gnu.linkonce.t*)
-    } :text
+    }
 
     .rodata ALIGN(0x1000) : AT(ADDR(.rodata) - @KERNEL_VIRTUAL_BASE@)
     {
@@ -38,23 +31,6 @@ SECTIONS
         *(.rodata*)
         *(.gnu.linkonce.r*)
     }
-
-    /* For stack unwinding (exception handling)  */
-    .eh_frame_hdr ALIGN(0x8): AT(ADDR(.eh_frame_hdr) - @KERNEL_VIRTUAL_BASE@)
-    {
-      KEEP(*(.eh_frame_hdr*))
-    } :eh_frame_phdr :text
-    .eh_frame ALIGN(0x8): AT(ADDR(.eh_frame) - @KERNEL_VIRTUAL_BASE@)
-    {
-      PROVIDE (__eh_frame_start = .);
-      KEEP(*(.eh_frame))
-      LONG (0);
-    } :eh_frame_phdr :text
-
-    .gcc_except_table : AT(ADDR(.gcc_except_table) - @KERNEL_VIRTUAL_BASE@)
-    {
-      *(.gcc_except_table)
-    } :text
 
     .data ALIGN(0x1000) : AT(ADDR(.data) - @KERNEL_VIRTUAL_BASE@)
     {
@@ -73,12 +49,10 @@ SECTIONS
         _bss_end = .;
     }
 
-
-    . = ALIGN(0x1000);
-
     /DISCARD/ :
     {
         *(.comment)
+        *(.eh_frame)
     }   
 
 

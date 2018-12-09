@@ -93,12 +93,13 @@ struct ProcessArchContext;
 // Don't forget to update clone() when adding fields !
 struct ProcessData
 {
+    static constexpr size_t kernel_stack_size = 0x4000;
+
     template <typename T>
     using shared_resource = std::shared_ptr<T>;
 
     aligned_vector<uint8_t, Memory::page_size()> stack; // stack is never shared
-    aligned_vector<uint8_t, Memory::page_size()> kernel_stack;
-    uintptr_t kernel_stack_ptr;
+    uint8_t* kernel_stack { nullptr }; // TODO : have a class for that
     shared_resource<aligned_vector<uint8_t, Memory::page_size()>> code;
 
     kpp::string name { "<INVALID>" };
@@ -131,6 +132,11 @@ struct ProcessData
     };
     std::stack<SigContext> sig_context;
     shared_resource<kpp::array<struct sigaction, SIGRTMAX>> sig_handlers;
+
+    ~ProcessData()
+    {
+        Memory::vfree(kernel_stack, kernel_stack_size/Memory::page_size());
+    }
 };
 
 #endif // PROCESS_DATA_HPP

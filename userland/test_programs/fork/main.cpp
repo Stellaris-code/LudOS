@@ -37,12 +37,15 @@ volatile sig_atomic_t sigchld_valid = 0;
 
 void sigchld_handler(int, siginfo_t* info, void*)
 {
+    print_serial("SIGCHLD handler\n");
     printf("SIGCHLD handler\n");
     sigchld_valid = 1;
 
     if (info->si_pid == getpid())    sigchld_valid = 0;
     if (info->si_status != 0)        sigchld_valid = 0;
     if (info->si_code != CLD_EXITED) sigchld_valid = 0;
+
+     print_serial("exit SIGCHLD handler\n");
 }
 
 int main()
@@ -60,19 +63,24 @@ int main()
     }
     else if (ret == 0)
     {
-                while (true)
-                {
-                    printf("Child!\n");
-                    sched_yield();
-                    exit(0);
-                }
-                return 1;
-//        const char* argv[] = {0};
-//        const char* envp[] = {0};
-//        execve("/initrd/test_programs/MoreOrLess", argv, envp);
+        print_serial("child\n");
+        while (true)
+        {
+            print_serial("loop\n");
+            printf("Child!\n");
+            sched_yield();
+            print_serial("gonna exit\n");
+            sched_yield();
+            exit(0);
+        }
+        return 1;
+        //        const char* argv[] = {0};
+        //        const char* envp[] = {0};
+        //        execve("/initrd/test_programs/MoreOrLess", argv, envp);
     }
     else
     {
+        print_serial("parent\n");
         while (true)
         {
             int status;
@@ -84,6 +92,7 @@ int main()
 
             if (!sigchld_valid) fprintf(stderr, "SIGCHLD handling invalid\n");
 
+            print_serial("back to parent\n");
             printf("Back to parent\n");
             while (true)
             {

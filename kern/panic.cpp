@@ -50,7 +50,7 @@ SOFTWARE.
 
 #include "halt.hpp"
 
-const registers* panic_regs = nullptr;
+registers panic_regs;
 bool panic_use_exception_frame = false;
 
 std::vector<TraceEntry> exception_stack_frame;
@@ -119,7 +119,7 @@ void print_stack_symbols()
 
 void print_disassembly()
 {
-    if (!Memory::is_mapped((void*)panic_regs->eip))
+    if (!Memory::is_mapped((void*)panic_regs.eip))
     {
         kprintf("No disassembly available, eip is at an unmapped address : \n");
         return;
@@ -130,17 +130,17 @@ void print_disassembly()
 
     size_t dump_len = 7;
 
-    auto func_base = elf::kernel_symbol_table.get_function(panic_regs->eip);
+    auto func_base = elf::kernel_symbol_table.get_function(panic_regs.eip);
     const uint8_t* base_ip;
     if (!func_base)
     {
-        base_ip = (uint8_t*)panic_regs->eip;
+        base_ip = (uint8_t*)panic_regs.eip;
         dump_len /= 2; // show half as much data in this case
     }
     else
     {
         base_ip = (uint8_t*)func_base->offset;
-        const uint8_t* target_ip = (uint8_t*)panic_regs->eip;
+        const uint8_t* target_ip = (uint8_t*)panic_regs.eip;
         while (next_ins(base_ip, dump_len/2) < target_ip)
         {
             base_ip = next_ins(base_ip);
@@ -153,7 +153,7 @@ void print_disassembly()
     {
         DisasmInfo info = get_disasm(ip);
         kpp::string bytes = join(map<uint8_t, kpp::string>(info.bytes, [](uint8_t c){return kpp::to_hex_string(c);}), " ");
-        if (ip == (uint8_t*)panic_regs->eip)
+        if (ip == (uint8_t*)panic_regs.eip)
         {
             kprintf("->  ");
         }
@@ -169,8 +169,6 @@ void print_disassembly()
 void panic(const char *fmt, ...)
 {
     cli();
-
-    if (!panic_regs) panic_regs = get_registers();
 
     term_data().clear();
     term_data().push_color({0xffffff, 0xaa0000});
@@ -193,7 +191,7 @@ void panic(const char *fmt, ...)
 
     kprintf("\n");
 
-    dump(panic_regs);
+    dump(&panic_regs);
 
     kprintf("\n");
 

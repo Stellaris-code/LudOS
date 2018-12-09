@@ -93,7 +93,7 @@ endif()
 
 # Compilation options
 set(KERNEL_VIRTUAL_BASE 0xC0000000 CACHE STRING "")
-set(CURRENT_YEAR 2017)
+set(CURRENT_YEAR 2018)
 if (WITH_ACPICA)
     set(USES_ACPICA 1)
 else()
@@ -112,13 +112,13 @@ add_executable(${PROJECT_NAME} ${PLATFORM_SRCS} ${ISA_SRCS} ${GENERIC_SRCS} ${HE
 
 target_compile_definitions(${PROJECT_NAME} PUBLIC "-D__LUDOS__")
 
-set(CMAKE_C_FLAGS "${ISA_C_FLAGS} ${PLATFORM_C_FLAGS} -Os -fno-strict-aliasing -fstack-protector -m32 ${SIMD_OPTIONS} ${ARCH_OPTIONS} -Wwrite-strings -ffast-math ${SANITIZER_OPTIONS} -std=c11 -Wall -Wextra -Wconversion -Wcast-qual -Wmisleading-indentation -Wno-unused-parameter -Wno-implicit-int -Wnull-dereference -lgcc -static-libgcc -ffreestanding -fno-builtin -nostdlib -fno-omit-frame-pointer -Werror=implicit-function-declaration -lgcc")
-set(CMAKE_CXX_FLAGS "${ISA_CXX_FLAGS} ${PLATFORM_CXX_FLAGS} -Os -fno-exceptions -fno-strict-aliasing -m32 ${SIMD_OPTIONS} ${ARCH_OPTIONS} -Wwrite-strings -Wsuggest-final-types -Wsuggest-final-methods -Wconversion -Woverloaded-virtual -ffast-math ${SANITIZER_OPTIONS} -fstack-protector -std=c++17 -Wall -Wextra -Wlogical-op -Wrestrict -Wnull-dereference -Wno-cast-qual -Wdouble-promotion -Wno-unused-parameter -Wno-format -Wno-switch -Wno-packed-bitfield-compat -Wno-reorder -Wno-trigraphs -Wmisleading-indentation -Wnull-dereference -lgcc -static-libgcc -ffreestanding -fno-builtin -nostdlib -fno-omit-frame-pointer -Werror=implicit-function-declaration -lgcc")
+set(CMAKE_C_FLAGS "${ISA_C_FLAGS} ${PLATFORM_C_FLAGS} -Os -fno-function-sections -fno-strict-aliasing -fstack-protector -m32 ${SIMD_OPTIONS} ${ARCH_OPTIONS} -Wwrite-strings -ffast-math ${SANITIZER_OPTIONS} -std=c11 -Wall -Wextra -Wconversion -Wcast-qual -Wmisleading-indentation -Wno-unused-parameter -Wno-implicit-int -Wnull-dereference -lgcc -static-libgcc -ffreestanding -fno-builtin -nostdlib -fno-omit-frame-pointer -Werror=implicit-function-declaration -lgcc")
+set(CMAKE_CXX_FLAGS "${ISA_CXX_FLAGS} ${PLATFORM_CXX_FLAGS} -Os -fno-function-sections -fno-exceptions -fno-strict-aliasing -m32 ${SIMD_OPTIONS} ${ARCH_OPTIONS} -Wwrite-strings -Wsuggest-final-types -Wsuggest-final-methods -Wconversion -Woverloaded-virtual -ffast-math ${SANITIZER_OPTIONS} -fstack-protector -std=c++17 -Wall -Wextra -Wlogical-op -Wrestrict -Wnull-dereference -Wno-cast-qual -Wdouble-promotion -Wno-unused-parameter -Wno-format -Wno-switch -Wno-packed-bitfield-compat -Wno-reorder -Wno-trigraphs -Wmisleading-indentation -Wnull-dereference -lgcc -static-libgcc -ffreestanding -fno-builtin -nostdlib -fno-omit-frame-pointer -Werror=implicit-function-declaration -lgcc")
 set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS
-  "-T ${PLATFORM_LAYOUT} ${ISA_LINKER_FLAGS} ${PLATFORM_LINKER_FLAGS} -lgcc -Xlinker -Map=ld.map ")
+  "-T ${PLATFORM_LAYOUT} ${ISA_LINKER_FLAGS} ${PLATFORM_LINKER_FLAGS} -lgcc -Xlinker -Map=ld.map -fno-function-sections")
 set_target_properties(${PROJECT_NAME} PROPERTIES SUFFIX ".bin")
 #set_property(TARGET ${PROJECT_NAME} PROPERTY INTERPROCEDURAL_OPTIMIZATION True)
-set(CMAKE_ASM_NASM_LINK_EXECUTABLE "${ARCH}-elf-gcc -T ${PLATFORM_LAYOUT} ${ISA_LINKER_FLAGS} --no-ld-generated-unwind-info ${PLATFORM_LINKER_FLAGS} <OBJECTS> -o <TARGET>.bin")
+set(CMAKE_ASM_NASM_LINK_EXECUTABLE "${ARCH}-elf-gcc -T ${PLATFORM_LAYOUT} ${ISA_LINKER_FLAGS} -fno-function-sections --no-ld-generated-unwind-info ${PLATFORM_LINKER_FLAGS} <OBJECTS> -o <TARGET>.bin")
 
 add_library(libk ${LIBK_SOURCES} ${LIBK_HEADERS})
 target_compile_definitions(libk
@@ -128,12 +128,12 @@ target_compile_options(libk PUBLIC $<$<NOT:$<COMPILE_LANGUAGE:ASM_NASM>>:-w>)
 
 add_library(libcxxabi ${LIBCXXABI_SOURCES} ${LIBCXXABI_HEADERS})
 set_target_properties(libcxxabi PROPERTIES LINKER_LANGUAGE CXX)
-set_target_properties(libcxxabi PROPERTIES COMPILE_FLAGS "${CMAKE_CXX_FLAGS} -w -g0 -s")
+set_target_properties(libcxxabi PROPERTIES COMPILE_FLAGS "${CMAKE_CXX_FLAGS} -w -s")
 target_compile_definitions(libcxxabi PUBLIC "-D__LUDOS__")
 target_link_libraries(libcxxabi)
 
 add_library(libcpp ${LIBCPP_SOURCES} ${LIBCPP_HEADERS})
-set_target_properties(libcpp PROPERTIES COMPILE_FLAGS "${CMAKE_CXX_FLAGS} -w -g0 -s")
+set_target_properties(libcpp PROPERTIES COMPILE_FLAGS "${CMAKE_CXX_FLAGS} -w -s")
 target_link_libraries(libcpp libcxxabi)
 target_compile_definitions(libcpp PUBLIC "-D__LUDOS__")
 
@@ -143,19 +143,19 @@ target_compile_definitions(libk++ PUBLIC "-D__LUDOS__")
 
 add_library(libx86emu ${LIBX86EMU_SOURCES} ${LIBX86EMU_HEADERS})
 set_target_properties(libx86emu PROPERTIES LINKER_LANGUAGE C)
-set_target_properties(libx86emu PROPERTIES COMPILE_FLAGS "${CMAKE_C_FLAGS} -w -g0 -s")
+set_target_properties(libx86emu PROPERTIES COMPILE_FLAGS "${CMAKE_C_FLAGS} -w -s")
 target_link_libraries(libx86emu libk)
 
 add_library(libdisasm ${LIBDISASM_SOURCES} ${LIBDISASM_HEADERS})
 set_target_properties(libdisasm PROPERTIES LINKER_LANGUAGE C)
-set_target_properties(libdisasm PROPERTIES COMPILE_FLAGS "${CMAKE_C_FLAGS} -w -g0 -s")
+set_target_properties(libdisasm PROPERTIES COMPILE_FLAGS "${CMAKE_C_FLAGS} -w -s")
 target_link_libraries(libdisasm libk)
 target_compile_definitions(libdisasm PUBLIC "-D__LUDOS__")
 
 if (WITH_ACPICA)
     add_library(acpica ${ACPICA_SOURCES} ${ACPICA_HEADERS})
     set_target_properties(acpica PROPERTIES LINKER_LANGUAGE C)
-    set_target_properties(acpica PROPERTIES COMPILE_FLAGS "${CMAKE_C_FLAGS} -w -g0 -s")
+    set_target_properties(acpica PROPERTIES COMPILE_FLAGS "${CMAKE_C_FLAGS} -w -s")
     target_link_libraries(acpica libk)
     target_compile_definitions(acpica PUBLIC "-D__LUDOS__")
 endif()

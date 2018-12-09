@@ -1,4 +1,4 @@
-/*
+﻿/*
 process_pagemapping.cpp
 
 Copyright (c) 13 Yann BOUCHER (yann)
@@ -30,6 +30,23 @@ extern "C" void signal_trampoline();
 
 using namespace tasking;
 
+void Process::unmap_address_space()
+{
+#if 0
+    Memory::unmap_user_space(); // reloading all the page tables is really costly, not the right solution
+#else
+    for (const auto& pair : data->mappings)
+    {
+        Memory::unmap_page((void*)pair.first);
+    }
+    for (const auto& shm : data->shm_list)
+    {
+        Memory::unmap(shm.second.v_addr, shm.second.shm->size());
+    }
+#endif
+}
+
+
 void Process::map_shm()
 {
     for (auto pair : data->shm_list)
@@ -46,7 +63,7 @@ void Process::map_code()
     for (size_t i { 0 }; i < code_page_amnt; ++i)
     {
         uintptr_t phys_addr = Memory::physical_address((uint8_t*)data->code->data() + i*Memory::page_size());
-        uint8_t* virt_addr = (uint8_t*)(i * Memory::page_size());
+        uint8_t* virt_addr = (uint8_t*)(i * Memory::page_size()) + USER_VIRTUAL_BASE;
 
         assert(phys_addr);
         data->mappings[(uintptr_t)virt_addr] = {phys_addr, Memory::Read|Memory::Write|Memory::Executable|Memory::User, false};
@@ -73,15 +90,10 @@ void Process::create_mappings()
 {
     map_code();
     map_stack();
-    if (!data->mappings.count(argv_virt_page))
-    {
-        data->mappings[argv_virt_page] =
-        {Memory::allocate_physical_page(), Memory::Read|Memory::Write|Memory::User, true};
-    }
     if (!data->mappings.count(signal_trampoline_page))
     {
         data->mappings[signal_trampoline_page] =
-        {Memory::physical_address((void*)signal_trampoline), Memory::Read|Memory::User, false};
+        {Memory::physical_address((void*)signal_trampoline), Memory::Read|Memory::User|Memory::Executable, false};
     }
 }
 
@@ -112,8 +124,9 @@ void *Process::map_range(uintptr_t phys, size_t len)
     uintptr_t virt = Memory::allocate_virtual_page(page_count, true);
     for (size_t i { 0 }; i < page_count; ++i)
     {
+        Memory::map_page(phys + Memory::page_size()*i, (uint8_t*)virt + Memory::page_size()*i, Memory::Read|Memory::Write|Memory::User);
         data->mappings[virt + Memory::page_size()*i] = {phys + Memory::page_size()*i,
-                Memory::Read|Memory::Write|Memory::WriteThrough|Memory::User, false};
+                Memory::Read|Memory::Write|Memory::User, false};
     }
 
     return (void*)virt;
@@ -148,14 +161,7 @@ void Process::allocate_user_callback_page()
 
     auto handle = attach_fault_handler((void*)virt_page, [this](const PageFault& fault)
     {
-        if (fault.level != PageFault::User) return false;
-        if (fault.type != PageFault::Read && fault.type != PageFault::Execute) return false;
-        if (!data->user_callbacks->list.count(fault.address)) return false;
-
-        auto entry = data->user_callbacks->list.at(fault.address);
-        do_user_callback(entry.callback, entry.arg_sizes);
-
-        return true;
+        return user_callback_fault_handler(fault);
     });
 
     data->user_callbacks->pages.push_back(UserCallbacks::PageEntry{virt_page, handle});
@@ -163,6 +169,7 @@ void Process::allocate_user_callback_page()
 
 uintptr_t Process::allocate_pages(size_t pages)
 {
+    // TODO : use vmalloc
     uint8_t* addr = reinterpret_cast<uint8_t*>(Memory::allocate_virtual_page(pages, true));
     for (size_t i { 0 }; i < pages; ++i)
     {
@@ -179,6 +186,7 @@ uintptr_t Process::allocate_pages(size_t pages)
 
 bool Process::release_pages(uintptr_t ptr, size_t pages)
 {
+    // TODO : use vfree
     assert(ptr % Memory::page_size() == 0);
 
     for (size_t i { 0 }; i < pages; ++i)

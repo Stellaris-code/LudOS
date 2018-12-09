@@ -25,7 +25,6 @@ siginfo_path:
     push dword [ebp+0x10] ; siginfo_t*
     push dword [ebp] ; the signal number
     call [ebp+0x4] ; the handler
-    jmp exit
 
 exit:
     mov eax, 0x77

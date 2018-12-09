@@ -32,8 +32,9 @@ SOFTWARE.
 # define PRINTF_FMT(fmt_idx,arg1_idx)
 #endif
 
+#define USER_VIRTUAL_BASE   0x08000000
 #define KERNEL_VIRTUAL_BASE 0xC0000000
-#define CURRENT_YEAR 2017
+#define CURRENT_YEAR 2018
     
 #define USES_ACPICA 0
 

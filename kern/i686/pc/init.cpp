@@ -67,6 +67,7 @@ SOFTWARE.
 
 #include "syscalls/syscalls.hpp"
 #include "tasking/process.hpp"
+#include "i686/tasking/process.hpp"
 #include "tasking/scheduler.hpp"
 
 #include "graphics/vga.hpp"
@@ -174,23 +175,6 @@ namespace pc
 {
 void init_task_entry();
 
-void test1()
-{
-    while (true)
-    {
-        kprintf("bouh1\n");
-        Process::task_switch(0);
-    }
-}
-void test2()
-{
-    while (true)
-    {
-        kprintf("bouh2\n");
-        Process::task_switch(1);
-    }
-}
-
 void init(uint32_t magic, const multiboot_info_t* mbd_info)
 {
     early_init();
@@ -215,6 +199,7 @@ void init(uint32_t magic, const multiboot_info_t* mbd_info)
 
     multiboot::parse_mem();
     MultibootMeminfo::init_alloc_bitmap();
+    multiboot::parse_info();
 
     uint64_t framebuffer_addr = bit_check(mbd_info->flags, 12) ? mbd_info->framebuffer_addr : 0xB8000;
 
@@ -321,23 +306,19 @@ void init(uint32_t magic, const multiboot_info_t* mbd_info)
 
     tasking::scheduler_init();
 
-//    auto test1_task = Process::create_kernel_task(test1);
-//    auto test2_task = Process::create_kernel_task(test2);
-
-//    while (true);
-
     auto idle_task = Process::create_kernel_task([]()
     {
         while (true)
         {
+//            asm volatile ("sti; hlt\n"); // wait for an interrupt to occur
+//            asm volatile ("cli\n");      // at this point, an interrupt occured, disable them again
             tasking::schedule();
-            wait_for_interrupts();
         }
     });
-    (void)idle_task;
+    //idle_task->arch_context->init_regs->eflags = 0x0; // disable interrupts for the idle task
 
-    auto init_task = Process::create_kernel_task(init_task_entry);
-    init_task->switch_to();
+    auto init_task = Process::create_init_task(init_task_entry);
+    init_task_entry();
 }
 
 void init_task_entry()

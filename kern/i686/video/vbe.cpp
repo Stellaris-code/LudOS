@@ -122,7 +122,7 @@ std::vector<VideoMode> get_vbe_modes(rmode_ptr mode_list_ptr)
         mode_list.emplace_back(*modes);
         ++modes;
     }
-    x86_flag = true;
+
     for (auto mode : mode_list)
     {
         memset(emu_mem + 0x20000, 0, sizeof(ModeInfoBlock));
@@ -168,11 +168,6 @@ bool is_mode_supported(const ModeInfoBlock &mode)
         //Disable text modes for now
         return false;
     }else if(mode.BitsPerPixel != 8 && mode.BitsPerPixel != 16 && mode.BitsPerPixel != 24 && mode.BitsPerPixel != 32){
-        return false;
-    }
-
-    if (mode.BytesPerScanLine*mode.YResolution > graphics::max_res_pixels)
-    {
         return false;
     }
 

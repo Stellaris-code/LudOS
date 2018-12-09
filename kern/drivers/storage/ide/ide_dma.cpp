@@ -335,9 +335,11 @@ kpp::expected<kpp::dummy_t, DiskError> Disk::do_read_write(size_t sector, gsl::s
                         sector, count, data);
 
 #if 1
+    //sti();
     if (!int_status)
     {
-        tasking::kernel_yield();
+        tasking::schedule();
+        //sti(); // restore interrupts again
     }
 #else
     if (!Timer::sleep_until([&int_status]{return int_status;}, 1000))

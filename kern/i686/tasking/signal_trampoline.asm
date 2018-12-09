@@ -1,7 +1,7 @@
 global signal_trampoline
 global signal_trampoline_info
 
-%include "../kern/i686/defs.asm"
+%include "defs.asm"
 
 align 0x1000
 

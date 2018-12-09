@@ -1,12 +1,40 @@
+
 # LudOS
-A crappy monolithic kernel written in C++11 !
+LudOS is a hobby linux-like kernel written for fun in C++.
+
+## Features
+- Currently supports the 32-bit x86 architecture
+- An extensible virtual file system with the ability to expose function call interfaces on nodes to provide a cleaner interface than ioctl
+- PS/2 Keyboard and Mouse support
+- Preemptive and Cooperative Multitasking
+- Supports resolutions up to 1920x1080 using VBE framebuffer
+- Uses MTRRs to provide better performance with the framebuffer
+- Support for SATA drives via AHCI and ATA
+- ext2 filesystem and tar files mounting on the VFS
+- A lighting-fast graphical framebuffer terminal and shell
+
+## Goals
+- Support for the 64-bit x86 architecture and ARM
+- TCP/IP driver
+- A full-fledged graphical window manager
+- Dynamic linker support
+- Porting programs like GCC, NASM or FreeDoom to LudOS
 
 ## Dependancies
-Qemu
-On Ubuntu and derivates : `sudo apt-get install qemu-system`
+`QEMU` is needed to run the kernel using `tools/run.sh`.
+On Ubuntu and derivatives : `sudo apt-get install qemu-system`
+
+## How to build :
+Built binaries are already included in the build/bin directory, but if you want to build yourself the repository do as follow :
+
+- First build your own cross-compiler following these instructions : https://wiki.osdev.org/GCC_Cross-Compiler
+- Build to project by running `CXX=<cross-g++-path> CC=<cross-gcc-path> cmake CMakeLists.txt` and then `make`.
 
 ## How to run :
-In the folder tools/, run the script ./run.sh (or ./run_iso.sh instead if you use bochs)
+Run the script `tools/run.sh` which will run QEMU on the kernel binary file.
+
+## Screenshots :
+
 
 ![Imgur](https://i.imgur.com/QgkMo0l.png)
 ![Imgur](https://i.imgur.com/bhkklbx.png)

@@ -52,6 +52,9 @@ FPUState FPU::make()
 
     memset(state.data, 0, 512);
 
+    // set the FPU Control Word according to the SysV ABI spec
+    *(uint16_t*)(&state.data[10]) = 0b0001001100111111;
+
     return state;
 }
 

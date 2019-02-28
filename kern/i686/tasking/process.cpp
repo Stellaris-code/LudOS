@@ -68,10 +68,13 @@ void Process::load_user_code(gsl::span<const uint8_t> code_to_copy, size_t alloc
     memset(regs, 0, sizeof(registers));
 
     regs->esp = user_stack_top;
-    regs->eflags |= 0b11001000000000; // enable IF and IOPL=3
+    regs->eflags |= 0b11001000000000; // enable IF and IOPL=3, DF clear
     regs->eip = 0xdeadbeef;
     regs->cs = gdt::user_code_selector*0x8 | 0x3;
     regs->ds = regs->es = regs->fs = regs->gs = regs->ss = gdt::user_data_selector*0x8 | 0x3;
+    // TODO : have %edx set to the sysv ABI convention's
+
+    arch_context->fpu_state = FPU::make(); // init the FPU state
 
     if (m_current_process == this)
         unmap_address_space();

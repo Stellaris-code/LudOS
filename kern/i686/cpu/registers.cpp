@@ -30,7 +30,11 @@ SOFTWARE.
 registers cur_regs;
 
 extern "C"
+{
 void update_registers();
+uint32_t get_fpu_sw();
+uint32_t get_fpu_cw();
+}
 
 const registers *get_registers()
 {
@@ -61,6 +65,7 @@ void dump(const registers *regs)
         kprintf("es : 0x%x  ds : 0x%x\n", regs->es, regs->ds);
         kprintf("cs : 0x%x  eflags : 0x%x  ", regs->cs, regs->eflags);
         kprintf("ss : 0x%x CPL : %d (%s)\n", regs->ss, regs->cs & 0x3, regs->cs & 0x3 ? "User" : "Kernel");
+        kprintf("[FPU] SW : 0x%x CW : 0x%x\n", get_fpu_sw(), get_fpu_cw());
     }
 }
 #pragma GCC diagnostic pop

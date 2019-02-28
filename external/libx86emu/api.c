@@ -481,9 +481,9 @@ void x86emu_dump(x86emu_t *emu, int flags)
             break;
           case 0x12:
             x86emu_log(emu, " ; real tsc");
-            if(emu->x86.R_TSC) {
-              x86emu_log(emu, ", ratio=%.2f", (double) emu->x86.R_REAL_TSC / emu->x86.R_TSC);
-            }
+//            if(emu->x86.R_TSC) {
+//              x86emu_log(emu, ", ratio=%.2f", (double) emu->x86.R_REAL_TSC / emu->x86.R_TSC);
+//            }
             break;
         }
         x86emu_log(emu, "\n");

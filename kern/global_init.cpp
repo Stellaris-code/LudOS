@@ -99,6 +99,7 @@ SOFTWARE.
 // TODO : put a lock on the ext2fs for earch access
 // TODO : only switch to the idle task if nothing is left to do
 // TODO : nanosleep must let signals pass through
+// TODO : check that the initial process stack conforms to the sys v abi spec
 
 // ROADMAP
 // : supprimer les floats dans le kernel et fixer le syscall handler pour envler les fpu save
@@ -111,6 +112,12 @@ SOFTWARE.
 // : implémenter /dev/input
 // : implémenter expanding stack
 // : fix caching
+
+/**********************************/
+// IMPORTANT
+// DON'T USE FP MATH IN THE KERNEL !
+// kernel's fpu context is not saved on switches
+/**********************************/
 
 /**********************************/
 // BUGS

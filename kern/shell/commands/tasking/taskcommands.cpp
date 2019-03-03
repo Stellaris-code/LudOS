@@ -71,7 +71,7 @@ void install_task_commands(Shell &sh)
              return -3;
          }
 
-         kprintf("File type : %s\n", loader->file_type().c_str());
+         //kprintf("File type : %s\n", loader->file_type().c_str());
 
          std::vector<kpp::string> program_args(args.size());
          program_args[0] = sh.get_path(path);

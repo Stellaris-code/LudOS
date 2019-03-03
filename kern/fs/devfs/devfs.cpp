@@ -65,7 +65,7 @@ protected:
     [[nodiscard]] virtual kpp::expected<kpp::dummy_t, vfs::FSError> write_impl(size_t offset, gsl::span<const uint8_t> data) override
     {
         auto str = kpp::string((const char*)data.data(), data.size());
-        //err("%s", str.c_str());
+        err("%s", str.c_str());
         kprintf("%s", str.c_str());
         return {};
     }

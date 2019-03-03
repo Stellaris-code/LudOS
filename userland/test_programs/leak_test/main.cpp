@@ -77,7 +77,7 @@ int main()
             total_test_ticks += (total_ticks() - begin);
         }
 
-        printf("total ticks : %lld\n", total_test_ticks/1000 / 2400 / 2);
+        //printf("total ticks : %lld\n", total_test_ticks/1000 / 2400 / 2);
 
         kill(pid, SIGKILL);
     }

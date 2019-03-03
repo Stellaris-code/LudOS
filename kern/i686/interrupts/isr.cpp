@@ -115,7 +115,8 @@ const registers* isr_handler(registers* const regs)
             return regs;
         }
 
-        log_serial("Unhandeld interrupt 0x%x (type : '%s') with error code 0x%lx at 0x%lx\n", regs->int_no, exception_messages[regs->int_no], regs->err_code, regs->eip);
+        log_serial("Unhandeld interrupt 0x%x (type : '%s') with error code 0x%lx at 0x%lx, cr2 : 0x%x\n", regs->int_no, exception_messages[regs->int_no], regs->err_code, regs->eip,
+                cr2());
 
         panic_regs = *regs;
         panic("Unhandeld interrupt 0x%x (type : '%s')\n", regs->int_no, exception_messages[regs->int_no]);

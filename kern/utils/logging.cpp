@@ -43,7 +43,8 @@ void log(LoggingLevel level, const char * __restrict fmt, ...)
     if (level <= log_level)
     {
         term_data().push_color({0x00aa00, 0});
-        kprintf("[%f] ", Time::uptime());
+        //kprintf("[%f] ", Time::uptime());
+        kprintf("[I] ");
         term_data().pop_color();
 
         va_list va;
@@ -58,7 +59,8 @@ void warn(const char * __restrict fmt, ...)
     term_data().push_color({0xffff55, 0});
 
     term_data().push_color({0x00aa00, 0});
-    kprintf("[%f] ", Time::uptime());
+    //kprintf("[%f] ", Time::uptime());
+    kprintf("[W] ");
     term_data().pop_color();
 
     va_list va;
@@ -74,7 +76,8 @@ void err(const char * __restrict fmt, ...)
     term_data().push_color({0xaa0000, 0});
 
     term_data().push_color({0x00aa00, 0});
-    kprintf("[%f] ", Time::uptime());
+    //kprintf("[%f] ", Time::uptime());
+    kprintf("[E] ");
     term_data().pop_color();
 
     va_list va;

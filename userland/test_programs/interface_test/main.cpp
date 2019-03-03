@@ -75,6 +75,11 @@ int main(int argc, char* argv[])
     fprintf(stderr, "address is : %p\n", interface.test);
 
     ret = interface.test("working!");
+    if (ret != 42)
+    {
+        perror("not okay");
+        return -1;
+    }
 
     printf("The call returned %d\n", ret);
 
@@ -92,7 +97,6 @@ int main(int argc, char* argv[])
 
 //        FBDevMode modes[64];
 //        int count = fbdev.get_video_modes(modes, 64);
-
 
     printf("Switching to 640x480x32\n");
     fbdev.switch_mode(640, 480, 32);

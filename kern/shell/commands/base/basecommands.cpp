@@ -337,13 +337,32 @@ void install_base_commands(Shell &sh)
      }});
 
     sh.register_command(
-    {"loop", "loop command to infinity",
-     "Usage : 'loop <command>'",
+    {"loop", "repeat command forever",
+     "Usage : 'loop <command> <time>'",
      [&sh](const std::vector<kpp::string>& args)
      {
          while (true)
          {
              sh.command(join(args, " "));
+         }
+         return 0;
+     }});
+
+    sh.register_command(
+    {"rep", "repeat command n times",
+     "Usage : 'rep <time> <command>'",
+     [&sh](const std::vector<kpp::string>& args)
+     {
+         if (args.size() < 2)
+         {
+             sh.error("not enough args");
+             return -1;
+         }
+
+         size_t times = kpp::stoul(args[0]);
+         for (size_t i { 0 }; i < times; ++i)
+         {
+             sh.command(join(gsl::span<const kpp::string>(args.data() + 1, args.size()-1), " "));
          }
          return 0;
      }});

@@ -102,7 +102,7 @@ SOFTWARE.
 // TODO : check that the initial process stack conforms to the sys v abi spec
 
 // ROADMAP
-// : supprimer les floats dans le kernel et fixer le syscall handler pour envler les fpu save
+// : supprimer les floats dans le kernel
 // : supprimer la libc++ & libcxxabi
 // : supprimer les includes inutiles
 // : passer le shell et un max de trucs en userspace
@@ -121,7 +121,7 @@ SOFTWARE.
 
 /**********************************/
 // BUGS
-// BUG : there is a leak in process management (ShmTest seems to leak heavily, LeakTest too...)
+// BUG : leak in terminal ? doesn't seem to be linked to processes though
 /**********************************/
 
 /**********************************/

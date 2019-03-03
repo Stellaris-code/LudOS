@@ -89,7 +89,7 @@ inline kpp::string join(const Container& cont, const kpp::string& join_str)
         result += kpp::string(cont[i]);
         result += join_str;
     }
-    result += kpp::string(cont.back());
+    result += kpp::string(cont[cont.size()-1]);
 
     return result;
 }

@@ -43,11 +43,12 @@ BootPageDirectory:
     dd 0x02400083
     dd 0x02800083
     dd 0x02c00083
-    times (1024 - KERNEL_PAGE_NUMBER - 12) dd 0  ; Pages after the kernel image.
+    dd 0x03000083
+    times (1024 - KERNEL_PAGE_NUMBER - 13) dd 0  ; Pages after the kernel image.
 
 kernel_stack_top equ kernel_stack_bottom + STACKSIZE
 
-section .text
+section .bootcode
 
 ; reserve initial kernel stack space
 STACKSIZE equ 0x4000                   ; that's 16k.
@@ -74,7 +75,6 @@ _start:
     mov ecx, cr0
     or ecx, 0x80000000                          ; Set PG bit in CR0 to enable paging.
     mov cr0, ecx
-
     ; Start fetching instructions in kernel space.
     ; Since eip at this point holds the physical address of this command (approximately 0x00100000)
     ; we need to do a long jump to the correct virtual address of StartInHigherHalf which is
@@ -98,6 +98,7 @@ higher_half_start:
     push dword [magic]
 
 .kmain_call:
+
     call kmain                          ; call kernel proper
 
     cli

@@ -201,7 +201,6 @@ void Process::do_user_callback(const std::function<int (const std::vector<uintpt
     // will be released by the jump_to_userspace call
     auto* regs = new registers{*arch_context->user_regs};
     uintptr_t return_address = *(uintptr_t*)(regs->esp);
-    regs->esp += sizeof(uintptr_t);
 
     uintptr_t esp_copy = regs->esp;
 
@@ -229,8 +228,15 @@ void Process::do_user_callback(const std::function<int (const std::vector<uintpt
         }
     }
 
+    for (auto arg : arguments)
+    {
+        kprintf("arg : 0x%x\n", arg);
+    }
+
     int ret = callback(arguments);
     regs->eax = ret;
+
+    arch_context->user_regs = regs;
 
     jump_to_user_space(return_address);
 }

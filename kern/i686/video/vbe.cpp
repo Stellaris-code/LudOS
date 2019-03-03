@@ -101,7 +101,7 @@ kpp::optional<VbeInfoBlock> get_vbe_info()
         log(Debug, "OEM Name : %s\n", read_address(info->OemString));
         log(Debug, "Capabilities : %b\n", info->Capabilities & 0xFF);
         log(Debug, "Video Mode List Ptr : %x:%x (0x%x)\n", info->VideoModePtr.Seg, info->VideoModePtr.Off, translate_address(info->VideoModePtr));
-        log(Debug, "Video Memory Amount : %s\n", human_readable_size(info->TotalMemory*64*1024).c_str());
+        //log(Debug, "Video Memory Amount : %s\n", human_readable_size(info->TotalMemory*64*1024).c_str());
         log(Debug, "OEM Software Revision : 0x%x\n", info->OemSoftwareRev);
         log(Debug, "OEM Product Name : %s\n", read_address(info->OemProductName));
         log(Debug, "OEM Product Rev : %s\n", read_address(info->OemProductRev));

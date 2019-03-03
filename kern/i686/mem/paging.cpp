@@ -44,6 +44,7 @@ static PagingInformation kernel_info;
 void Paging::init()
 {
     cli();
+
     create_paging_info(kernel_info);
 
     isr::register_handler(isr::PageFault, page_fault_handler);
@@ -132,9 +133,12 @@ void Paging::unmap_user_space()
 
 void Paging::create_paging_info(PagingInformation &info)
 {
+    log_serial("from %p to %p\n", info.page_directory.data(), info.page_directory.data() + info.page_directory.size()*sizeof(PDEntry));
+
     auto get_addr = [](auto addr)->void*
     {
-        return (void*)Memory::physical_address((void*)addr);
+        return addr - KERNEL_VIRTUAL_BASE;
+        //return (void*)Memory::physical_address((void*)addr);
     };
 
     memset(info.page_directory.data(), 0, info.page_directory.size()*sizeof(PDEntry));

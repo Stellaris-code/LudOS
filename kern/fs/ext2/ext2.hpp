@@ -36,7 +36,7 @@ class Ext2FS : public FSImpl<Ext2FS>
     friend class ext2_node;
 
 public:
-    Ext2FS(Disk& disk);
+    Ext2FS(Disk& disk, dev_t id);
 
     static bool accept(const Disk& disk);
 
@@ -122,6 +122,7 @@ public:
     ext2_node(Ext2FS& p_fs, vfs::node* p_parent, const kpp::string& p_name, size_t p_inode)
         : vfs::node(p_parent), fs(p_fs), inode(p_inode), filename(p_name)
     {
+        m_fs = &fs;
     }
 
     virtual ~ext2_node()

@@ -35,8 +35,8 @@ namespace procfs
 struct pid_node : public vfs::node
 {
 public:
-    pid_node(pid_t pid)
-        : m_pid(pid)
+    pid_node(node* parent, pid_t pid)
+        : node(parent), m_pid(pid)
     {}
 
 public:

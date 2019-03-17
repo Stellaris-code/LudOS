@@ -119,11 +119,11 @@ QueryResult user_find_impl(const kpp::string &path, Process &process, size_t rec
 
     for (size_t i { 0 }; i < dirs.size(); ++i)
     {
+
         // check at the beggining of the loop because we want to return the actual symlink at the end
         auto res = resolve_symlink_lambd(cur_node, pwd);
         if (res.target_node == nullptr) return res;
         cur_node = res.target_node;
-
         // now that symlink are resolved, update search pwd
         pwd += cur_node->name() + "/";
 
@@ -134,7 +134,6 @@ QueryResult user_find_impl(const kpp::string &path, Process &process, size_t rec
         {
             return {EACCES, nullptr};
         }
-
         // iterate over the children of the current node
         for (const auto& child : cur_node->readdir())
         {
@@ -160,6 +159,7 @@ contin:;
             return {ENOTDIR, nullptr};
         }
     }
+
     return {EOK, cur_node};
 }
 
@@ -173,7 +173,7 @@ QueryResult user_find(const kpp::string &path)
     return user_find(path, Process::current());
 }
 
-inline QueryResult resolve_symlink(const std::shared_ptr<node>& link)
+QueryResult resolve_symlink(const std::shared_ptr<node>& link)
 {
     std::shared_ptr<vfs::node> cur_node = link;
     size_t counter = 0;
@@ -181,11 +181,11 @@ inline QueryResult resolve_symlink(const std::shared_ptr<node>& link)
     {
         if (counter++ >= max_symlink_loop) return {ELOOP, nullptr};
 
-        auto result = find(cur_node->path() + std::static_pointer_cast<vfs::symlink>(cur_node)->target());
-        if (!result)
-            return {result.error().to_errno(), nullptr};
+        auto result = user_find(std::static_pointer_cast<vfs::symlink>(cur_node)->target());
+        if (result.target_node == nullptr)
+            return result;
 
-        cur_node = result.value();
+        cur_node = result.target_node;
     }
 
     return {EOK, cur_node};

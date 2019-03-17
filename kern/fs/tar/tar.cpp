@@ -71,8 +71,8 @@ SOFTWARE.
 namespace tar
 {
 
-TarFS::TarFS(Disk &disk)
-    : FSImpl<tar::TarFS>(disk)
+TarFS::TarFS(Disk &disk, dev_t id)
+    : FSImpl<tar::TarFS>(disk, id)
 {
     auto result = disk.read();
     if (!result)
@@ -155,6 +155,7 @@ std::shared_ptr<tar_node> TarFS::read_header(const Header *hdr) const
     node->m_stat.gid = read_number(hdr->gid);
     node->m_stat.creation_time = node->m_stat.modification_time = read_number(hdr->mtime);
     node->m_stat.access_time = 0;
+    node->m_stat.inode = (ino_t)((uint8_t*)hdr - m_file.data());
     node->m_name = kpp::string(hdr->name, 101); node->m_name.back() = '\0';
     node->m_name = trim_zstr(node->m_name);
 

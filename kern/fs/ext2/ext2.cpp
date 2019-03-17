@@ -35,7 +35,7 @@ SOFTWARE.
 #include "fs/fsutils.hpp"
 #include "fs/vfs.hpp"
 
-Ext2FS::Ext2FS(Disk &disk) : FSImpl<Ext2FS>(disk)
+Ext2FS::Ext2FS(Disk &disk, dev_t id) : FSImpl<Ext2FS>(disk, id)
 {
     m_superblock = *read_superblock(disk);
 
@@ -418,7 +418,7 @@ kpp::string Ext2FS::link_name(const ext2::Inode &inode_struct)
     }
     else
     {
-        if (!read_data(inode_struct, 0, {m_current_block.data(), (long)inode_struct.size_lower}))
+        if (!read_data(inode_struct, 0, {m_current_block.data(), inode_struct.size_lower}))
             return "<invalid>";
 
         str = kpp::string((const char*)m_current_block.data(), inode_struct.size_lower);
@@ -433,6 +433,7 @@ kpp::expected<size_t, vfs::FSError> ext2_node::read_impl(size_t offset, gsl::spa
     if (this->size() >= 65536)
     {
         fs.error("Files more than 64MiB long aren't supported\n");
+        return kpp::make_unexpected(vfs::FSError{vfs::FSError::TooLarge});
     }
 
     if (is_link())
@@ -458,6 +459,8 @@ kpp::expected<size_t, vfs::FSError> ext2_node::read_impl(size_t offset, gsl::spa
 
     return (offset + data.size()) - byte_off;
 #else
+    size_t read_size = 0;
+
     const size_t blk_size = fs.block_size();
 
     const size_t first_stride_size = offset%blk_size;
@@ -469,6 +472,8 @@ kpp::expected<size_t, vfs::FSError> ext2_node::read_impl(size_t offset, gsl::spa
         auto result = fs.read_data_block(inode_struct, offset/blk_size, buf);
         if (!result) return kpp::make_unexpected(result.error());
         std::copy(buf.begin() + first_stride_size, buf.begin() + blk_size, data.begin());
+
+        read_size += blk_size - first_stride_size;
     }
     if (second_stride_size != 0) // size isn't aligned, manually fetch the last sector
     {
@@ -476,18 +481,24 @@ kpp::expected<size_t, vfs::FSError> ext2_node::read_impl(size_t offset, gsl::spa
         auto result = fs.read_data_block(inode_struct, (offset+data.size())/blk_size, buf);
         if (!result) return kpp::make_unexpected(result.error());
         std::copy(buf.begin(), buf.begin() + second_stride_size, data.begin() + (data.size()-second_stride_size));
+
+        read_size += second_stride_size;
     }
 
     if (mid_stride_size != 0)
     {
         gsl::span<uint8_t> aligned_span = {data.data() + (blk_size - first_stride_size)%blk_size,
-                                           (long)mid_stride_size};
+                                           mid_stride_size};
 
         assert(aligned_span.size() % blk_size == 0);
 
         auto result = fs.read_data(inode_struct, offset/blk_size, aligned_span);
         if (!result) return kpp::make_unexpected(result.error());
+
+        read_size += mid_stride_size;
     }
+
+    return read_size;
 #endif
 }
 
@@ -548,6 +559,8 @@ vfs::node::Type ext2_node::type() const
             return Directory;
         case ext2::InodeType::Symlink:
             return SymLink;
+        case ext2::InodeType::Fifo:
+            return FIFO;
         default:
             return Unknown;
     }
@@ -593,13 +606,17 @@ vfs::node::Stat ext2_node::stat() const
     ext2::Inode inode_struct = fs.read_inode(inode);
 
     Stat stat;
+    stat.inode = inode;
     stat.perms = inode_struct.type & 0x0FFF;
-    stat.access_time = inode_struct.access_time;
-    stat.modification_time = inode_struct.modification_time;
-    stat.creation_time = inode_struct.creation_time;
+    stat.nlinks = inode_struct.links_count;
+    stat.block_size = 512;
+    stat.block_count = inode_struct.blocks_512;
     stat.uid = inode_struct.uid;
     stat.gid = inode_struct.gid;
     stat.flags = inode_struct.flags;
+    stat.access_time = inode_struct.access_time;
+    stat.creation_time = inode_struct.creation_time;
+    stat.modification_time = inode_struct.modification_time;
 
     return stat;
 }

@@ -109,7 +109,7 @@ struct ProcessData
     std::vector<pid_t> children;
 
     kpp::optional<pid_t> waiting_pid;
-    int* wstatus { nullptr };
+    pid_t waitpid_child { 0 };
     uintptr_t waitstatus_phys { 0 };
 
     shared_resource<vfs::node> pwd;

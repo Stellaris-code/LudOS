@@ -38,10 +38,10 @@ std::vector<std::shared_ptr<vfs::node> > pid_node::readdir_impl()
 {
     std::vector<std::shared_ptr<node>> children;
 
-    children.emplace_back(std::make_shared<string_node>("name", Process::by_pid(m_pid)->data->name));
-    children.emplace_back(std::make_shared<vfs::symlink>(Process::by_pid(m_pid)->data->pwd->path(), "cwd"));
-    children.emplace_back(std::make_shared<vfs::symlink>(Process::by_pid(m_pid)->data->root->path(), "root"));
-    children.emplace_back(std::make_shared<string_node>("cmdline", [this]{
+    children.emplace_back(std::make_shared<string_node> (this, "name", Process::by_pid(m_pid)->data->name));
+    children.emplace_back(std::make_shared<vfs::symlink>(this, Process::by_pid(m_pid)->data->pwd->path(), "cwd"));
+    children.emplace_back(std::make_shared<vfs::symlink>(this, Process::by_pid(m_pid)->data->root->path(), "root"));
+    children.emplace_back(std::make_shared<string_node> (this, "cmdline", [this]{
         kpp::string str;
         for (const auto& arg : Process::by_pid(m_pid)->data->args)
         {

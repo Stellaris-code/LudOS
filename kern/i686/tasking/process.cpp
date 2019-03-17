@@ -109,18 +109,6 @@ void Process::pop_stack(size_t size)
     arch_context->user_regs->esp += size;
 }
 
-void Process::wake_up(pid_t child, int err_code)
-{
-    Memory::phys_write(data->waitstatus_phys, &err_code, sizeof(err_code));
-
-    data->waiting_pid.reset();
-
-    status = Active;
-
-    if (arch_context->user_regs)
-        arch_context->user_regs->eax = child; // set waitpid return value
-}
-
 void Process::execute_sighandler(int signal, pid_t returning_pid, const siginfo_t &siginfo)
 {
     assert(arch_context);

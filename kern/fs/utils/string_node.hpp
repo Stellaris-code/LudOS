@@ -34,14 +34,14 @@ SOFTWARE.
 struct string_node : public vfs::node
 {
 public:
-    string_node(kpp::string name, std::function<kpp::string(size_t,size_t)> fun)
-        : m_name(std::move(name))
+    string_node(node* parent, kpp::string name, std::function<kpp::string(size_t,size_t)> fun)
+        : node(parent), m_name(std::move(name))
     {
         m_callback = std::move(fun);
     }
 
-    string_node(kpp::string name, std::function<kpp::string()> fun)
-        : m_name(std::move(name))
+    string_node(node* parent, kpp::string name, std::function<kpp::string()> fun)
+        : node(parent), m_name(std::move(name))
     {
         m_callback = [fun = std::move(fun)](size_t off, size_t size)
         {
@@ -51,8 +51,8 @@ public:
         };
     }
 
-    string_node(kpp::string name, kpp::string str)
-        : m_name(std::move(name))
+    string_node(node* parent, kpp::string name, kpp::string str)
+        : node(parent), m_name(std::move(name))
     {
         m_callback = [str = std::move(str)](size_t off, size_t size)
         {

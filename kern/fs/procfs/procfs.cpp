@@ -47,7 +47,8 @@ namespace procfs
 
 struct interface_test : public vfs::interface_node<interface_test, vfs::ientry<itest, ITEST_ID>>
 {
-    interface_test(const kpp::string& name)
+    interface_test(node* parent, const kpp::string& name) :
+        vfs::interface_node<interface_test, vfs::ientry<itest, ITEST_ID>>(parent)
     {
         the_name = name;
     }
@@ -84,15 +85,15 @@ public:
 
         for (auto pid : Process::process_list())
         {
-            children.emplace_back(std::make_shared<pid_node>(pid));
+            children.emplace_back(std::make_shared<pid_node>(this, pid));
         }
 
-        children.emplace_back(std::make_shared<string_node>("cmdline", kernel_cmdline));
-        children.emplace_back(std::make_shared<string_node>("uptime",  []{ return kpp::to_string(Time::uptime()); }));
-        children.emplace_back(std::make_shared<string_node>("version", get_version_str()));
-        children.emplace_back(std::make_shared<vfs::symlink>(kpp::to_string(Process::current().pid), "self"));
+        children.emplace_back(std::make_shared<string_node> (this, "cmdline", kernel_cmdline));
+        children.emplace_back(std::make_shared<string_node> (this, "uptime",  []{ return kpp::to_string(Time::uptime()); }));
+        children.emplace_back(std::make_shared<string_node> (this, "version", get_version_str()));
+        children.emplace_back(std::make_shared<vfs::symlink>(this, kpp::to_string(Process::current().pid), "self"));
 
-        children.emplace_back(std::make_shared<interface_test>("interface_test"));
+        children.emplace_back(std::make_shared<interface_test>(this, "interface_test"));
 
         return children;
     }

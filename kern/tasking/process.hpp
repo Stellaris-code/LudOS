@@ -74,6 +74,7 @@ public:
         Kernel
     };
 
+    static constexpr pid_t  init_pid = 0;
     static constexpr size_t root_uid = 0;
     static constexpr uintptr_t signal_trampoline_page = KERNEL_VIRTUAL_BASE - (1*Memory::page_size());
     static constexpr size_t    user_stack_top         = KERNEL_VIRTUAL_BASE - (1*Memory::page_size());

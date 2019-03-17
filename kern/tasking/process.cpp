@@ -136,10 +136,19 @@ void Process::close_fd(size_t fd)
 void Process::wait_for(pid_t pid, int *wstatus)
 {
     data->waiting_pid = pid;
-    data->wstatus = wstatus;
     data->waitstatus_phys = Memory::physical_address(wstatus);
+
     status = ChildWait;
-    assert(data->wstatus);
+}
+
+void Process::wake_up(pid_t child, int err_code)
+{
+    Memory::phys_write(data->waitstatus_phys, &err_code, sizeof(err_code));
+
+    data->waiting_pid.reset();
+    data->waitpid_child = child;
+
+    status = Active;
 }
 
 bool Process::check_perms(uint16_t perms, uint16_t tgt_uid, uint16_t tgt_gid, uint16_t type)
@@ -218,6 +227,12 @@ void Process::kill(pid_t pid, int err_code)
 
     m_processes[pid]->status = Zombie;
 
+    for (auto child_pid : m_processes[pid]->data->children)
+    {
+        by_pid(child_pid)->parent = init_pid; // reset parent of child processes
+        by_pid(init_pid)->data->children.push_back(child_pid);
+    }
+
     kmsgbus.send(ProcessDestroyedEvent{pid, err_code});
 
     assert(by_pid(by_pid(pid)->parent));
@@ -258,7 +273,8 @@ void Process::release_zombie(pid_t pid)
 
 Process *Process::by_pid(pid_t pid)
 {
-    if (pid >= (int)m_processes.size())
+    assert(pid >= 0);
+    if ((size_t)pid >= m_processes.size())
     {
         return nullptr;
     }

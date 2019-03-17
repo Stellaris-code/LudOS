@@ -107,4 +107,18 @@ void install_task_commands(Shell &sh)
 
          return WEXITSTATUS(status);
      }});
+
+    sh.register_command(
+    {"ps", "list processes",
+     "Usage : ps",
+     [](const std::vector<kpp::string>& args)
+     {
+         for (auto pid : Process::process_list())
+         {
+             auto proc = Process::by_pid(pid);
+             kprintf("Process '%s' : PID %d, parent %d, status %d\n", proc->data->name.c_str(), pid, proc->parent, proc->status);
+         }
+
+         return 0;
+     }});
 }

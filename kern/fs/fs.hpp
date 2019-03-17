@@ -28,13 +28,15 @@ SOFTWARE.
 #include "drivers/storage/disk.hpp"
 #include "vfs.hpp"
 
+#include <sys/types.h>
+
 #include "utils/vecutils.hpp"
 
 class FileSystem
 {
 public:
-    FileSystem(Disk& disk)
-        : m_disk(disk)
+    FileSystem(Disk& disk, dev_t id)
+        : fs_id(id), m_disk(disk)
     {}
 
     virtual std::shared_ptr<vfs::node> root() const = 0;
@@ -63,6 +65,9 @@ public:
         return vec;
     }
 
+public:
+    const dev_t fs_id;
+
 protected:
     Disk& m_disk;
 
@@ -74,7 +79,7 @@ template <typename Derived>
 class FSImpl : public FileSystem
 {
 public:
-    FSImpl(Disk& disk) : FileSystem(disk)
+    FSImpl(Disk& disk, dev_t id) : FileSystem(disk, id)
     {}
 
 public:
@@ -82,7 +87,8 @@ public:
     static Derived& create_disk(Args&&... args)
     {
         static_assert(std::is_base_of_v<FileSystem, Derived>);
-        FileSystem::m_fs_list.emplace_back(std::make_unique<Derived>(std::forward<Args>(args)...));
+        dev_t fs_id = FileSystem::m_fs_list.size() + 1;
+        FileSystem::m_fs_list.emplace_back(std::make_unique<Derived>(std::forward<Args>(args)..., fs_id));
         return static_cast<Derived&>(FileSystem::fs_list().back().get());
     }
 };

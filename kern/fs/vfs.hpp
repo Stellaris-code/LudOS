@@ -34,7 +34,11 @@ SOFTWARE.
 #include <kstring/kstring.hpp>
 #include <expected.hpp>
 
+#include <sys/types.h>
+
 #include "utils/membuffer.hpp"
+
+class FileSystem;
 
 namespace vfs
 {
@@ -106,24 +110,29 @@ struct node
         Unknown = 0,
         File = 1,
         Directory = 2,
-        SymLink = 3
+        SymLink = 3,
+        FIFO = 4
     };
 
     struct Stat
     {
+        ino_t    inode { 0 };
         uint16_t perms { OtherRead };
-        uint16_t uid { 0 };
-        uint16_t gid { 0 };
+        nlink_t  nlinks { 0 };
+        blksize_t block_size { 0 };
+        blkcnt_t block_count { 0 };
+        uid_t uid { 0 };
+        gid_t gid { 0 };
         uint32_t flags { 0 };
-        size_t access_time { 0 };
-        size_t creation_time { 0 };
-        size_t modification_time { 0 };
+        time_t access_time { 0 };
+        time_t creation_time { 0 };
+        time_t modification_time { 0 };
     };
 
     template <typename T>
     using result = kpp::expected<T, FSError>;
 
-    node(node* parent = nullptr);
+    node(node* parent);
 
     node(const node&) = delete;
     node(node&&) = default;
@@ -162,6 +171,8 @@ struct node
 
     kpp::string path() const;
 
+    FileSystem *get_fs();
+
 protected:
     [[nodiscard]] virtual result<size_t> read_impl(size_t, gsl::span<uint8_t>) const { return {}; }
     [[nodiscard]] virtual result<kpp::dummy_t> write_impl(size_t, gsl::span<const uint8_t>)
@@ -187,6 +198,8 @@ protected:
     kpp::string m_name {};
 
     node* m_parent { nullptr };
+
+    FileSystem* m_fs { nullptr };
 
     Type m_type { File };
 
@@ -217,9 +230,9 @@ private:
 struct symlink : public node
 {
 
-    symlink(kpp::string target);
+    symlink(node* parent, kpp::string target);
 
-    symlink(kpp::string target, kpp::string name);
+    symlink(node* parent, kpp::string target, kpp::string name);
 
     virtual size_t size() const override { return actual_target()->size(); }
     virtual Type type() const override { return actual_target()->type(); }

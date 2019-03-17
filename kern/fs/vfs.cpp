@@ -35,6 +35,7 @@ SOFTWARE.
 #include "utils/logging.hpp"
 
 #include "fsutils.hpp"
+#include "fs/fs.hpp"
 
 #include "time/time.hpp"
 
@@ -54,7 +55,6 @@ std::vector<std::weak_ptr<node>> mounted_nodes;
 void init()
 {
     root = std::make_shared<vfs_root>();
-
     kmsgbus.register_handler<ShutdownMessage>([](const ShutdownMessage&)
     {
         for (const auto& ptr : mounted_nodes)
@@ -71,6 +71,8 @@ void init()
 node::node(node *parent)
 {
     set_parent(parent);
+    if (parent)
+        m_fs = parent->m_fs;
     m_stat = mkstat();
 }
 
@@ -168,6 +170,11 @@ kpp::string node::path() const
     }
 }
 
+FileSystem *node::get_fs()
+{
+    return m_fs;
+}
+
 void node::update_access_time() const
 {
     auto stat = this->stat();
@@ -196,17 +203,13 @@ std::vector<std::shared_ptr<node> > node::readdir()
 {
     auto list = (m_mounted_node ? m_mounted_node->readdir_impl() : readdir_impl());
 
-    auto cur_dir = std::make_shared<symlink>(path(), ".");
-    if (!find(cur_dir->target()))
-    {
-        log_serial("It is '%s'\n", cur_dir->target().c_str());
-    }
+    auto cur_dir = std::make_shared<symlink>(this, path(), ".");
 
     list.emplace_back(cur_dir);
 
     if (m_parent)
     {
-        auto parent_dir = std::make_shared<symlink>(m_parent->path(), "..");
+        auto parent_dir = std::make_shared<symlink>(this, m_parent->path(), "..");
 
         list.emplace_back(parent_dir);
     }
@@ -255,14 +258,14 @@ node::result<kpp::dummy_t> vfs_root::remove_impl(const node *child)
     return {};
 }
 
-symlink::symlink(kpp::string target)
-    : m_target(std::move(target)), m_linkname(filename(target))
+symlink::symlink(node *parent, kpp::string target)
+    : node(parent), m_target(std::move(target)), m_linkname(filename(target))
 {
 
 }
 
-symlink::symlink(kpp::string target, kpp::string name)
-    : m_target(std::move(target)), m_linkname(std::move(name))
+symlink::symlink(node *parent, kpp::string target, kpp::string name)
+    : node(parent), m_target(std::move(target)), m_linkname(std::move(name))
 {
 
 }

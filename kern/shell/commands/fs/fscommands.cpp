@@ -61,17 +61,21 @@ void install_fs_commands(Shell &sh)
 
          for (const auto& entry : vec)
          {
+             kprintf("\t");
              if (entry->is_link()) kprintf(ESC_FG(0, 118, 201));
+             if (entry->type() == vfs::node::FIFO) kprintf(ESC_BG(85, 176, 255) ESC_FG(0, 255, 0));
 
-             kprintf("\t%s", entry->name().c_str());
+             kprintf("%s", entry->name().c_str());
              if (entry->type() == vfs::node::Directory)
              {
                  kprintf("/");
+                 if (entry->type() == vfs::node::FIFO) kprintf(ESC_POP_COLOR ESC_POP_COLOR);
                  if (entry->is_link()) kprintf(ESC_POP_COLOR);
              }
              else
              {
                  if (entry->is_link()) kprintf(ESC_POP_COLOR);
+                 if (entry->type() == vfs::node::FIFO) kprintf(ESC_POP_COLOR ESC_POP_COLOR);
                  kprintf("\t: %s", human_readable_size(entry->size()).c_str());
              }
              kprintf("\n");
@@ -326,7 +330,7 @@ void install_fs_commands(Shell &sh)
          size_t offset = 0;
          if (args.size() >= 3) offset = kpp::stoul(args[2]);
 
-         auto result = node->write(offset, {(uint8_t*)data.data(), (int)data.size()});
+         auto result = node->write(offset, {(uint8_t*)data.data(), data.size()});
          if (!result)
          {
              sh.error("Cannot write to file : '%s' (%s)\n", path.c_str(), result.error().to_string());
@@ -582,6 +586,10 @@ void install_fs_commands(Shell &sh)
          if (stat.perms & vfs::Permissions::OtherWrite) perm_str[7] = 'w';
          if (stat.perms & vfs::Permissions::OtherExec) perm_str[8] = 'x';
 
+         dev_t device = target_node->get_fs() ? target_node->get_fs()->fs_id : 0;
+
+         kprintf("Device : %d; inode : %llu\n", device, stat.inode);
+         kprintf("Type : %d\n", target_node->type());
          kprintf("Permissions : %s\n", perm_str.c_str());
          kprintf("uid : %d    gid : %d\n", stat.uid, stat.gid);
          kprintf("Flags : 0x%x\n", stat.flags);

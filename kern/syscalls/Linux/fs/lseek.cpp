@@ -59,7 +59,7 @@ int sys_lseek(unsigned int fd, int off, int whence)
         new_cursor = entry->node->size() + off;
     }
 
-    if (new_cursor < 0 || new_cursor >= (int)entry->node->size())
+    if (new_cursor < 0)
     {
         return -EINVAL;
     }

@@ -32,6 +32,7 @@ SOFTWARE.
 
 #include "fs/fsutils.hpp"
 #include "fs/vfs.hpp"
+#include "fs/pipe.hpp"
 
 #include "utils/logging.hpp"
 
@@ -48,9 +49,27 @@ int sys_open(user_ptr<const char> path, int flags, int mode)
         return -result.error;
     }
 
+    if (flags & O_TRUNC)
+    {
+        // TODO :
+        warn("O_TRUNC unsupported\n");
+        return -ENOSYS;
+    }
+    if (flags & O_CREAT)
+    {
+        // TODO :
+        warn("O_CREAT unsupported\n");
+        return -ENOSYS;
+    }
+
     if (flags & O_EXCL)
     {
         return -EEXIST;
+    }
+
+    if (flags & O_DIRECTORY && result.target_node->type() != vfs::node::Directory)
+    {
+        return -ENOTDIR;
     }
 
     tasking::FDInfo info;
@@ -77,26 +96,19 @@ int sys_open(user_ptr<const char> path, int flags, int mode)
         info.write = true;
     }
 
-    if (flags & O_TRUNC)
-    {
-        // TODO :
-        warn("O_TRUNC unsupported\n");
-        return -ENOSYS;
-    }
-    if (flags & O_CREAT)
-    {
-        // TODO :
-        warn("O_CREAT unsupported\n");
-        return -ENOSYS;
-    }
     if (flags & O_APPEND)
     {
         info.append = true;
     }
 
+    if (result.target_node->type() == vfs::node::FIFO)
+    {
+        info.node = vfs::pipe::open_fifo(result.target_node);
+    }
+
     int fd = Process::current().add_fd(info);
 
-    return fd; // negative means everything is okay (yeah it's weird but it is for errno)
+    return fd;
 }
 
 int sys_close(unsigned int fd)

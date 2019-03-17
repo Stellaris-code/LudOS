@@ -35,5 +35,6 @@ SOFTWARE.
 #define	O_CREAT		0x0200		/* create if nonexistant */
 #define	O_TRUNC		0x0400		/* truncate to zero length */
 #define	O_EXCL		0x0800		/* error if already exists */
+#define O_DIRECTORY	00200000	/* must be a directory */
 
 #endif // FNCTL_H

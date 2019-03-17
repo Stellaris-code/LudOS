@@ -75,19 +75,19 @@ int liballoc_free(void* ptr, size_t pages)
 
 #include "tasking/spinlock.hpp"
 
-DECLARE_LOCK(liballoc_lock);
+static spinlock_t lock;
 
 extern "C"
 {
 int liballoc_lock()
 {
-    LOCK(liballoc_lock);
+    LOCK(&lock);
     return 0;
 }
 
 int liballoc_unlock()
 {
-    UNLOCK(liballoc_lock);
+    UNLOCK(&lock);
     return 0;
 }
 

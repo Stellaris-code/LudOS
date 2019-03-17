@@ -25,6 +25,7 @@ SOFTWARE.
 #include "syscalls/syscalls.hpp"
 
 #include "tasking/process.hpp"
+#include "tasking/process_data.hpp"
 
 #include "tasking/scheduler.hpp"
 
@@ -34,18 +35,17 @@ pid_t sys_waitpid(pid_t pid, user_ptr<int> wstatus, int options)
 {
     if (!wstatus.check()) return -EFAULT;
 
-    // pid doesn't exist or isn't a child
-    if (Process::by_pid(pid) == nullptr || Process::by_pid(pid)->parent != Process::current().pid)
-    {
-        return -ECHILD;
-    }
-
     if (pid == -1)
     {
         Process::current().wait_for(pid, wstatus.get());
     }
     else if (pid > 0)
     {
+        // pid doesn't exist or isn't a child
+        if (Process::by_pid(pid) == nullptr || Process::by_pid(pid)->parent != Process::current().pid)
+        {
+            return -ECHILD;
+        }
         Process::current().wait_for(pid, wstatus.get());
     }
     else
@@ -54,6 +54,7 @@ pid_t sys_waitpid(pid_t pid, user_ptr<int> wstatus, int options)
     }
 
     tasking::schedule();
+    // returns when the process is active again
 
-    // It doesn't actually return here
+    return Process::current().data->waitpid_child;
 }

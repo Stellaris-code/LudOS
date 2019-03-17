@@ -52,12 +52,12 @@ size_t sys_read(unsigned int fd, user_ptr<void> buf, size_t count)
         return -EISDIR;
     }
 
-    if (node->size() && fd_entry->cursor + count >= node->size())
+    if (node->size() && fd_entry->cursor + count > node->size())
     {
         return -EIO;
     }
 
-    auto result = node->read(fd_entry->cursor, {(uint8_t*)buf.get(), (long)count});
+    auto result = node->read(fd_entry->cursor, {(uint8_t*)buf.get(), count});
     if (!result)
     {
         return -result.error().to_errno();

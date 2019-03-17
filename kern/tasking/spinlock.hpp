@@ -25,20 +25,16 @@ SOFTWARE.
 #ifndef _SPINLOCK_HPP
 #define _SPINLOCK_HPP
 
+#include "atomic.hpp"
+
 typedef volatile int spinlock_t;
 
-#define DECLARE_LOCK(name) spinlock_t name ## Locked = 0
 #define LOCK(name) \
-        while (!__sync_bool_compare_and_swap(& name ## Locked, 0, 1)); \
-        __sync_synchronize();
+    while(!__sync_bool_compare_and_swap((name), 0, 1)) \
+    { \
+        asm("pause"); \
+    }
 #define UNLOCK(name) \
-        __sync_synchronize(); \
-        name ## Locked = 0;
-
-#define LOCK_VAL(name) \
-        while (!__sync_bool_compare_and_swap(name, 0, 1)); \
-        __sync_synchronize();
-#define UNLOCK_VAL(name) \
         __sync_synchronize(); \
         *(name) = 0;
 

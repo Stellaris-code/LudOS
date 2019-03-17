@@ -31,6 +31,7 @@ SOFTWARE.
 
 #include "fs/fsutils.hpp"
 #include "fs/vfs.hpp"
+#include "fs/fs.hpp"
 #include "tasking/process.hpp"
 
 int sys_stat(user_ptr<const char> path, user_ptr<struct stat> ptr)
@@ -55,14 +56,32 @@ int sys_stat(user_ptr<const char> path, user_ptr<struct stat> ptr)
 
     auto stat = ptr.get();
     // TODO : dev/ino
-    stat->st_dev = 0;
-    stat->st_ino = 0;
+    const auto* fs = result.target_node->get_fs();
+    stat->st_dev = fs ? fs->fs_id : 0;
+    stat->st_ino = node_stat.inode;
     stat->st_mode = node_stat.perms;
-    stat->st_nlink = 1;
+    stat->st_nlink = node_stat.nlinks;
     stat->st_uid = node_stat.uid;
     stat->st_gid = node_stat.gid;
     stat->st_rdev = 0;
     stat->st_size = result.target_node->size();
-    stat->st_blksize = 512;
-    stat->st_blocks = result.target_node->size()/512 + (result.target_node->size()%512?:0);
+    stat->st_blksize = node_stat.block_size;
+    stat->st_blocks = node_stat.block_count;
+    //stat->st_blocks = result.target_node->size()/512 + (result.target_node->size()%512?:0);
+
+
+    switch (result.target_node->type())
+    {
+        case vfs::node::Type::Unknown:
+        case vfs::node::Type::File:
+            stat->st_mode |= S_IFREG;
+        case vfs::node::Type::Directory:
+            stat->st_mode |= S_IFDIR;
+        case vfs::node::Type::SymLink:
+            stat->st_mode |= S_IFLNK;
+        case vfs::node::Type::FIFO:
+            stat->st_mode |= S_IFIFO;
+    }
+
+    return EOK;
 }

@@ -1,4 +1,4 @@
-/*
+﻿/*
 tar.hpp
 
 Copyright (c) 05 Yann BOUCHER (yann)
@@ -47,8 +47,10 @@ struct tar_node : public vfs::node
     friend class TarFS;
 
     tar_node(const TarFS& fs, vfs::node* parent)
-        : vfs::node(parent), m_fs(fs)
-    {}
+        : vfs::node(parent), tar_fs(fs)
+    {
+        m_fs = (FileSystem*)((TarFS*)&tar_fs);
+    }
 
     [[nodiscard]] virtual result<size_t> read_impl(size_t offset, gsl::span<uint8_t> data) const override;
 
@@ -59,7 +61,7 @@ struct tar_node : public vfs::node
     virtual bool is_link() const override;
     virtual kpp::string name() const override;
 
-    const TarFS& m_fs;
+    const TarFS& tar_fs;
     const uint8_t* m_data_addr { nullptr };
     size_t m_size { 0 };
     kpp::string m_link_target {};
@@ -70,7 +72,7 @@ class TarFS : public FSImpl<TarFS>
 {
     friend struct tar_node;
 public:
-    TarFS(Disk& disk);
+    TarFS(Disk& disk, dev_t id);
 
     static bool accept(const Disk& disk);
 

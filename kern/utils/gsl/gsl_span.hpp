@@ -318,7 +318,7 @@ public:
     // constants and types
     using element_type = ElementType;
     using value_type = std::remove_cv_t<ElementType>;
-    using index_type = ptrdiff_t;
+    using index_type = size_t;
     using pointer = element_type*;
     using reference = element_type&;
 

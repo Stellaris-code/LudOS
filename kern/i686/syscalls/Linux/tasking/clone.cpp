@@ -1,7 +1,7 @@
 /*
-exit.cpp
+clone.cpp
 
-Copyright (c) 28 Yann BOUCHER (yann)
+Copyright (c) 19 Yann BOUCHER (yann)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -23,18 +23,28 @@ SOFTWARE.
 
 */
 
-#include "syscalls/syscall_list.hpp"
+#include "i686/syscalls/syscall.hpp"
 
-#include <stdlib.h>
+#include "tasking/process.hpp"
+#include "i686/tasking/process.hpp"
 
-#include "syscall.h"
+#include "errno.h"
 
-
-
-void exit(uint8_t errcode)
+static void fork_return()
 {
-    DO_LINUX_SYSCALL(SYS_exit, 1, errcode);
+    Process::current().jump_to_user_space();
+}
 
-    __builtin_unreachable();
-    abort();
+int sys_clone(int flags, user_ptr<void> child_stack)
+{
+    auto child = Process::clone(Process::current(), flags);
+    if (!child) return -ENOMEM;
+
+    child->arch_context->init_regs->eip = (uintptr_t)fork_return;
+
+    *child->arch_context->user_regs = *Process::current().arch_context->user_regs;
+    child->arch_context->user_regs->eax = 0; // return zero in the child
+    child->arch_context->user_regs->esp = child_stack.as_raw();
+
+    return child->pid;
 }

@@ -58,6 +58,7 @@ bool Paging::page_fault_handler(registers *regs)
 
         regs->eip = return_eip;
         regs->esp += sizeof(uintptr_t);
+        log_serial("more like 0x%x\n", return_eip);
     }
     else
     {

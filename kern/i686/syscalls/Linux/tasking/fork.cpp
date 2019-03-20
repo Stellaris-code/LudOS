@@ -30,7 +30,7 @@ SOFTWARE.
 
 #include "errno.h"
 
-void fork_return()
+static void fork_return()
 {
     Process::current().jump_to_user_space();
 }

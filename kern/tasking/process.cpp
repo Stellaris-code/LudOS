@@ -61,6 +61,7 @@ Process::Process()
     init_sig_handlers();
 
     data->user_callbacks = std::make_shared<tasking::UserCallbacks>();
+    data->mappings = std::make_shared<std::unordered_map<uintptr_t, tasking::MemoryMapping>>();
 
     arch_init();
 }
@@ -395,10 +396,13 @@ void Process::push_args(const std::vector<kpp::string>& args)
 
 Process::~Process()
 {
-    // TODO : do this per fd ?
-    for (auto entry : data->user_callbacks->pages)
+    // TODO : do this per fd ? and use destructor for this
+    if (data->user_callbacks.use_count() == 1)
     {
-        detach_fault_handler(entry.base);
+        for (auto entry : data->user_callbacks->pages)
+        {
+            detach_fault_handler(entry.base);
+        }
     }
 
     for (size_t fd { 0 }; fd < data->fd_table->size(); ++fd)

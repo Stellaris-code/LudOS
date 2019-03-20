@@ -119,7 +119,8 @@ struct ProcessData
 
     shared_resource<tasking::UserCallbacks> user_callbacks;
 
-    std::unordered_map<uintptr_t, tasking::MemoryMapping> mappings;
+    std::unordered_map<uintptr_t, tasking::MemoryMapping>                  stack_mappings;
+    shared_resource<std::unordered_map<uintptr_t, tasking::MemoryMapping>> mappings;
 
     std::vector<kpp::string> args;
 

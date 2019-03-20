@@ -43,6 +43,8 @@ SOFTWARE.
 #include "utils/membuffer.hpp"
 #include "utils/align.hpp"
 
+#include <sched.h>
+
 struct SignalTrampolineInfo
 {
     int32_t   signal;
@@ -288,6 +290,9 @@ void Process::task_switch(pid_t pid)
     prev->unswitch();
     next->switch_to();
 
+    //    if (next->arch_context && next->arch_context->user_regs)
+    //        log_serial("Switching to eip 0x%x\n", next->arch_context->user_regs->eip);
+
     FPU::load(next->arch_context->fpu_state);
 
     m_current_process = next;
@@ -333,32 +338,65 @@ Process *Process::clone(Process &proc, uint32_t flags)
     auto new_proc = Process::create();
     if (!new_proc) return nullptr;
 
-    new_proc->data->code = std::make_shared<aligned_vector<uint8_t, Memory::page_size()>>(*proc.data->code); // noleak ? :(
-    new_proc->data->stack = proc.data->stack; // noleak
-    assert(new_proc->data->stack.data() != proc.data->stack.data()); // check separate
+    new_proc->arch_context->user_regs = new registers{*proc.arch_context->user_regs};
 
-    new_proc->data->name = proc.data->name + "_child"; // noleak
+    new_proc->data->code = std::make_shared<aligned_vector<uint8_t, Memory::page_size()>>(*proc.data->code);
+    new_proc->data->stack = proc.data->stack;
+    new_proc->map_stack(); // manually new process' new stack
+
+    new_proc->data->name = proc.data->name + "_child";
     new_proc->data->uid = proc.data->uid;
     new_proc->data->gid = proc.data->gid;
-    new_proc->parent = proc.pid;
 
-    new_proc->data->pwd  = vfs::find(proc.data->pwd->path()).value(); assert(new_proc->data->pwd);
-    new_proc->data->root = vfs::find(proc.data->root->path()).value(); assert(new_proc->data->root);
+    if (flags & CLONE_THREAD)
+        new_proc->tgid = proc.pid;
 
-    new_proc->data->fd_table = std::make_shared<std::vector<tasking::FDInfo>>(*proc.data->fd_table); // noleak
-    proc.copy_allocated_pages(*new_proc); // noleak
+    if (flags & CLONE_FS)
+    {
+        new_proc->data->pwd  = proc.data->pwd;
+        new_proc->data->root = proc.data->root;
+    }
+    else
+    {
+        new_proc->data->pwd  = vfs::find(proc.data->pwd->path()).value(); assert(new_proc->data->pwd);
+        new_proc->data->root = vfs::find(proc.data->root->path()).value(); assert(new_proc->data->root);
+    }
+
+    if (flags & CLONE_FILES)
+        new_proc->data->fd_table = proc.data->fd_table;
+    else
+        new_proc->data->fd_table = std::make_shared<std::vector<tasking::FDInfo>>(*proc.data->fd_table);
+
+    if (flags & CLONE_VM)
+    {
+        new_proc->data->mappings = proc.data->mappings;
+    }
+    else
+    {
+        proc.copy_allocated_pages(*new_proc);
+    }
 
     // TODO : refactor this
     new_proc->data->user_callbacks = std::make_shared<tasking::UserCallbacks>(*proc.data->user_callbacks);
 
-    new_proc->data->args = proc.data->args; // noleak
+    new_proc->data->args = proc.data->args;
     new_proc->data->shm_list = proc.data->shm_list;
-    new_proc->data->sig_handlers = std::make_shared<kpp::array<struct sigaction, SIGRTMAX>>(*proc.data->sig_handlers);
 
-    if (proc.arch_context->user_regs != nullptr)
-        new_proc->arch_context->user_regs = new registers{*proc.arch_context->user_regs};
+    if (flags & CLONE_SIGHAND)
+        new_proc->data->sig_handlers = proc.data->sig_handlers;
+    else
+        new_proc->data->sig_handlers = std::make_shared<kpp::array<struct sigaction, SIGRTMAX>>(*proc.data->sig_handlers);
 
-    proc.data->children.emplace_back(new_proc->pid);
+    if (flags & CLONE_PARENT)
+    {
+        by_pid(proc.parent)->data->children.emplace_back(new_proc->pid);
+        new_proc->parent = proc.parent;
+    }
+    else
+    {
+        proc.data->children.emplace_back(new_proc->pid);
+        new_proc->parent = proc.pid;
+    }
 
     new_proc->create_mappings();
 

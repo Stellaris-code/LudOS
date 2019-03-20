@@ -35,7 +35,11 @@ void Process::unmap_address_space()
 #if 0
     Memory::unmap_user_space(); // reloading all the page tables is really costly, not the right solution
 #else
-    for (const auto& pair : data->mappings)
+    for (const auto& pair : *data->mappings)
+    {
+        Memory::unmap_page((void*)pair.first);
+    }
+    for (const auto& pair : data->stack_mappings)
     {
         Memory::unmap_page((void*)pair.first);
     }
@@ -66,7 +70,7 @@ void Process::map_code()
         uint8_t* virt_addr = (uint8_t*)(i * Memory::page_size()) + USER_VIRTUAL_BASE;
 
         assert(phys_addr);
-        data->mappings[(uintptr_t)virt_addr] = {phys_addr, Memory::Read|Memory::Write|Memory::Executable|Memory::User, false};
+        (*data->mappings)[(uintptr_t)virt_addr] = {phys_addr, Memory::Read|Memory::Write|Memory::Executable|Memory::User, false};
     }
 }
 
@@ -82,7 +86,7 @@ void Process::map_stack()
         uint8_t* virt_addr = (uint8_t*)Memory::page(user_stack_top-Memory::page_size()) - i*Memory::page_size();
 
         assert(phys_addr);
-        data->mappings[(uintptr_t)virt_addr] = {phys_addr, Memory::Read|Memory::Write|Memory::User, false};
+        data->stack_mappings[(uintptr_t)virt_addr] = {phys_addr, Memory::Read|Memory::Write|Memory::User, false};
     }
 }
 
@@ -90,16 +94,20 @@ void Process::create_mappings()
 {
     map_code();
     map_stack();
-    if (!data->mappings.count(signal_trampoline_page))
+    if (!data->mappings->count(signal_trampoline_page))
     {
-        data->mappings[signal_trampoline_page] =
+        (*data->mappings)[signal_trampoline_page] =
         {Memory::physical_address((void*)signal_trampoline), Memory::Read|Memory::User|Memory::Executable, false};
     }
 }
 
 void Process::release_mappings()
 {
-    for (const auto& pair : data->mappings)
+    // don't delete physical pages if we share the address space with another process
+    if (data->mappings.use_count() > 1)
+        return;
+
+    for (const auto& pair : *data->mappings)
     {
         if (pair.second.owned)
         {
@@ -107,12 +115,16 @@ void Process::release_mappings()
         }
     }
 
-    data->mappings.clear();
+    data->mappings->clear();
 }
 
 void Process::map_address_space()
 {
-    for (const auto& pair : data->mappings)
+    for (const auto& pair : *data->mappings)
+    {
+        Memory::map_page(pair.second.paddr, (void*)pair.first, pair.second.flags);
+    }
+    for (const auto& pair : data->stack_mappings)
     {
         Memory::map_page(pair.second.paddr, (void*)pair.first, pair.second.flags);
     }
@@ -125,7 +137,7 @@ void *Process::map_range(uintptr_t phys, size_t len)
     for (size_t i { 0 }; i < page_count; ++i)
     {
         Memory::map_page(phys + Memory::page_size()*i, (uint8_t*)virt + Memory::page_size()*i, Memory::Read|Memory::Write|Memory::User);
-        data->mappings[virt + Memory::page_size()*i] = {phys + Memory::page_size()*i,
+        (*data->mappings)[virt + Memory::page_size()*i] = {phys + Memory::page_size()*i,
                 Memory::Read|Memory::Write|Memory::User, false};
     }
 
@@ -151,7 +163,7 @@ void Process::allocate_user_callback_page()
 {
     auto virt_page = Memory::allocate_virtual_page(1, true);
     Memory::map_page(0, (void*)virt_page, Memory::Sentinel|Memory::User);
-    data->mappings[(uintptr_t)virt_page] = {0, Memory::Sentinel|Memory::User, false};
+    (*data->mappings)[(uintptr_t)virt_page] = {0, Memory::Sentinel|Memory::User, false};
 
     // Mark these new callbacks as free
     for (size_t i { 0 }; i < Memory::page_size(); ++i)
@@ -177,30 +189,30 @@ uintptr_t Process::allocate_pages(size_t pages)
         uintptr_t physical_page = Memory::allocate_physical_page();
         Memory::map_page(physical_page, virtual_page, Memory::Read|Memory::Write|Memory::User);
 
-        assert(!data->mappings.count((uintptr_t)virtual_page));
-        data->mappings[(uintptr_t)virtual_page] = {(uintptr_t)physical_page, Memory::Read|Memory::Write|Memory::User, true};
+        assert(!data->mappings->count((uintptr_t)virtual_page));
+        (*data->mappings)[(uintptr_t)virtual_page] = {(uintptr_t)physical_page, Memory::Read|Memory::Write|Memory::User, true};
     }
 
     return (uintptr_t)addr;
 }
 
 bool Process::release_pages(uintptr_t ptr, size_t pages)
-{
+{    
     // TODO : use vfree
     assert(ptr % Memory::page_size() == 0);
 
     for (size_t i { 0 }; i < pages; ++i)
     {
         void* virtual_page  = (uint8_t*)ptr + i*Memory::page_size();
-        assert(data->mappings.count((uintptr_t)virtual_page));
+        assert(data->mappings->count((uintptr_t)virtual_page));
 
-        uintptr_t physical_page = data->mappings.at((uintptr_t)virtual_page).paddr;
+        uintptr_t physical_page = data->mappings->at((uintptr_t)virtual_page).paddr;
 
         Memory::release_physical_page(physical_page);
         if (Memory::is_mapped(virtual_page)) Memory::unmap_page(virtual_page);
 
-        assert(data->mappings.at((uintptr_t)virtual_page).owned);
-        data->mappings.erase((uintptr_t)virtual_page);
+        assert(data->mappings->at((uintptr_t)virtual_page).owned);
+        data->mappings->erase((uintptr_t)virtual_page);
     }
 
     return true;
@@ -208,17 +220,17 @@ bool Process::release_pages(uintptr_t ptr, size_t pages)
 
 void Process::copy_allocated_pages(Process &target)
 {
-    for (const auto& pair : data->mappings)
+    for (const auto& pair : *data->mappings)
     {
         if (!pair.second.owned)
             continue;
 
-        target.data->mappings[pair.first] = pair.second;
-        assert(target.data->mappings[pair.first].owned);
-        target.data->mappings[pair.first].paddr = Memory::allocate_physical_page();
+        (*target.data->mappings)[pair.first] = pair.second;
+        assert((*target.data->mappings)[pair.first].owned);
+        (*target.data->mappings)[pair.first].paddr = Memory::allocate_physical_page();
 
         auto src_ptr = Memory::mmap(pair.second.paddr, Memory::page_size());
-        auto dest_ptr = Memory::mmap(target.data->mappings[pair.first].paddr, Memory::page_size());
+        auto dest_ptr = Memory::mmap((*target.data->mappings)[pair.first].paddr, Memory::page_size());
 
         aligned_memcpy(dest_ptr, src_ptr, Memory::page_size());
 

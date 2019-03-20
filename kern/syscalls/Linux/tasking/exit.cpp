@@ -34,5 +34,4 @@ SOFTWARE.
 void sys_exit(uint8_t errcode)
 {
     Process::kill(Process::current().pid, __W_EXITCODE(errcode, 0));
-    tasking::schedule();
 }

@@ -1,5 +1,5 @@
 /*
-exit.cpp
+main.cpp
 
 Copyright (c) 28 Yann BOUCHER (yann)
 
@@ -23,18 +23,42 @@ SOFTWARE.
 
 */
 
-#include "syscalls/syscall_list.hpp"
+#include <stdio.h>
 
-#include <stdlib.h>
+#include <syscalls/syscall_list.hpp>
 
-#include "syscall.h"
+#include <errno.h>
+#include <stdio.h>
+#include <string.h>
+#include <sched.h>
 
+volatile int the_data = 0;
 
+char child_stack[0x1000];
 
-void exit(uint8_t errcode)
+int thread_func(void*)
 {
-    DO_LINUX_SYSCALL(SYS_exit, 1, errcode);
+    the_data = 1;
+    exit(0);
+    return 0;
+}
 
-    __builtin_unreachable();
-    abort();
+int main()
+{
+    printf("Before clone : \n");
+    int ret = clone(thread_func, child_stack + 0x1000, CLONE_VM | CLONE_FILES | CLONE_FS | CLONE_SIGHAND | CLONE_PARENT
+                         | CLONE_THREAD | CLONE_IO, 0);
+    if (ret < 0)
+    {
+        printf("Error : %s\n", strerror(errno));
+        return 0;
+    }
+
+    while (the_data == 0)
+    {
+        sched_yield();
+        print_serial("back to parent\n");
+    }
+
+    printf("the data changed ! %d\n", the_data);
 }

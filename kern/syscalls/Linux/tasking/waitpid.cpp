@@ -41,7 +41,7 @@ pid_t sys_waitpid(pid_t pid, user_ptr<int> wstatus, int options)
     }
     else if (pid > 0)
     {
-        // pid doesn't exist or isn't a child
+        // pid doesn't exist or isn't a child nor a thread
         if (Process::by_pid(pid) == nullptr || Process::by_pid(pid)->parent != Process::current().pid)
         {
             return -ECHILD;

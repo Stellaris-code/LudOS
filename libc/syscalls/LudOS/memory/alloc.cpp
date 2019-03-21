@@ -29,6 +29,8 @@ SOFTWARE.
 
 #include "syscall.h"
 
+extern "C"
+{
 
 
 int alloc_pages(int pages)
@@ -47,4 +49,6 @@ int free_pages(uintptr_t ptr, int pages)
     DO_LUDOS_SYSCALL(SYS_free_pages, 2, ptr, pages);
 
     return 0;
+}
+
 }

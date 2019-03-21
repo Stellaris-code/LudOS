@@ -27,9 +27,14 @@ SOFTWARE.
 
 #include <errno.h>
 
+extern "C"
+{
+
 LINUX_SYSCALL_DEFAULT_IMPL(waitpid, 3, pid_t, (pid_t pid, int *wstatus, int options), pid, wstatus, options)
 
 pid_t wait(int *status)
 {
     return waitpid(-1, status, 0);
+}
+
 }

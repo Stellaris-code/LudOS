@@ -23,12 +23,15 @@ SOFTWARE.
 
 */
 
-#include "syscalls/syscalls.hpp"
 #include "syscalls/defs.hpp"
 
 #include <errno.h>
 
+extern "C"
+{
 
 
 LINUX_SYSCALL_DEFAULT_IMPL(read, 3, size_t, (unsigned int fd, void* buf, size_t count), fd, buf, count)
 LINUX_SYSCALL_DEFAULT_IMPL(write,3, size_t, (unsigned int fd, const void* buf, size_t count), fd, buf, count)
+
+}

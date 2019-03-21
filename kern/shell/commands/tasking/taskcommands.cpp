@@ -97,7 +97,6 @@ void install_task_commands(Shell &sh)
 
          int status = 0xdeadbeef;
          Process::current().wait_for(process->pid, &status);
-         tasking::schedule();
 
          if (WIFSIGNALED(status))
          {

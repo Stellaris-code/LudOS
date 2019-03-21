@@ -27,6 +27,8 @@ SOFTWARE.
 
 #include "syscall.h"
 
+extern "C"
+{
 
 
 int getpid()
@@ -37,4 +39,6 @@ int getpid()
 int gettid()
 {
     return DO_LINUX_SYSCALL(SYS_gettid, 0);
+}
+
 }

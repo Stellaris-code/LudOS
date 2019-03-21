@@ -25,6 +25,7 @@ SOFTWARE.
 #ifndef SYSCALL_DEFS_HPP
 #define SYSCALL_DEFS_HPP
 
+#include "syscalls/syscall_list.hpp"
 #include "syscall.h"
 
 #define LINUX_SYSCALL_DEFAULT_IMPL(name, cnt, ret, args, ...) \

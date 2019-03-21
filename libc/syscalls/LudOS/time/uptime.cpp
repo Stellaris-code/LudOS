@@ -29,9 +29,13 @@ SOFTWARE.
 
 #include "syscall.h"
 
+extern "C"
+{
 
 
 uint64_t uptime()
 {
     return DO_LUDOS_SYSCALL(SYS_uptime, 0);
+}
+
 }

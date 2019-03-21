@@ -23,10 +23,15 @@ SOFTWARE.
 
 */
 
-#include "syscalls/syscalls.hpp"
 #include "syscalls/defs.hpp"
 
 #include <errno.h>
 
+extern "C"
+{
+
+
 LINUX_SYSCALL_DEFAULT_IMPL(chdir , 1, int, (const char* path), path)
 LINUX_SYSCALL_DEFAULT_IMPL(fchdir, 1, int, (int fd), fd)
+
+}

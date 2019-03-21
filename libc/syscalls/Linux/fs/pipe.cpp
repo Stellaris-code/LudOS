@@ -23,9 +23,14 @@ SOFTWARE.
 
 */
 
-#include "syscalls/syscalls.hpp"
 #include "syscalls/defs.hpp"
 
 #include <errno.h>
 
+extern "C"
+{
+
+
 LINUX_SYSCALL_DEFAULT_IMPL(pipe, 1, int, (int fd[2]), fd)
+
+}

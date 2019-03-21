@@ -64,6 +64,7 @@ static constexpr uint16_t kernel_data_selector { 2 };
 static constexpr uint16_t user_code_selector { 3 };
 static constexpr uint16_t user_data_selector { 4 };
 static constexpr uint16_t tss_selector { 5 };
+static constexpr uint16_t tls_selector { 6 };
 
 }
 

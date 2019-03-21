@@ -23,9 +23,14 @@ SOFTWARE.
 
 */
 
-#include "syscalls/syscalls.hpp"
 #include "syscalls/defs.hpp"
 
 #include <errno.h>
 
+extern "C"
+{
+
+
 LINUX_SYSCALL_DEFAULT_IMPL(getcwd, 2, int, (char* buf, unsigned long size), buf, size)
+
+}

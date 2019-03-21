@@ -29,6 +29,8 @@ SOFTWARE.
 
 #include "syscall.h"
 
+extern "C"
+{
 
 
 long shmat(int shmid, const void* shmaddr, int shmflg)
@@ -53,4 +55,6 @@ long shmdt(const void* shmaddr)
     }
 
     return ret;
+}
+
 }

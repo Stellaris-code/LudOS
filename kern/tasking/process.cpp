@@ -136,18 +136,21 @@ void Process::close_fd(size_t fd)
 
 void Process::wait_for(pid_t pid, int *wstatus)
 {
-    data->waiting_pid = pid;
+    assert(Process::by_pid(pid));
+
+    Process::by_pid(pid)->data->wait_entries.push_back({this->pid, Memory::physical_address(wstatus)});
     data->waitstatus_phys = Memory::physical_address(wstatus);
 
     status = ChildWait;
+
+    tasking::schedule();
 }
 
-void Process::wake_up(pid_t child, int err_code)
+void Process::wake_up(pid_t awakener, int err_code)
 {
     Memory::phys_write(data->waitstatus_phys, &err_code, sizeof(err_code));
 
-    data->waiting_pid.reset();
-    data->waitpid_child = child;
+    data->woke_up_by = awakener;
 
     status = Active;
 }
@@ -239,11 +242,16 @@ void Process::kill(pid_t pid, int err_code)
     assert(by_pid(by_pid(pid)->parent));
     auto& parent = *by_pid(by_pid(pid)->parent);
 
-    if (parent.status == ChildWait && (parent.data->waiting_pid.value() == -1 || parent.data->waiting_pid.value() == pid))
+    for (auto entry : m_processes[pid]->data->wait_entries)
     {
-        //log_serial("Waking up PID %d with PID %d\n", parent.pid, pid);
-        parent.wake_up(pid, err_code);
+        assert(Process::by_pid(entry.process_waiting)->status == ChildWait);
+        Process::by_pid(entry.process_waiting)->wake_up(pid, err_code);
     }
+//    if (parent.status == ChildWait && (parent.data->waiting_pid.value() == -1 || parent.data->waiting_pid.value() == pid))
+//    {
+//        //log_serial("Waking up PID %d with PID %d\n", parent.pid, pid);
+//        parent.wake_up(pid, err_code);
+//    }
 
     parent.raise(parent.pid, SIGCHLD, info);
 
@@ -336,6 +344,7 @@ void Process::switch_to()
 {
     map_address_space();
     map_shm();
+    switch_tls();
 }
 
 void Process::unswitch()
@@ -390,8 +399,18 @@ void Process::push_args(const std::vector<kpp::string>& args)
 
     assert(cursor < Memory::page_size());
 
+    Process::current().unswitch();
+    switch_to();
     push_onto_stack(argv_base); // argv
     push_onto_stack(args.size()); // argc
+    unswitch();
+    Process::current().switch_to();
+}
+
+void Process::init_tls()
+{
+    // top of the tls area
+    data->tls_addr = allocate_pages(tls_pages, false) + tls_pages*Memory::page_size();
 }
 
 Process::~Process()

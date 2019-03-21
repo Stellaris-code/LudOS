@@ -23,7 +23,7 @@ SOFTWARE.
 
 */
 
-struct SyscallEntry;
+typedef struct SyscallEntry SyscallEntry;
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -60,6 +60,7 @@ LINUX_SYSCALL_DEF_COMBINED(0x3d, chroot, int, USER_PTR(const char) path)
 LINUX_SYSCALL_DEF_COMBINED(0x43, sigaction, int,int signum, USER_PTR(const struct sigaction) act, USER_PTR(struct sigaction) oldact)
 LINUX_SYSCALL_DEF_COMBINED(0x77, sigreturn, void, void)
 LINUX_SYSCALL_DEF_KERNEL(0x78, clone , int, int, USER_PTR(void))
+LINUX_SYSCALL_DEF_USER  (0x78, clone , int, int (*fn) (void *__arg), void *child_stack, int flags, void *arg, ...)
 LINUX_SYSCALL_DEF_COMBINED(0x85, fchdir, int, int fd)
 LINUX_SYSCALL_DEF_COMBINED(0xb7, getcwd, int, USER_PTR(char) buf, unsigned long size)
 LINUX_SYSCALL_DEF_COMBINED(0x9e, sched_yield, void)

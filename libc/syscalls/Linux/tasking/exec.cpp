@@ -30,6 +30,8 @@ SOFTWARE.
 
 #include "syscall.h"
 
+extern "C"
+{
 
 
 int execve(const char* path, const char* argv[], const char* envp[])
@@ -44,4 +46,6 @@ int execve(const char* path, const char* argv[], const char* envp[])
     __builtin_unreachable();
 
     return 0;
+}
+
 }

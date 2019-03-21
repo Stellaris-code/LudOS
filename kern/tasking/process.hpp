@@ -76,6 +76,7 @@ public:
 
     static constexpr pid_t  init_pid = 0;
     static constexpr size_t root_uid = 0;
+    static constexpr size_t tls_pages = 1;
     static constexpr uintptr_t signal_trampoline_page = KERNEL_VIRTUAL_BASE - (1*Memory::page_size());
     static constexpr size_t    user_stack_top         = KERNEL_VIRTUAL_BASE - (1*Memory::page_size());
     static constexpr kpp::array<uintptr_t, 64> default_sighandler_actions
@@ -166,9 +167,12 @@ public:
     void raise(pid_t target_pid, int sig, const siginfo_t& siginfo);
     void exit_signal();
 
+    void init_tls();
+    void switch_tls();
+
     bool check_perms(uint16_t perms, uint16_t tgt_uid, uint16_t tgt_gid, uint16_t type);
 
-    uintptr_t allocate_pages(size_t pages);
+    uintptr_t allocate_pages(size_t pages, bool map_immediatly = true);
     bool      release_pages(uintptr_t ptr, size_t pages);
 
 private:
@@ -234,7 +238,7 @@ private:
 
     void free_arch_context();
     void cleanup();
-    void wake_up(pid_t child, int err_code);
+    void wake_up(pid_t awakener, int err_code);
     void copy_allocated_pages(Process& target);
 
 private:

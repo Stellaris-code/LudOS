@@ -100,6 +100,7 @@ SOFTWARE.
 // TODO : only switch to the idle task if nothing is left to do
 // TODO : nanosleep must let signals pass through
 // TODO : check that the initial process stack conforms to the sys v abi spec
+// TODO : remove common_syscall
 
 // ROADMAP
 // : supprimer les floats dans le kernel

@@ -27,10 +27,10 @@ SOFTWARE.
 
 #include <stdint.h>
 
-struct SyscallEntry
+typedef struct SyscallEntry
 {
     uint8_t arg_cnt;
     uint8_t arg_sizes[6];
-};
+} SyscallEntry;
 
 #endif // LUDOS_SYSCALLS_HPP

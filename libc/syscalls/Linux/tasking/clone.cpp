@@ -23,10 +23,14 @@ SOFTWARE.
 
 */
 
-#include "syscalls/syscall_list.hpp"
 #include "syscalls/defs.hpp"
 
 #include "errno.h"
+
+#include <stdio.h>
+
+extern "C"
+{
 
 int clone_fork(int flags, void* child_stack)
 {
@@ -46,6 +50,8 @@ int clone_fork(int flags, void* child_stack)
 static int (*nonstack_fn_ptr) (void *__arg);
 static void* nonstack_arg;
 
+extern int y;
+
 int clone (int (*fn) (void *__arg), void *child_stack,
            int flags, void *arg, ...)
 {
@@ -60,7 +66,7 @@ int clone (int (*fn) (void *__arg), void *child_stack,
     // copy these to .data section variables since stack-referenced variables won't be accessible from the created thread
     nonstack_fn_ptr = fn;
     nonstack_arg = arg;
-
+tfp_printf("value at start b4 clone : %d %d\n", *(int*)nonstack_arg, y);
     auto ret_val = DO_LINUX_SYSCALL(SYS_clone, 2, flags, child_stack);
 
     if (ret_val < 0)
@@ -74,9 +80,12 @@ int clone (int (*fn) (void *__arg), void *child_stack,
 
 
     // created thread running here
+    tfp_printf("value at start : %d %d\n", *(int*)nonstack_arg, y);
     int ret = nonstack_fn_ptr(nonstack_arg);
     exit(ret);
 
     __builtin_unreachable();
     return 0;
+}
+
 }

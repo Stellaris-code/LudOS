@@ -23,42 +23,79 @@ SOFTWARE.
 
 */
 
+#include <pthread.h>
 #include <stdio.h>
 
 #include <syscalls/syscall_list.hpp>
 
-#include <errno.h>
-#include <stdio.h>
-#include <string.h>
-#include <sched.h>
+#define set_tls(val) \
+    asm volatile ("movl %0, %%gs:-4"                                      \
+                         : \
+    : "a" (val));
 
-volatile int the_data = 0;
+#define get_tls() \
+    ({ int val; \
+    asm volatile ("movl %%gs:-4, %0"                                      \
+                         : "=a"(val) \
+    :); \
+    val; })
 
-char child_stack[0x1000];
+int x = 0, y = 0;
 
-int thread_func(void*)
+/* this function is run by the second thread */
+void *inc_x(void *x_void_ptr)
 {
-    the_data = 1;
-    exit(0);
-    return 0;
+
+    set_tls(0xdeadbeef);
+
+    /* increment x to 100 */
+    int *x_ptr = (int *)x_void_ptr;
+    while(++(*x_ptr) < 5)
+    {
+        printf("x increment finished : %d %d (%p %p); tls : 0x%x\n", x, y, &x, &y, get_tls());
+    };
+
+    /* the function must return something - NULL will do */
+    return (void*)42;
 }
 
 int main()
 {
-    printf("Before clone : \n");
-    int ret = clone(thread_func, child_stack + 0x1000, CLONE_VM | CLONE_FILES | CLONE_FS | CLONE_SIGHAND | CLONE_PARENT
-                         | CLONE_THREAD | CLONE_IO, 0);
-    if (ret < 0)
-    {
-        printf("Error : %s\n", strerror(errno));
-        return 0;
+
+    //int x = 0, y = 0;
+
+    /* show the initial values of x and y */
+    printf("x: %d, y: %d\n", x, y);
+
+    /* this variable is our reference to the second thread */
+    pthread_t inc_x_thread;
+
+    /* create a second thread which executes inc_x(&x) */
+    if(pthread_create(&inc_x_thread, NULL, inc_x, (void*)&x)) {
+
+        fprintf(stderr, "Error creating thread\n");
+        return 1;
+
     }
 
-    while (the_data == 0)
+    set_tls(0xcafebabe);
+    /* increment y to 100 in the first thread */
+    while(++y < 5)
     {
-        sched_yield();
-        print_serial("back to parent\n");
+        printf("y increment finished : %d %d (%p %p), tls : 0x%x\n", x, y, &x, &y, get_tls());
+    };
+
+    /* wait for the second thread to finish */
+    if(pthread_join(inc_x_thread, NULL)) {
+
+        fprintf(stderr, "Error joining thread\n");
+        return 2;
+
     }
 
-    printf("the data changed ! %d\n", the_data);
+    /* show the results - x is now 100 thanks to the second thread */
+    printf("x: %d, y: %d, tls : 0x%x\n", x, y, get_tls());
+
+    return 0;
+
 }

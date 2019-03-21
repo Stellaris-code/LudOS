@@ -30,6 +30,8 @@ SOFTWARE.
 
 #include "syscall.h"
 
+extern "C"
+{
 
 
 int shmget(key_t key, size_t size, int shmflags)
@@ -42,4 +44,6 @@ int shmget(key_t key, size_t size, int shmflags)
     }
 
     return ret;
+}
+
 }

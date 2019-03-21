@@ -73,7 +73,8 @@ void Process::load_user_code(gsl::span<const uint8_t> code_to_copy, size_t alloc
     regs->eflags |= 0b11001000000000; // enable IF and IOPL=3, DF clear
     regs->eip = 0xdeadbeef;
     regs->cs = gdt::user_code_selector*0x8 | 0x3;
-    regs->ds = regs->es = regs->fs = regs->gs = regs->ss = gdt::user_data_selector*0x8 | 0x3;
+    regs->ds = regs->es = regs->fs = regs->ss = gdt::user_data_selector*0x8 | 0x3;
+    regs->gs = gdt::tls_selector*0x8 | 0x3;
     // TODO : have %edx set to the sysv ABI convention's
 
     arch_context->fpu_state = FPU::make(); // init the FPU state
@@ -95,12 +96,11 @@ void Process::expand_stack(size_t size)
 
 void Process::push_onto_stack(gsl::span<const uint8_t> data)
 {
-    auto current_sp = this->data->stack.size() - (user_stack_top - arch_context->user_regs->esp);
-    assert(current_sp - data.size() >= 0);
+    uint8_t* base_sp = (uint8_t*)arch_context->user_regs->esp - data.size();
 
     for (int i { 0 }; i < data.size(); ++i)
     {
-        this->data->stack[current_sp - i - 1] = data[data.size() - i - 1];
+        base_sp[i] = data[i];
     }
 
     expand_stack(data.size());
@@ -136,6 +136,9 @@ void Process::execute_sighandler(int signal, pid_t returning_pid, const siginfo_
     info.flags   = sig.sa_flags;
     info.handler = (uintptr_t)sig.sa_handler;
 
+    Process::current().unswitch();
+    switch_to();
+
     push_onto_stack(siginfo); // siginfo_t
     uintptr_t siginfo_addr = arch_context->user_regs->esp;
 
@@ -147,6 +150,9 @@ void Process::execute_sighandler(int signal, pid_t returning_pid, const siginfo_
     push_onto_stack(info);
 
     set_instruction_pointer(signal_trampoline_page);
+
+    unswitch();
+    Process::current().switch_to();
 }
 
 void Process::exit_signal()
@@ -247,6 +253,7 @@ Process *Process::create_user_task()
     });
 
     proc->arch_context->user_regs = new registers;
+    proc->init_tls();
 
     return proc;
 }
@@ -301,6 +308,11 @@ void Process::task_switch(pid_t pid)
     ::task_switch(&prev->arch_context->esp, &next->arch_context->esp);
 }
 
+void Process::switch_tls()
+{
+    gdt::set_gate(gdt::tls_selector, data->tls_addr, data->tls_addr - tls_pages*Memory::page_size(), 0xF2 | 0b100, 0xC0); // grows down
+}
+
 void Process::set_instruction_pointer(unsigned int value)
 {
     arch_context->user_regs->eip = value;
@@ -341,8 +353,6 @@ Process *Process::clone(Process &proc, uint32_t flags)
     new_proc->arch_context->user_regs = new registers{*proc.arch_context->user_regs};
 
     new_proc->data->code = std::make_shared<aligned_vector<uint8_t, Memory::page_size()>>(*proc.data->code);
-    new_proc->data->stack = proc.data->stack;
-    new_proc->map_stack(); // manually new process' new stack
 
     new_proc->data->name = proc.data->name + "_child";
     new_proc->data->uid = proc.data->uid;
@@ -367,15 +377,6 @@ Process *Process::clone(Process &proc, uint32_t flags)
     else
         new_proc->data->fd_table = std::make_shared<std::vector<tasking::FDInfo>>(*proc.data->fd_table);
 
-    if (flags & CLONE_VM)
-    {
-        new_proc->data->mappings = proc.data->mappings;
-    }
-    else
-    {
-        proc.copy_allocated_pages(*new_proc);
-    }
-
     // TODO : refactor this
     new_proc->data->user_callbacks = std::make_shared<tasking::UserCallbacks>(*proc.data->user_callbacks);
 
@@ -398,7 +399,18 @@ Process *Process::clone(Process &proc, uint32_t flags)
         new_proc->parent = proc.pid;
     }
 
-    new_proc->create_mappings();
+    if (flags & CLONE_VM)
+    {
+        new_proc->data->mappings = proc.data->mappings;
+    }
+    else
+    {
+        proc.copy_allocated_pages(*new_proc);
+        new_proc->data->stack = proc.data->stack;
+        new_proc->create_mappings();
+    }
+
+    new_proc->init_tls();
 
     return new_proc;
 }

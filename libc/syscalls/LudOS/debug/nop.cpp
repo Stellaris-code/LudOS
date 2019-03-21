@@ -29,9 +29,13 @@ SOFTWARE.
 
 #include <errno.h>
 
+extern "C"
+{
 
 
 void syscall_nop()
 {
     DO_LUDOS_SYSCALL(SYS_syscall_nop, 0);
+}
+
 }

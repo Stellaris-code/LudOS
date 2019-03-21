@@ -27,8 +27,6 @@ SOFTWARE.
 #include <string.h>
 #include <errno.h>
 
-#include "panic.hpp"
-
 #include "syscalls/syscall_list.hpp"
 
 int getchar()

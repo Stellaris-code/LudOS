@@ -28,9 +28,12 @@ SOFTWARE.
 
 #include "syscall.h"
 
-
+extern "C"
+{
 
 void sched_yield()
 {
     DO_LINUX_SYSCALL(SYS_sched_yield, 0);
+}
+
 }

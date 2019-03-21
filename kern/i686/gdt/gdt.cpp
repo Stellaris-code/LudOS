@@ -80,6 +80,7 @@ void init()
     set_gate(user_code_selector, 0, 0xFFFFFFFF, 0xFA, 0xC0); // User mode code segment
     set_gate(user_data_selector, 0, 0xFFFFFFFF, 0xF2, 0xC0); // User mode data segment
     set_gate(tss_selector, reinterpret_cast<uint32_t>(&tss), sizeof(tss), 0x89, 0x40);
+    set_gate(tls_selector, 0, 0xFFFFFFFF, 0xF2, 0xC0); // Thread-local storage
     tss.trap = 0x00;
     tss.iomap = 0x00;
     tss.esp0 = (uint32_t)&kernel_stack_top;

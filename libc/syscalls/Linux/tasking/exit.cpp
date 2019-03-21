@@ -29,6 +29,8 @@ SOFTWARE.
 
 #include "syscall.h"
 
+extern "C"
+{
 
 
 void exit(uint8_t errcode)
@@ -37,4 +39,6 @@ void exit(uint8_t errcode)
 
     __builtin_unreachable();
     abort();
+}
+
 }

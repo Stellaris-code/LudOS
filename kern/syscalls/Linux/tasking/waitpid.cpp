@@ -35,14 +35,19 @@ pid_t sys_waitpid(pid_t pid, user_ptr<int> wstatus, int options)
 {
     if (!wstatus.check()) return -EFAULT;
 
-    if (pid == -1)
+    if (pid == -1) // wait on all children
     {
-        Process::current().wait_for(pid, wstatus.get());
+        for (auto child : Process::current().data->children)
+        {
+            Process::current().wait_for(child, wstatus.get());
+        }
     }
     else if (pid > 0)
     {
         // pid doesn't exist or isn't a child nor a thread
-        if (Process::by_pid(pid) == nullptr || Process::by_pid(pid)->parent != Process::current().pid)
+        if (Process::by_pid(pid) == nullptr ||
+                (Process::by_pid(pid)->parent != Process::current().pid && Process::by_pid(pid)->tgid != Process::current().tgid)
+                || Process::by_pid(pid)->status == Process::Zombie)
         {
             return -ECHILD;
         }
@@ -53,8 +58,7 @@ pid_t sys_waitpid(pid_t pid, user_ptr<int> wstatus, int options)
         return -EINVAL;
     }
 
-    tasking::schedule();
     // returns when the process is active again
 
-    return Process::current().data->waitpid_child;
+    return Process::current().data->woke_up_by;
 }

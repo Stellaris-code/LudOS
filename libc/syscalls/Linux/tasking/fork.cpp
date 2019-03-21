@@ -28,4 +28,9 @@ SOFTWARE.
 
 #include "errno.h"
 
+extern "C"
+{
+
 LINUX_SYSCALL_DEFAULT_IMPL(fork, 0, pid_t, ())
+
+}

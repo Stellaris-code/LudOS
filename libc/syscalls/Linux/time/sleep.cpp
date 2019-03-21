@@ -28,9 +28,13 @@ SOFTWARE.
 
 #include "syscall.h"
 
+extern "C"
+{
 
 
 int nanosleep(const struct timespec *req, struct timespec *rem)
 {
     return -DO_LINUX_SYSCALL(SYS_nanosleep, 2, req, rem);
+}
+
 }

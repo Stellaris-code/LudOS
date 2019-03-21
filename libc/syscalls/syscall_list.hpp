@@ -33,15 +33,26 @@ SOFTWARE.
 
 #define LUDOS_SYSCALL_DEF_KERNEL(...)
 #define LUDOS_SYSCALL_DEF_USER(num, name, ret, ...) \
-    ret name(__VA_ARGS__);
+    ret name(__VA_ARGS__); \
+    static const size_t SYS_##name = num; \
 
 #define LINUX_SYSCALL_DEF_KERNEL(...)
 #define LINUX_SYSCALL_DEF_USER(num, name, ret, ...) \
-    ret name(__VA_ARGS__);
+    ret name(__VA_ARGS__); \
+    static const size_t SYS_##name = num; \
 
 #define USER_PTR(type) type*
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
 #include "syscalls/syscall_list.def"
+
+#ifdef __cplusplus
+}
+#endif
 
 #undef LUDOS_SYSCALL_DEF_USER
 #undef LINUX_SYSCALL_DEF_USER
@@ -49,16 +60,11 @@ SOFTWARE.
 #undef LINUX_SYSCALL_DEF_KERNEL
 #undef USER_PTR
 
-#include "syscalls/syscalls.hpp"
-
 #define DETAIL_LUDOS_ID 0
 #define DETAIL_LINUX_ID 1
 
 
 #define syscall(num, ...) common_syscall(1, num, __VA_ARGS__)
 #define ludos_syscall(num, ...) common_syscall(0, num, __VA_ARGS__)
-
-
-pid_t wait(int *status);
 
 #endif // SYSCALLS_HPP

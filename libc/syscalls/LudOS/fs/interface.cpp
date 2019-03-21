@@ -28,7 +28,11 @@ SOFTWARE.
 
 #include <errno.h>
 
+extern "C"
+{
 
 
 LUDOS_SYSCALL_DEFAULT_IMPL(get_interface, 3, int, (unsigned int fd, int interface_id, void* interface)
                            , fd, interface_id, interface)
+
+}

@@ -75,7 +75,7 @@ unsigned x86emu_run(x86emu_t *emu, unsigned flags)
 
   p = &M.log.ptr;
 
-  t0 = time(NULL);
+  //t0 = time(NULL);
 
 #if WITH_TSC
   tsc_ofs = tsc() - M.x86.R_REAL_TSC;

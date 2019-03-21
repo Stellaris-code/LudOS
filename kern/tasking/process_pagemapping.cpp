@@ -39,10 +39,6 @@ void Process::unmap_address_space()
     {
         Memory::unmap_page((void*)pair.first);
     }
-    for (const auto& pair : data->stack_mappings)
-    {
-        Memory::unmap_page((void*)pair.first);
-    }
     for (const auto& shm : data->shm_list)
     {
         Memory::unmap(shm.second.v_addr, shm.second.shm->size());
@@ -86,7 +82,7 @@ void Process::map_stack()
         uint8_t* virt_addr = (uint8_t*)Memory::page(user_stack_top-Memory::page_size()) - i*Memory::page_size();
 
         assert(phys_addr);
-        data->stack_mappings[(uintptr_t)virt_addr] = {phys_addr, Memory::Read|Memory::Write|Memory::User, false};
+        (*data->mappings)[(uintptr_t)virt_addr] = {phys_addr, Memory::Read|Memory::Write|Memory::User, false};
     }
 }
 
@@ -121,10 +117,6 @@ void Process::release_mappings()
 void Process::map_address_space()
 {
     for (const auto& pair : *data->mappings)
-    {
-        Memory::map_page(pair.second.paddr, (void*)pair.first, pair.second.flags);
-    }
-    for (const auto& pair : data->stack_mappings)
     {
         Memory::map_page(pair.second.paddr, (void*)pair.first, pair.second.flags);
     }
@@ -179,7 +171,7 @@ void Process::allocate_user_callback_page()
     data->user_callbacks->pages.push_back(UserCallbacks::PageEntry{virt_page, handle});
 }
 
-uintptr_t Process::allocate_pages(size_t pages)
+uintptr_t Process::allocate_pages(size_t pages, bool map_immediatly)
 {
     // TODO : use vmalloc
     uint8_t* addr = reinterpret_cast<uint8_t*>(Memory::allocate_virtual_page(pages, true));
@@ -187,7 +179,8 @@ uintptr_t Process::allocate_pages(size_t pages)
     {
         void* virtual_page  = (uint8_t*)addr + i*Memory::page_size();
         uintptr_t physical_page = Memory::allocate_physical_page();
-        Memory::map_page(physical_page, virtual_page, Memory::Read|Memory::Write|Memory::User);
+        if (map_immediatly)
+            Memory::map_page(physical_page, virtual_page, Memory::Read|Memory::Write|Memory::User);
 
         assert(!data->mappings->count((uintptr_t)virtual_page));
         (*data->mappings)[(uintptr_t)virtual_page] = {(uintptr_t)physical_page, Memory::Read|Memory::Write|Memory::User, true};

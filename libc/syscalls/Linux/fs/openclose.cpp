@@ -22,12 +22,16 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#include "syscalls/syscalls.hpp"
+
 #include "syscalls/defs.hpp"
 
 #include <errno.h>
 
+extern "C"
+{
 
 
 LINUX_SYSCALL_DEFAULT_IMPL(open, 3, int, (const char* path, int flags, int mode), path, flags, mode)
 LINUX_SYSCALL_DEFAULT_IMPL(close, 1, int, (unsigned int fd), fd)
+
+}

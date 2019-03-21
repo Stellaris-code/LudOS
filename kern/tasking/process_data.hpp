@@ -88,6 +88,12 @@ struct UserCallbacks
 };
 }
 
+struct WaitEntry
+{
+    pid_t process_waiting;
+    uintptr_t status_phys;
+};
+
 struct ProcessArchContext;
 
 // Don't forget to update clone() when adding fields !
@@ -108,8 +114,10 @@ struct ProcessData
 
     std::vector<pid_t> children;
 
+    std::vector<WaitEntry> wait_entries;
+
     kpp::optional<pid_t> waiting_pid;
-    pid_t waitpid_child { 0 };
+    pid_t woke_up_by { 0 };
     uintptr_t waitstatus_phys { 0 };
 
     shared_resource<vfs::node> pwd;
@@ -119,7 +127,7 @@ struct ProcessData
 
     shared_resource<tasking::UserCallbacks> user_callbacks;
 
-    std::unordered_map<uintptr_t, tasking::MemoryMapping>                  stack_mappings;
+    uintptr_t tls_addr;
     shared_resource<std::unordered_map<uintptr_t, tasking::MemoryMapping>> mappings;
 
     std::vector<kpp::string> args;

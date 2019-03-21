@@ -29,6 +29,10 @@ SOFTWARE.
 
 #include "syscall.h"
 
+extern "C"
+{
+
+
 int print_serial(const char* string)
 {
     auto return_val = DO_LUDOS_SYSCALL(SYS_print_serial, 1, string);
@@ -70,3 +74,6 @@ int panic(const char* string)
         return 0;
     }
 }
+
+}
+

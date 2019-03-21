@@ -123,7 +123,7 @@ typedef union {
     void    *sigval_ptr;
 } sigval_t;
 
-struct siginfo_t {
+typedef struct siginfo_t {
     int     si_signo;       /* Numéro de signal         */
     int     si_errno;       /* Numéro d'erreur          */
     int     si_code;        /* Code du signal           */
@@ -138,7 +138,7 @@ struct siginfo_t {
     void   *si_addr;        /* Emplacement d'erreur     */
     int     si_band;        /* Band event               */
     int     si_fd;          /* Descripteur de fichier   */
-};
+} siginfo_t;
 
 typedef void (*sighandler_t)(int);
 typedef void (sighandler_noptr_t)(int);

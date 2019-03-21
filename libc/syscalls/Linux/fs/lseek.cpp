@@ -28,4 +28,10 @@ SOFTWARE.
 
 #include <errno.h>
 
+extern "C"
+{
+
+
 LINUX_SYSCALL_DEFAULT_IMPL(lseek, 3, int, (unsigned int fd, int off, int whence), fd, off, whence)
+
+}

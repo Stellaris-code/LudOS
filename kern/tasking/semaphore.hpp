@@ -36,14 +36,32 @@ public:
     Semaphore(int value = 0)
         : counter(value)
     {}
+    ~Semaphore();
 
-    void wait();
     void post();
+
+    // if null, no timeout
+    // returns ETIMEOUT if timed out
+    int wait(uint64_t* timeout_ticks = nullptr);
+    bool try_wait();
+
+    int count() const;
+
+private:
+    void remove_timed_out_process(const Process* proc);
+    static void remove_timed_out_process_entry_point(const Process* proc, void* semaphore);
+
+private:
+    struct wait_entry
+    {
+        Process* proc { nullptr };
+        bool timed_out { false };
+    };
 
 private:
     spinlock_t lock = 0;
     volatile int counter = 0;
-    std::list<Process*> wait_list;
+    std::list<wait_entry> wait_list;
 };
 
 #endif // SEMAPHORE_HPP

@@ -25,12 +25,15 @@ SOFTWARE.
 #ifndef ATOMIC_HPP
 #define ATOMIC_HPP
 
-#define atomic_fetch_add(x) __atomic_fetch_add(x, 1, __ATOMIC_SEQ_CST)
-#define atomic_fetch_sub(x) __atomic_fetch_sub(x, 1, __ATOMIC_SEQ_CST)
-#define atomic_add_fetch(x) __atomic_add_fetch(x, 1, __ATOMIC_SEQ_CST)
-#define atomic_sub_fetch(x) __atomic_sub_fetch(x, 1, __ATOMIC_SEQ_CST)
+#define atomic_fetch_add(x, v) __atomic_fetch_add(x, v, __ATOMIC_SEQ_CST)
+#define atomic_fetch_sub(x, v) __atomic_fetch_sub(x, v, __ATOMIC_SEQ_CST)
+#define atomic_add_fetch(x, v) __atomic_add_fetch(x, v, __ATOMIC_SEQ_CST)
+#define atomic_sub_fetch(x,v ) __atomic_sub_fetch(x, v, __ATOMIC_SEQ_CST)
 
 #define atomic_inc(x) __atomic_fetch_add(x, 1, __ATOMIC_SEQ_CST)
 #define atomic_dec(x) __atomic_fetch_sub(x, 1, __ATOMIC_SEQ_CST)
+
+#define atomic_load(x) __atomic_load_n(x, __ATOMIC_SEQ_CST)
+#define atomic_store(x, val) __atomic_store_n(x, val, __ATOMIC_SEQ_CST)
 
 #endif // ATOMIC_HPP

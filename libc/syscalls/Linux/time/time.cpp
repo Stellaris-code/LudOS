@@ -32,5 +32,6 @@ extern "C"
 {
 
 LINUX_SYSCALL_DEFAULT_IMPL(time, 1, time_t, (time_t* t_loc), t_loc)
+LINUX_SYSCALL_DEFAULT_IMPL(clock_gettime, 2, int, (clockid_t clock, struct timespec* tp), clock, tp)
 
 }

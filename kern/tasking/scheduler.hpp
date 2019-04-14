@@ -35,7 +35,7 @@ void scheduler_init();
 
 void schedule();
 
-extern DeltaQueue<pid_t, time_t> sleep_queue;
+extern DeltaQueue<pid_t, uint64_t> sleep_queue;
 
 }
 

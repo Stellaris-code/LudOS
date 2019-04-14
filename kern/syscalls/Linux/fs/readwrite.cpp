@@ -68,6 +68,7 @@ size_t sys_read(unsigned int fd, user_ptr<void> buf, size_t count)
 
 size_t sys_write(unsigned int fd, user_ptr<const void> buf, size_t count)
 {
+
     if (!buf.check())
     {
         return -EFAULT;

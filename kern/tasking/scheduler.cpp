@@ -32,29 +32,44 @@ SOFTWARE.
 
 #include "i686/tasking/process.hpp"
 #include "tasking/process_data.hpp"
+#include "spinlock.hpp"
 
 namespace tasking
 {
-DeltaQueue<pid_t, time_t> sleep_queue
+DeltaQueue<pid_t, uint64_t> sleep_queue
 {
     [](pid_t pid)
     {
         auto proc = Process::by_pid(pid);
-        assert(proc); assert(proc->status == Process::Sleeping);
+        assert(proc);
+
+        if (proc->status == Process::IOWait)
+        {
+            // execute the registered timeout action for this process if it exists
+            if (proc->status_info.timeout_action)
+                proc->status_info.timeout_action(proc, proc->status_info.timeout_action_arg);
+
+            proc->status_info.timeout_action = nullptr;
+        }
+        else
+        {
+            assert(proc->status == Process::Sleeping);
+        }
 
         proc->status = Process::Active;
     }
 };
 
-time_t elapsed_ticks { 0 };
+uint64_t elapsed_ticks { 0 };
 
 void scheduler_init()
 {
 }
 
+spinlock_t sleep_lock;
 void update_sleep_queue()
 {
-    asm volatile ("cli\n"); // TODO : have a lock() function
+    spin_lock(&sleep_lock);
 
     time_t current_ticks = Time::total_ticks();
     time_t tick_duration = current_ticks - elapsed_ticks;
@@ -64,7 +79,7 @@ void update_sleep_queue()
 
     sleep_queue.decrease(tick_duration);
 
-    asm volatile ("sti\n");
+    spin_unlock(&sleep_lock);
 }
 
 bool process_ready(pid_t pid)

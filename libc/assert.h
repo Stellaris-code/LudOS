@@ -50,7 +50,7 @@ SOFTWARE.
 #include <stdbool.h>
 
 #if defined(LUDOS_USER)
-#define error_impl(...) abort() // TODO
+#define error_impl(...) fprintf(stderr, __VA_ARGS__); abort() // TODO
 #elif !defined(NDEBUG) || true
 #define error_impl panic
 #else

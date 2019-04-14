@@ -34,4 +34,5 @@ SOFTWARE.
 
 void sys_syscall_nop()
 {
+    log_serial("allocated physical : %d\n", Memory::allocated_physical_pages());
 }

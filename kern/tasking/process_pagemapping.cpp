@@ -39,6 +39,10 @@ void Process::unmap_address_space()
     {
         Memory::unmap_page((void*)pair.first);
     }
+    for (const auto& pair : data->tls_mappings)
+    {
+        Memory::unmap_page((void*)pair.first);
+    }
     for (const auto& shm : data->shm_list)
     {
         Memory::unmap(shm.second.v_addr, shm.second.shm->size());
@@ -66,6 +70,7 @@ void Process::map_code()
         uint8_t* virt_addr = (uint8_t*)(i * Memory::page_size()) + USER_VIRTUAL_BASE;
 
         assert(phys_addr);
+        assert(!data->mappings->count((uintptr_t)virt_addr));
         (*data->mappings)[(uintptr_t)virt_addr] = {phys_addr, Memory::Read|Memory::Write|Memory::Executable|Memory::User, false};
     }
 }
@@ -82,6 +87,7 @@ void Process::map_stack()
         uint8_t* virt_addr = (uint8_t*)Memory::page(user_stack_top-Memory::page_size()) - i*Memory::page_size();
 
         assert(phys_addr);
+        assert(!data->mappings->count((uintptr_t)virt_addr));
         (*data->mappings)[(uintptr_t)virt_addr] = {phys_addr, Memory::Read|Memory::Write|Memory::User, false};
     }
 }
@@ -99,6 +105,15 @@ void Process::create_mappings()
 
 void Process::release_mappings()
 {
+    for (const auto& pair : data->tls_mappings)
+    {
+        if (pair.second.owned)
+        {
+            Memory::release_physical_page(pair.second.paddr);
+        }
+    }
+    data->tls_mappings.clear();
+
     // don't delete physical pages if we share the address space with another process
     if (data->mappings.use_count() > 1)
         return;
@@ -117,6 +132,10 @@ void Process::release_mappings()
 void Process::map_address_space()
 {
     for (const auto& pair : *data->mappings)
+    {
+        Memory::map_page(pair.second.paddr, (void*)pair.first, pair.second.flags);
+    }
+    for (const auto& pair : data->tls_mappings)
     {
         Memory::map_page(pair.second.paddr, (void*)pair.first, pair.second.flags);
     }
@@ -230,4 +249,27 @@ void Process::copy_allocated_pages(Process &target)
         Memory::unmap(src_ptr, Memory::page_size());
         Memory::unmap(dest_ptr, Memory::page_size());
     }
+}
+
+void Process::switch_mappings(Process& prev, Process& next)
+{
+    // only switch address spaces if they aren't shared
+    if (prev.data->mappings != next.data->mappings)
+    {
+        prev.unmap_address_space();
+        next.map_address_space();
+        next.map_shm();
+    }
+    else
+    {
+        for (const auto& pair : prev.data->tls_mappings)
+        {
+            Memory::unmap_page((void*)pair.first);
+        }
+        for (const auto& pair : next.data->tls_mappings)
+        {
+            Memory::map_page(pair.second.paddr, (void*)pair.first, pair.second.flags);
+        }
+    }
+    next.switch_tls();
 }

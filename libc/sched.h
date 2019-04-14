@@ -16,10 +16,21 @@
 #ifndef _BITS_SCHED_H
 #define _BITS_SCHED_H 1
 
+#include <stdint.h>
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
 /* Scheduling algorithms.  */
 #define SCHED_OTHER                0
 #define SCHED_FIFO                1
 #define SCHED_RR                2
+
+#define SCHED_MIN   SCHED_OTHER
+#define SCHED_MAX   SCHED_RR
+
 # define SCHED_BATCH                3
 # define SCHED_ISO                4
 # define SCHED_IDLE                5
@@ -57,6 +68,22 @@
 # define CLONE_NEWNET        0x40000000        /* New network namespace.  */
 # define CLONE_IO        0x80000000        /* Clone I/O context.  */
 
+struct sched_param {
+    int32_t  sched_priority;
+    int32_t  sched_curpriority;
+    union {
+        int32_t  reserved[8];
+        struct {
+            int32_t  __ss_low_priority;
+            int32_t  __ss_max_repl;
+        }           __ss;
+    }           __ss_un;
+};
+
+#define sched_ss_low_priority   __ss_un.__ss.__ss_low_priority
+#define sched_ss_max_repl       __ss_un.__ss.__ss_max_repl
+#define sched_ss_repl_period    __ss_un.__ss.__ss_repl_period
+#define sched_ss_init_budget    __ss_un.__ss.__ss_init_budget
 
 /* Clone current process.  */
 extern int clone (int (*__fn) (void *__arg), void *__child_stack,
@@ -67,5 +94,9 @@ extern int unshare (int __flags);
 extern int sched_getcpu (void);
 /* Switch process to namespace of type NSTYPE indicated by FD.  */
 extern int setns (int __fd, int __nstype);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* bits/sched.h */

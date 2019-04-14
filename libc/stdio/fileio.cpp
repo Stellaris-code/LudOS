@@ -83,4 +83,11 @@ int fclose( FILE * stream )
     return 0;
 }
 
+int fflush( FILE * stream )
+{
+    // NOP
+
+    return 0;
+}
+
 #endif

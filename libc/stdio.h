@@ -55,6 +55,7 @@ void puts(const char*);
 int fprintf(FILE * stream, const char * format, ...) PRINTF_FMT(2, 3);
 FILE * fopen(const char * filename, const char * mode);
 int fclose( FILE * stream );
+int fflush( FILE * stream );
 
 void perror(const char * str);
 

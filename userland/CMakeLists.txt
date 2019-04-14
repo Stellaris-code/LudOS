@@ -15,6 +15,18 @@ include(add_user_program)
 
 set(ARCH i686)
 
+option(WITH_UBSAN "Compiles with undefined behavior sanitization" OFF)
+option(WITH_ASAN "Compiles with address sanitization" OFF)
+
+set(SANITIZER_OPTIONS "")
+if (WITH_UBSAN)
+    set(SANITIZER_OPTIONS "${SANITIZER_OPTIONS} -fsanitize=undefined")
+endif()
+if(WITH_ASAN)
+    set(SANITIZER_OPTIONS "${SANITIZER_OPTIONS} -fsanitize=address")
+endif()
+
+
 set(CMAKE_ASM_NASM_OBJECT_FORMAT elf32)
 set(CMAKE_ASM_NASM_COMPILER "/usr/bin/nasm")
 enable_language(ASM_NASM)
@@ -38,13 +50,16 @@ set_target_properties(user_libcpp PROPERTIES COMPILE_FLAGS "-w")
 target_link_libraries(user_libcpp libc)
 target_compile_definitions(user_libcpp PUBLIC "-D__LUDOS__ -DLUDOS_USER")
 
-set(COMMON_SRCS "${CMAKE_CURRENT_SOURCE_DIR}/layout.ld" "${CMAKE_CURRENT_SOURCE_DIR}/start.asm" "${CMAKE_CURRENT_SOURCE_DIR}/init.cpp")
+set(COMMON_SRCS "${CMAKE_CURRENT_SOURCE_DIR}/layout.ld" "${CMAKE_CURRENT_SOURCE_DIR}/start.asm" "${CMAKE_CURRENT_SOURCE_DIR}/init.cpp" "${CMAKE_CURRENT_SOURCE_DIR}/ubsan.cpp")
+
+set(CMAKE_CXX_FLAGS_RELEASE "-O2")
 
 set(CMAKE_ASM_NASM_LINK_EXECUTABLE "${ARCH}-elf-gcc -melf_i386 -nodefaultlibs -nostdlib -nostartfiles -T ${CMAKE_CURRENT_SOURCE_DIR}/layout.ld <OBJECTS> -o <TARGET>.bin")
-set(CMAKE_CXX_FLAGS "-nostdlib -fno-pic -std=c++17 -fno-exceptions -fno-rtti -nostdinc -fno-builtin -fno-stack-protector -nostartfiles -nodefaultlibs")
-set(CMAKE_C_FLAGS "-nostdlib -fno-pic -nostdinc -fno-builtin -fno-stack-protector -nostartfiles -nodefaultlibs")
+set(CMAKE_CXX_FLAGS "-nostdlib -fno-pic -std=c++17 -fno-exceptions -fno-rtti -nostdinc -fno-builtin -fno-stack-protector -nostartfiles -nodefaultlibs ${SANITIZER_OPTIONS}")
+set(CMAKE_C_FLAGS "-nostdlib -fno-pic -nostdinc -fno-builtin -fno-stack-protector -nostartfiles -nodefaultlibs ${SANITIZER_OPTIONS}")
 
 set(CMAKE_CXX_LINK_EXECUTABLE "/usr/local/cross/bin/${ARCH}-elf-ld --build-id=none -T ${CMAKE_CURRENT_SOURCE_DIR}/layout.ld <OBJECTS> -o <TARGET> <LINK_LIBRARIES>-L/usr/tooLargeForHome/cross_src/build-gcc/i686-elf/libgcc/ -lgcc")
 
+add_subdirectory(external/pthread-embedded)
 add_subdirectory(test_programs)
 add_subdirectory(user_programs)

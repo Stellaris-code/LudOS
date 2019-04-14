@@ -247,11 +247,6 @@ void Process::kill(pid_t pid, int err_code)
         assert(Process::by_pid(entry.process_waiting)->status == ChildWait);
         Process::by_pid(entry.process_waiting)->wake_up(pid, err_code);
     }
-//    if (parent.status == ChildWait && (parent.data->waiting_pid.value() == -1 || parent.data->waiting_pid.value() == pid))
-//    {
-//        //log_serial("Waking up PID %d with PID %d\n", parent.pid, pid);
-//        parent.wake_up(pid, err_code);
-//    }
 
     parent.raise(parent.pid, SIGCHLD, info);
 
@@ -399,18 +394,45 @@ void Process::push_args(const std::vector<kpp::string>& args)
 
     assert(cursor < Memory::page_size());
 
-    Process::current().unswitch();
-    switch_to();
+    Process::switch_mappings(Process::current(), *this);
+
     push_onto_stack(argv_base); // argv
     push_onto_stack(args.size()); // argc
-    unswitch();
-    Process::current().switch_to();
+
+    Process::switch_mappings(*this, Process::current());
 }
 
 void Process::init_tls()
 {
     // top of the tls area
-    data->tls_addr = allocate_pages(tls_pages, false) + tls_pages*Memory::page_size();
+    //uint8_t* addr = (uint8_t*)(Memory::allocate_virtual_page(tls_pages + 1, true)); // one for the control struct
+    uint8_t* addr = (uint8_t*)(0xbe000000); // TODO : fucking fix this horror
+    for (size_t i { 0 }; i < tls_pages + 1; ++i)
+    {
+        void* virtual_page  = (uint8_t*)addr + i*Memory::page_size();
+        uintptr_t physical_page = Memory::allocate_physical_page();
+
+        data->tls_mappings.emplace_back((uintptr_t)virtual_page, tasking::MemoryMapping{(uintptr_t)physical_page, Memory::Read|Memory::Write|Memory::User, true});
+    }
+
+    uintptr_t tls_control_vaddr = data->tls_mappings.back().first;
+    uintptr_t tls_control_paddr = data->tls_mappings.back().second.paddr;
+    // set the first TLS entry to the address of the TLS section
+    Memory::phys_write(tls_control_paddr, &tls_control_vaddr, 4);
+}
+
+void Process::copy_tls(const Process& other)
+{
+    for (size_t i { 0 }; i < tls_pages; ++i)
+    {
+        void* src_ptr  = Memory::mmap(other.data->tls_mappings[i].second.paddr, Memory::page_size(), Memory::Read);
+        void* dest_ptr = Memory::mmap(this->data->tls_mappings[i].second.paddr, Memory::page_size(), Memory::Write);
+
+        memcpy(dest_ptr, src_ptr, Memory::page_size());
+
+        Memory::unmap(dest_ptr, Memory::page_size());
+        Memory::unmap(src_ptr, Memory::page_size());
+    }
 }
 
 Process::~Process()
@@ -424,11 +446,14 @@ Process::~Process()
         }
     }
 
-    for (size_t fd { 0 }; fd < data->fd_table->size(); ++fd)
+    if (data->fd_table.use_count() == 1)
     {
-        if (get_fd(fd))
+        for (size_t fd { 0 }; fd < data->fd_table->size(); ++fd)
         {
-            close_fd(fd);
+            if (get_fd(fd))
+            {
+                close_fd(fd);
+            }
         }
     }
     //unswitch();

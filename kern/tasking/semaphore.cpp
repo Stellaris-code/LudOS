@@ -25,48 +25,115 @@ SOFTWARE.
 
 #include "semaphore.hpp"
 
+#include <errno.h>
+
 #include "process.hpp"
 #include "scheduler.hpp"
 #include "atomic.hpp"
 
-void Semaphore::wait()
+int Semaphore::wait(uint64_t *timeout_ticks)
 {
+    int result = EOK;
     bool reschedule = false;
+    decltype(wait_list)::iterator waitlist_entry;
 
-    LOCK(&lock);
+    spin_lock(&lock);
 
-    if (counter <= 0)
+    if (atomic_load(&counter) <= 0)
     {
-        wait_list.push_back(&Process::current());
+        wait_list.push_back({&Process::current(), false});
+        waitlist_entry = --wait_list.end();
         Process::current().status = Process::IOWait;
+
+        // if a timeout was set, register it
+        if (timeout_ticks)
+        {
+            Process::current().status_info.timeout_action = Semaphore::remove_timed_out_process_entry_point;
+            Process::current().status_info.timeout_action_arg = this;
+
+            tasking::sleep_queue.insert(Process::current().pid, *timeout_ticks);
+        }
+
         reschedule = true;
     }
 
     atomic_dec(&counter);
 
-    UNLOCK(&lock);
+    spin_unlock(&lock);
 
     if (reschedule)
+    {
         tasking::schedule();
+
+        if (waitlist_entry->timed_out)
+            result = ETIMEDOUT;
+        // cleanup
+        wait_list.erase(waitlist_entry);
+    }
+
+    return result;
+}
+
+bool Semaphore::try_wait()
+{
+    spin_lock(&lock);
+
+    if (atomic_load(&counter) <= 0)
+    {
+        spin_unlock(&lock);
+        return false;
+    }
+
+    atomic_dec(&counter);
+
+    spin_unlock(&lock);
+    return true;
+}
+
+int Semaphore::count() const
+{
+    return atomic_load(&counter);
+}
+
+Semaphore::~Semaphore()
+{
+    assert(wait_list.empty());
 }
 
 void Semaphore::post()
 {
     bool reschedule = false;
 
-    LOCK(&lock);
+    spin_lock(&lock);
 
     atomic_inc(&counter);
 
     if (!wait_list.empty())
     {
-        wait_list.front()->status = Process::Active;
-        wait_list.pop_front();
+        wait_list.front().proc->status = Process::Active;
+        //wait_list.pop_front();
         reschedule = true;
     }
 
-    UNLOCK(&lock);
+    spin_unlock(&lock);
 
     if (reschedule)
         tasking::schedule();
+}
+
+void Semaphore::remove_timed_out_process(const Process *proc)
+{
+    auto it = std::find_if(wait_list.begin(), wait_list.end(), [proc](const wait_entry& entry)
+    {
+        return entry.proc->pid == proc->pid;
+    });
+    assert(it != wait_list.end());
+
+    it->timed_out = true;
+}
+
+void Semaphore::remove_timed_out_process_entry_point(const Process *proc, void *semaphore)
+{
+    assert(semaphore);
+    ((Semaphore*)semaphore)->remove_timed_out_process(proc);
 }

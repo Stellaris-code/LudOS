@@ -54,11 +54,14 @@ bool Paging::page_fault_handler(registers *regs)
     // if eip seems invalid, try to manually pop the stack and return
     if (!Memory::is_mapped((unsigned char*)regs->eip))
     {
-        uintptr_t return_eip = *(uintptr_t*)(regs->esp);
+        if (Memory::is_mapped((unsigned char*)regs->esp))
+        {
+            uintptr_t return_eip = *(uintptr_t*)(regs->esp);
 
-        regs->eip = return_eip;
-        regs->esp += sizeof(uintptr_t);
-        log_serial("more like 0x%x\n", return_eip);
+            regs->eip = return_eip;
+            regs->esp += sizeof(uintptr_t);
+            log_serial("more like 0x%x\n", return_eip);
+        }
     }
     else
     {

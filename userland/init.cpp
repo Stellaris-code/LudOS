@@ -27,6 +27,9 @@ SOFTWARE.
 
 #include <syscalls/syscall_list.hpp>
 
+extern "C" void pthread_init();
+extern "C" void pthread_terminate();
+
 char print_buffer[1024];
 size_t buf_counter;
 
@@ -45,5 +48,14 @@ void write_callback(void*, char c)
 
 void __attribute__((constructor)) libc_init()
 {
+    // initialize the FPU
+    asm volatile ("fninit\n");
+
     init_printf(nullptr, write_callback);
+    pthread_init();
+}
+
+void __attribute__((destructor)) libc_exit()
+{
+    pthread_terminate();
 }

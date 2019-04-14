@@ -84,6 +84,7 @@ void Process::load_user_code(gsl::span<const uint8_t> code_to_copy, size_t alloc
 
     release_mappings();
     create_mappings();
+    init_tls();
 
     if (m_current_process == this)
         map_address_space();
@@ -136,9 +137,7 @@ void Process::execute_sighandler(int signal, pid_t returning_pid, const siginfo_
     info.flags   = sig.sa_flags;
     info.handler = (uintptr_t)sig.sa_handler;
 
-    Process::current().unswitch();
-    switch_to();
-
+    Process::switch_mappings(Process::current(), *this);
     push_onto_stack(siginfo); // siginfo_t
     uintptr_t siginfo_addr = arch_context->user_regs->esp;
 
@@ -151,8 +150,7 @@ void Process::execute_sighandler(int signal, pid_t returning_pid, const siginfo_
 
     set_instruction_pointer(signal_trampoline_page);
 
-    unswitch();
-    Process::current().switch_to();
+    Process::switch_mappings(*this, Process::current());
 }
 
 void Process::exit_signal()
@@ -253,7 +251,6 @@ Process *Process::create_user_task()
     });
 
     proc->arch_context->user_regs = new registers;
-    proc->init_tls();
 
     return proc;
 }
@@ -294,9 +291,9 @@ void Process::task_switch(pid_t pid)
 
     prev->arch_context->fpu_state = FPU::save();
 
-    prev->unswitch();
-    next->switch_to();
-
+    // only switch address spaces if they aren't shared
+    // TODO : FIXME : tls as separated mappings
+    Process::switch_mappings(Process::current(), *next);
     //    if (next->arch_context && next->arch_context->user_regs)
     //        log_serial("Switching to eip 0x%x\n", next->arch_context->user_regs->eip);
 
@@ -310,7 +307,11 @@ void Process::task_switch(pid_t pid)
 
 void Process::switch_tls()
 {
-    gdt::set_gate(gdt::tls_selector, data->tls_addr, data->tls_addr - tls_pages*Memory::page_size(), 0xF2 | 0b100, 0xC0); // grows down
+    if (!data->tls_mappings.empty())
+    {
+        uintptr_t tls_control_vaddr = data->tls_mappings.back().first;
+        gdt::set_gate(gdt::tls_selector, tls_control_vaddr, tls_control_vaddr/Memory::page_size(), 0xF2, 0xC0);
+    }
 }
 
 void Process::set_instruction_pointer(unsigned int value)
@@ -352,8 +353,8 @@ Process *Process::clone(Process &proc, uint32_t flags)
 
     new_proc->arch_context->user_regs = new registers{*proc.arch_context->user_regs};
 
-    new_proc->data->code = std::make_shared<aligned_vector<uint8_t, Memory::page_size()>>(*proc.data->code);
 
+    new_proc->priority = proc.priority;
     new_proc->data->name = proc.data->name + "_child";
     new_proc->data->uid = proc.data->uid;
     new_proc->data->gid = proc.data->gid;
@@ -402,15 +403,18 @@ Process *Process::clone(Process &proc, uint32_t flags)
     if (flags & CLONE_VM)
     {
         new_proc->data->mappings = proc.data->mappings;
+        new_proc->data->code = proc.data->code; // not a copy, shared_ptrs
     }
     else
     {
         proc.copy_allocated_pages(*new_proc);
         new_proc->data->stack = proc.data->stack;
+        new_proc->data->code = std::make_shared<aligned_vector<uint8_t, Memory::page_size()>>(*proc.data->code);
         new_proc->create_mappings();
     }
 
     new_proc->init_tls();
+    //new_proc->copy_tls(proc);
 
     return new_proc;
 }

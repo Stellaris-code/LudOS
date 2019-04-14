@@ -41,9 +41,19 @@ T round_to(T value, T roundTo)
     return (value + (roundTo - 1)) & ~(roundTo - 1);
 }
 
-inline size_t intlog(double base, double x)
+inline int log2int(int value)
 {
-    return static_cast<size_t>(log10(x) / log10(base));
+    int targetlevel = 0;
+    while (value >>= 1) ++targetlevel;
+
+    return targetlevel;
+}
+
+inline size_t intlog(size_t base, size_t x)
+{
+    assert(base > 0);
+    assert(log2int(base) != 0);
+    return static_cast<size_t>(log2int(x) / log2int(base));
 }
 
 template <typename T>

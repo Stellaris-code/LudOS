@@ -1,4 +1,4 @@
-/*
+﻿/*
 time.hpp
 
 Copyright (c) 17 Yann BOUCHER (yann)
@@ -32,6 +32,7 @@ namespace Time
 
 struct Date
 {
+    uint32_t ns  {};
     uint32_t sec {};
     uint32_t min {};
     uint32_t hour {};
@@ -50,6 +51,8 @@ static constexpr uint32_t days_in_months[12] =
 { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
 
 extern bool timer_ready;
+
+uint64_t ticks_since_boot();
 
 Date get_time_of_day();
 Date to_local_time(Date utc_date);

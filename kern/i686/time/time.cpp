@@ -59,9 +59,15 @@ double uptime()
 size_t epoch()
 {
     static auto boot_date = Time::to_unix(rtc::get_time());
+
+    return boot_date + ticks_since_boot()/Timer::freq();
+}
+
+uint64_t ticks_since_boot()
+{
     static auto boot_ticks = Timer::ticks();
 
-    return boot_date + (Timer::ticks() - boot_ticks)/Timer::freq();
+    return Timer::ticks() - boot_ticks;
 }
 
 Date get_time_of_day()

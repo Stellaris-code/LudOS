@@ -23,21 +23,26 @@ SOFTWARE.
 
 */
 
+
+#if 0
+
 #include <pthread.h>
 #include <stdio.h>
 
 #include <syscalls/syscall_list.hpp>
 
 #define set_tls(val) \
-    asm volatile ("movl %0, %%gs:-4"                                      \
+    asm volatile ("movl %%gs:0, %%ecx\n" \
+                  "movl %0, -256(%%ecx)"                                      \
                          : \
-    : "a" (val));
+    : "a" (val) : "ecx");
 
 #define get_tls() \
     ({ int val; \
-    asm volatile ("movl %%gs:-4, %0"                                      \
+    asm volatile ("movl %%gs:0, %%ecx\n"                                      \
+                  "movl -256(%%ecx), %0" \
                          : "=a"(val) \
-    :); \
+    ::"ecx"); \
     val; })
 
 int x = 0, y = 0;
@@ -45,6 +50,7 @@ int x = 0, y = 0;
 /* this function is run by the second thread */
 void *inc_x(void *x_void_ptr)
 {
+    printf("tls is : 0x%x\n", get_tls());
 
     set_tls(0xdeadbeef);
 
@@ -54,7 +60,6 @@ void *inc_x(void *x_void_ptr)
     {
         printf("x increment finished : %d %d (%p %p); tls : 0x%x\n", x, y, &x, &y, get_tls());
     };
-
     /* the function must return something - NULL will do */
     return (void*)42;
 }
@@ -65,8 +70,7 @@ int main()
     //int x = 0, y = 0;
 
     /* show the initial values of x and y */
-    printf("x: %d, y: %d\n", x, y);
-
+    printf("x: %d, y: %d; &x %p\n", x, y, &x);
     /* this variable is our reference to the second thread */
     pthread_t inc_x_thread;
 
@@ -99,3 +103,56 @@ int main()
     return 0;
 
 }
+
+#else
+
+
+// C program to demonstrate working of Semaphores
+#include <stdio.h>
+#include <pthread.h>
+#include <semaphore.h>
+#include <sched.h>
+
+#include <syscalls/syscall_list.hpp>
+
+sem_t mutex;
+
+void* thread(void* arg)
+{
+    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+
+    struct timespec tp;
+    clock_gettime(CLOCK_REALTIME, &tp);
+
+    tp.tv_sec  += 1;
+    tp.tv_nsec += 500000000;
+
+    //wait
+    sem_timedwait(&mutex, &tp);
+    printf("\nEntered..\n");
+
+    sched_yield();
+
+    //critical section
+    //sleep(4);
+
+    //signal
+    printf("\nJust Exiting...\n");
+}
+
+
+int main()
+{
+    sem_init(&mutex, 0, 0);
+
+    pthread_t t1;
+
+    pthread_create(&t1,NULL,thread,NULL);
+
+    pthread_join(t1,NULL);
+    sem_destroy(&mutex);
+    return 0;
+}
+
+
+#endif

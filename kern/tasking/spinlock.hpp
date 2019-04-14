@@ -29,12 +29,12 @@ SOFTWARE.
 
 typedef volatile int spinlock_t;
 
-#define LOCK(name) \
+#define spin_lock(name) \
     while(!__sync_bool_compare_and_swap((name), 0, 1)) \
     { \
         asm("pause"); \
     }
-#define UNLOCK(name) \
+#define spin_unlock(name) \
         __sync_synchronize(); \
         *(name) = 0;
 

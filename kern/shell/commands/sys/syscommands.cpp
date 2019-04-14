@@ -33,6 +33,7 @@ SOFTWARE.
 
 #include "shell/shell.hpp"
 #include "mem/meminfo.hpp"
+#include "mem/memmap.hpp"
 #include "power/powermanagement.hpp"
 #include "time/time.hpp"
 #include "drivers/pci/pci.hpp"
@@ -51,6 +52,7 @@ void install_sys_commands(Shell &sh)
          kprintf("Allocated memory : %s\n", human_readable_size(MemoryInfo::allocated()).c_str());
          kprintf("Used memory : %s\n", human_readable_size(MemoryInfo::used()).c_str());
          kprintf("Maximal Used memory : %s\n", human_readable_size(MemoryInfo::max_usage()).c_str());
+         kprintf("Allocated pages : %d\n", Memory::allocated_physical_pages());
          return 0;
      }});
 

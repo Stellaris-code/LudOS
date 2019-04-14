@@ -47,7 +47,8 @@ int sys_nanosleep(user_ptr<const struct timespec> req, user_ptr<struct timespec>
     }
 
     Process::current().status = Process::Sleeping;
-    time_t ticks = req.get()->tv_nsec * (Time::clock_speed()/1'000) + (req.get()->tv_sec * (Time::clock_speed()*1'000'000));
+    uint64_t ticks = (req.get()->tv_nsec/1000) * Time::clock_speed() + (req.get()->tv_sec * (Time::clock_speed()*1'000'000));
+
     tasking::sleep_queue.insert(Process::current().pid, ticks);
 
     tasking::schedule();

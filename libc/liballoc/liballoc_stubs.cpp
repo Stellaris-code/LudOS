@@ -81,13 +81,13 @@ extern "C"
 {
 int liballoc_lock()
 {
-    LOCK(&lock);
+    spin_lock(&lock);
     return 0;
 }
 
 int liballoc_unlock()
 {
-    UNLOCK(&lock);
+    spin_unlock(&lock);
     return 0;
 }
 

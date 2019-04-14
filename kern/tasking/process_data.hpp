@@ -99,7 +99,7 @@ struct ProcessArchContext;
 // Don't forget to update clone() when adding fields !
 struct ProcessData
 {
-    static constexpr size_t kernel_stack_size = 0x4000;
+    static constexpr size_t kernel_stack_size = 0x2000;
 
     template <typename T>
     using shared_resource = std::shared_ptr<T>;
@@ -127,7 +127,7 @@ struct ProcessData
 
     shared_resource<tasking::UserCallbacks> user_callbacks;
 
-    uintptr_t tls_addr;
+    std::vector<std::pair<uintptr_t, tasking::MemoryMapping>> tls_mappings;
     shared_resource<std::unordered_map<uintptr_t, tasking::MemoryMapping>> mappings;
 
     std::vector<kpp::string> args;

@@ -50,12 +50,10 @@ int clone_fork(int flags, void* child_stack)
 static int (*nonstack_fn_ptr) (void *__arg);
 static void* nonstack_arg;
 
-extern int y;
-
 int clone (int (*fn) (void *__arg), void *child_stack,
            int flags, void *arg, ...)
 {
-    if ((uintptr_t)child_stack & 0x10  // not aligned
+    if ((uintptr_t)child_stack & 0xF  // not aligned
             || fn == nullptr || child_stack == nullptr
             )
     {
@@ -66,7 +64,7 @@ int clone (int (*fn) (void *__arg), void *child_stack,
     // copy these to .data section variables since stack-referenced variables won't be accessible from the created thread
     nonstack_fn_ptr = fn;
     nonstack_arg = arg;
-tfp_printf("value at start b4 clone : %d %d\n", *(int*)nonstack_arg, y);
+
     auto ret_val = DO_LINUX_SYSCALL(SYS_clone, 2, flags, child_stack);
 
     if (ret_val < 0)
@@ -80,7 +78,6 @@ tfp_printf("value at start b4 clone : %d %d\n", *(int*)nonstack_arg, y);
 
 
     // created thread running here
-    tfp_printf("value at start : %d %d\n", *(int*)nonstack_arg, y);
     int ret = nonstack_fn_ptr(nonstack_arg);
     exit(ret);
 

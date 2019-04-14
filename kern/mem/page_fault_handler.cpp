@@ -57,6 +57,8 @@ void detach_fault_handler(fault_handle hdl)
 void user_space_fault(const PageFault& fault)
 {
     log_serial("User space fault for PID %d at 0x%x, type %d\n", Process::current().pid, fault.address, fault.type);
+    kprintf("\nUser space fault for PID %d at 0x%x, type %d\n\n", Process::current().pid, fault.address, fault.type);
+
 
     siginfo_t info;
     info.si_signo = SIGSEGV;

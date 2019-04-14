@@ -96,11 +96,14 @@ SOFTWARE.
 // TODO : restore ucontext_t* modified by signal handlers
 // TODO : optimized page copy function
 // TODO : mettre une page sentinelle après chaque stack de chaque processus
-// TODO : put a lock on the ext2fs for earch access
+// TODO : put a lock on the ext2fs for each access
 // TODO : only switch to the idle task if nothing is left to do
 // TODO : nanosleep must let signals pass through
 // TODO : check that the initial process stack conforms to the sys v abi spec
-// TODO : remove common_syscall
+// TODO : priority is currently ignored in scheduler, implement this
+
+// TODO HECKIN' IMPORTANT : DO NOT USE 'allocate_virtual_page' IN PROCESS !!!
+//   USE THE 'mappings' STRUCTURE TO ALLOCATE VIRTUAL SPACE
 
 // ROADMAP
 // : supprimer les floats dans le kernel

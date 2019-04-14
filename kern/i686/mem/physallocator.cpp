@@ -127,7 +127,7 @@ loop:
     }
 
     log_serial("Out of memory\n");
-    panic("Out of memory !\n");
+    panic("Out of memory ! allocated pages : %d\n", allocated_pages);
 
     return 0;
 }

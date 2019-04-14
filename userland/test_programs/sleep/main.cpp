@@ -33,8 +33,8 @@ SOFTWARE.
 
 timespec req =
 {
-    .tv_sec = 1,
-    .tv_nsec = 0
+    .tv_sec = 0,
+    .tv_nsec = 500000000
 };
 
 inline uint64_t total_ticks()
@@ -82,7 +82,17 @@ int main()
         while (true)
         {
             printf("Child!\n");
+#if 0
             nanosleep(&req, nullptr);
+#else
+            struct timespec req;
+            //    req.tv_sec = 0;
+            //    req.tv_nsec = msecs*1000000;
+            int msecs = 1500;
+            req.tv_sec  = msecs/1000;
+            req.tv_nsec = (msecs%1000) * 1000000;
+            nanosleep(&req, nullptr);
+#endif
             sched_yield();
         }
         printf("Child exit\n");

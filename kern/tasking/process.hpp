@@ -1,4 +1,4 @@
-/*
+﻿/*
 process.hpp
 
 Copyright (c) 05 Yann BOUCHER (yann)
@@ -74,8 +74,16 @@ public:
         Kernel
     };
 
+    struct status_info
+    {
+        void (*timeout_action)(const Process* proc, void* arg);
+        void*  timeout_action_arg;
+    };
+
     static constexpr pid_t  init_pid = 0;
     static constexpr size_t root_uid = 0;
+    static constexpr int    max_priority = 40;
+    static constexpr int    min_priority = 1;
     static constexpr size_t tls_pages = 1;
     static constexpr uintptr_t signal_trampoline_page = KERNEL_VIRTUAL_BASE - (1*Memory::page_size());
     static constexpr size_t    user_stack_top         = KERNEL_VIRTUAL_BASE - (1*Memory::page_size());
@@ -169,6 +177,7 @@ public:
 
     void init_tls();
     void switch_tls();
+    void copy_tls(const Process &other);
 
     bool check_perms(uint16_t perms, uint16_t tgt_uid, uint16_t tgt_gid, uint16_t type);
 
@@ -184,6 +193,7 @@ public:
     pid_t parent { 0 };
     std::unique_ptr<ProcessData> data;
     ProcessArchContext* arch_context { nullptr };
+    // data used by scheduler is kept directly in the Process structure
     enum
     {
         Active,
@@ -193,6 +203,8 @@ public:
         Sleeping,
         Zombie
     } status = Active;
+    status_info status_info;
+    int priority { 0 };
 
 private:
     static pid_t find_free_pid();
@@ -225,6 +237,8 @@ private:
 
     void switch_to();
     void unswitch();
+
+    static void switch_mappings(Process& prev, Process& next);
 
     void map_code();
     void map_stack();

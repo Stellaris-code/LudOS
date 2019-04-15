@@ -101,9 +101,7 @@ SOFTWARE.
 // TODO : nanosleep must let signals pass through
 // TODO : check that the initial process stack conforms to the sys v abi spec
 // TODO : priority is currently ignored in scheduler, implement this
-
-// TODO HECKIN' IMPORTANT : DO NOT USE 'allocate_virtual_page' IN PROCESS !!!
-//   USE THE 'mappings' STRUCTURE TO ALLOCATE VIRTUAL SPACE
+// TODO : restore shm support
 
 // ROADMAP
 // : supprimer les floats dans le kernel

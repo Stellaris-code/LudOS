@@ -35,28 +35,5 @@ SOFTWARE.
 
 int main()
 {
-
-    int ret = fork();
-    if (ret < 0)
-    {
-        perror("fork");
-        return 0;
-    }
-    else if (ret == 0)
-    {
-        while (true)
-        {
-            //sched_yield();
-            exit(0xef);
-        }
-        return 1;
-    }
-    else
-    {
-        while (true)
-        {
-            sched_yield();
-        }
-        return 2;
-    }
+    printf("test\n");
 }

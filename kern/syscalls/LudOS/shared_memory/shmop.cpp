@@ -36,49 +36,51 @@ SOFTWARE.
 
 long sys_shmat(int shmid, user_ptr<const void> shmaddr, int shmflg)
 {
-    uintptr_t v_addr = (uintptr_t)shmaddr.as_raw();
+    return -ENOSYS;
+//    uintptr_t v_addr = (uintptr_t)shmaddr.as_raw();
 
-    if (!get_shared_mem(shmid) || v_addr >= KERNEL_VIRTUAL_BASE)
-    {
-        return -EINVAL;
-    }
+//    if (!get_shared_mem(shmid) || v_addr >= KERNEL_VIRTUAL_BASE)
+//    {
+//        return -EINVAL;
+//    }
 
-    if (v_addr != 0)
-    {
-        if (Memory::offset(v_addr) != 0 && !(shmflg & SHM_RND))
-        {   // not rounded
-            return -EINVAL;
-        }
-        v_addr += (Memory::page_size() - Memory::offset(v_addr));
-        if (Memory::is_mapped((void*)v_addr))
-        {
-            return -EINVAL;
-        }
-    }
-    else
-    {
-        v_addr = Memory::allocate_virtual_page(1, true);
-        assert(!Memory::is_mapped((void*)v_addr));
-    }
+//    if (v_addr != 0)
+//    {
+//        if (Memory::offset(v_addr) != 0 && !(shmflg & SHM_RND))
+//        {   // not rounded
+//            return -EINVAL;
+//        }
+//        v_addr += (Memory::page_size() - Memory::offset(v_addr));
+//        if (Memory::is_mapped((void*)v_addr))
+//        {
+//            return -EINVAL;
+//        }
+//    }
+//    else
+//    {
+//        v_addr = Memory::allocate_virtual_page(1, true);
+//        assert(!Memory::is_mapped((void*)v_addr));
+//    }
 
-    Process::current().data->shm_list.at(shmid).v_addr = (void*)v_addr;
-    Process::current().data->shm_list.at(shmid).shm->map((void*)v_addr);
+//    Process::current().data->shm_list.at(shmid).v_addr = (void*)v_addr;
+//    Process::current().data->shm_list.at(shmid).shm->map((void*)v_addr);
 
-    return v_addr;
+//    return v_addr;
 }
 
 long sys_shmdt(user_ptr<const void> shmaddr)
 {
-    if (!shmaddr.check() || Memory::offset((uintptr_t)shmaddr.get()) != 0)
-    {
-        return -EINVAL;
-    }
-    uintptr_t v_addr = (uintptr_t)shmaddr.get();
+    return -ENOSYS;
+//    if (!shmaddr.check() || Memory::offset((uintptr_t)shmaddr.get()) != 0)
+//    {
+//        return -EINVAL;
+//    }
+//    uintptr_t v_addr = (uintptr_t)shmaddr.get();
 
-    erase_if(Process::current().data->shm_list, [v_addr](const std::pair<unsigned int, tasking::ShmEntry>& pair)
-    {
-        return (uintptr_t)pair.second.v_addr == v_addr;
-    });
+//    erase_if(Process::current().data->shm_list, [v_addr](const std::pair<unsigned int, tasking::ShmEntry>& pair)
+//    {
+//        return (uintptr_t)pair.second.v_addr == v_addr;
+//    });
 
-    return 0;
+//    return 0;
 }

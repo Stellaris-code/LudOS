@@ -486,20 +486,20 @@ void main()
         printf("   Test iteration #%d\n\n",i);
         printf("=========================\n");
 
-//        runThreadTests();
-//        runMiscTests();
-//        runMutexTests();
-//        runSemTests();
-//        runCondvarTests();
-//        runBarrierTests();
-//        runSpinTests();
-//        runRwlockTests();
-//#ifdef PTHREAD_CANCEL_TESTS
-//        runCancelTests();
-//#endif
-//        runExceptionTests();
-              runBenchTests();
-        //      runStressTests();
+        runThreadTests();
+        runMiscTests();
+        runMutexTests();
+        runSemTests();
+        runCondvarTests();
+        runBarrierTests();
+        runSpinTests();
+        runRwlockTests();
+#ifdef PTHREAD_CANCEL_TESTS
+        runCancelTests();
+#endif
+        runExceptionTests();
+        runBenchTests();
+        runStressTests();
 
     }
 

@@ -46,7 +46,7 @@ struct [[gnu::packed]] PDEntry
     uint8_t  accessed: 1;
     uint8_t  zero    : 1;
     uint8_t  size    : 1;
-    uint8_t  ignored : 1;
+    uint8_t  global  : 1;
     uint8_t  os_claimed : 1;
     uint8_t  data    : 2;
     uint32_t pt_addr : 20;

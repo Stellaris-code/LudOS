@@ -177,11 +177,10 @@ public:
 
     void init_tls();
     void switch_tls();
-    void copy_tls(const Process &other);
 
     bool check_perms(uint16_t perms, uint16_t tgt_uid, uint16_t tgt_gid, uint16_t type);
 
-    uintptr_t allocate_pages(size_t pages, bool map_immediatly = true);
+    uintptr_t allocate_pages(size_t pages);
     bool      release_pages(uintptr_t ptr, size_t pages);
 
 private:
@@ -235,17 +234,16 @@ private:
     bool user_callback_fault_handler(const PageFault& fault);
     void do_user_callback(const std::function<int(const std::vector<uintptr_t>&)>& callback, const std::vector<size_t> &arg_sizes);
 
-    void switch_to();
-    void unswitch();
+    static void switch_mappings(Process *prev, Process* next);
 
-    static void switch_mappings(Process& prev, Process& next);
+    void map_code(gsl::span<const uint8_t> code, size_t allocated_size);
+    void map_stack(size_t stack_size);
 
-    void map_code();
-    void map_stack();
-    void map_shm();
-
-    void create_mappings();
+    void create_mappings(gsl::span<const uint8_t> code, size_t allocated_size, size_t stack_size);
     void release_mappings();
+
+    uintptr_t allocate_virtual_page(size_t count);
+    void map_page(uintptr_t virt_addr, uintptr_t phys_addr, uint32_t flags, bool owned);
 
     void map_address_space();
     void unmap_address_space();
@@ -253,7 +251,7 @@ private:
     void free_arch_context();
     void cleanup();
     void wake_up(pid_t awakener, int err_code);
-    void copy_allocated_pages(Process& target);
+    void copy_page_directory(Process& target);
 
 private:
     static inline Process* m_current_process { nullptr };

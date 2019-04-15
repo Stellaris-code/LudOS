@@ -330,21 +330,9 @@ Process *Process::create_init_task(void (*procedure)())
     assert(m_current_process == nullptr);
     m_current_process = create_kernel_task(procedure);
 
-    m_current_process->switch_to();
+    Process::switch_mappings(nullptr, m_current_process);
 
     return m_current_process;
-}
-
-void Process::switch_to()
-{
-    map_address_space();
-    map_shm();
-    switch_tls();
-}
-
-void Process::unswitch()
-{
-    unmap_address_space();
 }
 
 bool Process::check_args_size(const std::vector<kpp::string> &args)
@@ -376,10 +364,13 @@ void Process::push_args(const std::vector<kpp::string>& args)
 
     expand_stack(table_size);
 
+    Process::switch_mappings(&Process::current(), this);
+
     const uintptr_t argv_base = stack_pointer();
-    const uintptr_t stack_base = (uintptr_t)data->stack.data() + data->stack.size() - (user_stack_top - argv_base);
+    const uintptr_t stack_base = argv_base;
 
     size_t cursor = args.size() * sizeof(uintptr_t); // start after arg array;
+    assert(cursor < Memory::page_size());
 
     for (size_t i { 0 }; i < args.size(); ++i)
     {
@@ -392,47 +383,10 @@ void Process::push_args(const std::vector<kpp::string>& args)
         cursor += args[i].size() + 1; // again, null terminator
     }
 
-    assert(cursor < Memory::page_size());
-
-    Process::switch_mappings(Process::current(), *this);
-
     push_onto_stack(argv_base); // argv
     push_onto_stack(args.size()); // argc
 
-    Process::switch_mappings(*this, Process::current());
-}
-
-void Process::init_tls()
-{
-    // top of the tls area
-    //uint8_t* addr = (uint8_t*)(Memory::allocate_virtual_page(tls_pages + 1, true)); // one for the control struct
-    uint8_t* addr = (uint8_t*)(0xbe000000); // TODO : fucking fix this horror
-    for (size_t i { 0 }; i < tls_pages + 1; ++i)
-    {
-        void* virtual_page  = (uint8_t*)addr + i*Memory::page_size();
-        uintptr_t physical_page = Memory::allocate_physical_page();
-
-        data->tls_mappings.emplace_back((uintptr_t)virtual_page, tasking::MemoryMapping{(uintptr_t)physical_page, Memory::Read|Memory::Write|Memory::User, true});
-    }
-
-    uintptr_t tls_control_vaddr = data->tls_mappings.back().first;
-    uintptr_t tls_control_paddr = data->tls_mappings.back().second.paddr;
-    // set the first TLS entry to the address of the TLS section
-    Memory::phys_write(tls_control_paddr, &tls_control_vaddr, 4);
-}
-
-void Process::copy_tls(const Process& other)
-{
-    for (size_t i { 0 }; i < tls_pages; ++i)
-    {
-        void* src_ptr  = Memory::mmap(other.data->tls_mappings[i].second.paddr, Memory::page_size(), Memory::Read);
-        void* dest_ptr = Memory::mmap(this->data->tls_mappings[i].second.paddr, Memory::page_size(), Memory::Write);
-
-        memcpy(dest_ptr, src_ptr, Memory::page_size());
-
-        Memory::unmap(dest_ptr, Memory::page_size());
-        Memory::unmap(src_ptr, Memory::page_size());
-    }
+    Process::switch_mappings(this, &Process::current());
 }
 
 Process::~Process()
@@ -456,6 +410,6 @@ Process::~Process()
             }
         }
     }
-    //unswitch();
+
     cleanup();
 }

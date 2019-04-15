@@ -104,9 +104,7 @@ struct ProcessData
     template <typename T>
     using shared_resource = std::shared_ptr<T>;
 
-    aligned_vector<uint8_t, Memory::page_size()> stack; // stack is never shared
     uint8_t* kernel_stack { nullptr }; // TODO : have a class for that
-    shared_resource<aligned_vector<uint8_t, Memory::page_size()>> code;
 
     kpp::string name { "<INVALID>" };
     uint32_t uid { 0 };
@@ -127,12 +125,12 @@ struct ProcessData
 
     shared_resource<tasking::UserCallbacks> user_callbacks;
 
-    std::vector<std::pair<uintptr_t, tasking::MemoryMapping>> tls_mappings;
+    uint32_t tls_vaddr;
     shared_resource<std::unordered_map<uintptr_t, tasking::MemoryMapping>> mappings;
 
     std::vector<kpp::string> args;
 
-    std::unordered_map<unsigned int, tasking::ShmEntry> shm_list;
+    //std::unordered_map<unsigned int, tasking::ShmEntry> shm_list;
 
     struct SigContext
     {

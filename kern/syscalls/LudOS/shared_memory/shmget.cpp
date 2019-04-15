@@ -35,31 +35,32 @@ SOFTWARE.
 
 int sys_shmget(key_t key, size_t size, int shmflags)
 {
-    if (get_shared_mem(key))
-    {
-        if (shmflags & IPC_CREAT && shmflags & IPC_EXCL)
-        {
-            return -EEXIST;
-        }
+    return -ENOSYS;
+//    if (get_shared_mem(key))
+//    {
+//        if (shmflags & IPC_CREAT && shmflags & IPC_EXCL)
+//        {
+//            return -EEXIST;
+//        }
 
-        return key;
-    }
-    else
-    {
-        if (!(shmflags & IPC_CREAT))
-        {
-            return -ENOENT;
-        }
+//        return key;
+//    }
+//    else
+//    {
+//        if (!(shmflags & IPC_CREAT))
+//        {
+//            return -ENOENT;
+//        }
 
-        if (key == IPC_PRIVATE) key = create_shared_memory_id();
+//        if (key == IPC_PRIVATE) key = create_shared_memory_id();
 
-        auto shm = create_shared_mem(key, size);
-        if (!shm) return -ENOMEM;
+//        auto shm = create_shared_mem(key, size);
+//        if (!shm) return -ENOMEM;
 
-        assert(!Process::current().data->shm_list.count(key));
-        Process::current().data->shm_list[key].shm = shm;
-        Process::current().data->shm_list[key].v_addr = nullptr; // not yet mapped
+//        assert(!Process::current().data->shm_list.count(key));
+//        Process::current().data->shm_list[key].shm = shm;
+//        Process::current().data->shm_list[key].v_addr = nullptr; // not yet mapped
 
-        return key;
-    }
+//        return key;
+//    }
 }
